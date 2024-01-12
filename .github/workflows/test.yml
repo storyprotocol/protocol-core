@@ -1,0 +1,91 @@
+name: UnitTest
+
+on: [pull_request]
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@v3
+      - uses: actions/cache@v3.0.3
+        id: cache
+        with:
+          path: '**/node_modules'
+          key: npm-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: npm-
+      - run: yarn
+        if: steps.cache.outputs.cache-hit != 'true'
+      - run: npm run lint
+
+  foundry-test:
+    strategy:
+      fail-fast: true
+
+    name: Foundry Unit Test
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          
+      - name: List files in the repository
+        run: |
+          ls ${{ github.workspace }}
+
+      - uses: chill-viking/npm-ci@latest
+        name: Install NPM Dependencies
+        with:
+          working_directory: ${{ github.workspace }}
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Run Forge build
+        run: |
+          forge --version
+          forge build --sizes
+        id: build
+
+      - name: Run Forge tests
+        run: |
+          forge test -vvv
+        id: forge-test
+
+      - name: Gas Difference
+        run:
+          forge snapshot --gas-report --diff --desc
+        id: forge-gas-snapshot-diff
+
+      - name: Code Coverage
+        run:
+          forge coverage --report lcov --report summary
+        id: forge-code-coverage
+
+  hardhat-test:
+    strategy:
+      fail-fast: true
+
+    name: Hardhat Unit Test
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      #- name: Environment
+      #  uses: actions/setup-node@v3
+      - name: Test
+        uses: ambersun1234/hardhat-test-action@v0.0.1
+        with:
+          network: hardhat

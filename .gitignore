@@ -1,0 +1,23 @@
+# Compiler files
+cache/
+out/
+artifacts/
+forge-cache/
+
+# Ignores development broadcast logs
+!/broadcast
+/broadcast/*/31337/
+/broadcast/**/dry-run/
+
+# Docs
+docs/
+
+# Dotenv file
+.env
+
+.idea/
+.github/
+node_modules/
+
+.vscode
+.DS_Store
