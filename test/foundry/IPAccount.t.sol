@@ -26,7 +26,7 @@ contract IPAccountTest is Test {
         registry = new IPAccountRegistry(address(erc6551Registry), address(accessController), address(implementation));
     }
 
-    function test_Idempotency() public {
+    function test_IPAccount_Idempotency() public {
         address owner = vm.addr(1);
         uint256 tokenId = 100;
 
@@ -59,7 +59,7 @@ contract IPAccountTest is Test {
         assertEq(predictedAccount, deployedAccount);
     }
 
-    function test_TokenAndOwnership() public {
+    function test_IPAccount_TokenAndOwnership() public {
         address owner = vm.addr(1);
         uint256 tokenId = 100;
 
@@ -162,7 +162,7 @@ contract IPAccountTest is Test {
         assertEq(ipAccount.state(), 0);
     }
 
-    function test_ERC721Receive() public {
+    function test_IPAccount_ERC721Receive() public {
         address owner = vm.addr(1);
         uint256 tokenId = 100;
 
