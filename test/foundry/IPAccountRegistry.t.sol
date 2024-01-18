@@ -26,7 +26,7 @@ contract RegistryTest is Test {
         tokenId = 300;
     }
 
-    function test_registerIpAccount() public {
+    function test_IPAccountRegistry_registerIpAccount() public {
         registry = new IPAccountRegistry(address(erc6551Registry), address(accessController), address(implementation));
         address ipAccountAddr;
         ipAccountAddr = registry.registerIpAccount(
@@ -50,7 +50,7 @@ contract RegistryTest is Test {
         assertEq(tokenId_, tokenId);
     }
 
-    function test_revert_createAccount_ifInitFailed() public {
+    function test_IPAccountRegistry_revert_createAccount_ifInitFailed() public {
         // expect init revert for invalid accessController address
         registry = new IPAccountRegistry(address(erc6551Registry), address(0), address(implementation));
         vm.expectRevert("Invalid access controller");
