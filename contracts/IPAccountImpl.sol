@@ -3,6 +3,8 @@ pragma solidity ^0.8.21;
 
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 import { IERC6551Account } from "contracts/interfaces/erc6551/IERC6551Account.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
