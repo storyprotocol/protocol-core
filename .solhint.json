@@ -3,19 +3,20 @@
   "plugins": ["prettier"],
   "rules": {
     "code-complexity": ["error", 8],
-    "compiler-version": ["error", ">=0.8.0"],
+    "compiler-version": ["error", ">=0.8.19"],
     "const-name-snakecase": "off",
+    "no-empty-blocks": "off",
     "constructor-syntax": "error",
     "func-visibility": ["error", { "ignoreConstructors": true }],
-    "max-line-length": ["error", 150],
+    "modifier-name-mixedcase":  "error",
+    "max-line-length": ["error", 120],
     "not-rely-on-time": "off",
-    "prettier/prettier": [
-      "error",
-      {
-        "endOfLine": "auto"
-      }
-    ],
-    "reason-string": ["error", { "maxLength": 64 }],
-    "private-vars-leading-underscore": ["error", { "strict": false }]
+    "reason-string": ["warn", { "maxLength": 64 }],
+    "no-unused-import": "error",
+    "no-unused-vars": "error",
+    "no-inline-assembly": "off",
+    "avoid-low-level-calls": "off",
+    "no-global-import": "error",
+    "prettier/prettier": "error"
   }
 }
