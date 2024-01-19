@@ -6,13 +6,12 @@ import { Licensing } from "../lib/Licensing.sol";
 import { IParamVerifier } from "../interfaces/licensing/IParamVerifier.sol";
 import { Errors } from "../lib/Errors.sol";
 import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import { ERC1155Burnable } from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 
 // TODO: consider disabling operators/approvals on creation
-contract LicenseRegistry is ERC1155, ERC1155Burnable {
+contract LicenseRegistry is ERC1155 {
 
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
