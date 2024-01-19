@@ -52,7 +52,7 @@ library Licensing {
         string licenseUrl;
     }
     
-    /// A particular configuration of a Licensing Framework, setting (or not) values fo the licensing
+    /// A particular configuration of a Licensing Framework, setting (or not) values for the licensing
     /// terms (parameters) of the framework.
     /// The lengths of the param value arrays must correspond to the Parameter[] of the framework.
     struct Policy {
