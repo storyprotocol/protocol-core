@@ -20,7 +20,7 @@ contract LicenseRegistryTest is Test {
     Licensing.FrameworkCreationParams fwParams;
     address public ipId1 = address(0x111);
     address public ipId2 = address(0x222);
-    address public licensee = address(0x101);
+    address public licenseHolder = address(0x101);
 
     // TODO: add parameter config for initial framework for 100% test
     modifier withFrameworkParams() {
@@ -140,7 +140,7 @@ contract LicenseRegistryTest is Test {
         assertEq(registry.policyIdForIpAtIndex(ipId1, 1), 2, "policyIdForIpAtIndex not 2");
     }
 
-    function test_LicenseRegistry_mintLicense() public withFrameworkParams {
+    function test_LicenseRegistry_mintLicense() public withFrameworkParams returns(uint256 licenseId) {
         Licensing.Policy memory policy = Licensing.Policy({
             frameworkId: 1,
             mintingParamValues: new bytes[](1),
@@ -152,17 +152,32 @@ contract LicenseRegistryTest is Test {
         policy.activationParamValues[0] = abi.encode("test");
         policy.linkParentParamValues[0] = abi.encode("test");
         (uint256 policyId, uint256 indexOnIpId) = registry.addPolicy(ipId1, policy);
-
+        assertEq(policyId, 1);
         Licensing.License memory licenseData = Licensing.License({
             policyId: policyId,
             licensorIpIds: new address[](1)
         });
-        licenseData.licensorIpIds[0] = ipId2;
+        licenseData.licensorIpIds[0] = ipId1;
 
-        uint256 licenseId = registry.mintLicense(licenseData, 2, licensee);
+        licenseId = registry.mintLicense(licenseData, 2, licenseHolder);
         assertEq(licenseId, 1);
-        assertEq(registry.balanceOf(licensee, licenseId), 2);
+        assertEq(registry.balanceOf(licenseHolder, licenseId), 2);
+        return licenseId;
     }
 
+    function test_LicenseRegistry_setParentId() public {
+        // TODO: something cleaner than this
+        uint256 licenseId = test_LicenseRegistry_mintLicense();
+
+        registry.setParentPolicy(licenseId, ipId2, licenseHolder);
+        assertEq(registry.balanceOf(licenseHolder, licenseId), 1, "not burnt");
+        assertEq(registry.isParent(ipId1, ipId2), true, "not parent");
+        assertEq(
+            keccak256(abi.encode(registry.policyForIpAtIndex(ipId2, 0))),
+            keccak256(abi.encode(registry.policyForIpAtIndex(ipId1, 0))),
+            "policy not copied"
+        );
+
+    }
 
 }
