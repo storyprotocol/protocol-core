@@ -5,8 +5,7 @@ pragma solidity ^0.8.21;
 interface IModuleRegistry {
     function registerModule(string memory name, address moduleAddress) external;
 
-    function getModule(
-        string memory name,
-        address account
-    ) external view returns (address);
+    function getModule(string memory name) external view returns (address);
+
+    function isRegistered(address moduleAddress) external view returns (bool);
 }

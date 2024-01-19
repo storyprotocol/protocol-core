@@ -42,17 +42,7 @@ interface IIPAccountRegistry {
         uint256 tokenId_
     ) external view returns (address);
 
-    /// @notice Checks if the IPAccount is registered
-    /// @param chainId_ The chain ID where the IP Account is located
-    /// @param tokenContract_ The address of the token contract associated with the IP Account
-    /// @param tokenId_ The ID of the token associated with the IP Account
-    /// @return True if the IP Account is registered, false otherwise
-    function isRegistered(
-        uint256 chainId_,
-        address tokenContract_,
-        uint256 tokenId_
-    ) external view returns (bool);
-    
+
     /// @notice Returns the IPAccount implementation address
     /// @return The address of the IPAccount implementation
     function getIPAccountImpl() external view returns (address);

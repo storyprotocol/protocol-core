@@ -11,6 +11,7 @@ import "test/foundry/mocks/MockERC721.sol";
 import "test/foundry/mocks/MockERC6551Registry.sol";
 import "test/foundry/mocks/MockAccessController.sol";
 import "test/foundry/mocks/MockModule.sol";
+import "contracts/registries/ModuleRegistry.sol";
 
 contract IPAccountTest is Test {
     IPAccountRegistry public registry;
@@ -18,12 +19,14 @@ contract IPAccountTest is Test {
     MockERC721 nft = new MockERC721();
     MockERC6551Registry public erc6551Registry = new MockERC6551Registry();
     MockAccessController public accessController = new MockAccessController();
-    MockModule public module = new MockModule();
+    ModuleRegistry public moduleRegistry = new ModuleRegistry();
+    MockModule public module;
 
 
     function setUp() public {
         implementation = new IPAccountImpl();
         registry = new IPAccountRegistry(address(erc6551Registry), address(accessController), address(implementation));
+        module = new MockModule(address(registry), address(moduleRegistry), "MockModule");
     }
 
     function test_IPAccount_Idempotency() public {
