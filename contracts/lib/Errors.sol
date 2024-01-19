@@ -15,5 +15,6 @@ library Errors {
     error LicenseRegistry__EmptyLicenseUrl();
     error LicenseRegistry__ParamVerifierLengthMismatch();
     error LicenseRegistry__InvalidParamVerifierType();
-
+    error LicenseRegistry__PolicyNotFound();
+    error LicenseRegistry__NotLicensee();
 }

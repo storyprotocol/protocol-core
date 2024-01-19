@@ -10,6 +10,9 @@ import { ERC1155Burnable } from "@openzeppelin/contracts/token/ERC1155/extension
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
+import "forge-std/console2.sol";
+
+// TODO: consider disabling operators/approvals on creation
 contract LicenseRegistry is ERC1155, ERC1155Burnable {
 
     using EnumerableSet for EnumerableSet.UintSet;
@@ -21,21 +24,34 @@ contract LicenseRegistry is ERC1155, ERC1155Burnable {
     mapping(bytes32 => uint256) private _hashedPolicies;
     mapping(uint256 => Licensing.Policy) private _policies;
     uint256 private _totalPolicies;
-
+    // DO NOT remove policies, that rugs derivatives and breaks ordering assumptions in set
     mapping(address => EnumerableSet.UintSet) private _policiesPerIpId;
     mapping(address => address[]) private _ipParents;
 
+    mapping(bytes32 => uint256) private _hashedLicenses;
     mapping(uint256 => Licensing.License) private _licenses;
+    
+    /// This tracks the number of licenses registered in the protocol, it will not decrease when a license is burnt.
     uint256 private _totalLicenses;
+
+    modifier onlyLicensee(uint256 licenseId, address holder) {
+        // Should ERC1155 operator count? IMO is a security risk. Better use ACL
+        if (balanceOf(holder, licenseId) == 0) {
+            revert Errors.LicenseRegistry__NotLicensee();
+        }
+        _;
+    }
 
     constructor(string memory uri) ERC1155(uri) {}
 
     // Protocol available terms
     function addLicenseFramework(Licensing.FrameworkCreationParams calldata fwCreation) external returns(uint256 frameworkId) {
+        // check protocol auth
         if (bytes(fwCreation.licenseUrl).length == 0 || fwCreation.licenseUrl.equal("")) {
             revert Errors.LicenseRegistry__EmptyLicenseUrl(); 
         }
-        // check protocol auth
+        // Todo: check duplications
+
         ++_totalFrameworks;
         _frameworks[_totalFrameworks].licenseUrl = fwCreation.licenseUrl;
         _frameworks[_totalFrameworks].defaultNeedsActivation = fwCreation.defaultNeedsActivation;
@@ -82,22 +98,22 @@ contract LicenseRegistry is ERC1155, ERC1155Burnable {
         return _frameworks[frameworkId];
     }
 
-    function _addPolicyIdOrGetExisting(Licensing.Policy calldata pol) internal returns(uint256) {
+    function _addIdOrGetExisting(bytes memory data, mapping(bytes32 => uint256) storage _hashToIds, uint256 existingIds) private returns(uint256 id, bool isNew) {
         // We could just use the hash of the policy as id to save some gas, but the UX/DX of having huge random
         // numbers for ID is bad enough to justify the cost, plus we have accountability on current number of
         // policies.
-        bytes32 policyHash = keccak256(abi.encode(pol));
-        uint256 id = _hashedPolicies[policyHash];
-        if (id != 0) {
-            return id;
-        }
-        id = ++_totalPolicies;
-        _hashedPolicies[policyHash] = id;
-        _policies[id] = pol;
-        // TODO: emit
-        return id;
-    }
+        console2.log("existingIds", existingIds);
 
+        bytes32 hash = keccak256(data);
+        uint256 id = _hashToIds[hash];
+        if (id != 0) {
+            return (id, false);
+        }
+        id = existingIds + 1;
+        console2.log("returningId", id);
+        _hashToIds[hash] = id;
+        return (id, true);
+    }
  
     // Per IP ID
     // Sets available policies per IPID, returns policy Id. This is not a license.
@@ -105,12 +121,21 @@ contract LicenseRegistry is ERC1155, ERC1155Burnable {
         // check protocol auth
         Licensing.Framework memory fw = _frameworks[pol.frameworkId];
 
-        policyId = _addPolicyIdOrGetExisting(pol);
+        (uint256 polId, bool isNew) = _addIdOrGetExisting(abi.encode(pol), _hashedPolicies, _totalPolicies);
+        policyId = polId;
+        if (isNew) {
+            _totalPolicies = polId;
+            console2.log("_totalPolicies", _totalPolicies);
+            console2.log("polId", polId);
+            _policies[polId] = pol;
+            // TODO: emit
+        }
         return (policyId, _addPolictyId(ipId, policyId));
     }
 
     function _addPolictyId(address ipId, uint256 policyId) internal returns(uint256 index) {
         EnumerableSet.UintSet storage policySet = _policiesPerIpId[ipId];
+        // TODO: check if policy is compatible with the others
         if (!policySet.add(policyId)) {
             revert Errors.LicenseRegistry__PolicyAlreadySetForIpId();
         }
@@ -118,9 +143,6 @@ contract LicenseRegistry is ERC1155, ERC1155Burnable {
         return policySet.length() - 1;
     }
 
-    // function _addPolictyId(address ipId, uint256 policyId) internal returns(uint256 index) {
-    //     // TODO check for existance of ID before calling internal method
-    // }
 
     function totalPolicies() external view returns(uint256) {
         return _totalPolicies;
@@ -151,20 +173,35 @@ contract LicenseRegistry is ERC1155, ERC1155Burnable {
         return _policies[_policiesPerIpId[ipId].at(index)];
     }
 
-    // function linkIpaToParent(address ipId, address parentIpId, uint256 licenseId) external {
-    //     // Check if parent is tagged
-    //     if (_ownerOf(licenseId) != msg.sender) {
-    //         revert "Not owner of license";
-    //     }
+    function mintLicense(Licensing.License calldata licenseData, uint256 amount, address receiver) external returns(uint256 licenseId) {
+        for(uint256 i = 0; i < licenseData.licensorIpIds.length; i++) {
+            // TODO: check if licensors are valid IP Ids and if they have been tagged bad
+            // TODO: check if licensor allowed sender to mint in their behalf
+        }
+        
+        uint256 polId = licenseData.policyId;
+        Licensing.Policy memory pol = _policies[polId];
+        if (pol.frameworkId == 0 || pol.frameworkId > _totalFrameworks) {
+            revert Errors.LicenseRegistry__PolicyNotFound();
+        }
 
-    //     // if msg.sender == parent ipa or correct licensor
-    //     for (uint i = 0; i < conditions.length; i++) {
-    //         if (!conditions[i].isFulfilled(msg.sender, ) {
-    //             revert PreConditionNotFulfilled();
-    //         }
-    //     }
-    //     child.addParent(parent);
-    //     _burn
-    //     _mint
-    // }
+        // TODO: execute minting params to check if they are valid
+
+        (uint256 lId, bool isNew) = _addIdOrGetExisting(abi.encode(pol), _hashedLicenses, _totalLicenses);
+        licenseId = lId;
+        if (isNew) {
+            _totalLicenses = licenseId;
+            _licenses[licenseId] = licenseData;
+            // TODO: emit
+        }
+        _mint(receiver, licenseId, amount, "");
+        return licenseId;
+    }
+
+    function isLicensee(uint256 licenseId, address holder) external view returns(bool) {
+        return balanceOf(holder, licenseId) > 0;
+    }
+
+    // TODO: activation method
+
 }
