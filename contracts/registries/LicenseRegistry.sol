@@ -255,9 +255,9 @@ contract LicenseRegistry is ERC1155, ERC1155Burnable {
     /// The child IP ID will have the policy that the license represent added to it's own, if it's compatible with 
     /// existing child policies.
     /// The child IP ID will be linked to the parent (if it wasn't before).
-    /// @param licenseId 
-    /// @param childIpId 
-    /// @param holder 
+    /// @param licenseId license NFT to be burned
+    /// @param childIpId that will receive the policy defined by licenseId
+    /// @param holder of the license NFT
     function setParentPolicy(uint256 licenseId, address childIpId, address holder)
         external
         onlyLicensee(licenseId, holder) {
