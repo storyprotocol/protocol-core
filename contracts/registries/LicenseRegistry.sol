@@ -36,7 +36,7 @@ contract LicenseRegistry is ERC1155, ERC1155Burnable {
             revert Errors.LicenseRegistry__EmptyLicenseUrl(); 
         }
         // check protocol auth
-        _totalFrameworks++;
+        ++_totalFrameworks;
         _frameworks[_totalFrameworks].licenseUrl = fwCreation.licenseUrl;
         _frameworks[_totalFrameworks].defaultNeedsActivation = fwCreation.defaultNeedsActivation;
         _setParamArray(_frameworks[_totalFrameworks], Licensing.ParamVerifierType.Minting, fwCreation.mintingParamVerifiers, fwCreation.mintingParamDefaultValues);
@@ -115,7 +115,7 @@ contract LicenseRegistry is ERC1155, ERC1155Burnable {
             revert Errors.LicenseRegistry__PolicyAlreadySetForIpId();
         }
         // TODO: emit
-        return policySet.length();
+        return policySet.length() - 1;
     }
 
     // function _addPolictyId(address ipId, uint256 policyId) internal returns(uint256 index) {
