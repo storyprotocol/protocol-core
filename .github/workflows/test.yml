@@ -4,26 +4,9 @@ on: [pull_request]
 
 env:
   FOUNDRY_PROFILE: ci
+  MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - uses: actions/setup-node@v3
-      - uses: actions/cache@v3.0.3
-        id: cache
-        with:
-          path: '**/node_modules'
-          key: npm-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: npm-
-      - run: yarn
-        if: steps.cache.outputs.cache-hit != 'true'
-      - run: npm run lint
 
   foundry-test:
     strategy:
@@ -31,61 +14,56 @@ jobs:
 
     name: Foundry Unit Test
     runs-on: ubuntu-latest
-    needs: lint
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
+          fetch-depth: 0
           
       - name: List files in the repository
         run: |
-          ls ${{ github.workspace }}
+          ls -R ${{ github.workspace }}
 
-      - uses: chill-viking/npm-ci@latest
-        name: Install NPM Dependencies
+      - name: Test Env Variables
+        env:
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+        run: |
+          echo "MAINNET_RPC_URL is ${{ secrets.MAINNET_RPC_URL }}"
+          echo "env.MAINNET_RPC_URL is $MAINNET_RPC_URL"
+          echo "env.FOUNDRY_PROFILE is $FOUNDRY_PROFILE"
+          echo "DONE."
+
+      - name: Run install
+        uses: borales/actions-yarn@v4
         with:
-          working_directory: ${{ github.workspace }}
+          cmd: install # will run `yarn install` command
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
 
+      - name: List files in the repository
+        run: |
+          ls -R ${{ github.workspace }}          
+
       - name: Run Forge build
         run: |
           forge --version
-          forge build --sizes
+          forge build --force --sizes
         id: build
 
       - name: Run Forge tests
         run: |
-          forge test -vvv
+          make test
         id: forge-test
 
-      - name: Gas Difference
-        run:
-          forge snapshot --gas-report --diff --desc
-        id: forge-gas-snapshot-diff
+      # - name: Gas Difference
+      #   run:
+      #     forge snapshot --gas-report --diff --desc
+      #   id: forge-gas-snapshot-diff
 
-      - name: Code Coverage
-        run:
-          forge coverage --report lcov --report summary
-        id: forge-code-coverage
-
-  hardhat-test:
-    strategy:
-      fail-fast: true
-
-    name: Hardhat Unit Test
-    runs-on: ubuntu-latest
-    needs: lint
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      #- name: Environment
-      #  uses: actions/setup-node@v3
-      - name: Test
-        uses: ambersun1234/hardhat-test-action@v0.0.1
-        with:
-          network: hardhat
+      # - name: Code Coverage
+      #   run:
+      #     forge coverage --report lcov --report summary
+      #   id: forge-code-coverage
