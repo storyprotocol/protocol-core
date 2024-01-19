@@ -20,8 +20,9 @@ contract LicenseRegistryTest is Test {
     Licensing.FrameworkCreationParams fwParams;
     address public ipId1 = address(0x111);
     address public ipId2 = address(0x222);
+    address public licensee = address(0x101);
 
-
+    // TODO: add parameter config for initial framework for 100% test
     modifier withFrameworkParams() {
         _initFwParams();
         registry.addLicenseFramework(fwParams);
@@ -61,14 +62,18 @@ contract LicenseRegistryTest is Test {
 
     function test_LicenseRegistry_addLicenseFramework() public {
         _initFwParams();
-        registry.addLicenseFramework(fwParams);
-        assertEq(keccak256(abi.encode(registry.framework(0))), keccak256(abi.encode(framework)), "framework not added");
+        uint256 fwId = registry.addLicenseFramework(fwParams);
+        Licensing.Framework memory fw = registry.framework(fwId);
+        assertEq(fwId, 1, "not incrementing fw id");
+        assertEq(keccak256(abi.encode(fw.licenseUrl)), keccak256(abi.encode(fwParams.licenseUrl)));
+        assertEq(fw.defaultNeedsActivation, fwParams.defaultNeedsActivation);
+        // TODO: test Parameter[] vs  IParamVerifier[] && bytes[]
         assertEq(registry.totalFrameworks(), 1, "total frameworks not updated");
     }
 
     function test_LicenseRegistry_addPolicyId() public withFrameworkParams {
         Licensing.Policy memory policy = Licensing.Policy({
-            frameworkId: 0,
+            frameworkId: 1,
             mintingParamValues: new bytes[](1),
             activationParamValues: new bytes[](1),
             needsActivation: false,
@@ -87,7 +92,7 @@ contract LicenseRegistryTest is Test {
 
     function test_LicenseRegistry_addSamePolicyReusesPolicyId() public withFrameworkParams {
         Licensing.Policy memory policy = Licensing.Policy({
-            frameworkId: 0,
+            frameworkId: 1,
             mintingParamValues: new bytes[](1),
             activationParamValues: new bytes[](1),
             needsActivation: false,
@@ -107,7 +112,7 @@ contract LicenseRegistryTest is Test {
         assertEq(registry.totalPolicies(), 0);
         assertEq(registry.totalPoliciesForIp(ipId1), 0);
         Licensing.Policy memory policy = Licensing.Policy({
-            frameworkId: 0,
+            frameworkId: 1,
             mintingParamValues: new bytes[](1),
             activationParamValues: new bytes[](1),
             needsActivation: false,
@@ -134,5 +139,30 @@ contract LicenseRegistryTest is Test {
         assertEq(registry.totalPoliciesForIp(ipId1), 2, "totalPoliciesForIp not incremented");
         assertEq(registry.policyIdForIpAtIndex(ipId1, 1), 2, "policyIdForIpAtIndex not 2");
     }
+
+    function test_LicenseRegistry_mintLicense() public withFrameworkParams {
+        Licensing.Policy memory policy = Licensing.Policy({
+            frameworkId: 1,
+            mintingParamValues: new bytes[](1),
+            activationParamValues: new bytes[](1),
+            needsActivation: false,
+            linkParentParamValues: new bytes[](1)
+        });
+        policy.mintingParamValues[0] = abi.encode("test");
+        policy.activationParamValues[0] = abi.encode("test");
+        policy.linkParentParamValues[0] = abi.encode("test");
+        (uint256 policyId, uint256 indexOnIpId) = registry.addPolicy(ipId1, policy);
+
+        Licensing.License memory licenseData = Licensing.License({
+            policyId: policyId,
+            licensorIpIds: new address[](1)
+        });
+        licenseData.licensorIpIds[0] = ipId2;
+
+        uint256 licenseId = registry.mintLicense(licenseData, 2, licensee);
+        assertEq(licenseId, 1);
+        assertEq(registry.balanceOf(licensee, licenseId), 2);
+    }
+
 
 }

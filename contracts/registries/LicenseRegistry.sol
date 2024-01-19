@@ -53,6 +53,7 @@ contract LicenseRegistry is ERC1155, ERC1155Burnable {
         // Todo: check duplications
 
         ++_totalFrameworks;
+        console2.log("_totalFrameworks", _totalFrameworks);
         _frameworks[_totalFrameworks].licenseUrl = fwCreation.licenseUrl;
         _frameworks[_totalFrameworks].defaultNeedsActivation = fwCreation.defaultNeedsActivation;
         _setParamArray(_frameworks[_totalFrameworks], Licensing.ParamVerifierType.Minting, fwCreation.mintingParamVerifiers, fwCreation.mintingParamDefaultValues);
@@ -94,7 +95,7 @@ contract LicenseRegistry is ERC1155, ERC1155Burnable {
         return _totalFrameworks;
     }
 
-    function framework(uint256 frameworkId) external view returns(Licensing.Framework memory) {
+    function framework(uint256 frameworkId) external view returns(Licensing.Framework memory framework) {
         return _frameworks[frameworkId];
     }
 
@@ -102,15 +103,12 @@ contract LicenseRegistry is ERC1155, ERC1155Burnable {
         // We could just use the hash of the policy as id to save some gas, but the UX/DX of having huge random
         // numbers for ID is bad enough to justify the cost, plus we have accountability on current number of
         // policies.
-        console2.log("existingIds", existingIds);
-
         bytes32 hash = keccak256(data);
         uint256 id = _hashToIds[hash];
         if (id != 0) {
             return (id, false);
         }
         id = existingIds + 1;
-        console2.log("returningId", id);
         _hashToIds[hash] = id;
         return (id, true);
     }
@@ -125,8 +123,6 @@ contract LicenseRegistry is ERC1155, ERC1155Burnable {
         policyId = polId;
         if (isNew) {
             _totalPolicies = polId;
-            console2.log("_totalPolicies", _totalPolicies);
-            console2.log("polId", polId);
             _policies[polId] = pol;
             // TODO: emit
         }
