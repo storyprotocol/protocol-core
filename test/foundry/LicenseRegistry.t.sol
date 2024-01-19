@@ -20,6 +20,12 @@ contract LicenseRegistryTest is Test {
     Licensing.FrameworkCreationParams fwParams;
 
     modifier withFrameworkParams() {
+        _initFwParams();
+        registry.addLicenseFramework(fwParams);
+        _;
+    }
+
+    function _initFwParams() private {
         IParamVerifier[] memory mintingParamVerifiers = new IParamVerifier[](1);
         mintingParamVerifiers[0] = verifier;
         bytes[] memory mintingParamDefaultValues = new bytes[](1);
@@ -43,7 +49,6 @@ contract LicenseRegistryTest is Test {
             linkParentParamDefaultValues: linkParentParamDefaultValues,
             licenseUrl: licenseUrl
         });
-        _;
     }
 
     function setUp() public {
@@ -51,7 +56,8 @@ contract LicenseRegistryTest is Test {
         registry = new LicenseRegistry("https://example.com/{id}.json");
     }
 
-    function test_LicenseRegistry_addLicenseFramework() public withFrameworkParams {
+    function test_LicenseRegistry_addLicenseFramework() public {
+        _initFwParams();
         registry.addLicenseFramework(fwParams);
         assertEq(keccak256(abi.encode(registry.framework(0))), keccak256(abi.encode(framework)), "framework not added");
         assertEq(registry.totalFrameworks(), 1, "total frameworks not updated");
