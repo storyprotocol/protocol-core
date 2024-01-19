@@ -30,7 +30,9 @@ library Licensing {
         Parameter[] mintingParams;
         /// License may need to be activated before linking, these parameters must be verified to activate.
         Parameter[] activationParams;
-        /// If the framework defaults to not needing activation, this can be set to true to skip activateParams check.abi
+        /// The framework might have activation terms defined, but the default settings say they are disabled
+        /// (so defaultNeedsActivation should be true). If the policy doesn't change this, it means licenses
+        /// will be minted Active and can't be linked out of the box (if linkParentParams are true)
         bool defaultNeedsActivation;
         /// These parameters need to be verified so the owner of a license can link to a parent ipId/policy
         Parameter[] linkParentParams;
