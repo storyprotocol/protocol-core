@@ -2,16 +2,6 @@
 pragma solidity ^0.8.21;
 
 import "forge-std/Test.sol";
-
-import "contracts/registries/IPAccountRegistry.sol";
-import "contracts/IPAccountImpl.sol";
-import "contracts/interfaces/IIPAccount.sol";
-import "lib/reference/src/interfaces/IERC6551Account.sol";
-import "test/foundry/mocks/MockERC721.sol";
-import "test/foundry/mocks/MockERC6551Registry.sol";
-import "test/foundry/mocks/MockAccessController.sol";
-import "test/foundry/mocks/MockModule.sol";
-import "contracts/registries/ModuleRegistry.sol";
 import "contracts/lib/Errors.sol";
 import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
@@ -19,7 +9,6 @@ import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortSt
 
 contract TaggingModuleTest is Test {
     using ShortStrings for *;
-    ModuleRegistry public moduleRegistry = new ModuleRegistry();
     TaggingModule public taggingModule;
 
     function setUp() public {
