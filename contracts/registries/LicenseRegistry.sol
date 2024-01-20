@@ -230,7 +230,18 @@ contract LicenseRegistry is ERC1155 {
         
         Licensing.Policy memory pol = policy(policyId);
 
-        // TODO: execute minting params to check if they are valid
+        // TODO: verify the mechanism for checking minting conditions
+        Licensing.Parameter[] memory mintParams = _frameworks[pol.frameworkId].mintingParams;
+        bytes[] memory mintParamValues = pol.mintingParamValues;
+        for (uint256 i=0; i < mintParams.length; i++) {
+            Licensing.Parameter memory param = mintParams[i];
+            // Empty bytes => use default value specified in license framework creation params.
+            bytes memory callValue = mintParamValues[i].length == 0 ? param.defaultValue : mintParamValues[i];
+            // TODO: is `caller` param `msg.sender` or `receiver` or something else?
+            if (!param.verifier.verifyParam(receiver, callValue)) {
+                revert Errors.LicenseRegistry__MintParamFailed();
+            }
+        }
 
         (uint256 lId, bool isNew) = _addIdOrGetExisting(abi.encode(licenseData), _hashedLicenses, _totalLicenses);
         licenseId = lId;
@@ -269,11 +280,23 @@ contract LicenseRegistry is ERC1155 {
             // TODO: check licensor exist
             // TODO: check licensor part of a bad tag branch
         }
-        Licensing.Policy memory policy = policy(licenseData.policyId);
-        // TODO: check linking conditions
+        
+        Licensing.Policy memory pol = policy(licenseData.policyId);
+        
+        // TODO: verify the mechanism for checking linking conditions
+        Licensing.Parameter[] memory linkParams = _frameworks[pol.frameworkId].linkParentParams;
+        bytes[] memory linkParamValues = pol.linkParentParamValues;
+        for (uint256 i=0; i < linkParams.length; i++) {
+            Licensing.Parameter memory param = linkParams[i];
+            // Empty bytes => use default value specified in license framework creation params.
+            bytes memory callValue = linkParamValues[i].length == 0 ? param.defaultValue : linkParamValues[i];
+            if (!param.verifier.verifyParam(holder, callValue)) {
+                revert Errors.LicenseRegistry__LinkParentParamFailed();
+            }
+        }
 
         // Add policy to kid
-        addPolicy(childIpId, policy);
+        addPolicy(childIpId, pol);
         // Set parent
         for (uint256 i=0; i < parents.length; i++) {
             // We don't care if it was already a parent, because there might be a case such as:
