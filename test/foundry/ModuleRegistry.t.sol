@@ -8,7 +8,7 @@ import "contracts/IPAccountImpl.sol";
 import "contracts/interfaces/IIPAccount.sol";
 import "lib/reference/src/interfaces/IERC6551Account.sol";
 import "test/foundry/mocks/MockERC721.sol";
-import "test/foundry/mocks/MockERC6551Registry.sol";
+import { MockERC6551Registry} from "test/foundry/mocks/MockERC6551Registry.sol";
 import "test/foundry/mocks/MockAccessController.sol";
 import "test/foundry/mocks/MockModule.sol";
 import "contracts/registries/ModuleRegistry.sol";

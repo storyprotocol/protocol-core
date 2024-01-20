@@ -4,13 +4,14 @@ pragma solidity ^0.8.23;
 import { BaseTest } from "./utils/BaseTest.sol";
 import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
 import { IIPRecordRegistry } from "contracts/interfaces/registries/IIPRecordRegistry.sol";
+import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
+import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
 import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { MockERC6551Registry } from "test/foundry/mocks/MockERC6551Registry.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
 /// @title IP Record Registry Testing Contract
@@ -49,7 +50,7 @@ contract IPRecordRegistryTest is BaseTest {
     function setUp() public virtual override {
         BaseTest.setUp();
         address accessController = address(new MockAccessController());
-        erc6551Registry = address(new MockERC6551Registry());
+        erc6551Registry = address(new ERC6551Registry());
         moduleRegistry = IModuleRegistry(
             address(new MockModuleRegistry(registrationModule))
         );
@@ -103,7 +104,7 @@ contract IPRecordRegistryTest is BaseTest {
         assertEq(registry.resolver(ipId), address(0));
         assertTrue(!registry.isRegistered(ipId));
         assertTrue(!registry.isRegistered(block.chainid, tokenAddress, tokenId));
-        assertTrue(!ipAccountRegistry.isRegistered(block.chainid, tokenAddress, tokenId));
+        assertTrue(!IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
         
         // Ensure all expected events are emitted.
         vm.expectEmit(true, true, true, true);
@@ -137,7 +138,7 @@ contract IPRecordRegistryTest is BaseTest {
         assertEq(totalSupply + 1, registry.totalSupply());
         assertTrue(registry.isRegistered(ipId));
         assertTrue(registry.isRegistered(block.chainid, tokenAddress, tokenId));
-        assertTrue(ipAccountRegistry.isRegistered(block.chainid, tokenAddress, tokenId));
+        assertTrue(IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
     }
 
     /// @notice Tests registration of IP records with lazy account creation.
@@ -154,7 +155,7 @@ contract IPRecordRegistryTest is BaseTest {
         // Ensure unregistered IP preconditions are satisfied.
         assertEq(registry.resolver(ipId), address(0));
         assertTrue(!registry.isRegistered(ipId));
-        assertTrue(!ipAccountRegistry.isRegistered(block.chainid, tokenAddress, tokenId));
+        assertTrue(!IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
         
         // Ensure all expected events are emitted.
         vm.expectEmit(true, true, true, true);
@@ -180,13 +181,13 @@ contract IPRecordRegistryTest is BaseTest {
         assertEq(registry.resolver(ipId), resolver);
         assertEq(totalSupply + 1, registry.totalSupply());
         assertTrue(registry.isRegistered(ipId));
-        assertTrue(!ipAccountRegistry.isRegistered(block.chainid, tokenAddress, tokenId));
+        assertTrue(!IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
     }
 
     /// @notice Tests registration of IP records works with existing IP accounts.
     function test_IPRecordRegistry_RegisterExistingAccount() public {
         address ipId = registry.createIPAccount(block.chainid, tokenAddress, tokenId);
-        assertTrue(ipAccountRegistry.isRegistered(block.chainid, tokenAddress, tokenId));
+        assertTrue(IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
         vm.prank(registrationModule);
         registry.register(
             block.chainid,
@@ -215,9 +216,9 @@ contract IPRecordRegistryTest is BaseTest {
 
     /// @notice Tests generic IP account creation works.
     function test_IPRecordRegistry_CreateIPAccount() public {
-        assertTrue(!ipAccountRegistry.isRegistered(block.chainid, tokenAddress, tokenId));
+        assertTrue(!IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
         address ipId = registry.createIPAccount(block.chainid, tokenAddress, tokenId);
-        assertTrue(ipAccountRegistry.isRegistered(block.chainid, tokenAddress, tokenId));
+        assertTrue(IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
     }
 
     /// @notice Tests IP account creation reverts if one already exists.
@@ -277,14 +278,14 @@ contract IPRecordRegistryTest is BaseTest {
         uint256 chainId,
         address contractAddress,
         uint256 contractId,
-        uint256 salt
+        bytes32 salt
     ) internal view returns (address) {
-        return MockERC6551Registry(erc6551Registry).account(
+        return ERC6551Registry(erc6551Registry).account(
             impl,
+            salt,
             chainId,
             contractAddress,
-            contractId,
-            ipAccountRegistry.IP_ACCOUNT_SALT()
+            contractId
         );
     }
 

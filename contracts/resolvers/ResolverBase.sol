@@ -10,7 +10,6 @@ import { Errors } from "contracts/lib/Errors.sol";
 
 /// @notice IP Resolver Base Contract
 abstract contract ResolverBase is IResolver {
-
     /// @notice Gets the protocol-wide module access controller.
     IAccessController public immutable ACCESS_CONTROLLER;
 
@@ -23,7 +22,7 @@ abstract contract ResolverBase is IResolver {
     /// @notice Checks if IP identified by ipId is authorized to perform a call.
     /// @param ipId The identifier for the IP being authorized.
     modifier onlyAuthorized(address ipId) {
-        if (!ACCESS_CONTROLLER.checkPolicy(ipId, msg.sender, address(this), msg.sig)) {
+        if (!ACCESS_CONTROLLER.checkPermission(ipId, msg.sender, address(this), msg.sig)) {
             revert Errors.IPResolver_Unauthorized();
         }
         _;
@@ -51,5 +50,4 @@ abstract contract ResolverBase is IResolver {
     function supportsInterface(bytes4 id) public view virtual override returns (bool) {
         return id == type(IResolver).interfaceId;
     }
-
 }

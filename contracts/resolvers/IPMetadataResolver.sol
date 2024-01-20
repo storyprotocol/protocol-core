@@ -16,7 +16,6 @@ import { IP } from "contracts/lib/IP.sol";
 ///         likely change to a separate contract that extends IPMetadataResolver
 ///         in the near future.
 contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
-
     /// @dev Maps IP to their metadata records based on their canonical IDs.
     mapping(address => IP.MetadataRecord) public _records;
 
@@ -34,28 +33,22 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
     /// @param ipId The canonical ID of the specified IP.
     function metadata(address ipId) public view returns (IP.Metadata memory) {
         IP.MetadataRecord memory record = _records[ipId];
-        return IP.Metadata({
-            owner: owner(ipId),
-            name: record.name,
-            category: record.category,
-            description: record.description,
-            hash: record.hash,
-            registrationDate: record.registrationDate,
-            registrant: record.registrant,
-            uri: tokenURI(ipId)
-        });
+        return
+            IP.Metadata({
+                owner: owner(ipId),
+                name: record.name,
+                description: record.description,
+                hash: record.hash,
+                registrationDate: record.registrationDate,
+                registrant: record.registrant,
+                uri: tokenURI(ipId)
+            });
     }
 
     /// @notice Fetches the canonical name associated with the specified IP.
     /// @param ipId The canonical ID of the specified IP.
     function name(address ipId) external view returns (string memory) {
         return _records[ipId].name;
-    }
-
-     /// @notice Fetches the category associated with an IP.
-    /// @param ipId The canonical ID of the specified IP.
-    function category(address ipId) external view returns (IP.Category) {
-        return _records[ipId].category;
     }
 
     /// @notice Fetches the description associated with the specified IP.
@@ -103,7 +96,7 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
         IP.MetadataRecord memory record = _records[ipId];
         string memory uri = record.uri;
 
-        if (bytes(uri).length > 0)  {
+        if (bytes(uri).length > 0) {
             return uri;
         }
 
@@ -122,13 +115,6 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
     /// @param newName The new string name to associate with the IP.
     function setName(address ipId, string calldata newName) external onlyAuthorized(ipId) {
         _records[ipId].name = newName;
-    }
-
-    /// @notice Sets the category associated with an IP.
-    /// @param ipId The canonical ID of the specified IP.
-    /// @param newCategory The IP category to associate with the IP.
-    function setCategory(address ipId, IP.Category newCategory) external onlyAuthorized(ipId) {
-        _records[ipId].category = newCategory;
     }
 
     /// @notice Sets the description associated with an IP.
@@ -156,8 +142,7 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
     /// @param id The resolver interface identifier.
     /// @return Whether the resolver interface is supported.
     function supportsInterface(bytes4 id) public view virtual override(IResolver, ResolverBase) returns (bool) {
-        return id == type(IIPMetadataResolver).interfaceId ||
-               super.supportsInterface(id);
+        return id == type(IIPMetadataResolver).interfaceId || super.supportsInterface(id);
     }
 
     /// @dev Internal function for generating a default IP URI if not provided.
@@ -185,9 +170,6 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
                 '{"trait_type": "Owner", "value": "',
                 Strings.toHexString(uint160(owner(ipId)), 20),
                 '"},'
-                '{"trait_type": "Category", "value": "',
-                IP.toString(record.category),
-                '"},',
                 '{"trait_type": "Registrant", "value": "',
                 Strings.toHexString(uint160(record.registrant), 20),
                 '"},',
@@ -208,7 +190,5 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
                     Base64.encode(bytes(string(abi.encodePacked(baseJson, ipAttributes, "]}"))))
                 )
             );
-
     }
-
 }

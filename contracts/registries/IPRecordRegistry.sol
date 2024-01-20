@@ -9,17 +9,16 @@ import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry
 import { Errors } from "contracts/lib/Errors.sol";
 
 /// @title IP Record Registry
-/// @notice This contract acts as the source of truth for all IP registered in 
+/// @notice This contract acts as the source of truth for all IP registered in
 ///         Story Protocol. An IP is identified by its contract address, token
 ///         id, and coin type, meaning any NFT may be conceptualized as an IP.
 ///         Once an IP is registered into the protocol, a corresponding IP
 ///         record is generated, which references an IP resolver for metadata
-///         attribution and an IP account for protocol authorization. Only 
+///         attribution and an IP account for protocol authorization. Only
 ///         approved registration modules may register IP into this registry.
 ///         IMPORTANT: The IP account address, besides being used for protocol
 ///                    auth, is also the canonical IP identifier for the IP NFT.
 contract IPRecordRegistry is IIPRecordRegistry {
-
     /// @notice Gets the factory contract used for IP account creation.
     IIPAccountRegistry public immutable IP_ACCOUNT_REGISTRY;
 
@@ -34,7 +33,7 @@ contract IPRecordRegistry is IIPRecordRegistry {
 
     /// @notice Restricts calls to only originate from the registration module.
     modifier onlyRegistrationModule() {
-        if (address(MODULE_REGISTRY.protocolModule(REGISTRATION_MODULE_KEY)) != msg.sender) {
+        if (address(MODULE_REGISTRY.getModule(REGISTRATION_MODULE_KEY)) != msg.sender) {
             revert Errors.IPRecordRegistry_Unauthorized();
         }
         _;
@@ -54,20 +53,14 @@ contract IPRecordRegistry is IIPRecordRegistry {
     /// @param tokenContract The address of the IP.
     /// @param tokenId The token identifier of the IP.
     /// @return The IP's canonical address identifier.
-    function ipId(
-        uint256 chainId,
-        address tokenContract,
-        uint256 tokenId
-    ) public view returns (address) {
+    function ipId(uint256 chainId, address tokenContract, uint256 tokenId) public view returns (address) {
         return IP_ACCOUNT_REGISTRY.ipAccount(chainId, tokenContract, tokenId);
     }
 
     /// @notice Checks whether an IP was registered based on its ID.
     /// @param id The canonical identifier for the IP.
     /// @return Whether the IP was registered into the protocol.
-    function isRegistered(
-        address id
-    ) external view returns (bool) {
+    function isRegistered(address id) external view returns (bool) {
         return _resolvers[id] != address(0);
     }
 
@@ -76,11 +69,7 @@ contract IPRecordRegistry is IIPRecordRegistry {
     /// @param tokenContract The address of the NFT.
     /// @param tokenId The token identifier of the NFT.
     /// @return Whether the NFT was registered into the protocol as IP.
-    function isRegistered(
-        uint256 chainId,
-        address tokenContract,
-        uint256 tokenId
-    ) external view returns (bool) {
+    function isRegistered(uint256 chainId, address tokenContract, uint256 tokenId) external view returns (bool) {
         address id = ipId(chainId, tokenContract, tokenId);
         return _resolvers[id] != address(0);
     }
@@ -88,9 +77,7 @@ contract IPRecordRegistry is IIPRecordRegistry {
     /// @notice Gets the resolver bound to an IP based on its ID.
     /// @param id The canonical identifier for the IP.
     /// @return The IP resolver address if registered, else the zero address.
-    function resolver(
-        address id
-    ) external view returns (address) {
+    function resolver(address id) external view returns (address) {
         return _resolvers[id];
     }
 
@@ -99,11 +86,7 @@ contract IPRecordRegistry is IIPRecordRegistry {
     /// @param tokenContract The address of the NFT.
     /// @param tokenId The token identifier of the NFT.
     /// @return The IP resolver address if registered, else the zero address.
-    function resolver(
-        uint256 chainId,
-        address tokenContract,
-        uint256 tokenId
-    ) external view returns (address) {
+    function resolver(uint256 chainId, address tokenContract, uint256 tokenId) external view returns (address) {
         address id = ipId(chainId, tokenContract, tokenId);
         return _resolvers[id];
     }
@@ -125,7 +108,7 @@ contract IPRecordRegistry is IIPRecordRegistry {
             revert Errors.IPRecordRegistry_AlreadyRegistered();
         }
 
-        // This is to emphasize the semantic differences between utilizing the 
+        // This is to emphasize the semantic differences between utilizing the
         // IP account as an identifier versus as an account used for auth.
         address account = id;
 
@@ -145,11 +128,7 @@ contract IPRecordRegistry is IIPRecordRegistry {
     /// @param chainId The chain identifier of where the NFT resides.
     /// @param tokenContract The address of the NFT.
     /// @param tokenId The token identifier of the NFT.
-    function createIPAccount(
-        uint256 chainId,
-        address tokenContract,
-        uint256 tokenId
-    ) external returns (address) {
+    function createIPAccount(uint256 chainId, address tokenContract, uint256 tokenId) external returns (address) {
         address account = IP_ACCOUNT_REGISTRY.ipAccount(chainId, tokenContract, tokenId);
         if (account.code.length != 0) {
             revert Errors.IPRecordRegistry_IPAccountAlreadyCreated();
@@ -175,10 +154,7 @@ contract IPRecordRegistry is IIPRecordRegistry {
     /// @notice Sets the resolver for an IP based on its canonical ID.
     /// @param id The canonical ID of the IP.
     /// @param resolverAddr The address of the resolver being set.
-    function setResolver(
-        address id,
-        address resolverAddr
-    ) public onlyRegistrationModule {
+    function setResolver(address id, address resolverAddr) public onlyRegistrationModule {
         if (resolverAddr == address(0)) {
             revert Errors.IPRecordRegistry_ResolverInvalid();
         }
@@ -204,12 +180,8 @@ contract IPRecordRegistry is IIPRecordRegistry {
     /// @dev Sets the resolver for the specified IP.
     /// @param id The canonical identifier for the specified IP.
     /// @param resolverAddr The address of the IP resolver.
-    function _setResolver(
-        address id,
-        address resolverAddr
-    ) internal {
+    function _setResolver(address id, address resolverAddr) internal {
         _resolvers[id] = resolverAddr;
         emit IPResolverSet(id, resolverAddr);
     }
-
 }

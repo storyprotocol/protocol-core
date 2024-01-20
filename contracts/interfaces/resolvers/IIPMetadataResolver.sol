@@ -15,10 +15,6 @@ interface IIPMetadataResolver is IResolver {
     /// @param ipId The canonical ID of the specified IP.
     function name(address ipId) external view returns (string memory);
 
-     /// @notice Fetches the category associated with the specified IP.
-    /// @param ipId The canonical ID of the specified IP.
-    function category(address ipId) external view returns (IP.Category);
-
     /// @notice Fetches the description associated with the specified IP.
     /// @param ipId The canonical ID of the specified IP.
     /// @return The string descriptor of the IP.
@@ -54,11 +50,6 @@ interface IIPMetadataResolver is IResolver {
     /// @param ipId The canonical ID of the specified IP.
     /// @param name The string name to associate with the IP.
     function setName(address ipId, string calldata name) external;
-
-    /// @notice Sets the category associated with an IP.
-    /// @param ipId The canonical ID of the specified IP.
-    /// @param category The IP category to associate with the IP.
-    function setCategory(address ipId, IP.Category category) external;
 
     /// @notice Sets the description associated with an IP.
     /// @param ipId The canonical ID of the specified IP.

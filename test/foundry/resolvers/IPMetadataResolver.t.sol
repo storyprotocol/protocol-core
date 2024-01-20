@@ -7,6 +7,7 @@ import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
 import { ResolverBaseTest } from "test/foundry/resolvers/ResolverBase.t.sol";
 import { IPMetadataResolver } from "contracts/resolvers/IPMetadataResolver.sol";
 import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
+import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
 import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
@@ -14,7 +15,6 @@ import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
 import { IIPRecordRegistry } from "contracts/interfaces/registries/IIPRecordRegistry.sol";
 import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
 import { IIPMetadataResolver } from "contracts/interfaces/resolvers/IIPMetadataResolver.sol";
-import { MockERC6551Registry } from "test/foundry/mocks/MockERC6551Registry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { Errors } from "contracts/lib/Errors.sol";
@@ -25,7 +25,6 @@ contract IPMetadataResolverTest is ResolverBaseTest {
 
     // Default IP record attributes.
     string public constant RECORD_NAME = "IPRecord";
-    IP.Category public constant RECORD_CATEGORY = IP.Category.COPYRIGHT;
     string public constant RECORD_DESCRIPTION = "IPs all the way down.";
     bytes32 public constant RECORD_HASH = "";
     uint64 public constant RECORD_REGISTRATION_DATE = 999999;
@@ -50,7 +49,7 @@ contract IPMetadataResolverTest is ResolverBaseTest {
     function setUp() public virtual override(ResolverBaseTest) {
         ResolverBaseTest.setUp();
         ipAccountRegistry = new IPAccountRegistry(
-            address(new MockERC6551Registry()),
+            address(new ERC6551Registry()),
             address(accessController),
             address(new IPAccountImpl())
         );
@@ -80,13 +79,12 @@ contract IPMetadataResolverTest is ResolverBaseTest {
 
     /// @notice Tests that metadata may be properly set for the resolver.
     function test_IPMetadataResolver_SetMetadata() public {
-        accessController.setPolicy(ipId, alice, address(ipResolver), IIPMetadataResolver.setMetadata.selector, 1);
+        accessController.setPermission(ipId, alice, address(ipResolver), IIPMetadataResolver.setMetadata.selector, 1);
         vm.prank(alice);
         ipResolver.setMetadata(
             ipId,
             IP.MetadataRecord({
                 name: RECORD_NAME,
-                category: RECORD_CATEGORY,
                 description: RECORD_DESCRIPTION,
                 hash: RECORD_HASH,
                 registrationDate: RECORD_REGISTRATION_DATE,
@@ -95,7 +93,6 @@ contract IPMetadataResolverTest is ResolverBaseTest {
             })
         );
         assertEq(ipResolver.name(ipId), RECORD_NAME);
-        assertTrue(ipResolver.category(ipId) == RECORD_CATEGORY);
         assertEq(ipResolver.description(ipId), RECORD_DESCRIPTION);
         assertEq(ipResolver.hash(ipId), RECORD_HASH);
         assertEq(ipResolver.registrationDate(ipId), RECORD_REGISTRATION_DATE);
@@ -106,7 +103,6 @@ contract IPMetadataResolverTest is ResolverBaseTest {
         // Also check the metadata getter returns as expected.
         IP.Metadata memory metadata = ipResolver.metadata(ipId);
         assertEq(metadata.name, RECORD_NAME);
-        assertTrue(metadata.category == RECORD_CATEGORY);
         assertEq(metadata.description, RECORD_DESCRIPTION);
         assertEq(metadata.hash, RECORD_HASH);
         assertEq(metadata.registrationDate, RECORD_REGISTRATION_DATE);
@@ -122,7 +118,6 @@ contract IPMetadataResolverTest is ResolverBaseTest {
             ipId,
             IP.MetadataRecord({
                 name: RECORD_NAME,
-                category: RECORD_CATEGORY,
                 description: RECORD_DESCRIPTION,
                 hash: RECORD_HASH,
                 registrationDate: RECORD_REGISTRATION_DATE,
@@ -134,7 +129,7 @@ contract IPMetadataResolverTest is ResolverBaseTest {
 
     /// @notice Tests that the name may be properly set for the resolver.
     function test_IPMetadataResolver_SetName() public {
-        accessController.setPolicy(ipId, alice, address(ipResolver), IIPMetadataResolver.setName.selector, 1);
+        accessController.setPermission(ipId, alice, address(ipResolver), IIPMetadataResolver.setName.selector, 1);
         vm.prank(alice);
         ipResolver.setName(ipId, RECORD_NAME);
         assertEq(RECORD_NAME, ipResolver.name(ipId));
@@ -146,23 +141,9 @@ contract IPMetadataResolverTest is ResolverBaseTest {
         ipResolver.setName(ipId, RECORD_NAME);
     }
 
-    /// @notice Tests that the category may be properly set for the resolver.
-    function test_IPMetadataResolver_SetCategory() public {
-        accessController.setPolicy(ipId, alice, address(ipResolver), IIPMetadataResolver.setCategory.selector, 1);
-        vm.prank(alice);
-        ipResolver.setCategory(ipId, RECORD_CATEGORY);
-        assertTrue(RECORD_CATEGORY == ipResolver.category(ipId));
-    }
-
-    /// @notice Checks that an unauthorized call to setCategory reverts.
-    function test_IPMetadataResolver_SetCategory_Reverts_Unauthorized() public {
-        vm.expectRevert(Errors.IPResolver_Unauthorized.selector);
-        ipResolver.setCategory(ipId, RECORD_CATEGORY);
-    }
-
     /// @notice Tests that the description may be properly set for the resolver.
     function test_IPMetadataResolver_SetDescription() public {
-        accessController.setPolicy(ipId, alice, address(ipResolver), IIPMetadataResolver.setDescription.selector, 1);
+        accessController.setPermission(ipId, alice, address(ipResolver), IIPMetadataResolver.setDescription.selector, 1);
         vm.prank(alice);
         ipResolver.setDescription(ipId, RECORD_DESCRIPTION);
         assertEq(RECORD_DESCRIPTION, ipResolver.description(ipId));
@@ -176,7 +157,7 @@ contract IPMetadataResolverTest is ResolverBaseTest {
 
     /// @notice Tests that the hash may be properly set for the resolver.
     function test_IPMetadataResolver_SetHash() public {
-        accessController.setPolicy(ipId, alice, address(ipResolver), IIPMetadataResolver.setHash.selector, 1);
+        accessController.setPermission(ipId, alice, address(ipResolver), IIPMetadataResolver.setHash.selector, 1);
         vm.prank(alice);
         ipResolver.setHash(ipId, RECORD_HASH);
         assertEq(RECORD_HASH, ipResolver.hash(ipId));
@@ -197,7 +178,7 @@ contract IPMetadataResolverTest is ResolverBaseTest {
 
     /// @notice Checks setting token URI works as expected.
     function test_IPMetadataResolver_SetTokenURI() public {
-        accessController.setPolicy(ipId, alice, address(ipResolver), IIPMetadataResolver.setTokenURI.selector, 1);
+        accessController.setPermission(ipId, alice, address(ipResolver), IIPMetadataResolver.setTokenURI.selector, 1);
         vm.prank(alice);
         ipResolver.setTokenURI(ipId, RECORD_URI);
         assertEq(ipResolver.tokenURI(ipId), RECORD_URI);
@@ -209,13 +190,12 @@ contract IPMetadataResolverTest is ResolverBaseTest {
         assertEq(ipResolver.tokenURI(address(0)), "");
 
         // Check default string value for registered IP.
-        accessController.setPolicy(ipId, alice, address(ipResolver), IIPMetadataResolver.setMetadata.selector, 1);
+        assertTrue(accessController.checkPermission(ipId, alice, address(ipResolver), IIPMetadataResolver.setMetadata.selector));
         vm.prank(alice);
         ipResolver.setMetadata(
             ipId,
             IP.MetadataRecord({
                 name: RECORD_NAME,
-                category: RECORD_CATEGORY,
                 description: RECORD_DESCRIPTION,
                 hash: RECORD_HASH,
                 registrationDate: RECORD_REGISTRATION_DATE,
@@ -229,7 +209,6 @@ contract IPMetadataResolverTest is ResolverBaseTest {
             '{"name": "IP Asset #', ipIdStr, '", "description": "IPs all the way down.", "attributes": [',
             '{"trait_type": "Name", "value": "IPRecord"},',
             '{"trait_type": "Owner", "value": "', ownerStr, '"},'
-            '{"trait_type": "Category", "value": "Copyright"},',
             '{"trait_type": "Registrant", "value": "', ownerStr, '"},',
             '{"trait_type": "Hash", "value": "0x0000000000000000000000000000000000000000000000000000000000000000"},',
             '{"trait_type": "Registration Date", "value": "', Strings.toString(RECORD_REGISTRATION_DATE), '"}',
