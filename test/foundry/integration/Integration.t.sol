@@ -11,6 +11,10 @@ import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
+import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
+import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
+import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 
@@ -35,6 +39,12 @@ contract IntegrationTest is Test {
     IPAccountImpl internal ipacctImpl;
     IPAccountRegistry internal ipacctRegistry;
     LicenseRegistry internal licenseRegistry;
+
+    DisputeModule public disputeModule;
+    ArbitrationPolicySP public arbitrationPolicySP;
+    RoyaltyModule public royaltyModule;
+    RoyaltyPolicyLS public royaltyPolicyLS;
+
     MockAccessController internal accessController = new MockAccessController();
     MockERC20 internal mockToken = new MockERC20();
     MockERC721s internal nft;
@@ -43,6 +53,15 @@ contract IntegrationTest is Test {
     // MockModule internal module = new MockModule(address(registry), address(moduleRegistry), "MockModule");
 
     Users internal u;
+
+    // USDC (ETH Mainnet)
+    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address public constant USDC_RICH = 0xcEe284F754E854890e311e3280b767F80797180d;
+    // Liquid Split (ETH Mainnet)
+    address public constant LIQUID_SPLIT_FACTORY = 0xdEcd8B99b7F763e16141450DAa5EA414B7994831;
+    address public constant LIQUID_SPLIT_MAIN = 0x2ed6c4B5dA6378c7897AC67Ba9e43102Feb694EE;
+
+    uint256 public constant ARBITRATION_PRICE = 1000 * 10 ** 6; // 1000 USDC
 
     // IPAccounts
     mapping(address userAddr => mapping(MockERC721 nft => mapping(uint256 tokenId => address ipId))) internal ipacct;
@@ -77,8 +96,15 @@ contract IntegrationTest is Test {
         );
         licenseRegistry = new LicenseRegistry("https://example-license-registry.com/{id}.json");
 
+        disputeModule = new DisputeModule();
+        arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), USDC, ARBITRATION_PRICE);
+        royaltyModule = new RoyaltyModule();
+        royaltyPolicyLS = new RoyaltyPolicyLS(address(royaltyModule), LIQUID_SPLIT_FACTORY, LIQUID_SPLIT_MAIN);
+
         nft = MockERC721s({ a: new MockERC721(), b: new MockERC721(), c: new MockERC721() });
         u = UsersLib.createMockUsers(vm);
+
+        royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
 
         mockToken.mint(u.alice, 1000 * 10 ** mockToken.decimals());
         mockToken.mint(u.bob, 1000 * 10 ** mockToken.decimals());
@@ -86,6 +112,11 @@ contract IntegrationTest is Test {
 
         // 1 mock token payment per mint
         mintPaymentVerifier = new MintPaymentVerifier(address(mockToken), 1 * 10 ** mockToken.decimals());
+
+        vm.label(address(disputeModule), "disputeModule");
+        vm.label(address(arbitrationPolicySP), "arbitrationPolicySP");
+        vm.label(address(royaltyModule), "royaltyModule");
+        vm.label(address(royaltyPolicyLS), "royaltyPolicyLS");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -411,5 +442,17 @@ contract IntegrationTest is Test {
             2 * 10 ** mockToken.decimals(),
             "Carl didn't receive payment"
         );
+
+        // address[] memory accounts = new address[](2);
+        // accounts[0] = ipAccount1;
+        // accounts[1] = ipAccount2;
+
+        // uint32[] memory initAllocations = new uint32[](2);
+        // initAllocations[0] = 100;
+        // initAllocations[1] = 900;
+
+        // bytes memory data = abi.encode(accounts, initAllocations, uint32(0), address(0));
+
+        // royaltyModule.setRoyaltyPolicy(ipAccount3, address(royaltyPolicyLS), data);
     }
 }
