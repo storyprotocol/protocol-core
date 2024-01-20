@@ -130,6 +130,7 @@ contract IPRecordRegistry is IIPRecordRegistry {
     /// @param tokenId The token identifier of the NFT.
     function createIPAccount(uint256 chainId, address tokenContract, uint256 tokenId) external returns (address) {
         address account = IP_ACCOUNT_REGISTRY.ipAccount(chainId, tokenContract, tokenId);
+        // TODO: Finalize disambiguation between IP accounts and IP identifiers.
         if (account.code.length != 0) {
             revert Errors.IPRecordRegistry_IPAccountAlreadyCreated();
         }
@@ -158,6 +159,7 @@ contract IPRecordRegistry is IIPRecordRegistry {
         if (resolverAddr == address(0)) {
             revert Errors.IPRecordRegistry_ResolverInvalid();
         }
+        // Resolvers may not be set unless the IP was registered into the protocol.
         if (_resolvers[id] == address(0)) {
             revert Errors.IPRecordRegistry_NotYetRegistered();
         }

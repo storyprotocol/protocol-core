@@ -6,6 +6,9 @@ pragma solidity ^0.8.21;
 /// @notice Library for constants, structs, and helper functions used for IP.
 library IP {
     /// @notice Core metadata associated with an IP.
+    /// @dev This is what is fetched when `metadata()` is called from an IP
+    ///      resolver, and includes aggregated attributes fetched from various
+    ///      modules in addition to that which is stored on the resolver itself.
     struct Metadata {
         // The current owner of the IP.
         address owner;
@@ -24,8 +27,9 @@ library IP {
     }
 
     /// @notice Core metadata exclusively saved by the IP resolver.
-    /// @dev Resolved attributes not referenced here are processed through
-    ///      their corresponding data modules (e.g. licensing for license data).
+    /// @dev This only encompasses metadata which is stored on the IP metadata
+    ///      resolver itself, and does not include those attributes which may
+    ///      be fetched from different modules (e.g. the licensing modules).
     struct MetadataRecord {
         // The name associated with the IP.
         string name;

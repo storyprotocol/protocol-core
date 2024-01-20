@@ -8,7 +8,7 @@ import "contracts/IPAccountImpl.sol";
 import "contracts/interfaces/IIPAccount.sol";
 import "lib/reference/src/interfaces/IERC6551Account.sol";
 import "test/foundry/mocks/MockERC721.sol";
-import { MockERC6551Registry} from "test/foundry/mocks/MockERC6551Registry.sol";
+import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import "test/foundry/mocks/MockAccessController.sol";
 import "test/foundry/mocks/MockModule.sol";
 import "contracts/registries/ModuleRegistry.sol";
@@ -18,7 +18,7 @@ contract ModuleRegistryTest is Test {
     IPAccountRegistry public registry;
     IPAccountImpl public implementation;
     ModuleRegistry public moduleRegistry = new ModuleRegistry();
-    MockERC6551Registry public erc6551Registry = new MockERC6551Registry();
+    ERC6551Registry public erc6551Registry = new ERC6551Registry();
     MockAccessController public accessController = new MockAccessController();
     MockModule public module;
 
