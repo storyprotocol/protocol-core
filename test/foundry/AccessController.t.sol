@@ -3,12 +3,13 @@ pragma solidity ^0.8.21;
 
 import "forge-std/Test.sol";
 
+import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
+
 import "contracts/registries/IPAccountRegistry.sol";
 import "contracts/IPAccountImpl.sol";
 import "contracts/interfaces/IIPAccount.sol";
 import "lib/reference/src/interfaces/IERC6551Account.sol";
 import "test/foundry/mocks/MockERC721.sol";
-import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import "test/foundry/mocks/MockAccessController.sol";
 import "test/foundry/mocks/MockModule.sol";
 import "test/foundry/mocks/MockOrchestratorModule.sol";
@@ -40,7 +41,7 @@ contract AccessControllerTest is Test {
         );
         moduleRegistry = new ModuleRegistry();
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-        nft.mint(owner, tokenId);
+        nft.mintId(owner, tokenId);
         address deployedAccount = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), tokenId);
         ipAccount = IIPAccount(payable(deployedAccount));
 

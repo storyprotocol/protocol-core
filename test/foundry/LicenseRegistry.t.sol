@@ -177,7 +177,6 @@ contract LicenseRegistryTest is Test {
             keccak256(abi.encode(registry.policyForIpAtIndex(ipId1, 0))),
             "policy not copied"
         );
-
     }
 
 }

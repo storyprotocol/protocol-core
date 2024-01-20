@@ -7,5 +7,6 @@ gas_reports = ["*"]
 optimizer = true
 optimizer_runs = 20000
 test = 'test'
+solc = '0.8.23'
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

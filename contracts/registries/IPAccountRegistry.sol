@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.23;
 
 import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
 import { IERC6551Registry } from "lib/reference/src/interfaces/IERC6551Registry.sol";

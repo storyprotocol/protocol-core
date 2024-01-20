@@ -1,12 +1,12 @@
 -include .env
 
-.PHONY: all test clean
+.PHONY: all test clean coverage
 
 all: clean install build
 
 # Clean the repo
 forge-clean  :; forge clean
-clean  :; npx hardhat clean
+clean :; npx hardhat clean
 
 # Remove modules
 forge-remove :; rm -rf .gitmodules && rm -rf .git/modules/* && rm -rf lib && touch .gitmodules && git add . && git commit -m "modules"
@@ -26,6 +26,12 @@ snapshot :; forge snapshot
 slither :; slither ./contracts
 
 format :; npx prettier --write contracts/**/*.sol && npx prettier --write contracts/*.sol
+
+coverage:
+	mkdir -p coverage
+	forge coverage --report lcov
+	lcov --remove lcov.info -o lcov.info 'test/*'
+	genhtml lcov.info --output-dir coverage
 
 # solhint should be installed globally
 lint :; npx solhint contracts/**/*.sol && npx solhint contracts/*.sol
