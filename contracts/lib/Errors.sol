@@ -20,4 +20,27 @@ library Errors {
     error LicenseRegistry__NotLicensee();
     error LicenseRegistry__ParentIdEqualThanChild();
     error LicenseRegistry__LicensorDoesntHaveThisPolicy();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                             ModuleRegistry                             //
+    ////////////////////////////////////////////////////////////////////////////
+
+    error ModuleRegistry__ModuleAddressZeroAddress();
+    error ModuleRegistry__ModuleAddressNotContract();
+    error ModuleRegistry__ModuleAlreadyRegistered();
+    error ModuleRegistry__NameEmptyString();
+    error ModuleRegistry__NameAlreadyRegistered();
+    error ModuleRegistry__NameDoesNotMatch();
+    error ModuleRegistry__ModuleNotRegistered();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                             AccessController                           //
+    ////////////////////////////////////////////////////////////////////////////
+
+    error AccessController__IPAccountIsZeroAddress();
+    error AccessController__IPAccountIsNotValid();
+    error AccessController__SignerIsZeroAddress();
+    error AccessController__CallerIsNotIPAccount();
+    error AccessController__PermissionIsNotValid();
+
 }

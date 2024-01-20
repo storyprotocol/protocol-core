@@ -6,7 +6,7 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
-import { IERC6551Account } from "contracts/interfaces/erc6551/IERC6551Account.sol";
+import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 
 /// @title IPAccountImpl
@@ -34,7 +34,6 @@ contract IPAccountImpl is IERC165, IIPAccount {
     // TODO: can only be called by IPAccountRegistry
     function initialize(address accessController_) external {
         require(accessController_ != address(0), "Invalid access controller");
-        require(accessController == address(0), "Already initialized");
         accessController = accessController_;
     }
 
@@ -92,7 +91,7 @@ contract IPAccountImpl is IERC165, IIPAccount {
         if (data_.length >= 4) {
             selector = bytes4(data_[:4]);
         }
-        return IAccessController(accessController).checkPolicy(address(this), signer_, to_, selector);
+        return IAccessController(accessController).checkPermission(address(this), signer_, to_, selector);
     }
 
     /// @notice Executes a transaction from the IP Account.

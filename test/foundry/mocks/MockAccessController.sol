@@ -11,15 +11,15 @@ contract MockAccessController is IAccessController {
         isAllowed = _isAllowed;
     }
 
-    function setPolicy(address, address, address, bytes4, uint8) external pure {
+    function setPermission(address, address, address, bytes4, uint8) external pure {
 
     }
 
-    function getPolicy(address, address, address, bytes4) external pure returns (uint8) {
+    function getPermission(address, address, address, bytes4) external pure returns (uint8) {
         return 1;
     }
 
-    function checkPolicy(address ipAccount, address signer, address, bytes4) external view returns(bool) {
+    function checkPermission(address ipAccount, address signer, address, bytes4) external view returns(bool) {
         return IIPAccount(payable(ipAccount)).owner() == signer && isAllowed;
     }
 }
