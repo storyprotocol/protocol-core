@@ -230,7 +230,6 @@ contract LicenseRegistry is ERC1155 {
         
         Licensing.Policy memory pol = policy(policyId);
 
-        // TODO: verify the mechanism for checking minting conditions
         Licensing.Parameter[] memory mintParams = _frameworks[pol.frameworkId].mintingParams;
         bytes[] memory mintParamValues = pol.mintingParamValues;
         for (uint256 i=0; i < mintParams.length; i++) {
