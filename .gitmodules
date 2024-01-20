@@ -1,0 +1,3 @@
+[submodule "lib/reference"]
+	path = lib/reference
+	url = https://github.com/erc6551/reference
