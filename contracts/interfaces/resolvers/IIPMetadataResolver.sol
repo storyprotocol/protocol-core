@@ -37,9 +37,9 @@ interface IIPMetadataResolver is IResolver {
     /// @param ipId The canonical ID of the specified IP.
     function owner(address ipId) external view returns (address);
 
-    /// @notice Fetches the token URI associated with the IP.
+    /// @notice Fetches an IP owner defined URI associated with the IP.
     /// @param ipId The canonical ID of the specified IP.
-    function tokenURI(address ipId) external view returns (string memory);
+    function uri(address ipId) external view returns (string memory);
 
     /// @notice Sets the core metadata associated with an IP.
     /// @param ipId The canonical ID of the specified IP.
@@ -61,8 +61,8 @@ interface IIPMetadataResolver is IResolver {
     /// @param hash The keccak-256 hash to associate with the IP.
     function setHash(address ipId, bytes32 hash) external;
 
-    /// @notice Sets a token URI to associated with the IP.
+    /// @notice Sets an IP owner defined URI to associate with the IP.
     /// @param ipId The canonical ID of the specified IP.
-    function setTokenURI(address ipId, string calldata tokenURI) external;
+    function setURI(address ipId, string calldata uri) external;
 
 }

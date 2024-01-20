@@ -98,7 +98,7 @@ contract IPMetadataResolverTest is ResolverBaseTest {
         assertEq(ipResolver.registrationDate(ipId), RECORD_REGISTRATION_DATE);
         assertEq(ipResolver.registrant(ipId), alice);
         assertEq(ipResolver.owner(ipId), alice);
-        assertEq(ipResolver.tokenURI(ipId), RECORD_URI);
+        assertEq(ipResolver.uri(ipId), RECORD_URI);
 
         // Also check the metadata getter returns as expected.
         IP.Metadata memory metadata = ipResolver.metadata(ipId);
@@ -178,16 +178,16 @@ contract IPMetadataResolverTest is ResolverBaseTest {
 
     /// @notice Checks setting token URI works as expected.
     function test_IPMetadataResolver_SetTokenURI() public {
-        accessController.setPermission(ipId, alice, address(ipResolver), IIPMetadataResolver.setTokenURI.selector, 1);
+        accessController.setPermission(ipId, alice, address(ipResolver), IIPMetadataResolver.setURI.selector, 1);
         vm.prank(alice);
-        ipResolver.setTokenURI(ipId, RECORD_URI);
-        assertEq(ipResolver.tokenURI(ipId), RECORD_URI);
+        ipResolver.setURI(ipId, RECORD_URI);
+        assertEq(ipResolver.uri(ipId), RECORD_URI);
     }
 
     /// @notice Checks the default token URI renders as expected.
     function test_IPMetadataResolver_TokenURI_DefaultRender() public {
         // Check default empty string value for unregistered IP.
-        assertEq(ipResolver.tokenURI(address(0)), "");
+        assertEq(ipResolver.uri(address(0)), "");
 
         // Check default string value for registered IP.
         assertTrue(accessController.checkPermission(ipId, alice, address(ipResolver), IIPMetadataResolver.setMetadata.selector));
@@ -218,7 +218,7 @@ contract IPMetadataResolverTest is ResolverBaseTest {
             "data:application/json;base64,",
             Base64.encode(bytes(string(abi.encodePacked(uriEncoding))))
         ));
-        assertEq(expectedURI, ipResolver.tokenURI(ipId));
+        assertEq(expectedURI, ipResolver.uri(ipId));
     }
 
     /// @dev Deploys a new IP Metadata Resolver.

@@ -41,7 +41,7 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
                 hash: record.hash,
                 registrationDate: record.registrationDate,
                 registrant: record.registrant,
-                uri: tokenURI(ipId)
+                uri: uri(ipId)
             });
     }
 
@@ -86,18 +86,18 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
         return IIPAccount(payable(ipId)).owner();
     }
 
-    /// @notice Fetches the token URI associated with the IP.
+    /// @notice Fetches an IP owner defined URI associated with the IP.
     /// @param ipId The canonical ID of the specified IP.
-    function tokenURI(address ipId) public view returns (string memory) {
+    function uri(address ipId) public view returns (string memory) {
         if (!IP_RECORD_REGISTRY.isRegistered(ipId)) {
             return "";
         }
 
         IP.MetadataRecord memory record = _records[ipId];
-        string memory uri = record.uri;
+        string memory ipUri = record.uri;
 
-        if (bytes(uri).length > 0) {
-            return uri;
+        if (bytes(ipUri).length > 0) {
+            return ipUri;
         }
 
         return _defaultTokenURI(ipId, record);
@@ -131,11 +131,11 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
         _records[ipId].hash = newHash;
     }
 
-    /// @notice Sets a token URI to associated with the IP.
+    /// @notice Sets an IP owner defined URI to associate with the IP.
     /// @param ipId The canonical ID of the specified IP.
-    /// @param newTokenURI The new token URI to set for the IP.
-    function setTokenURI(address ipId, string calldata newTokenURI) external onlyAuthorized(ipId) {
-        _records[ipId].uri = newTokenURI;
+    /// @param newURI The new token URI to set for the IP.
+    function setURI(address ipId, string calldata newURI) external onlyAuthorized(ipId) {
+        _records[ipId].uri = newURI;
     }
 
     /// @notice Checks whether the resolver interface is supported.
