@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 import {console2} from "forge-std/console2.sol";
 import {TestHelper} from "./../utils/TestHelper.sol";
 
-import {ShortStringEquals} from "./../../contracts/utils/ShortStringOps.sol";
+import {ShortStringOps} from "./../../contracts/utils/ShortStringOps.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract TestDisputeModule is TestHelper {
@@ -65,7 +65,7 @@ contract TestDisputeModule is TestHelper {
         assertEq(ip_id, address(1));
         assertEq(disputeInitiator, ipAccount1);
         assertEq(arbitrationPolicy, address(arbitrationPolicySP));
-        assertEq(linkToDisputeSummary, ShortStringEquals.stringToBytes32("urlExample"));
+        assertEq(linkToDisputeSummary, ShortStringOps.stringToBytes32("urlExample"));
         assertEq(tag, bytes32("plagiarism"));
     }
 
