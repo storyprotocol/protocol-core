@@ -29,7 +29,7 @@ format :; npx prettier --write contracts/**/*.sol && npx prettier --write contra
 
 coverage:
 	mkdir -p coverage
-	forge coverage --report lcov
+	forge coverage --report lcov --fork-url https://rpc.ankr.com/eth --fork-block-number 19042069
 	lcov --remove lcov.info -o lcov.info 'test/*'
 	genhtml lcov.info --output-dir coverage
 

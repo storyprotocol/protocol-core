@@ -16,9 +16,9 @@ contract MockERC721 is ERC721 {
         return tokenId;
     }
 
-    function mintId(address to, uint256 tokenId) public {
-        ++_counter;
+    function mintId(address to, uint256 tokenId) public returns (uint256) {
         _safeMint(to, tokenId);
+        return tokenId;
     }
 
     function burn(uint256 tokenId) public {

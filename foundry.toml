@@ -9,4 +9,9 @@ optimizer_runs = 20000
 test = 'test'
 solc = '0.8.23'
 
+[rpc_endpoints]
+# Comment out for local development (testing requires 0xSplit forks — will add Mock soon)
+# pin fork by using --fork-block-number 19042069 to reduce wait time
+mainnet = "https://rpc.ankr.com/eth"
+
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

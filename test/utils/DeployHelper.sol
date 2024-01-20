@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-import {Test} from "forge-std/Test.sol";
+import { Test } from "forge-std/Test.sol";
+import { console2 } from "forge-std/console2.sol";
 
-import {DisputeModule} from "../../contracts/modules/dispute-module/DisputeModule.sol";
-import {ArbitrationPolicySP} from "../../contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
-import {RoyaltyModule} from "../../contracts/modules/royalty-module/RoyaltyModule.sol";
-import {RoyaltyPolicyLS} from "../../contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
+import { DisputeModule } from "../../contracts/modules/dispute-module/DisputeModule.sol";
+import { ArbitrationPolicySP } from "../../contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
+import { RoyaltyModule } from "../../contracts/modules/royalty-module/RoyaltyModule.sol";
+import { RoyaltyPolicyLS } from "../../contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
+import { MockUSDC } from "../foundry/mocks/MockUSDC.sol";
 
 contract DeployHelper is Test {
     DisputeModule public disputeModule;
@@ -33,9 +35,21 @@ contract DeployHelper is Test {
         royaltyModule = new RoyaltyModule();
         royaltyPolicyLS = new RoyaltyPolicyLS(address(royaltyModule), LIQUID_SPLIT_FACTORY, LIQUID_SPLIT_MAIN);
 
+        // if code at USDC is zero, then deploy ERC20 to that address
+        // and also deploy other RoyaltyModule dependencies
+        if (USDC.code.length == 0) {
+            bytes memory code = vm.getDeployedCode("MockUSDC.sol:MockUSDC");
+            vm.etch(USDC, code);
+            vm.label(USDC, "USDC");
+            // assertEq(USDC.code, code);
+            MockUSDC(USDC).mint(USDC_RICH, 100_000_000 ether);
+        }
+
         vm.label(address(disputeModule), "disputeModule");
         vm.label(address(arbitrationPolicySP), "arbitrationPolicySP");
         vm.label(address(royaltyModule), "royaltyModule");
         vm.label(address(royaltyPolicyLS), "royaltyPolicyLS");
+
+        // console2.logBytes(0xdEcd8B99b7F763e16141450DAa5EA414B7994831.code);
     }
 }
