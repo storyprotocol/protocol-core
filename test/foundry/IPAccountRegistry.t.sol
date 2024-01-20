@@ -5,13 +5,13 @@ import "forge-std/Test.sol";
 
 import "contracts/registries/IPAccountRegistry.sol";
 import "contracts/IPAccountImpl.sol";
-import "test/foundry/mocks/MockERC6551Registry.sol";
+import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import "test/foundry/mocks/MockAccessController.sol";
 
 contract RegistryTest is Test {
     IPAccountRegistry public registry;
     IPAccountImpl public implementation;
-    MockERC6551Registry public erc6551Registry;
+    ERC6551Registry public erc6551Registry;
     MockAccessController public accessController;
     uint256 chainId;
     address tokenAddress;
@@ -19,7 +19,7 @@ contract RegistryTest is Test {
 
     function setUp() public {
         implementation = new IPAccountImpl();
-        erc6551Registry = new MockERC6551Registry();
+        erc6551Registry = new ERC6551Registry();
         accessController = new MockAccessController();
         chainId = 100;
         tokenAddress = address(200);

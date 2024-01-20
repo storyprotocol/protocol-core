@@ -3,14 +3,14 @@
 pragma solidity ^0.8.21;
 
 import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
-import { IERC6551Registry } from "contracts/interfaces/erc6551/IERC6551Registry.sol";
+import { IERC6551Registry } from "lib/reference/src/interfaces/IERC6551Registry.sol";
 
 /// @title IPAccountRegistry
 /// @notice This contract is responsible for managing the registration and tracking of IP Accounts.
 /// It leverages a public ERC6551 registry to deploy IPAccount contracts.
 contract IPAccountRegistry is IIPAccountRegistry {
     address internal immutable IP_ACCOUNT_IMPL;
-    uint256 internal immutable IP_ACCOUNT_SALT;
+    bytes32 internal immutable IP_ACCOUNT_SALT;
     address internal immutable ERC6551_PUBLIC_REGISTRY;
     address internal immutable ACCESS_CONTROLLER;
 
@@ -23,7 +23,7 @@ contract IPAccountRegistry is IIPAccountRegistry {
     constructor(address erc6551Registry_, address accessController_, address ipAccountImpl_) {
         if (ipAccountImpl_ == address(0)) revert NonExistIpAccountImpl();
         IP_ACCOUNT_IMPL = ipAccountImpl_;
-        IP_ACCOUNT_SALT = 0;
+        IP_ACCOUNT_SALT = bytes32(0);
         ERC6551_PUBLIC_REGISTRY = erc6551Registry_;
         ACCESS_CONTROLLER = accessController_;
     }
@@ -41,12 +41,17 @@ contract IPAccountRegistry is IIPAccountRegistry {
         bytes memory initData = abi.encodeWithSignature("initialize(address)", ACCESS_CONTROLLER);
         ipAccountAddress = IERC6551Registry(ERC6551_PUBLIC_REGISTRY).createAccount(
             IP_ACCOUNT_IMPL,
+            IP_ACCOUNT_SALT,
             chainId_,
             tokenContract_,
-            tokenId_,
-            IP_ACCOUNT_SALT,
-            initData
+            tokenId_
         );
+        (bool success, bytes memory result) = ipAccountAddress.call(initData);
+        if (!success) {
+            assembly {
+                revert(add(result, 32), mload(result))
+            }
+        }
         emit IPAccountRegistered(ipAccountAddress, IP_ACCOUNT_IMPL, chainId_, tokenContract_, tokenId_);
     }
 
@@ -57,15 +62,6 @@ contract IPAccountRegistry is IIPAccountRegistry {
     /// @return The address of the IP Account associated with the given NFT token.
     function ipAccount(uint256 chainId_, address tokenContract_, uint256 tokenId_) external view returns (address) {
         return _get6551AccountAddress(chainId_, tokenContract_, tokenId_);
-    }
-
-    /// @notice Returns true if the IPAccount is registered.
-    /// @param chainId_ The chain ID where the IP Account is located.
-    /// @param tokenContract_ The address of the token contract associated with the IP Account.
-    /// @param tokenId_ The ID of the token associated with the IP Account.
-    /// @return True if the IP Account is registered, false otherwise.
-    function isRegistered(uint256 chainId_, address tokenContract_, uint256 tokenId_) external view returns (bool) {
-        return _get6551AccountAddress(chainId_, tokenContract_, tokenId_).code.length != 0;
     }
 
     /// @notice Returns the IPAccount implementation address.
@@ -82,10 +78,10 @@ contract IPAccountRegistry is IIPAccountRegistry {
         return
             IERC6551Registry(ERC6551_PUBLIC_REGISTRY).account(
                 IP_ACCOUNT_IMPL,
+                IP_ACCOUNT_SALT,
                 chainId_,
                 tokenContract_,
-                tokenId_,
-                IP_ACCOUNT_SALT
+                tokenId_
             );
     }
 }

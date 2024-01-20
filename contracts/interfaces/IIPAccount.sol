@@ -4,7 +4,7 @@ pragma solidity ^0.8.21;
 
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
-import { IERC6551Account } from "contracts/interfaces/erc6551/IERC6551Account.sol";
+import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.sol";
 
 /// @title IIPAccount
 /// @dev IPAccount is a token-bound account that adopts the EIP-6551 standard.
