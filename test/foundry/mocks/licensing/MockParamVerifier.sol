@@ -1,12 +1,18 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 
 contract MockIParamVerifier is IParamVerifier {
+    function verifyMintingParam(address, uint256, bytes memory value) external pure returns (bool) {
+        return abi.decode(value, (bool));
+    }
 
-    function verifyParam(address, bytes memory value) external pure returns (bool) {
+    function verifyLinkParentParam(address, bytes memory value) external pure returns (bool) {
+        return abi.decode(value, (bool));
+    }
+
+    function verifyActivationParam(address, bytes memory value) external pure returns (bool) {
         return abi.decode(value, (bool));
     }
 
