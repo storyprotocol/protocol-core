@@ -103,4 +103,15 @@ library Errors {
     error AccessController__SignerIsZeroAddress();
     error AccessController__CallerIsNotIPAccount();
     error AccessController__PermissionIsNotValid();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                             TaggingModule                              //
+    ////////////////////////////////////////////////////////////////////////////
+
+    error TaggingModule__InvalidRelationTypeName();
+    error TaggingModule__RelationTypeAlreadyExists();
+    error TaggingModule__SrcIpIdDoesNotHaveSrcTag();
+    error TaggingModule__DstIpIdDoesNotHaveDstTag();
+    error TaggingModule__RelationTypeDoesNotExist();
+
 }

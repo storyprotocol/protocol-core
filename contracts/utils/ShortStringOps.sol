@@ -5,7 +5,7 @@ pragma solidity ^0.8.19;
 import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
 
 /// @notice Library for working with Openzeppelin's ShortString data types.
-library ShortStringEquals {
+library ShortStringOps {
     using ShortStrings for *;
 
     /// @dev Compares whether two ShortStrings are equal.
