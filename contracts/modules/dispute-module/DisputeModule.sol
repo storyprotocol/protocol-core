@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-import {ShortStringEquals} from "../../utils/ShortStringOps.sol";
+import {ShortStringOps} from "../../utils/ShortStringOps.sol";
 import {IArbitrationPolicy} from "../../../interfaces/modules/dispute-module/policies/IArbitrationPolicy.sol";
 import {IDisputeModule} from "../../../interfaces/modules/dispute-module/IDisputeModule.sol";
 
@@ -102,7 +102,7 @@ contract DisputeModule is IDisputeModule, ReentrancyGuard {
         }
         if (!isWhitelistedDisputeTag[_targetTag]) revert Errors.DisputeModule__NotWhitelistedDisputeTag();
 
-        bytes32 linkToDisputeSummary = ShortStringEquals.stringToBytes32(_linkToDisputeSummary);
+        bytes32 linkToDisputeSummary = ShortStringOps.stringToBytes32(_linkToDisputeSummary);
         if (linkToDisputeSummary == bytes32(0)) revert Errors.DisputeModule__ZeroLinkToDisputeSummary();
         
         disputeId++;
