@@ -4,6 +4,7 @@ pragma solidity ^0.8.23;
 import {console2} from "forge-std/console2.sol";
 import {TestHelper} from "./../utils/TestHelper.sol";
 
+import {ShortStringEquals} from "./../../contracts/utils/ShortStringOps.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract TestDisputeModule is TestHelper {
@@ -49,13 +50,13 @@ contract TestDisputeModule is TestHelper {
         uint256 ipAccount1USDCBalanceBefore = IERC20(USDC).balanceOf(ipAccount1);
         uint256 arbitrationPolicySPUSDCBalanceBefore = IERC20(USDC).balanceOf(address(arbitrationPolicySP));
 
-        disputeModule.raiseDispute(address(1), address(arbitrationPolicySP), bytes32("hashExample"), "plagiarism", "");
+        disputeModule.raiseDispute(address(1), address(arbitrationPolicySP), string("urlExample"), "plagiarism", "");
 
         uint256 disputeIdAfter = disputeModule.disputeId();
         uint256 ipAccount1USDCBalanceAfter = IERC20(USDC).balanceOf(ipAccount1);
         uint256 arbitrationPolicySPUSDCBalanceAfter = IERC20(USDC).balanceOf(address(arbitrationPolicySP));
 
-        (address ip_id, address disputeInitiator, address arbitrationPolicy, bytes32 hashToDisputeSummary, bytes32 tag)
+        (address ip_id, address disputeInitiator, address arbitrationPolicy, bytes32 linkToDisputeSummary, bytes32 tag)
         = disputeModule.disputes(disputeIdAfter);
 
         assertEq(disputeIdAfter - disputeIdBefore, 1);
@@ -64,7 +65,7 @@ contract TestDisputeModule is TestHelper {
         assertEq(ip_id, address(1));
         assertEq(disputeInitiator, ipAccount1);
         assertEq(arbitrationPolicy, address(arbitrationPolicySP));
-        assertEq(hashToDisputeSummary, bytes32("hashExample"));
+        assertEq(linkToDisputeSummary, ShortStringEquals.stringToBytes32("urlExample"));
         assertEq(tag, bytes32("plagiarism"));
     }
 
@@ -72,7 +73,7 @@ contract TestDisputeModule is TestHelper {
         // raise dispute
         vm.startPrank(ipAccount1);
         IERC20(USDC).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
-        disputeModule.raiseDispute(address(1), address(arbitrationPolicySP), bytes32("hashExample"), "plagiarism", "");
+        disputeModule.raiseDispute(address(1), address(arbitrationPolicySP), string("urlExample"), "plagiarism", "");
         vm.stopPrank();
 
         // set dispute judgement

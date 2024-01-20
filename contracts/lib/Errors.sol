@@ -26,7 +26,7 @@ library Errors {
     error DisputeModule__ZeroArbitrationPolicy();
     error DisputeModule__ZeroArbitrationRelayer();
     error DisputeModule__ZeroDisputeTag();
-    error DisputeModule__ZeroHashToDisputeSummary();
+    error DisputeModule__ZeroLinkToDisputeSummary();
     error DisputeModule__NotWhitelistedArbitrationPolicy();
     error DisputeModule__NotWhitelistedDisputeTag();
     error DisputeModule__NotWhitelistedArbitrationRelayer();

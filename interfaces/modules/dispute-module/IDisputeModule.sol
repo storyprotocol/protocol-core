@@ -22,14 +22,14 @@ interface IDisputeModule {
     /// @notice Raises a dispute
     /// @param ipId The ipId
     /// @param arbitrationPolicy The address of the arbitration policy
-    /// @param hashToDisputeSummary The hash of the dispute summary
+    /// @param linkToDisputeSummary The link of the dispute summary
     /// @param targetTag The target tag of the dispute
     /// @param data The data to initialize the policy
     /// @return disputeId The dispute id
     function raiseDispute(
         address ipId,
         address arbitrationPolicy,
-        bytes32 hashToDisputeSummary,
+        string memory linkToDisputeSummary,
         bytes32 targetTag,
         bytes calldata data
     ) external returns (uint256 disputeId);
@@ -54,7 +54,7 @@ interface IDisputeModule {
         address ipId,
         address disputeInitiator,
         address arbitrationPolicy,
-        bytes32 hashToDisputeSummary,
+        bytes32 linkToDisputeSummary,
         bytes32 tag
     );
 }

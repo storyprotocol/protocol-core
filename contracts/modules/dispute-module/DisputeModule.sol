@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
+import {ShortStringEquals} from "../../utils/ShortStringOps.sol";
 import {IArbitrationPolicy} from "../../../interfaces/modules/dispute-module/policies/IArbitrationPolicy.sol";
 import {IDisputeModule} from "../../../interfaces/modules/dispute-module/IDisputeModule.sol";
 
@@ -17,7 +18,7 @@ contract DisputeModule is IDisputeModule, ReentrancyGuard {
         address ipId; // The ipId
         address disputeInitiator; // The address of the dispute initiator
         address arbitrationPolicy; // The address of the arbitration policy
-        bytes32 hashToDisputeSummary; // The hash of the dispute summary
+        bytes32 linkToDisputeSummary; // The link of the dispute summary
         bytes32 tag; // The target tag of the dispute // TODO: move to tagging module?
     }
 
@@ -84,14 +85,14 @@ contract DisputeModule is IDisputeModule, ReentrancyGuard {
     /// @notice Raises a dispute
     /// @param _ipId The ipId
     /// @param _arbitrationPolicy The address of the arbitration policy
-    /// @param _hashToDisputeSummary The hash of the dispute summary
+    /// @param _linkToDisputeSummary The link of the dispute summary
     /// @param _targetTag The target tag of the dispute
     /// @param _data The data to initialize the policy
     /// @return disputeId The dispute id
     function raiseDispute(
         address _ipId,
         address _arbitrationPolicy,
-        bytes32 _hashToDisputeSummary,
+        string memory _linkToDisputeSummary,
         bytes32 _targetTag,
         bytes calldata _data
     ) external nonReentrant returns (uint256) {
@@ -99,16 +100,18 @@ contract DisputeModule is IDisputeModule, ReentrancyGuard {
         if (!isWhitelistedArbitrationPolicy[_arbitrationPolicy]) {
             revert Errors.DisputeModule__NotWhitelistedArbitrationPolicy();
         }
-        if (_hashToDisputeSummary == bytes32(0)) revert Errors.DisputeModule__ZeroHashToDisputeSummary();
         if (!isWhitelistedDisputeTag[_targetTag]) revert Errors.DisputeModule__NotWhitelistedDisputeTag();
 
+        bytes32 linkToDisputeSummary = ShortStringEquals.stringToBytes32(_linkToDisputeSummary);
+        if (linkToDisputeSummary == bytes32(0)) revert Errors.DisputeModule__ZeroLinkToDisputeSummary();
+        
         disputeId++;
 
         disputes[disputeId] = Dispute({
             ipId: _ipId,
             disputeInitiator: msg.sender,
             arbitrationPolicy: _arbitrationPolicy,
-            hashToDisputeSummary: _hashToDisputeSummary,
+            linkToDisputeSummary: linkToDisputeSummary,
             tag: _targetTag
         });
 
