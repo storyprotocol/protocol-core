@@ -1,11 +1,34 @@
-// SPDX-License-Identifier: MIT
-
-pragma solidity ^0.8.20;
+// SPDX-License-Identifier: UNLICENSED
+// See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
+pragma solidity ^0.8.19;
 
 /// @title Errors Library
 /// @notice Library for all Story Protocol contract errors.
 library Errors {
     
+    ////////////////////////////////////////////////////////////////////////////
+    //                               IPRecordRegistry                         //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice The IP record has already been registered.
+    error IPRecordRegistry_AlreadyRegistered();
+
+    /// @notice The IP account has already been created.
+    error IPRecordRegistry_IPAccountAlreadyCreated();
+
+    /// @notice The IP record has not yet been registered.
+    error IPRecordRegistry_NotYetRegistered();
+
+    /// @notice Caller not authorized to perform the IP registry function call.
+    error IPRecordRegistry_Unauthorized();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                                 IPResolver                            ///
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Caller not authorized to perform the IP resolver function call.
+    error IPResolver_Unauthorized();
+
     ////////////////////////////////////////////////////////////////////////////
     //                            LicenseRegistry                             //
     ////////////////////////////////////////////////////////////////////////////

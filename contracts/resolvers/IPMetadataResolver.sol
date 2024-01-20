@@ -1,0 +1,204 @@
+// SPDX-License-Identifier: UNLICENSED
+// See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
+pragma solidity ^0.8.21;
+
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
+import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
+import { ResolverBase } from "./ResolverBase.sol";
+import { IIPMetadataResolver } from "contracts/interfaces/resolvers/IIPMetadataResolver.sol";
+import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
+import { Errors } from "contracts/lib/Errors.sol";
+import { IP } from "contracts/lib/IP.sol";
+
+/// @title IP Metadata Resolver
+/// @notice Canonical IP resolver contract used for Story Protocol. This will
+///         likely change to a separate contract that extends IPMetadataResolver
+///         in the near future.
+contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
+
+    /// @dev Maps IP to their metadata records based on their canonical IDs.
+    mapping(address => IP.MetadataRecord) public _records;
+
+    /// @notice Initializes the IP metadata resolver.
+    /// @param accessController The access controller used for IP authorization.
+    constructor(address accessController) ResolverBase(accessController) {}
+
+    /// @notice Fetches all metadata associated with the specified IP.
+    /// @param ipId The canonical ID of the specified IP.
+    function metadata(address ipId) public view returns (IP.Metadata memory) {
+        IP.MetadataRecord memory record = _records[ipId];
+        return IP.Metadata({
+            owner: owner(ipId),
+            name: record.name,
+            category: record.category,
+            description: record.description,
+            hash: record.hash,
+            registrationDate: record.registrationDate,
+            registrant: record.registrant,
+            uri: tokenURI(ipId)
+        });
+    }
+
+    /// @notice Fetches the canonical name associated with the specified IP.
+    /// @param ipId The canonical ID of the specified IP.
+    function name(address ipId) external view returns (string memory) {
+        return _records[ipId].name;
+    }
+
+     /// @notice Fetches the category associated with an IP.
+    /// @param ipId The canonical ID of the specified IP.
+    function category(address ipId) external view returns (IP.Category) {
+        return _records[ipId].category;
+    }
+
+    /// @notice Fetches the description associated with the specified IP.
+    /// @param ipId The canonical ID of the specified IP.
+    /// @return The string descriptor of the IP.
+    function description(address ipId) external view returns (string memory) {
+        return _records[ipId].description;
+    }
+
+    /// @notice Fetches the keccak-256 hash associated with the specified IP.
+    /// @param ipId The canonical ID of the specified IP.
+    /// @return The bytes32 content hash of the IP.
+    function hash(address ipId) external view returns (bytes32) {
+        return _records[ipId].hash;
+    }
+
+    /// @notice Fetches the date of registration of the IP.
+    /// @param ipId The canonical ID of the specified IP.
+    function registrationDate(address ipId) external view returns (uint64) {
+        return _records[ipId].registrationDate;
+    }
+
+    /// @notice Fetches the initial registrant of the IP.
+    /// @param ipId The canonical ID of the specified IP.
+    function registrant(address ipId) external view returns (address) {
+        return _records[ipId].registrant;
+    }
+
+    /// @notice Fetches the current owner of the IP.
+    /// @param ipId The canonical ID of the specified IP.
+    function owner(address ipId) public view returns (address) {
+        return IIPAccount(payable(ipId)).owner();
+    }
+
+    /// @notice Fetches the token URI associated with the IP.
+    /// @param ipId The canonical ID of the specified IP.
+    function tokenURI(address ipId) public view returns (string memory) {
+        IP.MetadataRecord memory record = _records[ipId];
+        string memory uri = record.uri;
+
+        if (
+            bytes(uri).length > 0 ||                // Return URI if overridden.
+            _records[ipId].registrant == address(0) // Return "" if nonexistent.
+        )  {
+            return uri;
+        }
+
+        return _defaultTokenURI(ipId, record);
+    }
+
+    /// @notice Sets metadata associated with an IP.
+    /// @param ipId The canonical ID of the specified IP.
+    /// @param newMetadata The new metadata to set for the IP.
+    function setMetadata(address ipId, IP.MetadataRecord calldata newMetadata) external onlyAuthorized(ipId) {
+        _records[ipId] = newMetadata;
+    }
+
+    /// @notice Sets the name associated with an IP.
+    /// @param ipId The canonical ID of the specified IP.
+    /// @param newName The new string name to associate with the IP.
+    function setName(address ipId, string calldata newName) external onlyAuthorized(ipId) {
+        _records[ipId].name = newName;
+    }
+
+    /// @notice Sets the category associated with an IP.
+    /// @param ipId The canonical ID of the specified IP.
+    /// @param newCategory The IP category to associate with the IP.
+    function setCategory(address ipId, IP.Category newCategory) external onlyAuthorized(ipId) {
+        _records[ipId].category = newCategory;
+    }
+
+    /// @notice Sets the description associated with an IP.
+    /// @param ipId The canonical ID of the specified IP.
+    /// @param newDescription The string description to associate with the IP.
+    function setDescription(address ipId, string calldata newDescription) external onlyAuthorized(ipId) {
+        _records[ipId].description = newDescription;
+    }
+
+    /// @notice Sets the keccak-256 hash associated with an IP.
+    /// @param ipId The canonical ID of the specified IP.
+    /// @param newHash The keccak-256 hash to associate with the IP.
+    function setHash(address ipId, bytes32 newHash) external onlyAuthorized(ipId) {
+        _records[ipId].hash = newHash;
+    }
+
+    /// @notice Sets a token URI to associated with the IP.
+    /// @param ipId The canonical ID of the specified IP.
+    /// @param newTokenURI The new token URI to set for the IP.
+    function setTokenURI(address ipId, string calldata newTokenURI) external onlyAuthorized(ipId) {
+        _records[ipId].uri = newTokenURI;
+    }
+
+    /// @notice Checks whether the resolver interface is supported.
+    /// @param id The resolver interface identifier.
+    /// @return Whether the resolver interface is supported.
+    function supportsInterface(bytes4 id) public view virtual override(IResolver, ResolverBase) returns (bool) {
+        return id == type(IIPMetadataResolver).interfaceId ||
+               super.supportsInterface(id);
+    }
+
+    /// @dev Internal function for generating a default IP URI if not provided.
+    /// @param ipId The canonical ID of the specified IP.
+    /// @param record The IP record associated with the IP.
+    function _defaultTokenURI(address ipId, IP.MetadataRecord memory record) internal view returns (string memory) {
+        string memory baseJson = string(
+            /* solhint-disable */
+            abi.encodePacked(
+                '{"name": "IP Asset #',
+                Strings.toHexString(ipId),
+                '", "description": "',
+                record.description,
+                '", "attributes": ['
+            )
+            /* solhint-enable */
+        );
+
+        string memory ipAttributes = string(
+            /* solhint-disable */
+            abi.encodePacked(
+                '{"trait_type": "Name", "value": "',
+                record.name,
+                '"},'
+                '{"trait_type": "Owner", "value": "',
+                Strings.toHexString(uint160(owner(ipId)), 20),
+                '"},'
+                '{"trait_type": "Category", "value": "',
+                IP.toString(record.category),
+                '"},',
+                '{"trait_type": "Registrant", "value": "',
+                Strings.toHexString(uint160(record.registrant), 20),
+                '"},',
+                '{"trait_type": "Hash", "value": "',
+                Strings.toHexString(uint256(record.hash), 32),
+                '"},',
+                '{"trait_type": "Registration Date", "value": "',
+                Strings.toString(record.registrationDate),
+                '"}'
+            )
+            /* solhint-enable */
+        );
+
+        return
+            string(
+                abi.encodePacked(
+                    "data:application/json;base64,",
+                    Base64.encode(bytes(string(abi.encodePacked(baseJson, ipAttributes, "]}"))))
+                )
+            );
+
+    }
+
+}
