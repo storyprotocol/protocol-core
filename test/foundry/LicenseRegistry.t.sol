@@ -87,7 +87,6 @@ contract LicenseRegistryTest is Test {
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
         Licensing.Policy memory storedPolicy = registry.policy(policyId);
         assertEq(keccak256(abi.encode(storedPolicy)), keccak256(abi.encode(policy)), "policy not stored properly");
-
     }
 
     function test_LicenseRegistry_addSamePolicyReusesPolicyId() public withFrameworkParams {
@@ -140,7 +139,7 @@ contract LicenseRegistryTest is Test {
         assertEq(registry.policyIdForIpAtIndex(ipId1, 1), 2, "policyIdForIpAtIndex not 2");
     }
 
-    function test_LicenseRegistry_mintLicense() public withFrameworkParams returns(uint256 licenseId) {
+    function test_LicenseRegistry_mintLicense() public withFrameworkParams returns (uint256 licenseId) {
         Licensing.Policy memory policy = Licensing.Policy({
             frameworkId: 1,
             mintingParamValues: new bytes[](1),
@@ -151,8 +150,15 @@ contract LicenseRegistryTest is Test {
         policy.mintingParamValues[0] = abi.encode(true);
         policy.activationParamValues[0] = abi.encode(true);
         policy.linkParentParamValues[0] = abi.encode(true);
+
         (uint256 policyId, uint256 indexOnIpId) = registry.addPolicy(ipId1, policy);
         assertEq(policyId, 1);
+        assertTrue(registry.isPolicyIdSetForIp(ipId1, policyId));
+
+        uint256[] memory policyIds = registry.policyIdsForIp(ipId1);
+        assertEq(policyIds.length, 1);
+        assertEq(policyIds[indexOnIpId], policyId);
+
         Licensing.License memory licenseData = Licensing.License({
             policyId: policyId,
             licensorIpIds: new address[](1)
@@ -162,6 +168,7 @@ contract LicenseRegistryTest is Test {
         licenseId = registry.mintLicense(licenseData, 2, licenseHolder);
         assertEq(licenseId, 1);
         assertEq(registry.balanceOf(licenseHolder, licenseId), 2);
+        assertEq(registry.isLicensee(licenseId, licenseHolder), true);
         return licenseId;
     }
 
@@ -177,6 +184,14 @@ contract LicenseRegistryTest is Test {
             keccak256(abi.encode(registry.policyForIpAtIndex(ipId1, 0))),
             "policy not copied"
         );
-    }
 
+        address[] memory parents = registry.parentIpIds(ipId2);
+        assertEq(parents.length, 1, "not 1 parent");
+        assertEq(
+            parents.length,
+            registry.totalParentsForIpId(ipId2),
+            "parents.length and totalParentsForIpId mismatch"
+        );
+        assertEq(parents[0], ipId1, "parent not ipId1");
+    }
 }

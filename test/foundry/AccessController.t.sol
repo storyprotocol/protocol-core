@@ -1,22 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-import "forge-std/Test.sol";
+import { Test } from "forge-std/Test.sol";
 
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
+import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.sol";
 
-import "contracts/registries/IPAccountRegistry.sol";
-import "contracts/IPAccountImpl.sol";
-import "contracts/interfaces/IIPAccount.sol";
-import "lib/reference/src/interfaces/IERC6551Account.sol";
-import "test/foundry/mocks/MockERC721.sol";
-import "test/foundry/mocks/MockAccessController.sol";
-import "test/foundry/mocks/MockModule.sol";
-import "test/foundry/mocks/MockOrchestratorModule.sol";
-import "contracts/interfaces/registries/IModuleRegistry.sol";
-import "contracts/registries/ModuleRegistry.sol";
-import "contracts/AccessController.sol";
-import "contracts/lib/AccessPermission.sol";
+import { AccessController } from "contracts/AccessController.sol";
+import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
+import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
+import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
+import { AccessPermission } from "contracts/lib/AccessPermission.sol";
+import { Errors } from "contracts/lib/Errors.sol";
+import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
+import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
+import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
+import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { MockModule } from "test/foundry/mocks/MockModule.sol";
+import { MockOrchestratorModule } from "test/foundry/mocks/MockOrchestratorModule.sol";
 
 contract AccessControllerTest is Test {
     AccessController public accessController;
@@ -45,16 +46,12 @@ contract AccessControllerTest is Test {
         address deployedAccount = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), tokenId);
         ipAccount = IIPAccount(payable(deployedAccount));
 
-        mockModule = new MockModule(
-            address(ipAccountRegistry),
-            address(moduleRegistry),
-            "MockModule"
-        );
-//        moduleWithoutPermission = new MockModule(
-//            address(ipAccountRegistry),
-//            address(moduleRegistry),
-//            "ModuleWithoutPermission"
-//        );
+        mockModule = new MockModule(address(ipAccountRegistry), address(moduleRegistry), "MockModule");
+        //        moduleWithoutPermission = new MockModule(
+        //            address(ipAccountRegistry),
+        //            address(moduleRegistry),
+        //            "ModuleWithoutPermission"
+        //        );
     }
 
     // test owner can set permission
@@ -121,7 +118,96 @@ contract AccessControllerTest is Test {
                 AccessPermission.ALLOW
             )
         );
+    }
 
+    function test_AccessController_revert_directSetPermission() public {
+        moduleRegistry.registerModule("MockModule", address(mockModule));
+        address signer = vm.addr(2);
+
+        vm.prank(address(ipAccount));
+        vm.expectRevert(Errors.AccessController__IPAccountIsZeroAddress.selector);
+        accessController.setPermission(
+            address(0),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector,
+            AccessPermission.ALLOW
+        );
+
+        vm.prank(address(ipAccount));
+        vm.expectRevert(Errors.AccessController__SignerIsZeroAddress.selector);
+        accessController.setPermission(
+            address(ipAccount),
+            address(0),
+            address(mockModule),
+            mockModule.executeSuccessfully.selector,
+            AccessPermission.ALLOW
+        );
+
+        vm.prank(address(ipAccount));
+        vm.expectRevert(Errors.AccessController__IPAccountIsNotValid.selector);
+        accessController.setPermission(
+            address(0xbeefbeef),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector,
+            AccessPermission.ALLOW
+        );
+
+        vm.prank(owner); // not calling from ipAccount
+        vm.expectRevert(Errors.AccessController__CallerIsNotIPAccount.selector);
+        accessController.setPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector,
+            AccessPermission.ALLOW
+        );
+
+        vm.prank(address(ipAccount)); // not calling from ipAccount
+        vm.expectRevert(Errors.AccessController__PermissionIsNotValid.selector);
+        accessController.setPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector,
+            type(uint8).max
+        );
+    }
+
+    function test_AccessController_revert_checkPermission() public {
+        moduleRegistry.registerModule("MockModule", address(mockModule));
+        address signer = vm.addr(2);
+        vm.prank(owner);
+        ipAccount.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setPermission(address,address,address,bytes4,uint8)",
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                bytes4(0),
+                AccessPermission.ALLOW
+            )
+        );
+
+        assertFalse(
+            accessController.checkPermission(
+                address(ipAccount),
+                signer,
+                address(0xbeef), // instead of address(mockModule)
+                mockModule.executeSuccessfully.selector
+            )
+        );
+        assertFalse(
+            accessController.checkPermission(
+                address(0xbeef), // invalid IPAccount
+                signer,
+                address(mockModule),
+                mockModule.executeSuccessfully.selector
+            )
+        );
     }
 
     function test_AccessController_functionPermissionWildcardAllow() public {
@@ -141,12 +227,7 @@ contract AccessControllerTest is Test {
             )
         );
         assertEq(
-            accessController.getPermission(
-                address(ipAccount),
-                signer,
-                address(mockModule),
-                bytes4(0)
-            ),
+            accessController.getPermission(address(ipAccount), signer, address(mockModule), bytes4(0)),
             AccessPermission.ALLOW
         );
         assertEq(
@@ -186,12 +267,7 @@ contract AccessControllerTest is Test {
             )
         );
         assertEq(
-            accessController.getPermission(
-                address(ipAccount),
-                signer,
-                address(mockModule),
-                bytes4(0)
-            ),
+            accessController.getPermission(address(ipAccount), signer, address(mockModule), bytes4(0)),
             AccessPermission.DENY
         );
         assertEq(
@@ -231,12 +307,7 @@ contract AccessControllerTest is Test {
             )
         );
         assertEq(
-            accessController.getPermission(
-                address(ipAccount),
-                signer,
-                address(0),
-                bytes4(0)
-            ),
+            accessController.getPermission(address(ipAccount), signer, address(0), bytes4(0)),
             AccessPermission.ALLOW
         );
         assertEq(
@@ -276,12 +347,7 @@ contract AccessControllerTest is Test {
             )
         );
         assertEq(
-            accessController.getPermission(
-                address(ipAccount),
-                signer,
-                address(0),
-                bytes4(0)
-            ),
+            accessController.getPermission(address(ipAccount), signer, address(0), bytes4(0)),
             AccessPermission.DENY
         );
         assertEq(
@@ -334,12 +400,7 @@ contract AccessControllerTest is Test {
             )
         );
         assertEq(
-            accessController.getPermission(
-                address(ipAccount),
-                signer,
-                address(mockModule),
-                bytes4(0)
-            ),
+            accessController.getPermission(address(ipAccount), signer, address(mockModule), bytes4(0)),
             AccessPermission.DENY
         );
 
@@ -363,7 +424,6 @@ contract AccessControllerTest is Test {
             true
         );
     }
-
 
     function test_AccessController_overrideFunctionWildcard_DenyOverrideAllow() public {
         moduleRegistry.registerModule("MockModule", address(mockModule));
@@ -395,12 +455,7 @@ contract AccessControllerTest is Test {
             )
         );
         assertEq(
-            accessController.getPermission(
-                address(ipAccount),
-                signer,
-                address(mockModule),
-                bytes4(0)
-            ),
+            accessController.getPermission(address(ipAccount), signer, address(mockModule), bytes4(0)),
             AccessPermission.ALLOW
         );
 
@@ -455,12 +510,7 @@ contract AccessControllerTest is Test {
             )
         );
         assertEq(
-            accessController.getPermission(
-                address(ipAccount),
-                signer,
-                address(0),
-                bytes4(0)
-            ),
+            accessController.getPermission(address(ipAccount), signer, address(0), bytes4(0)),
             AccessPermission.DENY
         );
 
@@ -484,7 +534,6 @@ contract AccessControllerTest is Test {
             true
         );
     }
-
 
     function test_AccessController_overrideToAddressWildcard_DenyOverrideAllow() public {
         moduleRegistry.registerModule("MockModule", address(mockModule));
@@ -516,12 +565,7 @@ contract AccessControllerTest is Test {
             )
         );
         assertEq(
-            accessController.getPermission(
-                address(ipAccount),
-                signer,
-                address(0),
-                bytes4(0)
-            ),
+            accessController.getPermission(address(ipAccount), signer, address(0), bytes4(0)),
             AccessPermission.ALLOW
         );
 
@@ -545,7 +589,6 @@ contract AccessControllerTest is Test {
             false
         );
     }
-
 
     function test_AccessController_functionWildcardOverrideToAddressWildcard_allowOverrideDeny() public {
         moduleRegistry.registerModule("MockModule", address(mockModule));
@@ -577,22 +620,12 @@ contract AccessControllerTest is Test {
             )
         );
         assertEq(
-            accessController.getPermission(
-                address(ipAccount),
-                signer,
-                address(0),
-                bytes4(0)
-            ),
+            accessController.getPermission(address(ipAccount), signer, address(0), bytes4(0)),
             AccessPermission.DENY
         );
 
         assertEq(
-            accessController.getPermission(
-                address(ipAccount),
-                signer,
-                address(mockModule),
-                bytes4(0)
-            ),
+            accessController.getPermission(address(ipAccount), signer, address(mockModule), bytes4(0)),
             AccessPermission.ALLOW
         );
 
@@ -647,22 +680,12 @@ contract AccessControllerTest is Test {
             )
         );
         assertEq(
-            accessController.getPermission(
-                address(ipAccount),
-                signer,
-                address(0),
-                bytes4(0)
-            ),
+            accessController.getPermission(address(ipAccount), signer, address(0), bytes4(0)),
             AccessPermission.ALLOW
         );
 
         assertEq(
-            accessController.getPermission(
-                address(ipAccount),
-                signer,
-                address(mockModule),
-                bytes4(0)
-            ),
+            accessController.getPermission(address(ipAccount), signer, address(mockModule), bytes4(0)),
             AccessPermission.DENY
         );
 
@@ -694,10 +717,7 @@ contract AccessControllerTest is Test {
         bytes memory result = ipAccount.execute(
             address(mockModule),
             0,
-            abi.encodeWithSignature(
-                "executeSuccessfully(string)",
-                "testParameter"
-            )
+            abi.encodeWithSignature("executeSuccessfully(string)", "testParameter")
         );
         assertEq("testParameter", abi.decode(result, (string)));
     }
@@ -729,10 +749,7 @@ contract AccessControllerTest is Test {
         bytes memory result = ipAccount.execute(
             address(mockModule),
             0,
-            abi.encodeWithSignature(
-                "callAnotherModule(string)",
-                "AnotherMockModule"
-            )
+            abi.encodeWithSignature("callAnotherModule(string)", "AnotherMockModule")
         );
         assertEq("AnotherMockModule", abi.decode(result, (string)));
     }
@@ -845,7 +862,5 @@ contract AccessControllerTest is Test {
         vm.prank(owner);
         vm.expectRevert("Invalid signer");
         mockOrchestratorModule.workflowFailure(payable(address(ipAccount)));
-
     }
-
 }
