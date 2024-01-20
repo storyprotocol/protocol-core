@@ -235,9 +235,9 @@ contract LicenseRegistry is ERC1155 {
         for (uint256 i=0; i < mintParams.length; i++) {
             Licensing.Parameter memory param = mintParams[i];
             // Empty bytes => use default value specified in license framework creation params.
-            bytes memory callValue = mintParamValues[i].length == 0 ? param.defaultValue : mintParamValues[i];
+            bytes memory data = mintParamValues[i].length == 0 ? param.defaultValue : mintParamValues[i];
             // TODO: is `caller` param `msg.sender` or `receiver` or something else?
-            if (!param.verifier.verifyParam(receiver, callValue)) {
+            if (!param.verifier.verifyMintingParam(receiver, amount, data)) {
                 revert Errors.LicenseRegistry__MintParamFailed();
             }
         }
@@ -282,14 +282,13 @@ contract LicenseRegistry is ERC1155 {
         
         Licensing.Policy memory pol = policy(licenseData.policyId);
         
-        // TODO: verify the mechanism for checking linking conditions
         Licensing.Parameter[] memory linkParams = _frameworks[pol.frameworkId].linkParentParams;
         bytes[] memory linkParamValues = pol.linkParentParamValues;
         for (uint256 i=0; i < linkParams.length; i++) {
             Licensing.Parameter memory param = linkParams[i];
             // Empty bytes => use default value specified in license framework creation params.
-            bytes memory callValue = linkParamValues[i].length == 0 ? param.defaultValue : linkParamValues[i];
-            if (!param.verifier.verifyParam(holder, callValue)) {
+            bytes memory data = linkParamValues[i].length == 0 ? param.defaultValue : linkParamValues[i];
+            if (!param.verifier.verifyLinkParentParam(holder, data)) {
                 revert Errors.LicenseRegistry__LinkParentParamFailed();
             }
         }
