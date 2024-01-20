@@ -19,12 +19,18 @@ library Errors {
     /// @notice The IP record has not yet been registered.
     error IPRecordRegistry_NotYetRegistered();
 
+    /// @notice The specified IP resolver is not valid.
+    error IPRecordRegistry_ResolverInvalid();
+
     /// @notice Caller not authorized to perform the IP registry function call.
     error IPRecordRegistry_Unauthorized();
 
     ////////////////////////////////////////////////////////////////////////////
     //                                 IPResolver                            ///
     ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice The targeted IP does not yet have an IP account.
+    error IPResolver_InvalidIP();
 
     /// @notice Caller not authorized to perform the IP resolver function call.
     error IPResolver_Unauthorized();

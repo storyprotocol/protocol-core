@@ -22,7 +22,13 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
 
     /// @notice Initializes the IP metadata resolver.
     /// @param accessController The access controller used for IP authorization.
-    constructor(address accessController) ResolverBase(accessController) {}
+    /// @param ipRecordRegistry The address of the IP record registry.
+    /// @param ipAccountRegistry The address of the IP account registry.
+    constructor(
+        address accessController,
+        address ipRecordRegistry,
+        address ipAccountRegistry
+    ) ResolverBase(accessController, ipRecordRegistry, ipAccountRegistry) {}
 
     /// @notice Fetches all metadata associated with the specified IP.
     /// @param ipId The canonical ID of the specified IP.
@@ -81,19 +87,23 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
     /// @notice Fetches the current owner of the IP.
     /// @param ipId The canonical ID of the specified IP.
     function owner(address ipId) public view returns (address) {
+        if (!IP_RECORD_REGISTRY.isRegistered(ipId)) {
+            return address(0);
+        }
         return IIPAccount(payable(ipId)).owner();
     }
 
     /// @notice Fetches the token URI associated with the IP.
     /// @param ipId The canonical ID of the specified IP.
     function tokenURI(address ipId) public view returns (string memory) {
+        if (!IP_RECORD_REGISTRY.isRegistered(ipId)) {
+            return "";
+        }
+
         IP.MetadataRecord memory record = _records[ipId];
         string memory uri = record.uri;
 
-        if (
-            bytes(uri).length > 0 ||                // Return URI if overridden.
-            _records[ipId].registrant == address(0) // Return "" if nonexistent.
-        )  {
+        if (bytes(uri).length > 0)  {
             return uri;
         }
 

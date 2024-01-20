@@ -29,9 +29,6 @@ contract IPRecordRegistry is IIPRecordRegistry {
     /// @notice Tracks the total number of IP records in existence.
     uint256 public totalSupply = 0;
 
-    /// @notice Tracks the address of the IP account factory.
-    address public ipAccountRegistry;
-
     /// @dev Maps an IP, identified by its IP ID, to a metadata resolver.
     mapping(address => address) internal _resolvers;
 
@@ -45,7 +42,9 @@ contract IPRecordRegistry is IIPRecordRegistry {
 
     /// @notice Initializes the IP Record Registry.
     /// @param moduleRegistry The address of the protocol module registry.
-    constructor(address moduleRegistry) {
+    /// @param ipAccountRegistry The address of the IP account registry.
+    constructor(address moduleRegistry, address ipAccountRegistry) {
+        IP_ACCOUNT_REGISTRY = IIPAccountRegistry(ipAccountRegistry);
         MODULE_REGISTRY = IModuleRegistry(moduleRegistry);
     }
 
@@ -180,7 +179,10 @@ contract IPRecordRegistry is IIPRecordRegistry {
         address id,
         address resolverAddr
     ) public onlyRegistrationModule {
-        if (_resolvers[id] != address(0)) {
+        if (resolverAddr == address(0)) {
+            revert Errors.IPRecordRegistry_ResolverInvalid();
+        }
+        if (_resolvers[id] == address(0)) {
             revert Errors.IPRecordRegistry_NotYetRegistered();
         }
         _setResolver(id, resolverAddr);
