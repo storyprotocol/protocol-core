@@ -16,66 +16,9 @@ contract TaggingModule is IModule {
 
     uint256 constant MAX_TAG_PERMISSIONS_AT_ONCE = 300;
 
-    struct RelationType {
-        bytes32 srcTag;
-        bytes32 dstTag;
-    }
-
-    struct Relation {
-        /// Relationship type name id
-        ShortString relTypeName;
-        /// Source address
-        address srcIpId;
-        /// Destination address
-        address dstIpId;
-    }
     string public name = "TaggingModule";
 
     mapping(address => EnumerableSet.Bytes32Set) private _tagsForIpIds;
-    mapping(ShortString => RelationType) private _relationTypes;
-    mapping(bytes32 => Relation) private _relations;
-
-    function createRelationType(string memory relTypeName, string calldata srcTag, string calldata dstTag) external {
-        if (ShortStringOps.stringToBytes32(relTypeName) == bytes32(0)) {
-            revert Errors.TaggingModule__InvalidRelationTypeName();
-        }
-        if (_relationTypes[relTypeName.toShortString()].srcTag != bytes32(0)) {
-            revert Errors.TaggingModule__RelationTypeAlreadyExists();
-        }
-        _relationTypes[relTypeName.toShortString()] = RelationType(
-            ShortStringOps.stringToBytes32(srcTag),
-            ShortStringOps.stringToBytes32(dstTag)
-        );
-    }
-
-    function getRelationType(string calldata relTypeName) external view returns (RelationType memory) {
-        return _relationTypes[relTypeName.toShortString()];
-    }
-
-    function createRelation(string calldata relTypeName, address srcIpId, address dstIpId) external {
-        RelationType memory relType = _relationTypes[relTypeName.toShortString()];
-        if (relType.srcTag == bytes32(0)) {
-            revert Errors.TaggingModule__RelationTypeDoesNotExist();
-        }
-        if (!_tagsForIpIds[srcIpId].contains(relType.srcTag)) {
-            revert Errors.TaggingModule__SrcIpIdDoesNotHaveSrcTag();
-        }
-        if (!_tagsForIpIds[dstIpId].contains(relType.dstTag)) {
-            revert Errors.TaggingModule__DstIpIdDoesNotHaveDstTag();
-        }
-        Relation memory relation = Relation(
-            relTypeName.toShortString(),
-            srcIpId,
-            dstIpId
-        );
-        _relations[keccak256(abi.encode(relation))] = relation;
-    }
-
-    function relationExists(
-        Relation calldata relation
-    ) external view virtual returns (bool) {
-        return _relations[keccak256(abi.encode(relation))].srcIpId != address(0);
-    }
 
     function setTag(string calldata tag, address ipId) external returns (bool added) {
         // TODO: access control

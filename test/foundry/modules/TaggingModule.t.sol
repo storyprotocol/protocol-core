@@ -55,22 +55,4 @@ contract TaggingModuleTest is Test {
         assertEq(taggingModule.setTag("test-2", ipAccount), true);
         assertEq(taggingModule.tagStringAtIndexForIp(ipAccount, 2), "test-2");
     }
-
-    function test_taggingModule_createRelationType() public {
-        taggingModule.createRelationType("test", "src", "dst");
-        TaggingModule.RelationType memory relationType = taggingModule.getRelationType("test");
-        assertEq(relationType.srcTag, ShortStringOps.stringToBytes32("src"));
-        assertEq(relationType.dstTag, ShortStringOps.stringToBytes32("dst"));
-    }
-
-    function test_taggingModule_createRelation() public {
-        taggingModule.createRelationType("test", "src", "dst");
-        address ipAccountSrc = address(1);
-        address ipAccountDst = address(2);
-        assertEq(taggingModule.setTag("src", ipAccountSrc), true);
-        assertEq(taggingModule.setTag("dst", ipAccountDst), true);
-        taggingModule.createRelation("test", ipAccountSrc, ipAccountDst);
-        assertTrue(taggingModule.relationExists(TaggingModule.Relation("test".toShortString(), ipAccountSrc, ipAccountDst)));
-    }
-
 }
