@@ -55,7 +55,7 @@ jobs:
 
       - name: Run Forge tests
         run: |
-          make test
+          forge test -vvv --fork-url https://eth.drpc.org --fork-block-number 18613489
         id: forge-test
 
       # - name: Gas Difference
