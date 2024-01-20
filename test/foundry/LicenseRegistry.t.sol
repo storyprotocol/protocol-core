@@ -79,9 +79,9 @@ contract LicenseRegistryTest is Test {
             needsActivation: false,
             linkParentParamValues: new bytes[](1)
         });
-        policy.mintingParamValues[0] = abi.encode("test");
-        policy.activationParamValues[0] = abi.encode("test");
-        policy.linkParentParamValues[0] = abi.encode("test");
+        policy.mintingParamValues[0] = abi.encode(true);
+        policy.activationParamValues[0] = abi.encode(true);
+        policy.linkParentParamValues[0] = abi.encode(true);
         (uint256 policyId, uint256 indexOnIpId) = registry.addPolicy(ipId1, policy);
         assertEq(policyId, 1, "policyId not 1");
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
@@ -98,9 +98,9 @@ contract LicenseRegistryTest is Test {
             needsActivation: false,
             linkParentParamValues: new bytes[](1)
         });
-        policy.mintingParamValues[0] = abi.encode("test");
-        policy.activationParamValues[0] = abi.encode("test");
-        policy.linkParentParamValues[0] = abi.encode("test");
+        policy.mintingParamValues[0] = abi.encode(true);
+        policy.activationParamValues[0] = abi.encode(true);
+        policy.linkParentParamValues[0] = abi.encode(true);
         (uint256 policyId, uint256 indexOnIpId) = registry.addPolicy(ipId1, policy);
         (uint256 policyId2, uint256 indexOnIpId2) = registry.addPolicy(ipId2, policy);
         assertEq(policyId, policyId2, "policyId not reused");
@@ -118,9 +118,9 @@ contract LicenseRegistryTest is Test {
             needsActivation: false,
             linkParentParamValues: new bytes[](1)
         });
-        policy.mintingParamValues[0] = abi.encode("test");
-        policy.activationParamValues[0] = abi.encode("test");
-        policy.linkParentParamValues[0] = abi.encode("test");
+        policy.mintingParamValues[0] = abi.encode(true);
+        policy.activationParamValues[0] = abi.encode(true);
+        policy.linkParentParamValues[0] = abi.encode(true);
 
         // First time adding a policy
         (uint256 policyId, uint256 indexOnIpId) = registry.addPolicy(ipId1, policy);
@@ -148,9 +148,9 @@ contract LicenseRegistryTest is Test {
             needsActivation: false,
             linkParentParamValues: new bytes[](1)
         });
-        policy.mintingParamValues[0] = abi.encode("test");
-        policy.activationParamValues[0] = abi.encode("test");
-        policy.linkParentParamValues[0] = abi.encode("test");
+        policy.mintingParamValues[0] = abi.encode(true);
+        policy.activationParamValues[0] = abi.encode(true);
+        policy.linkParentParamValues[0] = abi.encode(true);
         (uint256 policyId, uint256 indexOnIpId) = registry.addPolicy(ipId1, policy);
         assertEq(policyId, 1);
         Licensing.License memory licenseData = Licensing.License({

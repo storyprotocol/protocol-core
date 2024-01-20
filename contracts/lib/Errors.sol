@@ -20,6 +20,8 @@ library Errors {
     error LicenseRegistry__NotLicensee();
     error LicenseRegistry__ParentIdEqualThanChild();
     error LicenseRegistry__LicensorDoesntHaveThisPolicy();
+    error LicenseRegistry__MintParamFailed();
+    error LicenseRegistry__LinkParentParamFailed();
 
     ////////////////////////////////////////////////////////////////////////////
     //                             ModuleRegistry                             //
