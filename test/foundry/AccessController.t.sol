@@ -590,6 +590,7 @@ contract AccessControllerTest is Test {
         );
     }
 
+
     function test_AccessController_functionWildcardOverrideToAddressWildcard_allowOverrideDeny() public {
         moduleRegistry.registerModule("MockModule", address(mockModule));
         address signer = vm.addr(2);
@@ -862,5 +863,44 @@ contract AccessControllerTest is Test {
         vm.prank(owner);
         vm.expectRevert("Invalid signer");
         mockOrchestratorModule.workflowFailure(payable(address(ipAccount)));
+    }
+
+    function test_AccessController_OrchestratorModuleWithGlobalPermission() public {
+        MockOrchestratorModule mockOrchestratorModule = new MockOrchestratorModule(
+            address(ipAccountRegistry),
+            address(moduleRegistry)
+        );
+        moduleRegistry.registerModule("MockOrchestratorModule", address(mockOrchestratorModule));
+
+        MockModule module1WithPermission = new MockModule(
+            address(ipAccountRegistry),
+            address(moduleRegistry),
+            "Module1WithPermission"
+        );
+        moduleRegistry.registerModule("Module1WithPermission", address(module1WithPermission));
+
+        MockModule module2WithPermission = new MockModule(
+            address(ipAccountRegistry),
+            address(moduleRegistry),
+            "Module2WithPermission"
+        );
+        moduleRegistry.registerModule("Module2WithPermission", address(module2WithPermission));
+
+        accessController.setGlobalPermission(
+            address(mockOrchestratorModule),
+            address(module1WithPermission),
+            mockModule.executeSuccessfully.selector,
+            AccessPermission.ALLOW
+        );
+
+        accessController.setGlobalPermission(
+            address(mockOrchestratorModule),
+            address(module2WithPermission),
+            mockModule.executeNoReturn.selector,
+            AccessPermission.ALLOW
+        );
+
+        vm.prank(owner);
+        mockOrchestratorModule.workflowPass(payable(address(ipAccount)));
     }
 }

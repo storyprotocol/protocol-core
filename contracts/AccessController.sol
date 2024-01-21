@@ -39,6 +39,19 @@ contract AccessController is IAccessController {
         MODULE_REGISTRY = moduleRegistry_;
     }
 
+    /// @notice Sets the permission for all IPAccounts
+    function setGlobalPermission(address signer_, address to_, bytes4 func_, uint8 permission_) external {
+        // TODO: access controller can only be called by protocol admin
+        if (signer_ == address(0)) {
+            revert Errors.AccessController__SignerIsZeroAddress();
+        }
+        // permission must be one of ABSTAIN, ALLOW, DENY
+        if (permission_ > 2) {
+            revert Errors.AccessController__PermissionIsNotValid();
+        }
+        permissions[address(0)][signer_][to_][func_] = permission_;
+    }
+
     /// @notice Sets the permission for a specific function call
     /// @dev By default, all policies are set to ABSTAIN, which means that the permission is not set
     /// Owner of ipAccount by default has permission sets the permission
@@ -130,6 +143,9 @@ contract AccessController is IAccessController {
             }
             // If module level permission is ABSTAIN, check transaction signer level permission
             if (permissions[ipAccount_][signer_][to_][bytes4(0)] == AccessPermission.ABSTAIN) {
+                if (permissions[address(0)][signer_][to_][func_] == AccessPermission.ALLOW) {
+                    return true;
+                }
                 // Return true if the ipAccount allow the signer can call all functions of all modules
                 // Otherwise, return false
                 return permissions[ipAccount_][signer_][address(0)][bytes4(0)] == AccessPermission.ALLOW;
