@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-import {console2} from "forge-std/console2.sol";
-import {TestHelper} from "./../utils/TestHelper.sol";
-
-import {ShortStringOps} from "./../../contracts/utils/ShortStringOps.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+import {Errors} from "contracts/lib/Errors.sol";
+import {ShortStringOps} from "contracts/utils/ShortStringOps.sol";
+import {TestHelper} from "test/utils/TestHelper.sol";
 
 contract TestDisputeModule is TestHelper {
     function setUp() public override {
@@ -50,6 +50,9 @@ contract TestDisputeModule is TestHelper {
         uint256 ipAccount1USDCBalanceBefore = IERC20(USDC).balanceOf(ipAccount1);
         uint256 arbitrationPolicySPUSDCBalanceBefore = IERC20(USDC).balanceOf(address(arbitrationPolicySP));
 
+        vm.expectRevert(Errors.DisputeModule__NotWhitelistedArbitrationPolicy.selector);
+        disputeModule.raiseDispute(address(1), address(0xbeef), string("urlExample"), "plagiarism", "");
+
         disputeModule.raiseDispute(address(1), address(arbitrationPolicySP), string("urlExample"), "plagiarism", "");
 
         uint256 disputeIdAfter = disputeModule.disputeId();
@@ -81,6 +84,12 @@ contract TestDisputeModule is TestHelper {
         uint256 ipAccount1USDCBalanceBefore = IERC20(USDC).balanceOf(ipAccount1);
         uint256 arbitrationPolicySPUSDCBalanceBefore = IERC20(USDC).balanceOf(address(arbitrationPolicySP));
 
+        vm.startPrank(address(0xdeadbeef));
+        vm.expectRevert(Errors.DisputeModule__NotWhitelistedArbitrationRelayer.selector);
+        disputeModule.setDisputeJudgement(1, false, "");
+        vm.stopPrank();
+
+        vm.startPrank(arbitrationRelayer);
         disputeModule.setDisputeJudgement(1, true, "");
 
         uint256 ipAccount1USDCBalanceAfter = IERC20(USDC).balanceOf(ipAccount1);
@@ -89,5 +98,38 @@ contract TestDisputeModule is TestHelper {
 
         assertEq(ipAccount1USDCBalanceAfter - ipAccount1USDCBalanceBefore, ARBITRATION_PRICE);
         assertEq(arbitrationPolicySPUSDCBalanceBefore - arbitrationPolicySPUSDCBalanceAfter, ARBITRATION_PRICE);
+    }
+
+    // TODO
+    function test_DisputeModule_cancelDispute() public {
+        // raise dispute
+        vm.startPrank(ipAccount1);
+        IERC20(USDC).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
+        disputeModule.raiseDispute(address(1), address(arbitrationPolicySP), string("urlExample"), "plagiarism", "");
+        vm.stopPrank();
+
+        // cancel dispute
+
+        vm.prank(address(0xdeadbeef));
+        vm.expectRevert(Errors.DisputeModule__NotDisputeInitiator.selector);
+        disputeModule.cancelDispute(1, "");
+
+        vm.startPrank(ipAccount1);
+        disputeModule.cancelDispute(1, "");
+        vm.stopPrank();
+    }
+
+    // TODO
+    function test_DisputeModule_resolveDispute() public {
+        // raise dispute
+        vm.startPrank(ipAccount1);
+        IERC20(USDC).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
+        disputeModule.raiseDispute(address(1), address(arbitrationPolicySP), string("urlExample"), "plagiarism", "");
+        vm.stopPrank();
+
+        // resolve dispute
+        vm.prank(address(0xdeadbeef));
+        vm.expectRevert(Errors.DisputeModule__NotDisputeInitiator.selector);
+        disputeModule.resolveDispute(1);
     }
 }

@@ -66,7 +66,9 @@ contract IPRecordRegistryTest is BaseTest {
         );
         MockERC721 erc721 = new MockERC721();
         tokenAddress = address(erc721);
-        tokenId = erc721.mint(alice, 99);
+        tokenId = erc721.mintId(alice, 99);
+
+        assertEq(ipAccountRegistry.getIPAccountImpl(), ipAccountImpl);
     }
 
     /// @notice Tests IP record registry initialization.

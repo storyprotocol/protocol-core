@@ -60,7 +60,7 @@ contract IPMetadataResolverTest is ResolverBaseTest {
         MockERC721 erc721 = new MockERC721();
         vm.prank(alice);
         ipResolver = IIPMetadataResolver(_deployResolver());
-        uint256 tokenId = erc721.mint(alice, 99);
+        uint256 tokenId = erc721.mintId(alice, 99);
         ipId = registry.ipId(block.chainid, address(erc721), tokenId);
         vm.prank(registrationModule);
         registry.register(

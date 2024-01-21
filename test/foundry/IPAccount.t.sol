@@ -3,15 +3,17 @@ pragma solidity ^0.8.21;
 
 import "forge-std/Test.sol";
 
-import "contracts/registries/IPAccountRegistry.sol";
+import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
+import "lib/reference/src/interfaces/IERC6551Account.sol";
+
 import "contracts/IPAccountImpl.sol";
 import "contracts/interfaces/IIPAccount.sol";
-import "lib/reference/src/interfaces/IERC6551Account.sol";
-import "test/foundry/mocks/MockERC721.sol";
-import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
-import "test/foundry/mocks/MockAccessController.sol";
-import "test/foundry/mocks/MockModule.sol";
+import "contracts/registries/IPAccountRegistry.sol";
 import "contracts/registries/ModuleRegistry.sol";
+
+import "test/foundry/mocks/MockAccessController.sol";
+import "test/foundry/mocks/MockERC721.sol";
+import "test/foundry/mocks/MockModule.sol";
 
 contract IPAccountTest is Test {
     IPAccountRegistry public registry;
@@ -21,7 +23,6 @@ contract IPAccountTest is Test {
     MockAccessController public accessController = new MockAccessController();
     ModuleRegistry public moduleRegistry = new ModuleRegistry();
     MockModule public module;
-
 
     function setUp() public {
         implementation = new IPAccountImpl();
@@ -39,7 +40,7 @@ contract IPAccountTest is Test {
             tokenId
         );
 
-        nft.mint(owner, tokenId);
+        nft.mintId(owner, tokenId);
 
         vm.prank(owner, owner);
 
@@ -66,7 +67,7 @@ contract IPAccountTest is Test {
         address owner = vm.addr(1);
         uint256 tokenId = 100;
 
-        nft.mint(owner, tokenId);
+        nft.mintId(owner, tokenId);
 
         vm.prank(owner, owner);
         address account = registry.registerIpAccount(
@@ -82,6 +83,7 @@ contract IPAccountTest is Test {
         assertEq(chainId_, block.chainid);
         assertEq(tokenAddress_, address(nft));
         assertEq(tokenId_, tokenId);
+        assertEq(ipAccount.isValidSigner(vm.addr(2), ""), bytes4(0));
         assertEq(ipAccount.isValidSigner(owner, ""), IERC6551Account.isValidSigner.selector);
 
         // Transfer token to new owner and make sure account owner changes
@@ -98,7 +100,7 @@ contract IPAccountTest is Test {
         address owner = vm.addr(1);
         uint256 tokenId = 100;
 
-        nft.mint(owner, tokenId);
+        nft.mintId(owner, tokenId);
 
         vm.prank(owner, owner);
         address account = registry.registerIpAccount(
@@ -108,7 +110,7 @@ contract IPAccountTest is Test {
         );
 
         uint256 subTokenId = 111;
-        nft.mint(account, subTokenId);
+        nft.mintId(account, subTokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
@@ -123,7 +125,7 @@ contract IPAccountTest is Test {
         address owner = vm.addr(1);
         uint256 tokenId = 100;
 
-        nft.mint(owner, tokenId);
+        nft.mintId(owner, tokenId);
 
         address account = registry.registerIpAccount(
             block.chainid,
@@ -132,7 +134,7 @@ contract IPAccountTest is Test {
         );
 
         uint256 subTokenId = 111;
-        nft.mint(account, subTokenId);
+        nft.mintId(account, subTokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
@@ -146,7 +148,7 @@ contract IPAccountTest is Test {
         address owner = vm.addr(1);
         uint256 tokenId = 100;
 
-        nft.mint(owner, tokenId);
+        nft.mintId(owner, tokenId);
 
         address account = registry.registerIpAccount(
             block.chainid,
@@ -155,7 +157,7 @@ contract IPAccountTest is Test {
         );
 
         uint256 subTokenId = 111;
-        nft.mint(account, subTokenId);
+        nft.mintId(account, subTokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
@@ -169,7 +171,7 @@ contract IPAccountTest is Test {
         address owner = vm.addr(1);
         uint256 tokenId = 100;
 
-        nft.mint(owner, tokenId);
+        nft.mintId(owner, tokenId);
 
         vm.prank(owner, owner);
         address account = registry.registerIpAccount(
@@ -180,7 +182,7 @@ contract IPAccountTest is Test {
 
         address otherOwner = vm.addr(2);
         uint256 otherTokenId = 200;
-        nft.mint(otherOwner, otherTokenId);
+        nft.mintId(otherOwner, otherTokenId);
         vm.prank(otherOwner);
         nft.safeTransferFrom(otherOwner, account, otherTokenId);
         assertEq(nft.balanceOf(account), 1);
