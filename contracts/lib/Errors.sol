@@ -6,6 +6,13 @@ pragma solidity ^0.8.19;
 /// @notice Library for all Story Protocol contract errors.
 library Errors {
     ////////////////////////////////////////////////////////////////////////////
+    //                                   Module                               //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice The caller is not allowed to call the provided module.
+    error Module_Unauthorized();
+
+    ////////////////////////////////////////////////////////////////////////////
     //                               IPRecordRegistry                         //
     ////////////////////////////////////////////////////////////////////////////
 
@@ -93,6 +100,13 @@ library Errors {
     error ModuleRegistry__NameAlreadyRegistered();
     error ModuleRegistry__NameDoesNotMatch();
     error ModuleRegistry__ModuleNotRegistered();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                               RegistrationModule                       //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice The caller is not the owner of the root IP NFT.
+    error RegistrationModule__InvalidOwner();
 
     ////////////////////////////////////////////////////////////////////////////
     //                             AccessController                           //

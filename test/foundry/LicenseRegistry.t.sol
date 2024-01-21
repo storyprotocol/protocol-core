@@ -10,11 +10,7 @@ import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.so
 contract LicenseRegistryTest is Test {
     LicenseRegistry public registry;
     Licensing.Framework public framework;
-    enum VerifierType {
-        Minting,
-        Activate,
-        LinkParent
-    }
+
     MockIParamVerifier public verifier;
     string public licenseUrl = "https://example.com/license";
     Licensing.FrameworkCreationParams fwParams;
@@ -28,7 +24,7 @@ contract LicenseRegistryTest is Test {
         registry.addLicenseFramework(fwParams);
         _;
     }
-
+    // TODO: use ModuleBaseTest for this
     function _initFwParams() private {
         IParamVerifier[] memory mintingParamVerifiers = new IParamVerifier[](1);
         mintingParamVerifiers[0] = verifier;
@@ -71,7 +67,7 @@ contract LicenseRegistryTest is Test {
         assertEq(registry.totalFrameworks(), 1, "total frameworks not updated");
     }
 
-    function test_LicenseRegistry_addPolicyId() public withFrameworkParams {
+    function test_LicenseRegistry_addPolicyToIpId() public withFrameworkParams {
         Licensing.Policy memory policy = Licensing.Policy({
             frameworkId: 1,
             mintingParamValues: new bytes[](1),
@@ -82,7 +78,7 @@ contract LicenseRegistryTest is Test {
         policy.mintingParamValues[0] = abi.encode(true);
         policy.activationParamValues[0] = abi.encode(true);
         policy.linkParentParamValues[0] = abi.encode(true);
-        (uint256 policyId, uint256 indexOnIpId) = registry.addPolicy(ipId1, policy);
+        (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
         assertEq(policyId, 1, "policyId not 1");
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
         Licensing.Policy memory storedPolicy = registry.policy(policyId);
@@ -100,8 +96,8 @@ contract LicenseRegistryTest is Test {
         policy.mintingParamValues[0] = abi.encode(true);
         policy.activationParamValues[0] = abi.encode(true);
         policy.linkParentParamValues[0] = abi.encode(true);
-        (uint256 policyId, uint256 indexOnIpId) = registry.addPolicy(ipId1, policy);
-        (uint256 policyId2, uint256 indexOnIpId2) = registry.addPolicy(ipId2, policy);
+        (uint256 policyId, bool isNew1, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
+        (uint256 policyId2, bool isNew2, uint256 indexOnIpId2) = registry.addPolicyToIp(ipId2, policy);
         assertEq(policyId, policyId2, "policyId not reused");
     }
 
@@ -122,7 +118,8 @@ contract LicenseRegistryTest is Test {
         policy.linkParentParamValues[0] = abi.encode(true);
 
         // First time adding a policy
-        (uint256 policyId, uint256 indexOnIpId) = registry.addPolicy(ipId1, policy);
+        (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
+        // TODO: test isNew
         assertEq(policyId, 1, "policyId not 1");
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
         assertEq(registry.totalPolicies(), 1, "totalPolicies not incremented");
@@ -131,7 +128,7 @@ contract LicenseRegistryTest is Test {
 
         // Adding different policy to same ipId
         policy.mintingParamValues[0] = abi.encode("test2");
-        (uint256 policyId2, uint256 indexOnIpId2) = registry.addPolicy(ipId1, policy);
+        (uint256 policyId2, bool isNew2, uint256 indexOnIpId2) = registry.addPolicyToIp(ipId1, policy);
         assertEq(policyId2, 2, "policyId not 2");
         assertEq(indexOnIpId2, 1, "indexOnIpId not 1");
         assertEq(registry.totalPolicies(), 2, "totalPolicies not incremented");
@@ -151,7 +148,7 @@ contract LicenseRegistryTest is Test {
         policy.activationParamValues[0] = abi.encode(true);
         policy.linkParentParamValues[0] = abi.encode(true);
 
-        (uint256 policyId, uint256 indexOnIpId) = registry.addPolicy(ipId1, policy);
+        (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
         assertEq(policyId, 1);
         assertTrue(registry.isPolicyIdSetForIp(ipId1, policyId));
 
@@ -176,7 +173,7 @@ contract LicenseRegistryTest is Test {
         // TODO: something cleaner than this
         uint256 licenseId = test_LicenseRegistry_mintLicense();
 
-        registry.setParentPolicy(licenseId, ipId2, licenseHolder);
+        registry.linkIpToParent(licenseId, ipId2, licenseHolder);
         assertEq(registry.balanceOf(licenseHolder, licenseId), 1, "not burnt");
         assertEq(registry.isParent(ipId1, ipId2), true, "not parent");
         assertEq(

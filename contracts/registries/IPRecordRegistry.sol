@@ -31,7 +31,7 @@ contract IPRecordRegistry is IIPRecordRegistry {
     /// @dev Maps an IP, identified by its IP ID, to a metadata resolver.
     mapping(address => address) internal _resolvers;
 
-    /// @notice Restricts calls to only originate from the registration module.
+    /// @notice Restricts calls to only originate from a protocol-authorized caller.
     modifier onlyRegistrationModule() {
         if (address(MODULE_REGISTRY.getModule(REGISTRATION_MODULE_KEY)) != msg.sender) {
             revert Errors.IPRecordRegistry_Unauthorized();
@@ -43,8 +43,8 @@ contract IPRecordRegistry is IIPRecordRegistry {
     /// @param moduleRegistry The address of the protocol module registry.
     /// @param ipAccountRegistry The address of the IP account registry.
     constructor(address moduleRegistry, address ipAccountRegistry) {
-        IP_ACCOUNT_REGISTRY = IIPAccountRegistry(ipAccountRegistry);
         MODULE_REGISTRY = IModuleRegistry(moduleRegistry);
+        IP_ACCOUNT_REGISTRY = IIPAccountRegistry(ipAccountRegistry);
     }
 
     /// @notice Gets the canonical IP identifier associated with an IP NFT.
@@ -102,7 +102,7 @@ contract IPRecordRegistry is IIPRecordRegistry {
         uint256 tokenId,
         address resolverAddr,
         bool createAccount
-    ) external onlyRegistrationModule {
+    ) external onlyRegistrationModule returns (address account) {
         address id = ipId(chainId, tokenContract, tokenId);
         if (_resolvers[id] != address(0)) {
             revert Errors.IPRecordRegistry_AlreadyRegistered();
@@ -110,7 +110,7 @@ contract IPRecordRegistry is IIPRecordRegistry {
 
         // This is to emphasize the semantic differences between utilizing the
         // IP account as an identifier versus as an account used for auth.
-        address account = id;
+        account = id;
 
         if (account.code.length == 0 && createAccount) {
             _createIPAccount(chainId, tokenContract, tokenId);
