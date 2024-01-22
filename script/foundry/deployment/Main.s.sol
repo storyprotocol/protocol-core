@@ -70,7 +70,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             _configureDeployment();
         }
 
-        _writeDeployment("./deployments");
+        _writeDeployment("./deploy-out"); // write deployment json to deploy-out/deployment-{chainId}.json
         _endBroadcast(); // BroadcastManager.s.sol
     }
 

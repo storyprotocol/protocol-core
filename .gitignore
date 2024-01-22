@@ -26,3 +26,9 @@ node_modules/
 pnpm-lock.yaml
 
 coverage
+
+# contracts
+typechain
+
+# hardhat-tenderly plugin
+deployments

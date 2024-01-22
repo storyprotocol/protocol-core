@@ -1,6 +1,6 @@
 -include .env
 
-.PHONY: all test clean coverage deploy-main
+.PHONY: all test clean coverage typechain deploy-main
 
 all: clean install build
 
@@ -53,10 +53,11 @@ abi:
 	@$(call generate_abi,"ModuleRegistry","./registries")
 	@$(call generate_abi,"IPMetadataResolver","./resolvers")
 
-typechain:
-	make abi
-	rm -rf ./types-typechain
-	npx typechain --target ethers-v5 ./abi/*.json --out-dir ./types-typechain
+# typechain:
+# 	make abi
+# 	rm -rf ./types-typechain
+# 	npx typechain --target ethers-v6 ./abi/*.json --out-dir ./types-typechain
+typechain :; npx hardhat typechain
 
 # solhint should be installed globally
 lint :; npx solhint contracts/**/*.sol && npx solhint contracts/*.sol
@@ -68,3 +69,7 @@ anvil :; anvil -m 'test test test test test test test test test test test junk'
 
 # run: RPC_URL=https://rpc.url make deploy-main
 deploy-main :; forge script script/foundry/deployment/Main.s.sol:Main --rpc-url ${RPC_URL} --broadcast --verify -vvvv
+
+deploy-main-hh:
+	rm -rf deployments/hardhat/*.json
+	npx hardhat run script/hardhat/deployment/00-deploy-main.ts --network tenderly

@@ -27,6 +27,12 @@ const deployMain = async function () {
     const deployRes: DeployResult = await deployFn(libraryKey, { ...defaultDeployOpts })
     libraries[libraryKey] = deployRes.address
     console.log(`Deployed ${libraryKey} to: `, deployRes.address)
+
+    await hre.tenderly.persistArtifacts({
+      name: libraryKey,
+      address: deployRes.address,
+    })
+
     return deployRes.address
   }
 
@@ -36,6 +42,12 @@ const deployMain = async function () {
     const deployRes: DeployResult = await deployFn(contractKey, { ...defaultDeployOpts, ...extraDeployOpts })
     deploys[contractKey] = { address: deployRes.address, args: deployRes.args }
     console.log(`Deployed ${contractKey} to: `, deployRes.address)
+
+    await hre.tenderly.persistArtifacts({
+      name: contractKey,
+      address: deployRes.address,
+    })
+
     return deployRes.address
   }
 
@@ -47,17 +59,43 @@ const deployMain = async function () {
 
   await _deployLibaries(deployLibrary)
   await _deployContracts(deployContract)
-  await _verifyAll()
+  // await _verifyAll()
+  await _postDeploy()
+}
+
+async function _postDeploy() {
+  // write content of deploys and libraries to out file
+  const fs = require("fs")
+  const path = require("path")
+  const outPath = path.join(__dirname, "../../out")
+  const deploysPath = path.join(outPath, "deploys.json")
+  const librariesPath = path.join(outPath, "libraries.json")
+  const deploysContent = JSON.stringify(deploys, null, 2)
+  const librariesContent = JSON.stringify(libraries, null, 2)
+  fs.writeFileSync(deploysPath, deploysContent)
+  fs.writeFileSync(librariesPath, librariesContent)
+
+  // combine deploys and libraries to all
+  const deployAddresses: { [key: string]: string } = {}
+  Object.keys(deploys).forEach((ck) => {
+    deployAddresses[ck] = deploys[ck].address
+  })
+
+  // console.log("deploys", deploys)
+  // console.log("deployAddresses", deployAddresses)
+  const allAddresses = { contracts: { ...deployAddresses }, libraries }
+  const allPath = path.join(outPath, "all.json")
+  const allContent = JSON.stringify(allAddresses, null, 2)
+  fs.writeFileSync(allPath, allContent)
 }
 
 async function _deployLibaries(deployLibrary: any) {
-	// do one by one to keep nonce in order
+  // do one by one to keep nonce in order
   await deployLibrary("AccessPermission")
   await deployLibrary("Errors")
   await deployLibrary("IP")
   await deployLibrary("Licensing")
   await deployLibrary("IPAccountChecker")
-  await deployLibrary("Module")
 }
 
 async function _deployContracts(deployContract: any) {
@@ -101,7 +139,6 @@ async function _deployContracts(deployContract: any) {
     args: [moduleRegistry, ipAccountRegistry],
     libraries: {
       Errors: libraries.Errors,
-      Module: libraries.Module,
     },
   })
 
@@ -120,7 +157,6 @@ async function _deployContracts(deployContract: any) {
     libraries: {
       Errors: libraries.Errors,
       IP: libraries.IP,
-      Module: libraries.Module,
     },
   })
 

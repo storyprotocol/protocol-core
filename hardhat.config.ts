@@ -1,8 +1,10 @@
-import "@typechain/hardhat"
 import "@nomicfoundation/hardhat-foundry"
 import "@nomiclabs/hardhat-waffle"
 import "@nomiclabs/hardhat-ethers"
-import "@nomiclabs/hardhat-etherscan"
+import "@nomicfoundation/hardhat-verify"
+import "@tenderly/hardhat-tenderly"
+import * as tdly from "@tenderly/hardhat-tenderly" // also import tdly for setup, in addition to global import above
+import "@typechain/hardhat"
 // import "@openzeppelin/hardhat-upgrades"
 import "hardhat-gas-reporter"
 import "solidity-coverage"
@@ -11,6 +13,10 @@ import { HardhatConfig, HardhatUserConfig } from "hardhat/types"
 import "hardhat-contract-sizer" // npx hardhat size-contracts
 
 require("dotenv").config()
+
+tdly.setup({
+  automaticVerifications: true,
+})
 
 //
 // NOTE:
@@ -49,7 +55,7 @@ const config: HardhatUserConfig = {
     cache: "./cache",
     artifacts: "./artifacts",
   },
-  defaultNetwork: "hardhat",
+  defaultNetwork: "tenderly",
   networks: {
     hardhat: {
       chainId: 31337,
@@ -58,7 +64,7 @@ const config: HardhatUserConfig = {
       chainId: 31337,
       url: "http://127.0.0.1:8545/",
     },
-    mainnet: {
+    tenderly: {
       url: MAINNET_URL || "",
       chainId: 1,
       accounts: [MAINNET_PRIVATEKEY],
@@ -69,6 +75,7 @@ const config: HardhatUserConfig = {
       accounts: [GOERLI_PRIVATEKEY],
     },
   },
+  // @ts-ignore
   namedAccounts: {
     deployer: {
       default: 0, // here this will by default take the first account as deployer
@@ -86,6 +93,16 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: ETHERSCAN_API_KEY,
+  },
+  tenderly: {
+    project: process.env.TENDERLY_PROJECT_SLUG || "",
+    username: process.env.TENDERLY_USERNAME || "",
+    forkNetwork: 1, // fork mainnet
+    privateVerification: process.env.TENDERLY_PRIVATE_VERIFICATION === "true",
+  },
+  typechain: {
+    outDir: "typechain",
+    target: "ethers-v6",
   },
 }
 
