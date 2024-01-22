@@ -1,0 +1,234 @@
+[
+  {
+    "type": "function",
+    "name": "IP_ACCOUNT_REGISTRY",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MODULE_REGISTRY",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "checkPermission",
+    "inputs": [
+      {
+        "name": "ipAccount_",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "signer_",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "to_",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "func_",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPermission",
+    "inputs": [
+      {
+        "name": "ipAccount_",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "signer_",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "to_",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "func_",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "initialize",
+    "inputs": [
+      {
+        "name": "ipAccountRegistry_",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "moduleRegistry_",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "permissions",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "setGlobalPermission",
+    "inputs": [
+      {
+        "name": "signer_",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "to_",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "func_",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      },
+      {
+        "name": "permission_",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setPermission",
+    "inputs": [
+      {
+        "name": "ipAccount_",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "signer_",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "to_",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "func_",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      },
+      {
+        "name": "permission_",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "error",
+    "name": "AccessController__CallerIsNotIPAccount",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AccessController__IPAccountIsNotValid",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AccessController__IPAccountIsZeroAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AccessController__PermissionIsNotValid",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AccessController__SignerIsZeroAddress",
+    "inputs": []
+  }
+]

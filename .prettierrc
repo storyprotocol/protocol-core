@@ -5,5 +5,13 @@
     "tabWidth": 4,
     "semi": false,
     "singleQuote": false,
-    "bracketSpacing": true
+    "bracketSpacing": true,
+    "overrides": [
+        {
+            "files": ["*.ts", "*.js"],
+            "options": {
+                "tabWidth": 2
+            }
+        }
+    ]
 }
