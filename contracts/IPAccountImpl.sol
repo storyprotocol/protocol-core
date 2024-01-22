@@ -8,6 +8,9 @@ import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
+import { SignatureChecker } from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
+import { AccessPermission } from "contracts/lib/AccessPermission.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /// @title IPAccountImpl
 /// @notice The Story Protocol's implementation of the IPAccount.
@@ -92,6 +95,36 @@ contract IPAccountImpl is IERC165, IIPAccount {
             selector = bytes4(data_[:4]);
         }
         return IAccessController(accessController).checkPermission(address(this), signer_, to_, selector);
+    }
+
+    function isValidSignature(bytes32 hash, bytes memory signature) external view returns (bytes4 magicValue) {
+        bool isValid = SignatureChecker.isValidSignatureNow(owner(), hash, signature);
+        if (isValid) {
+            return IERC1271.isValidSignature.selector;
+        }
+
+        return "";
+    }
+
+    function delegateWithSignature(
+        address delegatee,
+        address module,
+        bytes4 func,
+        uint256 deadline,
+        bytes calldata signature
+    ) external {
+
+        require(_isValidSigner(msg.sender, to_, data_), "Invalid signer");
+
+        ++state;
+
+        IAccessController(accessController).setPermission(
+            address(this),
+            delegatee,
+            module,
+            func,
+            AccessPermission.ALLOW
+        );
     }
 
     /// @notice Executes a transaction from the IP Account.
