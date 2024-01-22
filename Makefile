@@ -1,6 +1,6 @@
 -include .env
 
-.PHONY: all test clean coverage
+.PHONY: all test clean coverage deploy-main
 
 all: clean install build
 
@@ -41,3 +41,5 @@ verify-goerli :; npx hardhat verify --network goerli ${contract}
 
 anvil :; anvil -m 'test test test test test test test test test test test junk'
 
+# run: RPC_URL=https://rpc.url make deploy-main
+deploy-main :; forge script script/foundry/deployment/Main.s.sol:Main --rpc-url ${RPC_URL} --broadcast --verify -vvvv

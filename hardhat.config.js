@@ -8,6 +8,7 @@ require("solidity-coverage")
 require("@nomiclabs/hardhat-ethers")
 require("@nomiclabs/hardhat-etherscan")
 require("@openzeppelin/hardhat-upgrades")
+require("@nomicfoundation/hardhat-foundry")
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -32,16 +33,14 @@ module.exports = {
             url: process.env.MAINNET_URL || "",
             chainId: 1,
             accounts: [
-                process.env.MAINNET_PRIVATEKEY ||
-                    "0x1234567890123456789012345678901234567890123456789012345678901234",
+                process.env.MAINNET_PRIVATEKEY || "0x1234567890123456789012345678901234567890123456789012345678901234",
             ],
         },
         goerli: {
             url: process.env.GOERLI_URL || "",
             chainId: 5,
             accounts: [
-                process.env.GOERLI_PRIVATEKEY ||
-                    "0x1234567890123456789012345678901234567890123456789012345678901234",
+                process.env.GOERLI_PRIVATEKEY || "0x1234567890123456789012345678901234567890123456789012345678901234",
             ],
         },
     },
