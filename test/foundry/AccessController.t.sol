@@ -590,7 +590,6 @@ contract AccessControllerTest is Test {
         );
     }
 
-
     function test_AccessController_functionWildcardOverrideToAddressWildcard_allowOverrideDeny() public {
         moduleRegistry.registerModule("MockModule", address(mockModule));
         address signer = vm.addr(2);

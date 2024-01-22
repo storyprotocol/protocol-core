@@ -4,7 +4,6 @@ pragma solidity ^0.8.20;
 import { IParamVerifier } from "../interfaces/licensing/IParamVerifier.sol";
 
 library Licensing {
-
     /// Identifies a license parameter (term) from a license framework
     struct Parameter {
         /// Contract that must check if the condition of the paremeter is set
@@ -51,7 +50,7 @@ library Licensing {
         bytes[] linkParentParamDefaultValues;
         string licenseUrl;
     }
-    
+
     /// A particular configuration of a Licensing Framework, setting (or not) values for the licensing
     /// terms (parameters) of the framework.
     /// The lengths of the param value arrays must correspond to the Parameter[] of the framework.
@@ -66,7 +65,7 @@ library Licensing {
         bytes[] activationParamValues;
         /// If false, minted licenses will start activated and verification of activationParams will be skipped
         bool needsActivation;
-        /// Array with values for parameters verifying conditions to link a license to a parent. Empty bytes for index if
+        /// Array with values for params verifying conditions to link a license to a parent. Empty bytes for index if
         /// this policy wants to use the default value for the paremeter.
         bytes[] linkParentParamValues;
     }

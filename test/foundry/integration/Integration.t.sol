@@ -179,10 +179,9 @@ contract IntegrationTest is Test {
     function attachPolicyToIPID(
         address ipId,
         string memory policyName
-    ) public returns (uint256 policyId, uint256 indexOnIpId) {
-        (policyId, indexOnIpId) = licenseRegistry.addPolicy(ipId, policy[policyName]);
+    ) public returns (uint256 policyId, bool isNew, uint256 indexOnIpId) {
+        (policyId, isNew, indexOnIpId) = licenseRegistry.addPolicyToIp(ipId, policy[policyName]);
         policyIds[policyName][ipId] = policyId;
-        return (policyId, indexOnIpId);
     }
 
     function attachPolicyAndMintLicenseForIPID(
@@ -191,7 +190,7 @@ contract IntegrationTest is Test {
         address licensee,
         uint256 amount
     ) public returns (uint256 licenseId) {
-        (uint256 policyId, uint256 indexOnIpId) = attachPolicyToIPID(ipId, policyName);
+        (uint256 policyId, bool isNew, uint256 indexOnIpId) = attachPolicyToIPID(ipId, policyName);
         Licensing.License memory licenseData = Licensing.License({
             policyId: policyId,
             licensorIpIds: new address[](1)
@@ -330,6 +329,9 @@ contract IntegrationTest is Test {
             linkParentParamValues: new bytes[](0)
         });
 
+        licenseRegistry.addPolicy(policy["test_true"]);
+        licenseRegistry.addPolicy(policy["expensive_mint"]);
+
         /*///////////////////////////////////////////////////////////////
                             ADD POLICIES TO IPACCOUNTS
         ////////////////////////////////////////////////////////////////*/
@@ -361,7 +363,7 @@ contract IntegrationTest is Test {
         // Carl activates above license on his NFT C IPAccount, linking as child to Alice's NFT A IPAccount
 
         vm.prank(u.carl);
-        licenseRegistry.setParentPolicy(
+        licenseRegistry.linkIpToParent(
             licenseIds[u.carl][policyIds["test_true"][getIpId(u.alice, nft.a, 1)]],
             getIpId(u.carl, nft.c, 1),
             u.carl
@@ -414,7 +416,7 @@ contract IntegrationTest is Test {
         // Bob activates above license on his NFT A IPAccount, linking as child to Carl's NFT C IPAccount
 
         vm.prank(u.bob);
-        licenseRegistry.setParentPolicy(
+        licenseRegistry.linkIpToParent(
             licenseIds[u.bob][policyIds["expensive_mint"][getIpId(u.carl, nft.c, 1)]],
             getIpId(u.bob, nft.a, 2),
             u.bob

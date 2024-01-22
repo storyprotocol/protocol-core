@@ -6,10 +6,13 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
 import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
 import { ResolverBase } from "./ResolverBase.sol";
+import { BaseModule } from "contracts/modules/BaseModule.sol";
+import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
 import { IIPMetadataResolver } from "contracts/interfaces/resolvers/IIPMetadataResolver.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { IP } from "contracts/lib/IP.sol";
+import { METADATA_RESOLVER_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 
 /// @title IP Metadata Resolver
 /// @notice Canonical IP resolver contract used for Story Protocol. This will
@@ -23,11 +26,13 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
     /// @param accessController The access controller used for IP authorization.
     /// @param ipRecordRegistry The address of the IP record registry.
     /// @param ipAccountRegistry The address of the IP account registry.
+    /// @param licenseRegistry The address of the license registry.
     constructor(
         address accessController,
         address ipRecordRegistry,
-        address ipAccountRegistry
-    ) ResolverBase(accessController, ipRecordRegistry, ipAccountRegistry) {}
+        address ipAccountRegistry,
+        address licenseRegistry
+    ) ResolverBase(accessController, ipRecordRegistry, ipAccountRegistry, licenseRegistry) {}
 
     /// @notice Fetches all metadata associated with the specified IP.
     /// @param ipId The canonical ID of the specified IP.
@@ -143,6 +148,11 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
     /// @return Whether the resolver interface is supported.
     function supportsInterface(bytes4 id) public view virtual override(IResolver, ResolverBase) returns (bool) {
         return id == type(IIPMetadataResolver).interfaceId || super.supportsInterface(id);
+    }
+
+    /// @notice Gets the protocol-wide module identifier for this module.
+    function name() public pure override(BaseModule, IModule) returns (string memory) {
+        return METADATA_RESOLVER_MODULE_KEY;
     }
 
     /// @dev Internal function for generating a default IP URI if not provided.

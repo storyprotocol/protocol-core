@@ -2,6 +2,7 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.21;
 
+import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
 import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
@@ -75,12 +76,12 @@ contract AccessController is IAccessController {
         if (!IIPAccountRegistry(IP_ACCOUNT_REGISTRY).isIpAccount(ipAccount_)) {
             revert Errors.AccessController__IPAccountIsNotValid();
         }
-        if (ipAccount_ != msg.sender) {
-            revert Errors.AccessController__CallerIsNotIPAccount();
-        }
         // permission must be one of ABSTAIN, ALLOW, DENY
         if (permission_ > 2) {
             revert Errors.AccessController__PermissionIsNotValid();
+        }
+        if (!IModuleRegistry(MODULE_REGISTRY).isRegistered(msg.sender) && ipAccount_ != msg.sender) {
+            revert Errors.AccessController__CallerIsNotIPAccount();
         }
         permissions[ipAccount_][signer_][to_][func_] = permission_;
 

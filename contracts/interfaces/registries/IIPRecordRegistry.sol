@@ -99,7 +99,7 @@ interface IIPRecordRegistry {
         uint256 tokenId,
         address resolverAddr,
         bool createAccount
-    ) external;
+    ) external returns (address);
 
     /// @notice Creates the IP account for the specified IP.
     /// @param chainId The chain identifier of where the IP resides.

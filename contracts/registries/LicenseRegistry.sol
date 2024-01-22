@@ -9,10 +9,8 @@ import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
-
 // TODO: consider disabling operators/approvals on creation
 contract LicenseRegistry is ERC1155 {
-
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
     using Strings for *;
@@ -27,10 +25,9 @@ contract LicenseRegistry is ERC1155 {
     mapping(address => EnumerableSet.UintSet) private _policiesPerIpId;
     mapping(address => EnumerableSet.AddressSet) private _ipIdParents;
 
-
     mapping(bytes32 => uint256) private _hashedLicenses;
     mapping(uint256 => Licensing.License) private _licenses;
-    
+
     /// This tracks the number of licenses registered in the protocol, it will not decrease when a license is burnt.
     uint256 private _totalLicenses;
 
@@ -48,25 +45,43 @@ contract LicenseRegistry is ERC1155 {
     /// Must be called by protocol admin
     /// @param fwCreation parameters
     /// @return frameworkId identifier for framework, starting in 1
-    function addLicenseFramework(Licensing.FrameworkCreationParams calldata fwCreation) external returns(uint256 frameworkId) {
+    function addLicenseFramework(
+        Licensing.FrameworkCreationParams calldata fwCreation
+    ) external returns (uint256 frameworkId) {
         // check protocol auth
         if (bytes(fwCreation.licenseUrl).length == 0 || fwCreation.licenseUrl.equal("")) {
-            revert Errors.LicenseRegistry__EmptyLicenseUrl(); 
+            revert Errors.LicenseRegistry__EmptyLicenseUrl();
         }
         // Todo: check duplications
 
         ++_totalFrameworks;
         _frameworks[_totalFrameworks].licenseUrl = fwCreation.licenseUrl;
         _frameworks[_totalFrameworks].defaultNeedsActivation = fwCreation.defaultNeedsActivation;
-        _setParamArray(_frameworks[_totalFrameworks], Licensing.ParamVerifierType.Minting, fwCreation.mintingParamVerifiers, fwCreation.mintingParamDefaultValues);
-        _setParamArray(_frameworks[_totalFrameworks], Licensing.ParamVerifierType.Activate, fwCreation.activationParamVerifiers, fwCreation.activationParamDefaultValues);
-        _setParamArray(_frameworks[_totalFrameworks], Licensing.ParamVerifierType.LinkParent, fwCreation.linkParentParamVerifiers, fwCreation.linkParentParamDefaultValues);
+        _setParamArray(
+            _frameworks[_totalFrameworks],
+            Licensing.ParamVerifierType.Minting,
+            fwCreation.mintingParamVerifiers,
+            fwCreation.mintingParamDefaultValues
+        );
+        _setParamArray(
+            _frameworks[_totalFrameworks],
+            Licensing.ParamVerifierType.Activate,
+            fwCreation.activationParamVerifiers,
+            fwCreation.activationParamDefaultValues
+        );
+        _setParamArray(
+            _frameworks[_totalFrameworks],
+            Licensing.ParamVerifierType.LinkParent,
+            fwCreation.linkParentParamVerifiers,
+            fwCreation.linkParentParamDefaultValues
+        );
         // Should we add a label?
         // TODO: emit
         return _totalFrameworks;
     }
 
-    /// Convenience method to convert IParamVerifier[] + bytes[] into Parameter[], then stores it in a Framework storage ref
+    /// Convenience method to convert IParamVerifier[] + bytes[] into Parameter[]
+    /// After conversion, it stores it in a Framework storage ref
     /// (Parameter[] can be in storage but not in calldata)
     /// @param fw storage ref to framework
     /// @param pvType ParamVerifierType, to know which parameters the arrays correspond to
@@ -92,39 +107,41 @@ contract LicenseRegistry is ERC1155 {
             revert Errors.LicenseRegistry__InvalidParamVerifierType();
         }
         for (uint256 i = 0; i < paramVerifiers.length; i++) {
-            params.push(Licensing.Parameter({
-                verifier: paramVerifiers[i],
-                defaultValue: paramDefaultValues[i]
-            }));
+            params.push(Licensing.Parameter({ verifier: paramVerifiers[i], defaultValue: paramDefaultValues[i] }));
         }
     }
 
     /// Gets total frameworks supported by LicenseRegistry
-    function totalFrameworks() external view returns(uint256) {
+    function totalFrameworks() external view returns (uint256) {
         return _totalFrameworks;
     }
 
     /// Returns framework for id. Reverts if not found
-    function framework(uint256 frameworkId) public view returns(Licensing.Framework memory fw) {
+    function framework(uint256 frameworkId) public view returns (Licensing.Framework memory fw) {
         fw = _frameworks[frameworkId];
         if (bytes(fw.licenseUrl).length == 0) {
-            revert Errors.LicenseRegistry__FrameworkNotFound(); 
+            revert Errors.LicenseRegistry__FrameworkNotFound();
         }
         return fw;
     }
 
-    /// Convenience method to store data without repetition, assigning an id to it if new or reusing the existing one if already stored
+    /// Stores data without repetition, assigning an id to it if new or reusing existing one if already stored
     /// @param data raw bytes, abi.encode() a value to be hashed
     /// @param _hashToIds storage ref to the mapping of hash -> data id
     /// @param existingIds amount of distinct data stored.
     /// @return id new sequential id if new data, reused id if not new
-    /// @return isNew true if a new id was generated, signaling the value was stored in _hashToIds. False if id is reused and data was not stored
-    function _addIdOrGetExisting(bytes memory data, mapping(bytes32 => uint256) storage _hashToIds, uint256 existingIds) private returns(uint256 id, bool isNew) {
+    /// @return isNew True if a new id was generated, signaling the value was stored in _hashToIds.
+    ///               False if id is reused and data was not stored
+    function _addIdOrGetExisting(
+        bytes memory data,
+        mapping(bytes32 => uint256) storage _hashToIds,
+        uint256 existingIds
+    ) private returns (uint256 id, bool isNew) {
         // We could just use the hash of the policy as id to save some gas, but the UX/DX of having huge random
         // numbers for ID is bad enough to justify the cost, plus we have accountability on current number of
         // policies.
         bytes32 hash = keccak256(data);
-        uint256 id = _hashToIds[hash];
+        id = _hashToIds[hash];
         if (id != 0) {
             return (id, false);
         }
@@ -132,26 +149,47 @@ contract LicenseRegistry is ERC1155 {
         _hashToIds[hash] = id;
         return (id, true);
     }
- 
-    /// Adds a policy to an ipId, which can be used to mint licenses, which are permissions for ipIds to be derivatives (children).
+
+    /// Adds a policy to an ipId, which can be used to mint licenses.
+    /// Licenses are permissions for ipIds to be derivatives (children).
     /// If an exact policy already existed, it will reuse the id.
     /// Will revert if ipId already has the same policy
     /// @param ipId to receive the policy
     /// @param pol policy data
     /// @return policyId if policy data was in the contract, policyId is reused, if it's new, id will be new.
+    /// @return isNew true if policy data was not in the contract, false if it was already stored
     /// @return indexOnIpId position of policy within the ipIds policy set
-    function addPolicy(address ipId, Licensing.Policy memory pol) public returns(uint256 policyId, uint256 indexOnIpId) {
+    function addPolicyToIp(
+        address ipId,
+        Licensing.Policy memory pol
+    ) public returns (uint256 policyId, bool isNew, uint256 indexOnIpId) {
         // check protocol auth
-        Licensing.Framework memory fw = framework(pol.frameworkId);
-        // TODO: check if policy is compatible with existing or is allowed to add more
-        (uint256 polId, bool isNew) = _addIdOrGetExisting(abi.encode(pol), _hashedPolicies, _totalPolicies);
-        policyId = polId;
-        if (isNew) {
+        (uint256 polId, bool newPolicy) = addPolicy(pol);
+        return (polId, newPolicy, _addPolictyIdToIp(ipId, polId));
+    }
+
+    /// Adds a policy to an ipId, which can be used to mint licenses.
+    /// Licnses are permissions for ipIds to be derivatives (children).
+    /// if policyId is not defined in LicenseRegistry, reverts.
+    /// Will revert if ipId already has the same policy
+    /// @param ipId to receive the policy
+    /// @param polId id of the policy data
+    /// @return indexOnIpId position of policy within the ipIds policy set
+    function addPolicyToIp(address ipId, uint256 polId) external returns (uint256 indexOnIpId) {
+        if (!isPolicyDefined(polId)) {
+            revert Errors.LicenseRegistry__PolicyNotFound();
+        }
+        return _addPolictyIdToIp(ipId, polId);
+    }
+
+    function addPolicy(Licensing.Policy memory pol) public returns (uint256 policyId, bool isNew) {
+        (uint256 polId, bool newPol) = _addIdOrGetExisting(abi.encode(pol), _hashedPolicies, _totalPolicies);
+        if (newPol) {
             _totalPolicies = polId;
             _policies[polId] = pol;
             // TODO: emit
         }
-        return (policyId, _addPolictyId(ipId, policyId));
+        return (polId, newPol);
     }
 
     /// Adds a policy id to the ipId policy set
@@ -159,7 +197,7 @@ contract LicenseRegistry is ERC1155 {
     /// @param ipId the IP identifier
     /// @param policyId id of the policy data
     /// @return index of the policy added to the set
-    function _addPolictyId(address ipId, uint256 policyId) internal returns(uint256 index) {
+    function _addPolictyIdToIp(address ipId, uint256 policyId) internal returns (uint256 index) {
         EnumerableSet.UintSet storage policySet = _policiesPerIpId[ipId];
         // TODO: check if policy is compatible with the others
         if (!policySet.add(policyId)) {
@@ -170,12 +208,12 @@ contract LicenseRegistry is ERC1155 {
     }
 
     /// Returns amount of distinct licensing policies in LicenseRegistry
-    function totalPolicies() external view returns(uint256) {
+    function totalPolicies() external view returns (uint256) {
         return _totalPolicies;
     }
 
     /// Gets policy data for policyId, reverts if not found
-    function policy(uint256 policyId) public view returns(Licensing.Policy memory pol) {
+    function policy(uint256 policyId) public view returns (Licensing.Policy memory pol) {
         pol = _policies[policyId];
         if (pol.frameworkId == 0) {
             revert Errors.LicenseRegistry__PolicyNotFound();
@@ -183,31 +221,37 @@ contract LicenseRegistry is ERC1155 {
         return pol;
     }
 
+    /// Returns true if policyId is defined in LicenseRegistry, false otherwise.
+    function isPolicyDefined(uint256 policyId) public view returns (bool) {
+        return _policies[policyId].frameworkId != 0;
+    }
+
     /// Gets the policy set for an IpId
     /// @dev potentially expensive operation, use with care
-    function policyIdsForIp(address ipId) external view returns(uint256[] memory policyIds) {
+    function policyIdsForIp(address ipId) external view returns (uint256[] memory policyIds) {
         return _policiesPerIpId[ipId].values();
     }
 
-    function totalPoliciesForIp(address ipId) external view returns(uint256) {
+    function totalPoliciesForIp(address ipId) external view returns (uint256) {
         return _policiesPerIpId[ipId].length();
     }
 
-    function isPolicyIdSetForIp(address ipId, uint256 policyId) external view returns(bool) {
+    function isPolicyIdSetForIp(address ipId, uint256 policyId) external view returns (bool) {
         return _policiesPerIpId[ipId].contains(policyId);
     }
 
-    function policyIdForIpAtIndex(address ipId, uint256 index) external view returns(uint256 policyId) {
+    function policyIdForIpAtIndex(address ipId, uint256 index) external view returns (uint256 policyId) {
         return _policiesPerIpId[ipId].at(index);
     }
 
-    function policyForIpAtIndex(address ipId, uint256 index) external view returns(Licensing.Policy memory) {
+    function policyForIpAtIndex(address ipId, uint256 index) external view returns (Licensing.Policy memory) {
         return _policies[_policiesPerIpId[ipId].at(index)];
     }
 
-    /// Mints license NFTs representing a licensing policy granted by a set of ipIds (licensors). This NFT needs to be burned
+    /// Mints license NFTs representing a policy granted by a set of ipIds (licensors). This NFT needs to be burned
     /// in order to link a derivative IP with its parents.
-    /// If this is the first combination of policy and licensors, a new licenseId will be created (by incrementing prev totalLicenses).
+    /// If this is the first combination of policy and licensors, a new licenseId
+    /// will be created (by incrementing prev totalLicenses).
     /// If not, the license is fungible and an id will be reused.
     /// The licensing terms that regulate creating new licenses will be verified to allow minting.
     /// Reverts if caller is not authorized by licensors.
@@ -215,24 +259,28 @@ contract LicenseRegistry is ERC1155 {
     /// @param amount of licenses to be minted. License NFT is fungible for same policy and same licensors
     /// @param receiver of the License NFT(s).
     /// @return licenseId of the NFT(s).
-    function mintLicense(Licensing.License calldata licenseData, uint256 amount, address receiver) external returns(uint256 licenseId) {
+    function mintLicense(
+        Licensing.License calldata licenseData,
+        uint256 amount,
+        address receiver
+    ) external returns (uint256 licenseId) {
         uint256 policyId = licenseData.policyId;
-        
-        for(uint256 i = 0; i < licenseData.licensorIpIds.length; i++) {
+
+        for (uint256 i = 0; i < licenseData.licensorIpIds.length; i++) {
             address licensor = licenseData.licensorIpIds[i];
-            if(!_policiesPerIpId[licensor].contains(policyId)) {
+            if (!_policiesPerIpId[licensor].contains(policyId)) {
                 revert Errors.LicenseRegistry__LicensorDoesntHaveThisPolicy();
             }
             // TODO: check duplicates
             // TODO: check if licensors are valid IP Ids and if they have been tagged bad
             // TODO: check if licensor allowed sender to mint in their behalf
         }
-        
+
         Licensing.Policy memory pol = policy(policyId);
 
         Licensing.Parameter[] memory mintParams = _frameworks[pol.frameworkId].mintingParams;
         bytes[] memory mintParamValues = pol.mintingParamValues;
-        for (uint256 i=0; i < mintParams.length; i++) {
+        for (uint256 i = 0; i < mintParams.length; i++) {
             Licensing.Parameter memory param = mintParams[i];
             // Empty bytes => use default value specified in license framework creation params.
             bytes memory data = mintParamValues[i].length == 0 ? param.defaultValue : mintParamValues[i];
@@ -254,37 +302,39 @@ contract LicenseRegistry is ERC1155 {
     }
 
     /// Returns true if holder has positive balance for licenseId
-    function isLicensee(uint256 licenseId, address holder) external view returns(bool) {
+    function isLicensee(uint256 licenseId, address holder) external view returns (bool) {
         return balanceOf(holder, licenseId) > 0;
     }
 
     /// Relates an IP ID with its parents (licensors), by burning the License NFT the holder owns
     /// License must be activated to succeed, reverts otherwise.
     /// Licensing parameters related to linking IPAs must be verified in order to succeed, reverts otherwise.
-    /// The child IP ID will have the policy that the license represent added to it's own, if it's compatible with 
+    /// The child IP ID will have the policy that the license represent added to it's own, if it's compatible with
     /// existing child policies.
     /// The child IP ID will be linked to the parent (if it wasn't before).
     /// @param licenseId license NFT to be burned
     /// @param childIpId that will receive the policy defined by licenseId
     /// @param holder of the license NFT
-    function setParentPolicy(uint256 licenseId, address childIpId, address holder)
-        external
-        onlyLicensee(licenseId, holder) {
+    function linkIpToParent(
+        uint256 licenseId,
+        address childIpId,
+        address holder
+    ) external onlyLicensee(licenseId, holder) {
         // TODO: auth
         // TODO: check if license is activated
         // TODO: check if childIpId exists and is owned by holder
         Licensing.License memory licenseData = _licenses[licenseId];
         address[] memory parents = licenseData.licensorIpIds;
-        for (uint256 i=0; i < parents.length; i++) {
+        for (uint256 i = 0; i < parents.length; i++) {
             // TODO: check licensor exist
             // TODO: check licensor part of a bad tag branch
         }
-        
+
         Licensing.Policy memory pol = policy(licenseData.policyId);
         
         Licensing.Parameter[] memory linkParams = _frameworks[pol.frameworkId].linkParentParams;
         bytes[] memory linkParamValues = pol.linkParentParamValues;
-        for (uint256 i=0; i < linkParams.length; i++) {
+        for (uint256 i = 0; i < linkParams.length; i++) {
             Licensing.Parameter memory param = linkParams[i];
             // Empty bytes => use default value specified in license framework creation params.
             bytes memory data = linkParamValues[i].length == 0 ? param.defaultValue : linkParamValues[i];
@@ -294,9 +344,10 @@ contract LicenseRegistry is ERC1155 {
         }
 
         // Add policy to kid
-        addPolicy(childIpId, pol);
+        // TODO: return this values
+        addPolicyToIp(childIpId, pol);
         // Set parent
-        for (uint256 i=0; i < parents.length; i++) {
+        for (uint256 i = 0; i < parents.length; i++) {
             // We don't care if it was already a parent, because there might be a case such as:
             // 1. IP2 is created from IP1 with L1(non commercial)
             // 2. IP1 releases L2 with commercial terms, and IP2 wants permission to commercially exploit
@@ -308,26 +359,25 @@ contract LicenseRegistry is ERC1155 {
             _ipIdParents[childIpId].add(parent);
             // TODO: emit
         }
-        
+
         // Burn license
         _burn(holder, licenseId, 1);
     }
 
     /// Returns true if the child is derivative from the parent, by at least 1 policy.
-    function isParent(address parentIpId, address childIpId) external view returns(bool) {
+    function isParent(address parentIpId, address childIpId) external view returns (bool) {
         return _ipIdParents[childIpId].contains(parentIpId);
     }
 
-    function parentIpIds(address ipId) external view returns(address[] memory) {
+    function parentIpIds(address ipId) external view returns (address[] memory) {
         return _ipIdParents[ipId].values();
     }
 
-    function totalParentsForIpId(address ipId) external view returns(uint256) {
+    function totalParentsForIpId(address ipId) external view returns (uint256) {
         return _ipIdParents[ipId].length();
     }
 
     // TODO: activation method
 
     // TODO: tokenUri from parameters, from a metadata resolver contract
-
 }
