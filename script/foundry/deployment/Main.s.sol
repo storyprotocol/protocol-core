@@ -17,6 +17,12 @@ import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
+import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
+import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
+import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
+import { IPMetadataResolver } from "contracts/resolvers/IPMetadataResolver.sol";
+
 // script
 import { StringUtil } from "script/foundry/utils/StringUtil.sol";
 import { BroadcastManager } from "script/foundry/utils/BroadcastManager.s.sol";
@@ -26,19 +32,25 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     using StringUtil for uint256;
     using stdJson for string;
 
+    address public constant ERC6551_REGISTRY = address(0x000000006551c19487814612e58FE06813775758);
     AccessController public accessController;
 
     IPAccountRegistry public ipAccountRegistry;
     IPRecordRegistry public ipRecordRegistry;
     LicenseRegistry public licenseRegistry;
     ModuleRegistry public moduleRegistry;
-    // MockModule public module;
 
     IPAccountImpl public implementation;
     // MockERC721 nft = new MockERC721();
 
     IIPAccount public ipAccount;
-    ERC6551Registry public erc6551Registry;
+    //    ERC6551Registry public erc6551Registry;
+
+    RegistrationModule registrationModule;
+    TaggingModule taggingModule;
+    RoyaltyModule royaltyModule;
+    DisputeModule disputeModule;
+    IPMetadataResolver ipMetadataResolver;
 
     constructor() JsonDeploymentHandler("main") {}
 
@@ -70,11 +82,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         accessController = new AccessController();
         _postdeploy(contractKey, address(accessController));
 
-        contractKey = "ERC6551Registry";
-        _predeploy(contractKey);
-        erc6551Registry = new ERC6551Registry();
-        _postdeploy(contractKey, address(erc6551Registry));
-
         contractKey = "IPAccountImpl";
         _predeploy(contractKey);
         implementation = new IPAccountImpl();
@@ -92,17 +99,49 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "IPAccountRegistry";
         _predeploy(contractKey);
-        ipAccountRegistry = new IPAccountRegistry(
-            address(erc6551Registry),
-            address(accessController),
-            address(implementation)
-        );
+        ipAccountRegistry = new IPAccountRegistry(ERC6551_REGISTRY, address(accessController), address(implementation));
         _postdeploy(contractKey, address(ipAccountRegistry));
 
-        contractKey = "LicenseRegistry";
+        contractKey = "IPRecordRegistry";
         _predeploy(contractKey);
         ipRecordRegistry = new IPRecordRegistry(address(moduleRegistry), address(ipAccountRegistry));
         _postdeploy(contractKey, address(ipRecordRegistry));
+
+        contractKey = "IPMetadataResolver";
+        _predeploy(contractKey);
+        ipMetadataResolver = new IPMetadataResolver(
+            address(accessController),
+            address(ipRecordRegistry),
+            address(ipAccountRegistry),
+            address(licenseRegistry)
+        );
+        _postdeploy(contractKey, address(ipMetadataResolver));
+
+        contractKey = "RegistrationModule";
+        _predeploy(contractKey);
+        registrationModule = new RegistrationModule(
+            address(accessController),
+            address(ipRecordRegistry),
+            address(ipAccountRegistry),
+            address(licenseRegistry),
+            address(ipMetadataResolver)
+        );
+        _postdeploy(contractKey, address(registrationModule));
+
+        contractKey = "TaggingModule";
+        _predeploy(contractKey);
+        taggingModule = new TaggingModule();
+        _postdeploy(contractKey, address(taggingModule));
+
+        contractKey = "RoyaltyModule";
+        _predeploy(contractKey);
+        royaltyModule = new RoyaltyModule();
+        _postdeploy(contractKey, address(royaltyModule));
+
+        contractKey = "DisputeModule";
+        _predeploy(contractKey);
+        disputeModule = new DisputeModule();
+        _postdeploy(contractKey, address(disputeModule));
 
         // mockModule = new MockModule(address(ipAccountRegistry), address(moduleRegistry), "MockModule");
     }
