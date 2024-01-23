@@ -2,20 +2,22 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
+// external
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-
-import { BaseModule } from "contracts/modules/BaseModule.sol";
+// contracts
+import { IRegistrationModule } from "contracts/interfaces/modules/IRegistrationModule.sol";
 import { IIPMetadataResolver } from "contracts/interfaces/resolvers/IIPMetadataResolver.sol";
 import { REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { IP } from "contracts/lib/IP.sol";
+import { BaseModule } from "contracts/modules/BaseModule.sol";
 
 /// @title Registration Module
 /// @notice The registration module is responsible for registration of IP into
 ///         the protocol. During registration, this module will register an IP
 ///         into the protocol, create a resolver, and bind to it any licenses
 ///         and terms specified by the IP registrant (IP account owner).
-contract RegistrationModule is BaseModule {
+contract RegistrationModule is BaseModule, IRegistrationModule {
     /// @notice The metadata resolver used by the registration module.
     IIPMetadataResolver public resolver;
 
@@ -67,6 +69,8 @@ contract RegistrationModule is BaseModule {
             LICENSE_REGISTRY.addPolicyToIp(ipId, policyId);
         }
 
+        emit RootIPRegistered(msg.sender, ipId, policyId);
+
         return ipId;
     }
 
@@ -76,14 +80,14 @@ contract RegistrationModule is BaseModule {
     /// @param tokenId The token id of the NFT bound to the derivative IP.
     /// @param ipName The name assigned to the new IP.
     /// @param ipDescription A string description to assign to the IP.
-    /// @param hash The content hash of the IP being registered.
+    /// @param contentHash The content hash of the IP being registered.
     function registerDerivativeIp(
         uint256 licenseId,
         address tokenContract,
         uint256 tokenId,
         string memory ipName,
         string memory ipDescription,
-        bytes32 hash
+        bytes32 contentHash
     ) external {
         // Check that the caller is authorized to perform the registration.
         // TODO: Perform additional registration authorization logic, allowing
@@ -94,7 +98,13 @@ contract RegistrationModule is BaseModule {
 
         // Perform core IP registration and IP account creation.
         address ipId = IP_RECORD_REGISTRY.register(block.chainid, tokenContract, tokenId, address(resolver), true);
-        ACCESS_CONTROLLER.setPermission(ipId, address(this), address(resolver), IIPMetadataResolver.setMetadata.selector, 1);
+        ACCESS_CONTROLLER.setPermission(
+            ipId,
+            address(this),
+            address(resolver),
+            IIPMetadataResolver.setMetadata.selector,
+            1
+        );
 
         // Perform core IP derivative licensing - the license must be owned by the caller.
         // TODO: return resulting policy index
@@ -106,12 +116,14 @@ contract RegistrationModule is BaseModule {
             IP.MetadataRecord({
                 name: ipName,
                 description: ipDescription,
-                hash: hash,
+                hash: contentHash,
                 registrationDate: uint64(block.timestamp),
                 registrant: msg.sender,
                 uri: ""
             })
         );
+
+        emit DerivativeIPRegistered(msg.sender, ipId, licenseId);
     }
 
     /// @notice Gets the protocol-wide module identifier for this module.

@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-import {ShortStringOps} from "../../utils/ShortStringOps.sol";
-import {IArbitrationPolicy} from "../../../interfaces/modules/dispute-module/policies/IArbitrationPolicy.sol";
-import {IDisputeModule} from "../../../interfaces/modules/dispute-module/IDisputeModule.sol";
-
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-
-import {Errors} from "../../lib/Errors.sol";
+// external
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+// contracts
+import { IDisputeModule } from "contracts/interfaces/modules/dispute/IDisputeModule.sol";
+import { IArbitrationPolicy } from "contracts/interfaces/modules/dispute/policies/IArbitrationPolicy.sol";
+import { Errors } from "contracts/lib/Errors.sol";
+import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 
 /// @title Story Protocol Dispute Module
 /// @notice The Story Protocol dispute module acts as an enforcement layer for
@@ -35,8 +35,8 @@ contract DisputeModule is IDisputeModule, ReentrancyGuard {
     mapping(address arbitrationPolicy => bool allowed) public isWhitelistedArbitrationPolicy;
 
     /// @notice Indicates if an arbitration relayer is whitelisted for a given arbitration policy
-    mapping(address arbitrationPolicy => mapping(address arbitrationRelayer => bool allowed)) public
-        isWhitelistedArbitrationRelayer;
+    mapping(address arbitrationPolicy => mapping(address arbitrationRelayer => bool allowed))
+        public isWhitelistedArbitrationRelayer;
 
     /// @notice Restricts the calls to the governance address
     modifier onlyGovernance() {
@@ -70,10 +70,11 @@ contract DisputeModule is IDisputeModule, ReentrancyGuard {
     /// @param _arbitrationPolicy The address of the arbitration policy
     /// @param _arbPolicyRelayer The address of the arbitration relayer
     /// @param _allowed Indicates if the arbitration relayer is whitelisted or not
-    function whitelistArbitrationRelayer(address _arbitrationPolicy, address _arbPolicyRelayer, bool _allowed)
-        external
-        onlyGovernance
-    {
+    function whitelistArbitrationRelayer(
+        address _arbitrationPolicy,
+        address _arbPolicyRelayer,
+        bool _allowed
+    ) external onlyGovernance {
         if (_arbitrationPolicy == address(0)) revert Errors.DisputeModule__ZeroArbitrationPolicy();
         if (_arbPolicyRelayer == address(0)) revert Errors.DisputeModule__ZeroArbitrationRelayer();
 
@@ -104,7 +105,7 @@ contract DisputeModule is IDisputeModule, ReentrancyGuard {
 
         bytes32 linkToDisputeSummary = ShortStringOps.stringToBytes32(_linkToDisputeSummary);
         if (linkToDisputeSummary == bytes32(0)) revert Errors.DisputeModule__ZeroLinkToDisputeSummary();
-        
+
         disputeId++;
 
         disputes[disputeId] = Dispute({

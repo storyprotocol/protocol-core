@@ -113,6 +113,7 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
     /// @param newMetadata The new metadata to set for the IP.
     function setMetadata(address ipId, IP.MetadataRecord calldata newMetadata) external onlyAuthorized(ipId) {
         _records[ipId] = newMetadata;
+        emit IPMetadataResolverSetRecord(ipId, newMetadata);
     }
 
     /// @notice Sets the name associated with an IP.
@@ -120,6 +121,7 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
     /// @param newName The new string name to associate with the IP.
     function setName(address ipId, string calldata newName) external onlyAuthorized(ipId) {
         _records[ipId].name = newName;
+        emit IPMetadataResolverSetName(ipId, newName);
     }
 
     /// @notice Sets the description associated with an IP.
@@ -127,6 +129,7 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
     /// @param newDescription The string description to associate with the IP.
     function setDescription(address ipId, string calldata newDescription) external onlyAuthorized(ipId) {
         _records[ipId].description = newDescription;
+        emit IPMetadataResolverSetDescription(ipId, newDescription);
     }
 
     /// @notice Sets the keccak-256 hash associated with an IP.
@@ -134,6 +137,7 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
     /// @param newHash The keccak-256 hash to associate with the IP.
     function setHash(address ipId, bytes32 newHash) external onlyAuthorized(ipId) {
         _records[ipId].hash = newHash;
+        emit IPMetadataResolverSetHash(ipId, newHash);
     }
 
     /// @notice Sets an IP owner defined URI to associate with the IP.
@@ -141,6 +145,7 @@ contract IPMetadataResolver is IIPMetadataResolver, ResolverBase {
     /// @param newURI The new token URI to set for the IP.
     function setURI(address ipId, string calldata newURI) external onlyAuthorized(ipId) {
         _records[ipId].uri = newURI;
+        emit IPMetadataResolverSetURI(ipId, newURI);
     }
 
     /// @notice Checks whether the resolver interface is supported.

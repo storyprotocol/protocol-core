@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: MIT
+pragma solidity ^0.8.23;
 
-pragma solidity ^0.8.20;
-
-import { Licensing } from "../lib/Licensing.sol";
-import { IParamVerifier } from "../interfaces/licensing/IParamVerifier.sol";
-import { Errors } from "../lib/Errors.sol";
-import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+// external
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+// contracts
+import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
+import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
+import { Errors } from "contracts/lib/Errors.sol";
+import { Licensing } from "contracts/lib/Licensing.sol";
 
 // TODO: consider disabling operators/approvals on creation
-contract LicenseRegistry is ERC1155 {
+contract LicenseRegistry is ERC1155, ILicenseRegistry {
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
     using Strings for *;
@@ -76,7 +78,7 @@ contract LicenseRegistry is ERC1155 {
             fwCreation.linkParentParamDefaultValues
         );
         // Should we add a label?
-        // TODO: emit
+        emit LicenseFrameworkCreated(msg.sender, _totalFrameworks, fwCreation);
         return _totalFrameworks;
     }
 
@@ -187,7 +189,7 @@ contract LicenseRegistry is ERC1155 {
         if (newPol) {
             _totalPolicies = polId;
             _policies[polId] = pol;
-            // TODO: emit
+            emit PolicyCreated(msg.sender, polId, pol);
         }
         return (polId, newPol);
     }
@@ -203,7 +205,7 @@ contract LicenseRegistry is ERC1155 {
         if (!policySet.add(policyId)) {
             revert Errors.LicenseRegistry__PolicyAlreadySetForIpId();
         }
-        // TODO: emit
+        emit PolicyAddedToIpId(msg.sender, ipId, policyId);
         return policySet.length() - 1;
     }
 
@@ -295,7 +297,7 @@ contract LicenseRegistry is ERC1155 {
         if (isNew) {
             _totalLicenses = licenseId;
             _licenses[licenseId] = licenseData;
-            // TODO: emit
+            emit LicenseMinted(msg.sender, receiver, licenseId, amount, licenseData);
         }
         _mint(receiver, licenseId, amount, "");
         return licenseId;
@@ -331,7 +333,7 @@ contract LicenseRegistry is ERC1155 {
         }
 
         Licensing.Policy memory pol = policy(licenseData.policyId);
-        
+
         Licensing.Parameter[] memory linkParams = _frameworks[pol.frameworkId].linkParentParams;
         bytes[] memory linkParamValues = pol.linkParentParamValues;
         for (uint256 i = 0; i < linkParams.length; i++) {
@@ -357,7 +359,7 @@ contract LicenseRegistry is ERC1155 {
                 revert Errors.LicenseRegistry__ParentIdEqualThanChild();
             }
             _ipIdParents[childIpId].add(parent);
-            // TODO: emit
+            emit IpIdLinkedToParent(msg.sender, childIpId, parent);
         }
 
         // Burn license
