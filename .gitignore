@@ -30,6 +30,7 @@ coverage
 # contracts
 abi
 typechain
+!./script/out
 
 # hardhat-tenderly plugin
 deployments

@@ -72,4 +72,5 @@ deploy-main :; forge script script/foundry/deployment/Main.s.sol:Main --rpc-url 
 
 deploy-main-hh:
 	rm -rf deployments/hardhat/*.json
+	npx hardhat run script/hardhat/post-deployment/99-revert-chain.ts --network tenderly
 	npx hardhat run script/hardhat/deployment/00-deploy-main.ts --network tenderly
