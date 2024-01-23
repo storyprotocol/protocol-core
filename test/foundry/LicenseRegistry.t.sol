@@ -139,7 +139,11 @@ contract LicenseRegistryTest is Test {
         policy.activationParamValues[0] = abi.encode(true);
         policy.linkParentParamValues[0] = abi.encode(true);
         (uint256 policyId, bool isNew1, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
+        assertTrue(isNew1, "not new");
+        assertEq(indexOnIpId, 0);
         (uint256 policyId2, bool isNew2, uint256 indexOnIpId2) = registry.addPolicyToIp(ipId2, policy);
+        assertFalse(isNew2, "new");
+        assertEq(indexOnIpId2, 0);
         assertEq(policyId, policyId2, "policyId not reused");
     }
 
@@ -161,7 +165,7 @@ contract LicenseRegistryTest is Test {
 
         // First time adding a policy
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
-        // TODO: test isNew
+        assertTrue(isNew, "not new");
         assertEq(policyId, 1, "policyId not 1");
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
         assertEq(registry.totalPolicies(), 1, "totalPolicies not incremented");
@@ -171,6 +175,7 @@ contract LicenseRegistryTest is Test {
         // Adding different policy to same ipId
         policy.mintingParamValues[0] = abi.encode("test2");
         (uint256 policyId2, bool isNew2, uint256 indexOnIpId2) = registry.addPolicyToIp(ipId1, policy);
+        assertTrue(isNew2, "not new");
         assertEq(policyId2, 2, "policyId not 2");
         assertEq(indexOnIpId2, 1, "indexOnIpId not 1");
         assertEq(registry.totalPolicies(), 2, "totalPolicies not incremented");
