@@ -72,8 +72,41 @@ contract LicenseRegistryTest is Test {
         assertTrue(fwParams.licenseUrl.equal(registry.frameworkUrl(fwId)), "licenseUrl not set");
         assertEq(registry.totalFrameworks(), 1, "totalFrameworks not incremented");
         assertEq(registry.frameworkMintsActiveByDefault(fwId), fwParams.mintsActiveByDefault);
-        // TODO: test Parameter[] vs  IParamVerifier[] && bytes[]
+        assertEq(registry.frameworkParams(fwId, Licensing.ParamVerifierType.Minting).length, 1);
         assertEq(registry.totalFrameworks(), 1, "total frameworks not updated");
+        _assertEqualParams(
+            registry.frameworkParams(fwId, Licensing.ParamVerifierType.Minting),
+            fwParams.mintingVerifiers,
+            fwParams.mintingDefaultValues
+        );
+        _assertEqualParams(
+            registry.frameworkParams(fwId, Licensing.ParamVerifierType.Activation),
+            fwParams.activationVerifiers,
+            fwParams.activationDefaultValues
+        );
+        _assertEqualParams(
+            registry.frameworkParams(fwId, Licensing.ParamVerifierType.LinkParent),
+            fwParams.linkParentVerifiers,
+            fwParams.linkParentDefaultValues
+        );
+        _assertEqualParams(
+            registry.frameworkParams(fwId, Licensing.ParamVerifierType.Transfer),
+            fwParams.transferVerifiers,
+            fwParams.transferDefaultValues
+        );
+    }
+
+    function _assertEqualParams(
+        Licensing.Parameter[] memory params1,
+        IParamVerifier[] memory verifiers,
+        bytes[] memory defaultValues
+    ) private {
+        assertEq(params1.length, verifiers.length, "length mismatch");
+        assertEq(params1.length, defaultValues.length, "length mismatch");
+        for (uint256 i = 0; i < params1.length; i++) {
+            assertEq(address(params1[i].verifier), address(verifiers[i]), "verifier mismatch");
+            assertEq(params1[i].defaultValue, defaultValues[i], "default value mismatch");
+        }
     }
 
     function test_LicenseRegistry_addPolicyToIpId() public withFrameworkParams {
