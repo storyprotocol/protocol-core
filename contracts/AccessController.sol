@@ -85,7 +85,7 @@ contract AccessController is IAccessController {
         }
         permissions[ipAccount_][signer_][to_][func_] = permission_;
 
-        // TODO: emit event
+        emit PermissionSet(ipAccount_, signer_, to_, func_, permission_);
     }
 
     /// @notice Returns the permission level for a specific function call.
@@ -154,7 +154,5 @@ contract AccessController is IAccessController {
             return false;
         }
         return false;
-
-        // TODO: emit event
     }
 }

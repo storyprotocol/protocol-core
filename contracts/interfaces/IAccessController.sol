@@ -3,6 +3,14 @@
 pragma solidity ^0.8.23;
 
 interface IAccessController {
+    event PermissionSet(
+        address indexed ipAccount,
+        address indexed signer,
+        address indexed to,
+        bytes4 func,
+        uint8 permission
+    );
+
     /// @notice Sets the permission for a specific function call
     /// @dev Each policy is represented as a mapping from an IP account address to a signer address to a recipient
     ///// address to a function selector to a permission level.

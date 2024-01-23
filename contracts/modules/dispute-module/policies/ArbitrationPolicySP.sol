@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-import {IArbitrationPolicy} from "../../../../interfaces/modules/dispute-module/policies/IArbitrationPolicy.sol";
-import {IDisputeModule} from "../../../../interfaces/modules/dispute-module/IDisputeModule.sol";
-
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import {Errors} from "../../../lib/Errors.sol";
+// external
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+// contracts
+import { IDisputeModule } from "contracts/interfaces/modules/dispute/IDisputeModule.sol";
+import { IArbitrationPolicy } from "contracts/interfaces/modules/dispute/policies/IArbitrationPolicy.sol";
+import { Errors } from "contracts/lib/Errors.sol";
 
 /// @title Story Protocol Arbitration Policy
 /// @notice The Story Protocol arbitration policy is a simple policy that
@@ -63,7 +63,7 @@ contract ArbitrationPolicySP is IArbitrationPolicy {
     /// @param _decision The decision of the dispute
     function onDisputeJudgement(uint256 _disputeId, bool _decision, bytes calldata) external onlyDisputeModule {
         if (_decision) {
-            (, address disputeInitiator,,,) = IDisputeModule(DISPUTE_MODULE).disputes(_disputeId);
+            (, address disputeInitiator, , , ) = IDisputeModule(DISPUTE_MODULE).disputes(_disputeId);
             IERC20(PAYMENT_TOKEN).safeTransfer(disputeInitiator, ARBITRATION_PRICE);
         }
     }

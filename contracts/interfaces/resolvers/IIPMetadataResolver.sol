@@ -7,6 +7,15 @@ import { IP } from "contracts/lib/IP.sol";
 
 /// @notice Resolver Interface
 interface IIPMetadataResolver is IResolver {
+    event IPMetadataResolverSetRecord(address indexed ipId, IP.MetadataRecord data);
+
+    event IPMetadataResolverSetName(address indexed ipId, string name);
+
+    event IPMetadataResolverSetDescription(address indexed ipId, string description);
+
+    event IPMetadataResolverSetHash(address indexed ipId, bytes32 hash);
+
+    event IPMetadataResolverSetURI(address indexed ipId, string uri);
 
     /// @notice Fetches core metadata attributed to a specific IP.
     function metadata(address ipId) external view returns (IP.Metadata memory);
@@ -64,5 +73,4 @@ interface IIPMetadataResolver is IResolver {
     /// @notice Sets an IP owner defined URI to associate with the IP.
     /// @param ipId The canonical ID of the specified IP.
     function setURI(address ipId, string calldata uri) external;
-
 }
