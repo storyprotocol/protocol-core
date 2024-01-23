@@ -74,6 +74,9 @@ library Licensing {
         /// Array with values for parameters verifying conditions to link a license to a parent. Empty bytes for index if
         /// this policy wants to use the default value for the paremeter.
         bytes[] linkParentParamValues;
+        /// Array with values for parameters verifying conditions to transfer a license. Empty bytes for index if
+        /// this policy wants to use the default value for the paremeter.
+        bytes[] transferParamValues;
     }
 
     function getValues(Policy memory policy, ParamVerifierType pvt) internal returns(bytes[] memory) {

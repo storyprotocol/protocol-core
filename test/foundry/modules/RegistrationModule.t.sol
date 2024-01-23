@@ -232,11 +232,13 @@ contract RegistrationModuleTest is ModuleBaseTest {
             mintingParamValues: new bytes[](1),
             activationParamValues: new bytes[](1),
             needsActivation: false,
-            linkParentParamValues: new bytes[](1)
+            linkParentParamValues: new bytes[](1),
+            transferParamValues: new bytes[](1)
         });
         policy.mintingParamValues[0] = abi.encode(true);
         policy.activationParamValues[0] = abi.encode(true);
         policy.linkParentParamValues[0] = abi.encode(true);
+        policy.transferParamValues[0] = abi.encode(true);
         (uint256 polId, bool isNew) = licenseRegistry.addPolicy(policy);
         
         policyId = polId;

@@ -115,11 +115,13 @@ contract LicenseRegistryTest is Test {
             mintingParamValues: new bytes[](1),
             activationParamValues: new bytes[](1),
             needsActivation: false,
-            linkParentParamValues: new bytes[](1)
+            linkParentParamValues: new bytes[](1),
+            transferParamValues: new bytes[](1)
         });
         policy.mintingParamValues[0] = abi.encode(true);
         policy.activationParamValues[0] = abi.encode(true);
         policy.linkParentParamValues[0] = abi.encode(true);
+        policy.transferParamValues[0] = abi.encode(true);
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
         assertEq(policyId, 1, "policyId not 1");
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
@@ -133,11 +135,13 @@ contract LicenseRegistryTest is Test {
             mintingParamValues: new bytes[](1),
             activationParamValues: new bytes[](1),
             needsActivation: false,
-            linkParentParamValues: new bytes[](1)
+            linkParentParamValues: new bytes[](1),
+            transferParamValues: new bytes[](1)
         });
         policy.mintingParamValues[0] = abi.encode(true);
         policy.activationParamValues[0] = abi.encode(true);
         policy.linkParentParamValues[0] = abi.encode(true);
+        policy.transferParamValues[0] = abi.encode(true);
         (uint256 policyId, bool isNew1, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
         assertTrue(isNew1, "not new");
         assertEq(indexOnIpId, 0);
@@ -157,11 +161,13 @@ contract LicenseRegistryTest is Test {
             mintingParamValues: new bytes[](1),
             activationParamValues: new bytes[](1),
             needsActivation: false,
-            linkParentParamValues: new bytes[](1)
+            linkParentParamValues: new bytes[](1),
+            transferParamValues: new bytes[](1)
         });
         policy.mintingParamValues[0] = abi.encode(true);
         policy.activationParamValues[0] = abi.encode(true);
         policy.linkParentParamValues[0] = abi.encode(true);
+        policy.transferParamValues[0] = abi.encode(true);
 
         // First time adding a policy
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
@@ -189,12 +195,15 @@ contract LicenseRegistryTest is Test {
             mintingParamValues: new bytes[](1),
             activationParamValues: new bytes[](1),
             needsActivation: false,
-            linkParentParamValues: new bytes[](1)
+            linkParentParamValues: new bytes[](1),
+            transferParamValues: new bytes[](1)
         });
         policy.mintingParamValues[0] = abi.encode(true);
         policy.activationParamValues[0] = abi.encode(true);
         policy.linkParentParamValues[0] = abi.encode(true);
+        policy.transferParamValues[0] = abi.encode(true);
 
+        // solhint-disable-next-line no-unused-vars
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
         assertEq(policyId, 1);
         assertTrue(registry.isPolicyIdSetForIp(ipId1, policyId));
@@ -237,5 +246,10 @@ contract LicenseRegistryTest is Test {
             "parents.length and totalParentsForIpId mismatch"
         );
         assertEq(parents[0], ipId1, "parent not ipId1");
+    }
+
+
+    function test_LicenseRegistry_transferParamsVerifyTrue() public {
+
     }
 }

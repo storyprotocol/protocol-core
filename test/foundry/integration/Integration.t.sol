@@ -318,20 +318,23 @@ contract IntegrationTest is Test {
             mintingParamValues: new bytes[](1),
             activationParamValues: new bytes[](1),
             needsActivation: true,
-            linkParentParamValues: new bytes[](1)
+            linkParentParamValues: new bytes[](1),
+            transferParamValues: new bytes[](1)
         });
 
         // TODO: test failure (verifier condition check fails) by setting to false
         policy["test_true"].mintingParamValues[0] = abi.encode(true);
         policy["test_true"].activationParamValues[0] = abi.encode(true);
         policy["test_true"].linkParentParamValues[0] = abi.encode(true);
+        policy["test_true"].transferParamValues[0] = abi.encode(true);
 
         policy["expensive_mint"] = Licensing.Policy({
             frameworkId: licenseFwIds["mint_payment"],
             mintingParamValues: new bytes[](1), // empty value to use default value, which doesn't matter
             activationParamValues: new bytes[](0),
             needsActivation: false,
-            linkParentParamValues: new bytes[](0)
+            linkParentParamValues: new bytes[](0),
+            transferParamValues: new bytes[](0)
         });
 
         licenseRegistry.addPolicy(policy["test_true"]);
