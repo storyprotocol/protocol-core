@@ -274,32 +274,37 @@ contract IntegrationTest is Test {
         byteValueTrue[0] = abi.encode(true);
 
         Licensing.FrameworkCreationParams memory fwAllTrue = Licensing.FrameworkCreationParams({
-            mintingParamVerifiers: new IParamVerifier[](1),
-            mintingParamDefaultValues: byteValueTrue,
-            activationParamVerifiers: new IParamVerifier[](1),
-            activationParamDefaultValues: byteValueTrue,
-            defaultNeedsActivation: true,
-            linkParentParamVerifiers: new IParamVerifier[](1),
-            linkParentParamDefaultValues: byteValueTrue,
+            mintingVerifiers: new IParamVerifier[](1),
+            mintingDefaultValues: byteValueTrue,
+            activationVerifiers: new IParamVerifier[](1),
+            activationDefaultValues: byteValueTrue,
+            mintsActiveByDefault: true,
+            linkParentVerifiers: new IParamVerifier[](1),
+            linkParentDefaultValues: byteValueTrue,
+            transferVerifiers: new IParamVerifier[](1),
+            transferDefaultValues: byteValueTrue,
             licenseUrl: "https://very-nice-verifier-license.com"
         });
 
-        fwAllTrue.mintingParamVerifiers[0] = mockLicenseVerifier;
-        fwAllTrue.activationParamVerifiers[0] = mockLicenseVerifier;
-        fwAllTrue.linkParentParamVerifiers[0] = mockLicenseVerifier;
+        fwAllTrue.mintingVerifiers[0] = mockLicenseVerifier;
+        fwAllTrue.activationVerifiers[0] = mockLicenseVerifier;
+        fwAllTrue.linkParentVerifiers[0] = mockLicenseVerifier;
+        fwAllTrue.transferVerifiers[0] = mockLicenseVerifier;
 
         Licensing.FrameworkCreationParams memory fwMintPayment = Licensing.FrameworkCreationParams({
-            mintingParamVerifiers: new IParamVerifier[](1),
-            mintingParamDefaultValues: byteValueTrue, // value here doesn't matter for MintPaymentVerifier
-            activationParamVerifiers: new IParamVerifier[](0),
-            activationParamDefaultValues: new bytes[](0),
-            defaultNeedsActivation: false,
-            linkParentParamVerifiers: new IParamVerifier[](0),
-            linkParentParamDefaultValues: new bytes[](0),
+            mintingVerifiers: new IParamVerifier[](1),
+            mintingDefaultValues: byteValueTrue, // value here doesn't matter for MintPaymentVerifier
+            activationVerifiers: new IParamVerifier[](0),
+            activationDefaultValues: new bytes[](0),
+            mintsActiveByDefault: false,
+            linkParentVerifiers: new IParamVerifier[](0),
+            linkParentDefaultValues: new bytes[](0),
+            transferVerifiers: new IParamVerifier[](0),
+            transferDefaultValues: new bytes[](0),
             licenseUrl: "https://expensive-minting-license.com"
         });
 
-        fwMintPayment.mintingParamVerifiers[0] = mintPaymentVerifier;
+        fwMintPayment.mintingVerifiers[0] = mintPaymentVerifier;
 
         addLicenseFramework("all_true", fwAllTrue);
         addLicenseFramework("mint_payment", fwMintPayment);

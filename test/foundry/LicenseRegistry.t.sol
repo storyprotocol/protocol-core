@@ -6,8 +6,11 @@ import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { MockIParamVerifier } from "test/foundry/mocks/licensing/MockParamVerifier.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 contract LicenseRegistryTest is Test {
+    using Strings for *;
+
     LicenseRegistry public registry;
     Licensing.Framework public framework;
 
@@ -26,27 +29,33 @@ contract LicenseRegistryTest is Test {
     }
     // TODO: use ModuleBaseTest for this
     function _initFwParams() private {
-        IParamVerifier[] memory mintingParamVerifiers = new IParamVerifier[](1);
-        mintingParamVerifiers[0] = verifier;
-        bytes[] memory mintingParamDefaultValues = new bytes[](1);
-        mintingParamDefaultValues[0] = abi.encode(true);
-        IParamVerifier[] memory activationParamVerifiers = new IParamVerifier[](1);
-        activationParamVerifiers[0] = verifier;
-        bytes[] memory activationParamDefaultValues = new bytes[](1);
-        activationParamDefaultValues[0] = abi.encode(true);
-        IParamVerifier[] memory linkParentParamVerifiers = new IParamVerifier[](1);
-        linkParentParamVerifiers[0] = verifier;
-        bytes[] memory linkParentParamDefaultValues = new bytes[](1);
-        linkParentParamDefaultValues[0] = abi.encode(true);
+        IParamVerifier[] memory mintingVerifiers = new IParamVerifier[](1);
+        mintingVerifiers[0] = verifier;
+        bytes[] memory mintingDefaultValues = new bytes[](1);
+        mintingDefaultValues[0] = abi.encode(true);
+        IParamVerifier[] memory activationVerifiers = new IParamVerifier[](1);
+        activationVerifiers[0] = verifier;
+        bytes[] memory activationDefaultValues = new bytes[](1);
+        activationDefaultValues[0] = abi.encode(true);
+        IParamVerifier[] memory linkParentVerifiers = new IParamVerifier[](1);
+        linkParentVerifiers[0] = verifier;
+        bytes[] memory linkParentDefaultValues = new bytes[](1);
+        linkParentDefaultValues[0] = abi.encode(true);
+        IParamVerifier[] memory transferVerifiers = new IParamVerifier[](1);
+        transferVerifiers[0] = verifier;
+        bytes[] memory transferDefaultValues = new bytes[](1);
+        transferDefaultValues[0] = abi.encode(true);
 
         fwParams = Licensing.FrameworkCreationParams({
-            mintingParamVerifiers: mintingParamVerifiers,
-            mintingParamDefaultValues: mintingParamDefaultValues,
-            activationParamVerifiers: activationParamVerifiers,
-            activationParamDefaultValues: activationParamDefaultValues,
-            defaultNeedsActivation: true,
-            linkParentParamVerifiers: linkParentParamVerifiers,
-            linkParentParamDefaultValues: linkParentParamDefaultValues,
+            mintingVerifiers: mintingVerifiers,
+            mintingDefaultValues: mintingDefaultValues,
+            activationVerifiers: activationVerifiers,
+            activationDefaultValues: activationDefaultValues,
+            mintsActiveByDefault: true,
+            linkParentVerifiers: linkParentVerifiers,
+            linkParentDefaultValues: linkParentDefaultValues,
+            transferVerifiers: transferVerifiers,
+            transferDefaultValues: transferDefaultValues,
             licenseUrl: licenseUrl
         });
     }
@@ -59,10 +68,10 @@ contract LicenseRegistryTest is Test {
     function test_LicenseRegistry_addLicenseFramework() public {
         _initFwParams();
         uint256 fwId = registry.addLicenseFramework(fwParams);
-        Licensing.Framework memory fw = registry.framework(fwId);
         assertEq(fwId, 1, "not incrementing fw id");
-        assertEq(keccak256(abi.encode(fw.licenseUrl)), keccak256(abi.encode(fwParams.licenseUrl)));
-        assertEq(fw.defaultNeedsActivation, fwParams.defaultNeedsActivation);
+        assertTrue(fwParams.licenseUrl.equal(registry.frameworkUrl(fwId)), "licenseUrl not set");
+        assertEq(registry.totalFrameworks(), 1, "totalFrameworks not incremented");
+        assertEq(registry.frameworkMintsActiveByDefault(fwId), fwParams.mintsActiveByDefault);
         // TODO: test Parameter[] vs  IParamVerifier[] && bytes[]
         assertEq(registry.totalFrameworks(), 1, "total frameworks not updated");
     }

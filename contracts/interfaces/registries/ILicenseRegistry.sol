@@ -51,7 +51,9 @@ interface ILicenseRegistry {
 
     function totalFrameworks() external view returns (uint256);
 
-    function framework(uint256 frameworkId) external view returns (Licensing.Framework memory fw);
+    function frameworkParams(uint256 frameworkId, Licensing.ParamVerifierType pvt) external view returns (Licensing.Parameter[] memory);
+    function frameworkUrl(uint256 frameworkId) external view returns (string memory);
+    function frameworkMintsActiveByDefault(uint256 frameworkId) external view returns (bool);
 
     function totalPolicies() external view returns (uint256);
 

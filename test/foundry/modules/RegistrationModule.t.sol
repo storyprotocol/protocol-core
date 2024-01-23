@@ -200,28 +200,30 @@ contract RegistrationModuleTest is ModuleBaseTest {
 
     // TODO: put this in the base test
     function _initLicensing() private {
-        IParamVerifier[] memory mintingParamVerifiers = new IParamVerifier[](1);
+        IParamVerifier[] memory mintingVerifiers = new IParamVerifier[](1);
         MockIParamVerifier verifier = new MockIParamVerifier();
-        mintingParamVerifiers[0] = verifier;
-        bytes[] memory mintingParamDefaultValues = new bytes[](1);
-        mintingParamDefaultValues[0] = abi.encode(true);
-        IParamVerifier[] memory activationParamVerifiers = new IParamVerifier[](1);
-        activationParamVerifiers[0] = verifier;
-        bytes[] memory activationParamDefaultValues = new bytes[](1);
-        activationParamDefaultValues[0] = abi.encode(true);
-        IParamVerifier[] memory linkParentParamVerifiers = new IParamVerifier[](1);
-        linkParentParamVerifiers[0] = verifier;
-        bytes[] memory linkParentParamDefaultValues = new bytes[](1);
-        linkParentParamDefaultValues[0] = abi.encode(true);
+        mintingVerifiers[0] = verifier;
+        bytes[] memory mintingDefaultValues = new bytes[](1);
+        mintingDefaultValues[0] = abi.encode(true);
+        IParamVerifier[] memory activationVerifiers = new IParamVerifier[](1);
+        activationVerifiers[0] = verifier;
+        bytes[] memory activationDefaultValues = new bytes[](1);
+        activationDefaultValues[0] = abi.encode(true);
+        IParamVerifier[] memory linkParentVerifiers = new IParamVerifier[](1);
+        linkParentVerifiers[0] = verifier;
+        bytes[] memory linkParentDefaultValues = new bytes[](1);
+        linkParentDefaultValues[0] = abi.encode(true);
 
         Licensing.FrameworkCreationParams memory fwParams = Licensing.FrameworkCreationParams({
-            mintingParamVerifiers: mintingParamVerifiers,
-            mintingParamDefaultValues: mintingParamDefaultValues,
-            activationParamVerifiers: activationParamVerifiers,
-            activationParamDefaultValues: activationParamDefaultValues,
-            defaultNeedsActivation: true,
-            linkParentParamVerifiers: linkParentParamVerifiers,
-            linkParentParamDefaultValues: linkParentParamDefaultValues,
+            mintingVerifiers: mintingVerifiers,
+            mintingDefaultValues: mintingDefaultValues,
+            activationVerifiers: activationVerifiers,
+            activationDefaultValues: activationDefaultValues,
+            mintsActiveByDefault: true,
+            linkParentVerifiers: linkParentVerifiers,
+            linkParentDefaultValues: linkParentDefaultValues,
+            transferVerifiers: new IParamVerifier[](0),
+            transferDefaultValues: new bytes[](0),
             licenseUrl: "https://example.com"
         });
         licenseRegistry.addLicenseFramework(fwParams);
