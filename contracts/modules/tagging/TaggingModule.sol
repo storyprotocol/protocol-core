@@ -8,8 +8,9 @@ import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
+import { ITaggingModule } from "contracts/interfaces/modules/ITaggingModule.sol";
 
-contract TaggingModule is IModule {
+contract TaggingModule is IModule, ITaggingModule {
     using ShortStrings for *;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -23,14 +24,15 @@ contract TaggingModule is IModule {
     function setTag(string calldata tag, address ipId) external returns (bool added) {
         // TODO: access control
         // TODO: emit
+        emit TagSet(tag, ipId);
         return _tagsForIpIds[ipId].add(ShortStringOps.stringToBytes32(tag));
     }
 
     function removeTag(string calldata tag, address ipId) external returns (bool removed) {
         // TODO: access control
+        emit TagRemoved(tag, ipId);
         return _tagsForIpIds[ipId].remove(ShortStringOps.stringToBytes32(tag));
     }
-
     function isTagged(string calldata tag, address ipId) external view returns (bool) {
         return _tagsForIpIds[ipId].contains(ShortStringOps.stringToBytes32(tag));
     }
