@@ -60,18 +60,11 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         ++_totalFrameworks;
         Licensing.Framework storage fw = _frameworks[_totalFrameworks];
         fw.licenseUrl = fwCreation.licenseUrl;
-        fw.mintsActiveByDefault = fwCreation.mintsActiveByDefault;
         _setParamArray(
             fw,
             Licensing.ParamVerifierType.Mint,
             fwCreation.mintingVerifiers,
             fwCreation.mintingDefaultValues
-        );
-        _setParamArray(
-            fw,
-            Licensing.ParamVerifierType.Activation,
-            fwCreation.activationVerifiers,
-            fwCreation.activationDefaultValues
         );
         _setParamArray(
             fw,
@@ -133,9 +126,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
     function frameworkUrl(uint256 frameworkId) external view returns (string memory) {
         return _framework(frameworkId).licenseUrl;
-    }
-    function frameworkMintsActiveByDefault(uint256 frameworkId) external view returns (bool) {
-        return _framework(frameworkId).mintsActiveByDefault;
     }
 
     /// Stores data without repetition, assigning an id to it if new or reusing existing one if already stored
@@ -323,18 +313,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return licenseId;
     }
 
-    // TODO: activation must be done at the IP Id level
-    // function activateLicense(uint256 licenseId) external onlyLicensee(licenseId, msg.sender) {
-    //     Licensing.License storage licenseData = _licenses[licenseId];
-    //     if (licenseData.status != Licensing.LinkStatus.NeedsActivation) {
-    //         revert Errors.LicenseRegistry__LicenseAlreadyActivated();
-    //     }
-    //     Licensing.Policy memory pol = policy(licenseData.policyId);
-    //     _verifyParams(Licensing.ParamVerifierType.Activation, pol, msg.sender, 1);
-    //     licenseData.status = Licensing.LinkStatus.Active;
-    //     emit LicenseActivated(licenseId, msg.sender);
-    // }
-
     /// Returns true if holder has positive balance for licenseId
     function isLicensee(uint256 licenseId, address holder) external view returns (bool) {
         return balanceOf(holder, licenseId) > 0;
@@ -349,7 +327,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     }
 
     /// Relates an IP ID with its parents (licensors), by burning the License NFT the holder owns
-    /// License must be activated to succeed, reverts otherwise.
     /// Licensing parameters related to linking IPAs must be verified in order to succeed, reverts otherwise.
     /// The child IP ID will have the policy that the license represent added to it's own, if it's compatible with
     /// existing child policies.
@@ -365,9 +342,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         
         // TODO: check if childIpId exists and is owned by holder
         Licensing.License memory licenseData = _licenses[licenseId];
-        // if (licenseData.status != Licensing.LinkStatus.Active) {
-        //     revert Errors.LicenseRegistry__LicenseNotActive();
-        // }
         address[] memory parents = licenseData.licensorIpIds;
         for (uint256 i = 0; i < parents.length; i++) {
             // TODO: check licensor exist
@@ -423,7 +397,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         if (from != address(0) && to != address(0)) {
             uint256 length = ids.length;
             for (uint256 i = 0; i < length; i++) {
-                
                 _verifyParams(Licensing.ParamVerifierType.Transfer, policyForLicense(ids[i]), to, values[i]);
             }   
         }
@@ -431,17 +404,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     }
 
     function _verifyParams(Licensing.ParamVerifierType pvt, Licensing.Policy memory pol, address holder, uint256 amount) internal {
-        
-        
-        
-        
-        
         Licensing.Framework storage fw = _framework(pol.frameworkId);
-
         Licensing.Parameter[] storage params = fw.parameters[pvt];
         uint256 paramsLength = params.length;
         bytes[] memory values = pol.getValues(pvt);
-        
         
         for (uint256 i = 0; i < paramsLength; i++) {
             Licensing.Parameter memory param = params[i];
@@ -450,18 +416,9 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
             bool verificationOk = false;
             if (pvt == Licensing.ParamVerifierType.Mint) {
                 verificationOk = param.verifier.verifyMinting(holder, amount, data);
-            } else if (pvt == Licensing.ParamVerifierType.Activation) {
-                verificationOk = param.verifier.verifyActivation(holder, data);
             } else if (pvt == Licensing.ParamVerifierType.LinkParent) {
                 verificationOk = param.verifier.verifyLinkParent(holder, data);
             } else if (pvt == Licensing.ParamVerifierType.Transfer) {
-                
-                
-                
-                
-                
-                
-                
                 verificationOk = param.verifier.verifyTransfer(holder, amount, data);
             } else {
                 // This should never happen since getValues checks for pvt validity

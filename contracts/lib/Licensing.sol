@@ -17,7 +17,6 @@ library Licensing {
     /// Moment of the license lifetime where a Parameter will be verified
     enum ParamVerifierType {
         Mint,
-        Activation,
         LinkParent,
         Transfer
     }
@@ -30,15 +29,10 @@ library Licensing {
     struct Framework {
         /// @notice Stores the parameters that need to be verified in each moment of the license lifetime
         /// ParamVerifierType.Mint --> These parameters need to be verified when minting a license
-        /// ParamVerifierType.Activation --> If license status is NeedsActivation, these parametes need to be verified
         /// in activateLicense() to be able to call linkIpToParent
         /// ParamVerifierType.LinkParent --> Verified before the owner of a license links to a parent ipId/policy,
         /// burning the license and setting the policy for the ipId.
         mapping(ParamVerifierType => Parameter[]) parameters;
-        /// @notice False if by default licenses minted with this framework are Active, this could mean
-        /// that the framework has no activation terms defined, or that the default settings of those
-        /// terms are described in the licenseUrl as disabled by default
-        bool mintsActiveByDefault;
         /// @notice URL to the file containing the legal text for the license agreement
         string licenseUrl;
     }
@@ -47,9 +41,6 @@ library Licensing {
     struct FrameworkCreationParams {
         IParamVerifier[] mintingVerifiers;
         bytes[] mintingDefaultValues;
-        IParamVerifier[] activationVerifiers;
-        bytes[] activationDefaultValues;
-        bool mintsActiveByDefault;
         IParamVerifier[] linkParentVerifiers;
         bytes[] linkParentDefaultValues;
         IParamVerifier[] transferVerifiers;
@@ -66,11 +57,6 @@ library Licensing {
         /// Array with values for parameters verifying conditions to mint a license. Empty bytes for index if
         /// this policy wants to use the default value for the paremeter.
         bytes[] mintingParamValues;
-        /// Array with values for parameters verifying conditions to activate a license. Empty bytes for index if
-        /// this policy wants to use the default value for the paremeter.
-        bytes[] activationParamValues;
-        /// If true, licenses minted with this policy will be active by default. If false, they will be inactive
-        bool mintsActive;
         /// Array with values for parameters verifying conditions to link a license to a parent. Empty bytes for index if
         /// this policy wants to use the default value for the paremeter.
         bytes[] linkParentParamValues;
@@ -82,8 +68,6 @@ library Licensing {
     function getValues(Policy memory policy, ParamVerifierType pvt) internal returns(bytes[] memory) {
         if (pvt == ParamVerifierType.Mint) {
             return policy.mintingParamValues;
-        } else if (pvt == ParamVerifierType.Activation) {
-            return policy.activationParamValues;
         } else if (pvt == ParamVerifierType.LinkParent) {
             return policy.linkParentParamValues;
         } else if (pvt == ParamVerifierType.Transfer) {

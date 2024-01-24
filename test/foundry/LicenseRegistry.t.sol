@@ -36,10 +36,6 @@ contract LicenseRegistryTest is Test {
         mintingVerifiers[0] = verifier;
         bytes[] memory mintingDefaultValues = new bytes[](1);
         mintingDefaultValues[0] = abi.encode(true);
-        IParamVerifier[] memory activationVerifiers = new IParamVerifier[](1);
-        activationVerifiers[0] = verifier;
-        bytes[] memory activationDefaultValues = new bytes[](1);
-        activationDefaultValues[0] = abi.encode(true);
         IParamVerifier[] memory linkParentVerifiers = new IParamVerifier[](1);
         linkParentVerifiers[0] = verifier;
         bytes[] memory linkParentDefaultValues = new bytes[](1);
@@ -52,9 +48,6 @@ contract LicenseRegistryTest is Test {
         fwParams = Licensing.FrameworkCreationParams({
             mintingVerifiers: mintingVerifiers,
             mintingDefaultValues: mintingDefaultValues,
-            activationVerifiers: activationVerifiers,
-            activationDefaultValues: activationDefaultValues,
-            mintsActiveByDefault: true,
             linkParentVerifiers: linkParentVerifiers,
             linkParentDefaultValues: linkParentDefaultValues,
             transferVerifiers: transferVerifiers,
@@ -67,13 +60,10 @@ contract LicenseRegistryTest is Test {
         pol = Licensing.Policy({
             frameworkId: 1,
             mintingParamValues: new bytes[](1),
-            activationParamValues: new bytes[](1),
-            mintsActive: true,
             linkParentParamValues: new bytes[](1),
             transferParamValues: new bytes[](1)
         });
         pol.mintingParamValues[0] = abi.encode(true);
-        pol.activationParamValues[0] = abi.encode(true);
         pol.linkParentParamValues[0] = abi.encode(true);
         pol.transferParamValues[0] = abi.encode(true);
         return pol;
@@ -90,18 +80,12 @@ contract LicenseRegistryTest is Test {
         assertEq(fwId, 1, "not incrementing fw id");
         assertTrue(fwParams.licenseUrl.equal(registry.frameworkUrl(fwId)), "licenseUrl not set");
         assertEq(registry.totalFrameworks(), 1, "totalFrameworks not incremented");
-        assertEq(registry.frameworkMintsActiveByDefault(fwId), fwParams.mintsActiveByDefault);
         assertEq(registry.frameworkParams(fwId, Licensing.ParamVerifierType.Mint).length, 1);
         assertEq(registry.totalFrameworks(), 1, "total frameworks not updated");
         _assertEqualParams(
             registry.frameworkParams(fwId, Licensing.ParamVerifierType.Mint),
             fwParams.mintingVerifiers,
             fwParams.mintingDefaultValues
-        );
-        _assertEqualParams(
-            registry.frameworkParams(fwId, Licensing.ParamVerifierType.Activation),
-            fwParams.activationVerifiers,
-            fwParams.activationDefaultValues
         );
         _assertEqualParams(
             registry.frameworkParams(fwId, Licensing.ParamVerifierType.LinkParent),
@@ -226,7 +210,6 @@ contract LicenseRegistryTest is Test {
         Licensing.License memory license = registry.license(licenseId);
         assertEq(registry.balanceOf(licenseHolder, licenseId), 2);
         assertEq(registry.isLicensee(licenseId, licenseHolder), true);
-        // assertEq(uint8(license.status), uint8(Licensing.LinkStatus.Active));
         assertEq(license.policyId, policyId);
         assertEq(license.licensorIpIds.length, 1);
         assertEq(license.licensorIpIds[0], ipId1);

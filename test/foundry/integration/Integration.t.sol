@@ -273,9 +273,6 @@ contract IntegrationTest is Test {
         Licensing.FrameworkCreationParams memory fwAllTrue = Licensing.FrameworkCreationParams({
             mintingVerifiers: new IParamVerifier[](1),
             mintingDefaultValues: byteValueTrue,
-            activationVerifiers: new IParamVerifier[](1),
-            activationDefaultValues: byteValueTrue,
-            mintsActiveByDefault: true,
             linkParentVerifiers: new IParamVerifier[](1),
             linkParentDefaultValues: byteValueTrue,
             transferVerifiers: new IParamVerifier[](1),
@@ -284,16 +281,12 @@ contract IntegrationTest is Test {
         });
 
         fwAllTrue.mintingVerifiers[0] = mockLicenseVerifier;
-        fwAllTrue.activationVerifiers[0] = mockLicenseVerifier;
         fwAllTrue.linkParentVerifiers[0] = mockLicenseVerifier;
         fwAllTrue.transferVerifiers[0] = mockLicenseVerifier;
 
         Licensing.FrameworkCreationParams memory fwMintPayment = Licensing.FrameworkCreationParams({
             mintingVerifiers: new IParamVerifier[](1),
             mintingDefaultValues: byteValueTrue, // value here doesn't matter for MintPaymentVerifier
-            activationVerifiers: new IParamVerifier[](0),
-            activationDefaultValues: new bytes[](0),
-            mintsActiveByDefault: false,
             linkParentVerifiers: new IParamVerifier[](0),
             linkParentDefaultValues: new bytes[](0),
             transferVerifiers: new IParamVerifier[](0),
@@ -313,23 +306,18 @@ contract IntegrationTest is Test {
         policy["test_true"] = Licensing.Policy({
             frameworkId: licenseFwIds["all_true"],
             mintingParamValues: new bytes[](1),
-            activationParamValues: new bytes[](1),
-            mintsActive: true,
             linkParentParamValues: new bytes[](1),
             transferParamValues: new bytes[](1)
         });
 
         // TODO: test failure (verifier condition check fails) by setting to false
         policy["test_true"].mintingParamValues[0] = abi.encode(true);
-        policy["test_true"].activationParamValues[0] = abi.encode(true);
         policy["test_true"].linkParentParamValues[0] = abi.encode(true);
         policy["test_true"].transferParamValues[0] = abi.encode(true);
 
         policy["expensive_mint"] = Licensing.Policy({
             frameworkId: licenseFwIds["mint_payment"],
             mintingParamValues: new bytes[](1), // empty value to use default value, which doesn't matter
-            activationParamValues: new bytes[](0),
-            mintsActive: false,
             linkParentParamValues: new bytes[](0),
             transferParamValues: new bytes[](0)
         });
