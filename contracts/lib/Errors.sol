@@ -58,6 +58,9 @@ library Errors {
     error LicenseRegistry__LicensorDoesntHaveThisPolicy();
     error LicenseRegistry__ParamVerifierFailed(uint8 verifierType, address verifier);
     error LicenseRegistry__LinkParentParamFailed();
+    error LicenseRegistry__LicenseMustHaveLicensors();
+    error LicenseRegistry__InvalidLicensor();
+
 
     ////////////////////////////////////////////////////////////////////////////
     //                            Dispute Module                              //

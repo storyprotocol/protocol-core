@@ -91,10 +91,10 @@ contract LicenseRegistryTest is Test {
         assertTrue(fwParams.licenseUrl.equal(registry.frameworkUrl(fwId)), "licenseUrl not set");
         assertEq(registry.totalFrameworks(), 1, "totalFrameworks not incremented");
         assertEq(registry.frameworkMintsActiveByDefault(fwId), fwParams.mintsActiveByDefault);
-        assertEq(registry.frameworkParams(fwId, Licensing.ParamVerifierType.Minting).length, 1);
+        assertEq(registry.frameworkParams(fwId, Licensing.ParamVerifierType.Mint).length, 1);
         assertEq(registry.totalFrameworks(), 1, "total frameworks not updated");
         _assertEqualParams(
-            registry.frameworkParams(fwId, Licensing.ParamVerifierType.Minting),
+            registry.frameworkParams(fwId, Licensing.ParamVerifierType.Mint),
             fwParams.mintingVerifiers,
             fwParams.mintingDefaultValues
         );
@@ -220,13 +220,9 @@ contract LicenseRegistryTest is Test {
         assertEq(policyIds.length, 1);
         assertEq(policyIds[indexOnIpId], policyId);
 
-        Licensing.License memory licenseData = Licensing.License({
-            policyId: policyId,
-            licensorIpIds: new address[](1)
-        });
-        licenseData.licensorIpIds[0] = ipId1;
-
-        licenseId = registry.mintLicense(licenseData, 2, licenseHolder);
+        address[] memory licensorIpIds = new address[](1);
+        licensorIpIds[0] = ipId1;
+        licenseId = registry.mintLicense(policyId, licensorIpIds, 2, licenseHolder);
         assertEq(licenseId, 1);
         assertEq(registry.balanceOf(licenseHolder, licenseId), 2);
         assertEq(registry.isLicensee(licenseId, licenseHolder), true);
@@ -264,13 +260,9 @@ contract LicenseRegistryTest is Test {
         // solhint-disable-next-line no-unused-vars
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
 
-        Licensing.License memory licenseData = Licensing.License({
-            policyId: policyId,
-            licensorIpIds: new address[](1)
-        });
-        licenseData.licensorIpIds[0] = ipId1;
-
-        uint256 licenseId = registry.mintLicense(licenseData, 2, licenseHolder);
+        address[] memory licensorIpIds = new address[](1);
+        licensorIpIds[0] = ipId1;
+        uint256 licenseId = registry.mintLicense(policyId, licensorIpIds, 2, licenseHolder);
         address licenseHolder2 = address(0x102);
         vm.prank(licenseHolder);
         registry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
@@ -289,13 +281,10 @@ contract LicenseRegistryTest is Test {
         // solhint-disable-next-line no-unused-vars
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
 
-        Licensing.License memory licenseData = Licensing.License({
-            policyId: policyId,
-            licensorIpIds: new address[](1)
-        });
-        licenseData.licensorIpIds[0] = ipId1;
+        address[] memory licensorIpIds = new address[](1);
+        licensorIpIds[0] = ipId1;
+        uint256 licenseId = registry.mintLicense(policyId, licensorIpIds, 2, licenseHolder);
 
-        uint256 licenseId = registry.mintLicense(licenseData, 2, licenseHolder);
         address licenseHolder2 = address(0x102);
         vm.prank(licenseHolder);
         vm.expectRevert(

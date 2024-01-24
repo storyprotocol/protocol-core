@@ -17,7 +17,7 @@ library Licensing {
 
     /// Moment of the license lifetime where a Parameter will be verified
     enum ParamVerifierType {
-        Minting,
+        Mint,
         Activation,
         LinkParent,
         Transfer
@@ -30,7 +30,7 @@ library Licensing {
     /// corresponding to those of each Parameter struct
     struct Framework {
         /// @notice Stores the parameters that need to be verified in each moment of the license lifetime
-        /// ParamVerifierType.Minting --> These parameters need to be verified when minting a license
+        /// ParamVerifierType.Mint --> These parameters need to be verified when minting a license
         /// ParamVerifierType.Activation --> If license status is NeedsActivation, these parametes need to be verified
         /// in activateLicense() to be able to call linkIpToParent
         /// ParamVerifierType.LinkParent --> Verified before the owner of a license links to a parent ipId/policy,
@@ -81,8 +81,7 @@ library Licensing {
     }
 
     function getValues(Policy memory policy, ParamVerifierType pvt) internal returns(bytes[] memory) {
-        console2.log("getValues");
-        if (pvt == ParamVerifierType.Minting) {
+        if (pvt == ParamVerifierType.Mint) {
             return policy.mintingParamValues;
         } else if (pvt == ParamVerifierType.Activation) {
             return policy.activationParamValues;
@@ -96,11 +95,24 @@ library Licensing {
         }
     }
 
+    /// Describe the ability of the license to be linked to a parent IP
+    /// Burnt license NFT can still be set Inactive by expiration or Disputer module
+    enum Status {
+        /// License has been minted but not activated
+        NeedsActivation,
+        /// License has been activated and is active
+        Active,
+        /// License has been deactivated, by expiration, Disputer module or other.
+        Inactive
+    }
+
     /// Data that define a License Agreement NFT
     struct License {
         /// the id for the Policy this License will set to the desired derivative IP after being burned.
         uint256 policyId;
         /// Ids for the licensors, meaning the Ip Ids of the parents of the derivative to be created
         address[] licensorIpIds;
+        /// Status of the license
+        Status status;
     }
 }

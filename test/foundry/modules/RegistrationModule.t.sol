@@ -129,12 +129,9 @@ contract RegistrationModuleTest is ModuleBaseTest {
         );
 
         // Mint license
-        Licensing.License memory licenseData = Licensing.License({
-            policyId: policyId,
-            licensorIpIds: new address[](1)
-        });
-        licenseData.licensorIpIds[0] = ipId;
-        uint256 licenseId = licenseRegistry.mintLicense(licenseData, 1, bob);
+        address[] memory licensorIpIds = new address[](1);
+        licensorIpIds[0] = ipId;
+        uint256 licenseId = licenseRegistry.mintLicense(policyId, licensorIpIds, 1, bob);
         uint256 totalSupply = ipRecordRegistry.totalSupply();
         
 

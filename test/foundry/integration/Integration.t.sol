@@ -191,12 +191,9 @@ contract IntegrationTest is Test {
         uint256 amount
     ) public returns (uint256 licenseId) {
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = attachPolicyToIPID(ipId, policyName);
-        Licensing.License memory licenseData = Licensing.License({
-            policyId: policyId,
-            licensorIpIds: new address[](1)
-        });
-        licenseData.licensorIpIds[0] = ipId;
-        licenseId = licenseRegistry.mintLicense(licenseData, amount, licensee);
+        address[] memory licensorIpIds = new address[](1);
+        licensorIpIds[0] = ipId;
+        licenseId = licenseRegistry.mintLicense(policyId, licensorIpIds, amount, licensee);
         licenseIds[licensee][policyId] = licenseId;
     }
 
@@ -350,16 +347,15 @@ contract IntegrationTest is Test {
         /*///////////////////////////////////////////////////////////////
                             MINT LICENSES ON POLICIES
         ////////////////////////////////////////////////////////////////*/
-
-        Licensing.License memory licenseData = Licensing.License({
-            policyId: policyIds["test_true"][getIpId(u.alice, nft.a, 1)],
-            licensorIpIds: new address[](1)
-        });
-        licenseData.licensorIpIds[0] = getIpId(u.alice, nft.a, 1);
+ 
+        uint256 policyId = policyIds["test_true"][getIpId(u.alice, nft.a, 1)];
+        address[] memory licensorIpIds = new address[](1);
+        licensorIpIds[0] = getIpId(u.alice, nft.a, 1);
 
         // Carl mints 1 license for policy "test_true" on alice's NFT A IPAccount
         licenseIds[u.carl][policyIds["test_true"][getIpId(u.alice, nft.a, 1)]] = licenseRegistry.mintLicense(
-            licenseData,
+            policyId,
+            licensorIpIds,
             1,
             u.carl
         );
@@ -401,11 +397,9 @@ contract IntegrationTest is Test {
         mockToken.approve(address(mintPaymentVerifier), 2 * 10 ** mockToken.decimals());
         vm.stopPrank();
 
-        licenseData = Licensing.License({
-            policyId: policyIds["expensive_mint"][getIpId(u.carl, nft.c, 1)],
-            licensorIpIds: new address[](1)
-        });
-        licenseData.licensorIpIds[0] = getIpId(u.carl, nft.c, 1);
+        policyId = policyIds["expensive_mint"][getIpId(u.carl, nft.c, 1)];
+        licensorIpIds = new address[](1);
+        licensorIpIds[0] = getIpId(u.carl, nft.c, 1);
 
         // Bob mints 2 license for policy "expensive_mint" on carl's NFT C IPAccount
 
@@ -413,7 +407,8 @@ contract IntegrationTest is Test {
         mockTokenBalanceBefore[address(mintPaymentVerifier)] = mockToken.balanceOf(address(mintPaymentVerifier));
 
         licenseIds[u.bob][policyIds["expensive_mint"][getIpId(u.carl, nft.c, 1)]] = licenseRegistry.mintLicense(
-            licenseData,
+            policyId,
+            licensorIpIds,
             2,
             u.bob
         );

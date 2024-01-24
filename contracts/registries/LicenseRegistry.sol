@@ -65,7 +65,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         fw.mintsActiveByDefault = fwCreation.mintsActiveByDefault;
         _setParamArray(
             fw,
-            Licensing.ParamVerifierType.Minting,
+            Licensing.ParamVerifierType.Mint,
             fwCreation.mintingVerifiers,
             fwCreation.mintingDefaultValues
         );
@@ -87,7 +87,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
             fwCreation.transferVerifiers,
             fwCreation.transferDefaultValues
         );
-        console2.log("mint length", fw.parameters[Licensing.ParamVerifierType.Minting].length);
+        console2.log("mint length", fw.parameters[Licensing.ParamVerifierType.Mint].length);
         console2.log("transfer length", fw.parameters[Licensing.ParamVerifierType.Transfer].length);
         console2.log("transfer default length", fwCreation.transferDefaultValues.length);
         // Should we add a label?
@@ -286,30 +286,42 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// If not, the license is fungible and an id will be reused.
     /// The licensing terms that regulate creating new licenses will be verified to allow minting.
     /// Reverts if caller is not authorized by licensors.
-    /// @param licenseData policy Id and licensors
+    /// @param policyId id of the policy to be minted
+    /// @param licensorIpIds array of IP Ids that are granting the license
     /// @param amount of licenses to be minted. License NFT is fungible for same policy and same licensors
     /// @param receiver of the License NFT(s).
     /// @return licenseId of the NFT(s).
     function mintLicense(
-        Licensing.License calldata licenseData,
+        uint256 policyId,
+        address[] memory licensorIpIds,
         uint256 amount,
         address receiver
     ) external returns (uint256 licenseId) {
-        uint256 policyId = licenseData.policyId;
-
-        for (uint256 i = 0; i < licenseData.licensorIpIds.length; i++) {
-            address licensor = licenseData.licensorIpIds[i];
+        uint256 licensorAmount = licensorIpIds.length;
+        if (licensorAmount == 0) {
+            revert Errors.LicenseRegistry__LicenseMustHaveLicensors();
+        }
+        for (uint256 i = 0; i < licensorAmount; i++) {
+            address licensor = licensorIpIds[i];
+            // TODO: check duplicates
+            // TODO: check if licensors are valid IP Ids
+            // TODO: check if licensors they have been tagged by disputer
+            // TODO: check if licensor allowed sender to mint in their behalf
+            if (licensor == address(0)) {
+                revert Errors.LicenseRegistry__InvalidLicensor();
+            }
             if (!_policiesPerIpId[licensor].contains(policyId)) {
                 revert Errors.LicenseRegistry__LicensorDoesntHaveThisPolicy();
             }
-            // TODO: check duplicates
-            // TODO: check if licensors are valid IP Ids and if they have been tagged bad
-            // TODO: check if licensor allowed sender to mint in their behalf
         }
-
         Licensing.Policy memory pol = policy(policyId);
-        _verifyParams(Licensing.ParamVerifierType.Minting, pol, receiver, amount);
-
+        _verifyParams(Licensing.ParamVerifierType.Mint, pol, receiver, amount);
+        Licensing.Status status = pol.needsActivation ? Licensing.Status.NeedsActivation : Licensing.Status.Active;
+        Licensing.License memory licenseData = Licensing.License({
+            policyId: policyId,
+            licensorIpIds: licensorIpIds,
+            status: status
+        });
         (uint256 lId, bool isNew) = _addIdOrGetExisting(abi.encode(licenseData), _hashedLicenses, _totalLicenses);
         licenseId = lId;
         if (isNew) {
@@ -428,7 +440,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
             // Empty bytes => use default value specified in license framework creation params.
             bytes memory data = values[i].length == 0 ? param.defaultValue : values[i];
             bool verificationOk = false;
-            if (pvt == Licensing.ParamVerifierType.Minting) {
+            if (pvt == Licensing.ParamVerifierType.Mint) {
                 verificationOk = param.verifier.verifyMinting(holder, amount, data);
             } else if (pvt == Licensing.ParamVerifierType.Activation) {
                 verificationOk = param.verifier.verifyActivation(holder, data);
