@@ -3,11 +3,9 @@
 pragma solidity ^0.8.20;
 
 interface IParamVerifier {
-    function verifyMintingParam(address caller, uint256 mintAmount, bytes memory data) external returns (bool);
-
-    function verifyLinkParentParam(address caller, bytes memory data) external returns (bool);
-
-    function verifyActivationParam(address caller, bytes memory data) external returns (bool);
-
+    function verifyMinting(address caller, uint256 amount, bytes memory data) external returns (bool);
+    function verifyTransfer(address caller, uint256 amount, bytes memory data) external returns (bool);
+    function verifyLinkParent(address caller, bytes memory data) external returns (bool);
+    function verifyActivation(address caller, bytes memory data) external returns (bool);
     function json() external view returns (string memory);
 }

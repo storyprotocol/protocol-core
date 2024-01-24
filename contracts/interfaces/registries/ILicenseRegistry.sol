@@ -35,7 +35,7 @@ interface ILicenseRegistry {
 
     function addPolicyToIp(address ipId, uint256 polId) external returns (uint256 indexOnIpId);
 
-    function addPolicy(Licensing.Policy memory pol) external returns (uint256 policyId, bool isNew);
+    function addPolicy(Licensing.Policy memory pol) external returns (uint256 policyId);
 
     function mintLicense(
         Licensing.License calldata licenseData,

@@ -49,6 +49,7 @@ library Errors {
     error LicenseRegistry__PolicyAlreadySetForIpId();
     error LicenseRegistry__FrameworkNotFound();
     error LicenseRegistry__EmptyLicenseUrl();
+    error LicenseRegistry__PolicyAlreadyAdded();
     error LicenseRegistry__ParamVerifierLengthMismatch();
     error LicenseRegistry__InvalidParamVerifierType();
     error LicenseRegistry__PolicyNotFound();

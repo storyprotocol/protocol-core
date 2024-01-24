@@ -3,6 +3,7 @@
 pragma solidity ^0.8.20;
 import { IParamVerifier } from "../interfaces/licensing/IParamVerifier.sol";
 import { Errors } from "./Errors.sol";
+import "forge-std/console2.sol";
 
 library Licensing {
 
@@ -80,12 +81,16 @@ library Licensing {
     }
 
     function getValues(Policy memory policy, ParamVerifierType pvt) internal returns(bytes[] memory) {
+        console2.log("getValues");
         if (pvt == ParamVerifierType.Minting) {
             return policy.mintingParamValues;
         } else if (pvt == ParamVerifierType.Activation) {
             return policy.activationParamValues;
         } else if (pvt == ParamVerifierType.LinkParent) {
             return policy.linkParentParamValues;
+        } else if (pvt == ParamVerifierType.Transfer) {
+            console2.log(policy.transferParamValues.length);
+            return policy.transferParamValues;
         } else {
             revert Errors.LicenseRegistry__InvalidParamVerifierType();
         }

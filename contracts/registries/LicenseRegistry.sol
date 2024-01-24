@@ -11,6 +11,8 @@ import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegist
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 
+import "forge-std/console2.sol";
+
 // TODO: consider disabling operators/approvals on creation
 contract LicenseRegistry is ERC1155, ILicenseRegistry {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -58,32 +60,36 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         // Todo: check duplications
 
         ++_totalFrameworks;
-        _frameworks[_totalFrameworks].licenseUrl = fwCreation.licenseUrl;
-        _frameworks[_totalFrameworks].mintsActiveByDefault = fwCreation.mintsActiveByDefault;
+        Licensing.Framework storage fw = _frameworks[_totalFrameworks];
+        fw.licenseUrl = fwCreation.licenseUrl;
+        fw.mintsActiveByDefault = fwCreation.mintsActiveByDefault;
         _setParamArray(
-            _frameworks[_totalFrameworks],
+            fw,
             Licensing.ParamVerifierType.Minting,
             fwCreation.mintingVerifiers,
             fwCreation.mintingDefaultValues
         );
         _setParamArray(
-            _frameworks[_totalFrameworks],
+            fw,
             Licensing.ParamVerifierType.Activation,
             fwCreation.activationVerifiers,
             fwCreation.activationDefaultValues
         );
         _setParamArray(
-            _frameworks[_totalFrameworks],
+            fw,
             Licensing.ParamVerifierType.LinkParent,
             fwCreation.linkParentVerifiers,
             fwCreation.linkParentDefaultValues
         );
         _setParamArray(
-            _frameworks[_totalFrameworks],
+            fw,
             Licensing.ParamVerifierType.Transfer,
             fwCreation.transferVerifiers,
             fwCreation.transferDefaultValues
         );
+        console2.log("mint length", fw.parameters[Licensing.ParamVerifierType.Minting].length);
+        console2.log("transfer length", fw.parameters[Licensing.ParamVerifierType.Transfer].length);
+        console2.log("transfer default length", fwCreation.transferDefaultValues.length);
         // Should we add a label?
         emit LicenseFrameworkCreated(msg.sender, _totalFrameworks, fwCreation);
         return _totalFrameworks;
@@ -102,6 +108,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         IParamVerifier[] calldata paramVerifiers,
         bytes[] calldata paramDefaultValues
     ) private {
+        console2.log("setting param array");
         if (paramVerifiers.length != paramDefaultValues.length) {
             revert Errors.LicenseRegistry__ParamVerifierLengthMismatch();
         }
@@ -110,6 +117,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         for (uint256 i = 0; i < paramVerifiers.length; i++) {
             params.push(Licensing.Parameter({ verifier: paramVerifiers[i], defaultValue: paramDefaultValues[i] }));
         }
+        console2.log("params length", params.length);
     }
 
     /// Gets total frameworks supported by LicenseRegistry
@@ -119,18 +127,23 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
     /// Returns framework for id. Reverts if not found
     function frameworkParams(uint256 frameworkId, Licensing.ParamVerifierType pvt) public view returns (Licensing.Parameter[] memory) {
-        Licensing.Framework storage fw = _frameworks[frameworkId];
-        if (bytes(fw.licenseUrl).length == 0) {
-            revert Errors.LicenseRegistry__FrameworkNotFound();
-        }
+        Licensing.Framework storage fw = _framework(frameworkId);
         return fw.parameters[pvt];
     }
 
+    function _framework(uint256 frameworkId) internal view returns (Licensing.Framework storage fw) {
+        fw = _frameworks[frameworkId];
+        if (bytes(fw.licenseUrl).length == 0) {
+            revert Errors.LicenseRegistry__FrameworkNotFound();
+        }
+        return fw;
+    }
+
     function frameworkUrl(uint256 frameworkId) external view returns (string memory) {
-        return _frameworks[frameworkId].licenseUrl;
+        return _framework(frameworkId).licenseUrl;
     }
     function frameworkMintsActiveByDefault(uint256 frameworkId) external view returns (bool) {
-        return _frameworks[frameworkId].mintsActiveByDefault;
+        return _framework(frameworkId).mintsActiveByDefault;
     }
 
     /// Stores data without repetition, assigning an id to it if new or reusing existing one if already stored
@@ -172,7 +185,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         Licensing.Policy memory pol
     ) public returns (uint256 policyId, bool isNew, uint256 indexOnIpId) {
         // check protocol auth
-        (uint256 polId, bool newPolicy) = addPolicy(pol);
+        (uint256 polId, bool newPolicy) = _addPolicy(pol);
         return (polId, newPolicy, _addPolictyIdToIp(ipId, polId));
     }
 
@@ -190,7 +203,17 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return _addPolictyIdToIp(ipId, polId);
     }
 
-    function addPolicy(Licensing.Policy memory pol) public returns (uint256 policyId, bool isNew) {
+    function addPolicy(Licensing.Policy memory pol) public returns (uint256 policyId) {
+        (uint256 polId, bool newPol) = _addPolicy(pol);
+        if (!newPol) {
+            revert Errors.LicenseRegistry__PolicyAlreadyAdded();
+        }
+        return polId;
+    }
+
+    function _addPolicy(Licensing.Policy memory pol) public returns (uint256 policyId, bool isNew) {
+        // We ignore the return value, we just want to check if the framework exists
+        _framework(pol.frameworkId);
         (uint256 polId, bool newPol) = _addIdOrGetExisting(abi.encode(pol), _hashedPolicies, _totalPolicies);
         if (newPol) {
             _totalPolicies = polId;
@@ -372,13 +395,15 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return _ipIdParents[ipId].length();
     }
 
-    
-
     function _update(address from, address to, uint256[] memory ids, uint256[] memory values) virtual override internal {
         // We are interested in transfers, minting and burning are checked in mintLicense and linkIpToParent respectively.
+        console2.log("updating");
+        console2.log("from", from);
+        console2.log("to", to);
         if (from != address(0) && to != address(0)) {
             uint256 length = ids.length;
             for (uint256 i = 0; i < length; i++) {
+                console2.log("id", ids[i]);
                 _verifyParams(Licensing.ParamVerifierType.Transfer, policyForLicense(ids[i]), to, values[i]);
             }   
         }
@@ -386,20 +411,41 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     }
 
     function _verifyParams(Licensing.ParamVerifierType pvt, Licensing.Policy memory pol, address holder, uint256 amount) internal {
-        Licensing.Parameter[] memory params = _frameworks[pol.frameworkId].parameters[pvt];
+        console2.log("verifying params");
+        console2.log("pvt", uint8(pvt));
+        console2.log("frameworkId", pol.frameworkId);
+        console2.log("holder", holder);
+        console2.log("amount", amount);
+        Licensing.Framework storage fw = _framework(pol.frameworkId);
+
+        Licensing.Parameter[] storage params = fw.parameters[pvt];
         uint256 paramsLength = params.length;
         bytes[] memory values = pol.getValues(pvt);
+        console2.log("values length", values.length);
+        console2.log("params length", paramsLength);
         for (uint256 i = 0; i < paramsLength; i++) {
             Licensing.Parameter memory param = params[i];
             // Empty bytes => use default value specified in license framework creation params.
             bytes memory data = values[i].length == 0 ? param.defaultValue : values[i];
             bool verificationOk = false;
             if (pvt == Licensing.ParamVerifierType.Minting) {
-                verificationOk = param.verifier.verifyMintingParam(holder, amount, data);
+                verificationOk = param.verifier.verifyMinting(holder, amount, data);
             } else if (pvt == Licensing.ParamVerifierType.Activation) {
-                verificationOk = param.verifier.verifyActivationParam(holder, data);
+                verificationOk = param.verifier.verifyActivation(holder, data);
             } else if (pvt == Licensing.ParamVerifierType.LinkParent) {
-                verificationOk = param.verifier.verifyLinkParentParam(holder, data);
+                verificationOk = param.verifier.verifyLinkParent(holder, data);
+            } else if (pvt == Licensing.ParamVerifierType.Transfer) {
+                console2.log("verifying transfer");
+                console2.log("values length", values[i].length);
+                console2.log("values");
+                console2.logBytes(values[i]);
+                console2.log("default value length", param.defaultValue.length);
+                console2.log("default value");
+                console2.logBytes(param.defaultValue);
+                verificationOk = param.verifier.verifyTransfer(holder, amount, data);
+            } else {
+                // This should never happen since getValues checks for pvt validity
+                revert Errors.LicenseRegistry__InvalidParamVerifierType();
             }
             if (!verificationOk) {
                 revert Errors.LicenseRegistry__ParamVerifierFailed(uint8(pvt), address(param.verifier));

@@ -239,7 +239,7 @@ contract RegistrationModuleTest is ModuleBaseTest {
         policy.activationParamValues[0] = abi.encode(true);
         policy.linkParentParamValues[0] = abi.encode(true);
         policy.transferParamValues[0] = abi.encode(true);
-        (uint256 polId, bool isNew) = licenseRegistry.addPolicy(policy);
+        (uint256 polId) = licenseRegistry.addPolicy(policy);
         
         policyId = polId;
     }

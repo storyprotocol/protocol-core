@@ -7,6 +7,8 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 import { MockIParamVerifier } from "test/foundry/mocks/licensing/MockParamVerifier.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import "forge-std/console2.sol";
+import { Errors } from "contracts/lib/Errors.sol";
 
 contract LicenseRegistryTest is Test {
     using Strings for *;
@@ -27,6 +29,7 @@ contract LicenseRegistryTest is Test {
         registry.addLicenseFramework(fwParams);
         _;
     }
+
     // TODO: use ModuleBaseTest for this
     function _initFwParams() private {
         IParamVerifier[] memory mintingVerifiers = new IParamVerifier[](1);
@@ -58,6 +61,22 @@ contract LicenseRegistryTest is Test {
             transferDefaultValues: transferDefaultValues,
             licenseUrl: licenseUrl
         });
+    }
+
+    function _createPolicy() pure internal returns(Licensing.Policy memory pol) {
+        pol = Licensing.Policy({
+            frameworkId: 1,
+            mintingParamValues: new bytes[](1),
+            activationParamValues: new bytes[](1),
+            needsActivation: false,
+            linkParentParamValues: new bytes[](1),
+            transferParamValues: new bytes[](1)
+        });
+        pol.mintingParamValues[0] = abi.encode(true);
+        pol.activationParamValues[0] = abi.encode(true);
+        pol.linkParentParamValues[0] = abi.encode(true);
+        pol.transferParamValues[0] = abi.encode(true);
+        return pol;
     }
 
     function setUp() public {
@@ -109,19 +128,36 @@ contract LicenseRegistryTest is Test {
         }
     }
 
-    function test_LicenseRegistry_addPolicyToIpId() public withFrameworkParams {
-        Licensing.Policy memory policy = Licensing.Policy({
-            frameworkId: 1,
-            mintingParamValues: new bytes[](1),
-            activationParamValues: new bytes[](1),
-            needsActivation: false,
-            linkParentParamValues: new bytes[](1),
-            transferParamValues: new bytes[](1)
-        });
-        policy.mintingParamValues[0] = abi.encode(true);
-        policy.activationParamValues[0] = abi.encode(true);
-        policy.linkParentParamValues[0] = abi.encode(true);
-        policy.transferParamValues[0] = abi.encode(true);
+    function test_LicenseRegistry_addPolicy()
+        withFrameworkParams
+        public {
+        Licensing.Policy memory policy = _createPolicy();
+        uint256 polId = registry.addPolicy(policy);
+        assertEq(polId, 1, "polId not 1");
+    }
+
+    function test_LicenseRegistry_addPolicy_revert_policyAlreadyAdded()
+        withFrameworkParams
+        public {
+        Licensing.Policy memory policy = _createPolicy();
+        registry.addPolicy(policy);
+        vm.expectRevert(Errors.LicenseRegistry__PolicyAlreadyAdded.selector);
+        registry.addPolicy(policy);
+    }
+
+    function test_LicenseRegistry_addPolicy_revert_frameworkNotFound()
+        public {
+        Licensing.Policy memory policy = _createPolicy();
+        vm.expectRevert(Errors.LicenseRegistry__FrameworkNotFound.selector);
+        registry.addPolicy(policy);
+    }
+
+
+
+    function test_LicenseRegistry_addPolicyToIpId()
+        withFrameworkParams
+        public {
+        Licensing.Policy memory policy = _createPolicy();
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
         assertEq(policyId, 1, "policyId not 1");
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
@@ -129,19 +165,10 @@ contract LicenseRegistryTest is Test {
         assertEq(keccak256(abi.encode(storedPolicy)), keccak256(abi.encode(policy)), "policy not stored properly");
     }
 
-    function test_LicenseRegistry_addSamePolicyReusesPolicyId() public withFrameworkParams {
-        Licensing.Policy memory policy = Licensing.Policy({
-            frameworkId: 1,
-            mintingParamValues: new bytes[](1),
-            activationParamValues: new bytes[](1),
-            needsActivation: false,
-            linkParentParamValues: new bytes[](1),
-            transferParamValues: new bytes[](1)
-        });
-        policy.mintingParamValues[0] = abi.encode(true);
-        policy.activationParamValues[0] = abi.encode(true);
-        policy.linkParentParamValues[0] = abi.encode(true);
-        policy.transferParamValues[0] = abi.encode(true);
+    function test_LicenseRegistry_addSamePolicyReusesPolicyId()
+        withFrameworkParams
+        public {
+        Licensing.Policy memory policy = _createPolicy();
         (uint256 policyId, bool isNew1, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
         assertTrue(isNew1, "not new");
         assertEq(indexOnIpId, 0);
@@ -153,21 +180,12 @@ contract LicenseRegistryTest is Test {
 
     //function test_LicenseRegistry_revert_policyAlreadyAddedToIpId()
 
-    function test_LicenseRegistry_add2PoliciesToIpId() public withFrameworkParams {
+    function test_LicenseRegistry_add2PoliciesToIpId()
+        withFrameworkParams
+        public {
         assertEq(registry.totalPolicies(), 0);
         assertEq(registry.totalPoliciesForIp(ipId1), 0);
-        Licensing.Policy memory policy = Licensing.Policy({
-            frameworkId: 1,
-            mintingParamValues: new bytes[](1),
-            activationParamValues: new bytes[](1),
-            needsActivation: false,
-            linkParentParamValues: new bytes[](1),
-            transferParamValues: new bytes[](1)
-        });
-        policy.mintingParamValues[0] = abi.encode(true);
-        policy.activationParamValues[0] = abi.encode(true);
-        policy.linkParentParamValues[0] = abi.encode(true);
-        policy.transferParamValues[0] = abi.encode(true);
+        Licensing.Policy memory policy = _createPolicy();
 
         // First time adding a policy
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
@@ -189,20 +207,10 @@ contract LicenseRegistryTest is Test {
         assertEq(registry.policyIdForIpAtIndex(ipId1, 1), 2, "policyIdForIpAtIndex not 2");
     }
 
-    function test_LicenseRegistry_mintLicense() public withFrameworkParams returns (uint256 licenseId) {
-        Licensing.Policy memory policy = Licensing.Policy({
-            frameworkId: 1,
-            mintingParamValues: new bytes[](1),
-            activationParamValues: new bytes[](1),
-            needsActivation: false,
-            linkParentParamValues: new bytes[](1),
-            transferParamValues: new bytes[](1)
-        });
-        policy.mintingParamValues[0] = abi.encode(true);
-        policy.activationParamValues[0] = abi.encode(true);
-        policy.linkParentParamValues[0] = abi.encode(true);
-        policy.transferParamValues[0] = abi.encode(true);
-
+    function test_LicenseRegistry_mintLicense()
+        withFrameworkParams
+        public returns (uint256 licenseId) {
+        Licensing.Policy memory policy = _createPolicy();
         // solhint-disable-next-line no-unused-vars
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
         assertEq(policyId, 1);
@@ -249,7 +257,54 @@ contract LicenseRegistryTest is Test {
     }
 
 
-    function test_LicenseRegistry_transferParamsVerifyTrue() public {
+    function test_LicenseRegistry_singleTransfer_paramVerifyTrue()
+        withFrameworkParams
+        public  {
+        Licensing.Policy memory policy = _createPolicy();
+        // solhint-disable-next-line no-unused-vars
+        (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
 
+        Licensing.License memory licenseData = Licensing.License({
+            policyId: policyId,
+            licensorIpIds: new address[](1)
+        });
+        licenseData.licensorIpIds[0] = ipId1;
+
+        uint256 licenseId = registry.mintLicense(licenseData, 2, licenseHolder);
+        address licenseHolder2 = address(0x102);
+        vm.prank(licenseHolder);
+        registry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
+        assertEq(registry.balanceOf(licenseHolder, licenseId), 1, "not burnt");
+
+    }
+
+    function test_LicenseRegistry_revert_singleTransfer_transferParamVerifyFalse()
+        withFrameworkParams
+        public {
+        Licensing.Policy memory policy = _createPolicy();
+        policy.transferParamValues[0] = abi.encode(false);
+        console2.logBytes(policy.transferParamValues[0]);
+        console2.log("policy.transferParamValues.length", policy.transferParamValues.length);
+    
+        // solhint-disable-next-line no-unused-vars
+        (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
+
+        Licensing.License memory licenseData = Licensing.License({
+            policyId: policyId,
+            licensorIpIds: new address[](1)
+        });
+        licenseData.licensorIpIds[0] = ipId1;
+
+        uint256 licenseId = registry.mintLicense(licenseData, 2, licenseHolder);
+        address licenseHolder2 = address(0x102);
+        vm.prank(licenseHolder);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.LicenseRegistry__ParamVerifierFailed.selector,
+                uint8(Licensing.ParamVerifierType.Transfer),
+                address(verifier)
+            )
+        );
+        registry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
     }
 }
