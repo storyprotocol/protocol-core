@@ -29,9 +29,9 @@ library Licensing {
     struct Framework {
         /// @notice Stores the parameters that need to be verified in each moment of the license lifetime
         /// ParamVerifierType.Mint --> These parameters need to be verified when minting a license
-        /// in activateLicense() to be able to call linkIpToParent
         /// ParamVerifierType.LinkParent --> Verified before the owner of a license links to a parent ipId/policy,
         /// burning the license and setting the policy for the ipId.
+        /// ParamVerifierType.Transfer -> verified when transfering NFT
         mapping(ParamVerifierType => Parameter[]) parameters;
         /// @notice URL to the file containing the legal text for the license agreement
         string licenseUrl;
