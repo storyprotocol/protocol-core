@@ -12,7 +12,9 @@ import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.so
 import { AccessController } from "contracts/AccessController.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
+import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { Errors } from "contracts/lib/Errors.sol";
+import { Licensing } from "contracts/lib/Licensing.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
@@ -21,8 +23,8 @@ import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
+import { MockERC721 } from "contracts/mocks/MockERC721.sol";
 import { IPMetadataResolver } from "contracts/resolvers/IPMetadataResolver.sol";
-
 // script
 import { StringUtil } from "script/foundry/utils/StringUtil.sol";
 import { BroadcastManager } from "script/foundry/utils/BroadcastManager.s.sol";
@@ -41,16 +43,22 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     ModuleRegistry public moduleRegistry;
 
     IPAccountImpl public implementation;
-    // MockERC721 nft = new MockERC721();
+    MockERC721 public mockNft;
 
     IIPAccount public ipAccount;
     //    ERC6551Registry public erc6551Registry;
 
-    RegistrationModule registrationModule;
-    TaggingModule taggingModule;
-    RoyaltyModule royaltyModule;
-    DisputeModule disputeModule;
-    IPMetadataResolver ipMetadataResolver;
+    RegistrationModule public registrationModule;
+    TaggingModule public taggingModule;
+    RoyaltyModule public royaltyModule;
+    DisputeModule public disputeModule;
+    IPMetadataResolver public ipMetadataResolver;
+
+    mapping(uint256 => uint256) internal nftIds;
+    mapping(uint256 => uint256) internal policyIds;
+    mapping(string => uint256) internal fwIds;
+    mapping(string => Licensing.FrameworkCreationParams) internal fwCreationParams;
+    mapping(string => Licensing.Policy) internal policies;
 
     constructor() JsonDeploymentHandler("main") {}
 
@@ -70,12 +78,14 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             _configureDeployment();
         }
 
-        _writeDeployment("./deploy-out"); // write deployment json to deploy-out/deployment-{chainId}.json
+        _writeDeployment(); // write deployment json to deployments/deployment-{chainId}.json
         _endBroadcast(); // BroadcastManager.s.sol
     }
 
-    function _deployProtocolContracts(address accessControlAdmin) private {
+    function _deployProtocolContracts(address accessControldeployer) private {
         string memory contractKey;
+
+        mockNft = new MockERC721();
 
         contractKey = "AccessController";
         _predeploy(contractKey);
@@ -157,13 +167,171 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
     function _configureDeployment() private {
         _configureAccessController();
-        // _configureModuleRegistry();
-        // _configureLicenseRegistry();
+        _configureModuleRegistry();
+        _configureInteractions();
         // _configureIPAccountRegistry();
         // _configureIPRecordRegistry();
     }
 
     function _configureAccessController() private {
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
+    }
+
+    function _configureModuleRegistry() private {
+        moduleRegistry.registerModule("REGISTRATION_MODULE", address(registrationModule));
+        moduleRegistry.registerModule("METADATA_RESOLVER_MODULE", address(ipMetadataResolver));
+    }
+
+    function _configureInteractions() private {
+        nftIds[1] = mockNft.mint(deployer);
+        nftIds[2] = mockNft.mint(deployer);
+        nftIds[3] = mockNft.mint(deployer);
+        nftIds[4] = mockNft.mint(deployer);
+
+        // registerIPAccount(deployer, mockNft, token[deployer][mockNft][0]);
+        registrationModule.registerRootIp(0, address(mockNft), nftIds[1]);
+        registrationModule.registerRootIp(0, address(mockNft), nftIds[2]);
+
+        accessController.setGlobalPermission(
+            address(registrationModule),
+            address(licenseRegistry),
+            bytes4(0), // wildcard
+            1 // AccessPermission.ALLOW
+        );
+
+        // wildcard allow
+        IIPAccount(payable(getIpId(deployer, mockNft, nftIds[1]))).execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setPermission(address,address,address,bytes4,uint8)",
+                getIpId(deployer, mockNft, 1),
+                deployer,
+                address(0),
+                bytes4(0),
+                1 // AccessPermission.ALLOW
+            )
+        );
+
+        /*///////////////////////////////////////////////////////////////
+                            CREATE LICENSE FRAMEWORKS
+        ////////////////////////////////////////////////////////////////*/
+
+        // All trues for MockVerifier means it will always return true on condition checks
+        bytes[] memory byteValueTrue = new bytes[](1);
+        byteValueTrue[0] = abi.encode(true);
+
+        // Licensing.FrameworkCreationParams memory fwAllTrue = Licensing.FrameworkCreationParams({
+        //     mintingParamVerifiers: new IParamVerifier[](1),
+        //     mintingParamDefaultValues: byteValueTrue,
+        //     activationParamVerifiers: new IParamVerifier[](1),
+        //     activationParamDefaultValues: byteValueTrue,
+        //     defaultNeedsActivation: true,
+        //     linkParentParamVerifiers: new IParamVerifier[](1),
+        //     linkParentParamDefaultValues: byteValueTrue,
+        //     licenseUrl: "https://very-nice-verifier-license.com"
+        // });
+        fwCreationParams["all_true"] = Licensing.FrameworkCreationParams({
+            mintingParamVerifiers: new IParamVerifier[](0),
+            mintingParamDefaultValues: new bytes[](0),
+            // mintingParamDefaultValues: byteValueTrue,
+            activationParamVerifiers: new IParamVerifier[](0),
+            activationParamDefaultValues: new bytes[](0),
+            // activationParamDefaultValues: byteValueTrue,
+            defaultNeedsActivation: true,
+            linkParentParamVerifiers: new IParamVerifier[](0),
+            linkParentParamDefaultValues: new bytes[](0),
+            // linkParentParamDefaultValues: byteValueTrue,
+            licenseUrl: "https://very-nice-verifier-license.com"
+        });
+
+        // fwCreationParams["all_true"].mintingParamVerifiers[0] = mockLicenseVerifier;
+        // fwCreationParams["all_true"].activationParamVerifiers[0] = mockLicenseVerifier;
+        // fwCreationParams["all_true"].linkParentParamVerifiers[0] = mockLicenseVerifier;
+
+        fwCreationParams["mint_payment"] = Licensing.FrameworkCreationParams({
+            mintingParamVerifiers: new IParamVerifier[](0),
+            mintingParamDefaultValues: new bytes[](0),
+            // mintingParamVerifiers: new IParamVerifier[](1),
+            // mintingParamDefaultValues: byteValueTrue, // value here doesn't matter for MintPaymentVerifier
+            activationParamVerifiers: new IParamVerifier[](0),
+            activationParamDefaultValues: new bytes[](0),
+            defaultNeedsActivation: false,
+            linkParentParamVerifiers: new IParamVerifier[](0),
+            linkParentParamDefaultValues: new bytes[](0),
+            licenseUrl: "https://expensive-minting-license.com"
+        });
+
+        // fwCreationParams["mint_payment"].mintingParamVerifiers[0] = mintPaymentVerifier;
+
+        fwIds["all_true"] = licenseRegistry.addLicenseFramework(fwCreationParams["all_true"]);
+        fwIds["mint_payment"] = licenseRegistry.addLicenseFramework(fwCreationParams["mint_payment"]);
+
+        // /*///////////////////////////////////////////////////////////////
+        //                         CREATE POLICIES
+        // ////////////////////////////////////////////////////////////////*/
+
+        policies["test_true"] = Licensing.Policy({
+            frameworkId: fwIds["all_true"],
+            mintingParamValues: new bytes[](0),
+            activationParamValues: new bytes[](0),
+            needsActivation: true,
+            linkParentParamValues: new bytes[](0)
+        });
+
+        policies["expensive_mint"] = Licensing.Policy({
+            frameworkId: fwIds["mint_payment"],
+            mintingParamValues: new bytes[](0),
+            activationParamValues: new bytes[](0),
+            needsActivation: false,
+            linkParentParamValues: new bytes[](0)
+        });
+
+        (uint256 policyId_test_true, ) = licenseRegistry.addPolicy(policies["test_true"]);
+        (uint256 policyId_exp_mint, ) = licenseRegistry.addPolicy(policies["expensive_mint"]);
+
+        // /*///////////////////////////////////////////////////////////////
+        //                     ADD POLICIES TO IPACCOUNTS
+        // ////////////////////////////////////////////////////////////////*/
+
+        licenseRegistry.addPolicyToIp(getIpId(mockNft, nftIds[1]), policyId_test_true);
+        licenseRegistry.addPolicyToIp(getIpId(mockNft, nftIds[2]), policyId_exp_mint);
+
+        // /*///////////////////////////////////////////////////////////////
+        //                     MINT LICENSES ON POLICIES
+        // ////////////////////////////////////////////////////////////////*/
+
+        Licensing.License memory licenseData = Licensing.License({
+            policyId: policyId_test_true,
+            licensorIpIds: new address[](1)
+        });
+        licenseData.licensorIpIds[0] = getIpId(mockNft, nftIds[1]);
+
+        // Mints 1 license for policy "test_true" on NFT id 1 IPAccount
+        uint256 licenseId1 = licenseRegistry.mintLicense(licenseData, 2, deployer);
+
+        registrationModule.registerDerivativeIp(
+            licenseId1,
+            address(mockNft),
+            nftIds[3],
+            "best derivative ip",
+            "some of the best description",
+            bytes32("rand_hash")
+        );
+
+        // /*///////////////////////////////////////////////////////////////
+        //             LINK IPACCOUNTS TO PARENTS USING LICENSES
+        // ////////////////////////////////////////////////////////////////*/
+
+        licenseRegistry.linkIpToParent(licenseId1, getIpId(mockNft, nftIds[4]), deployer);
+    }
+
+    function getIpId(MockERC721 mnft, uint256 tokenId) public view returns (address ipId) {
+        return ipAccountRegistry.ipAccount(block.chainid, address(mnft), tokenId);
+    }
+
+    function getIpId(address user, MockERC721 mnft, uint256 tokenId) public view returns (address ipId) {
+        require(mnft.ownerOf(tokenId) == user, "getIpId: not owner");
+        return ipAccountRegistry.ipAccount(block.chainid, address(mnft), tokenId);
     }
 }

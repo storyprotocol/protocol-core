@@ -71,6 +71,9 @@ anvil :; anvil -m 'test test test test test test test test test test test junk'
 deploy-main :; forge script script/foundry/deployment/Main.s.sol:Main --rpc-url ${RPC_URL} --broadcast --verify -vvvv
 
 deploy-main-hh:
+	npx hardhat run script/hardhat/deployment/00-deploy-main.ts --network ${NETWORK}
+
+deploy-tenderly:
 	rm -rf deployments/hardhat/*.json
 	npx hardhat run script/hardhat/post-deployment/99-revert-chain.ts --network tenderly
 	npx hardhat run script/hardhat/deployment/00-deploy-main.ts --network tenderly
