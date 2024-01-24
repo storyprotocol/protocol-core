@@ -22,6 +22,8 @@ interface ILicenseRegistry {
         Licensing.License licenseData
     );
 
+    event LicenseActivated(uint256 indexed licenseId, address indexed holder);
+
     event IpIdLinkedToParent(address indexed caller, address indexed ipId, address indexed parentIpId);
 
     function addLicenseFramework(

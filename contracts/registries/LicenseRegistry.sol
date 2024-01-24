@@ -316,7 +316,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         }
         Licensing.Policy memory pol = policy(policyId);
         _verifyParams(Licensing.ParamVerifierType.Mint, pol, receiver, amount);
-        Licensing.Status status = pol.needsActivation ? Licensing.Status.NeedsActivation : Licensing.Status.Active;
+        // We don't check about `mintsActiveByDefault` because policy value always overrides.
+        Licensing.Status status = pol.mintsActive ? Licensing.Status.NeedsActivation : Licensing.Status.Active;
         Licensing.License memory licenseData = Licensing.License({
             policyId: policyId,
             licensorIpIds: licensorIpIds,
@@ -331,6 +332,17 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         }
         _mint(receiver, licenseId, amount, "");
         return licenseId;
+    }
+
+    function activateLicense(uint256 licenseId) external onlyLicensee(licenseId, msg.sender) {
+        Licensing.License storage licenseData = _licenses[licenseId];
+        if (licenseData.status != Licensing.Status.NeedsActivation) {
+            revert Errors.LicenseRegistry__LicenseAlreadyActivated();
+        }
+        Licensing.Policy memory pol = policy(licenseData.policyId);
+        _verifyParams(Licensing.ParamVerifierType.Activation, pol, msg.sender, 1);
+        licenseData.status = Licensing.Status.Active;
+        emit LicenseActivated(licenseId, msg.sender);
     }
 
     /// Returns true if holder has positive balance for licenseId
@@ -360,14 +372,16 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         address childIpId,
         address holder
     ) external onlyLicensee(licenseId, holder) {
-        // TODO: auth
-        // TODO: check if license is activated
+        
         // TODO: check if childIpId exists and is owned by holder
         Licensing.License memory licenseData = _licenses[licenseId];
+        if (licenseData.status != Licensing.Status.Active) {
+            revert Errors.LicenseRegistry__LicenseNotActive();
+        }
         address[] memory parents = licenseData.licensorIpIds;
         for (uint256 i = 0; i < parents.length; i++) {
             // TODO: check licensor exist
-            // TODO: check licensor part of a bad tag branch
+            // TODO: check licensor not part of a branch tagged by disputer
         }
 
         Licensing.Policy memory pol = policy(licenseData.policyId);
@@ -465,7 +479,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         }
     }
 
-    // TODO: activation method
 
     // TODO: tokenUri from parameters, from a metadata resolver contract
 }

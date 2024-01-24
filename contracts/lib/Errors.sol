@@ -60,6 +60,8 @@ library Errors {
     error LicenseRegistry__LinkParentParamFailed();
     error LicenseRegistry__LicenseMustHaveLicensors();
     error LicenseRegistry__InvalidLicensor();
+    error LicenseRegistry__LicenseAlreadyActivated();
+    error LicenseRegistry__LicenseNotActive();
 
 
     ////////////////////////////////////////////////////////////////////////////

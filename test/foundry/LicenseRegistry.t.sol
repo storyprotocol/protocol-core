@@ -68,7 +68,7 @@ contract LicenseRegistryTest is Test {
             frameworkId: 1,
             mintingParamValues: new bytes[](1),
             activationParamValues: new bytes[](1),
-            needsActivation: false,
+            mintsActive: false,
             linkParentParamValues: new bytes[](1),
             transferParamValues: new bytes[](1)
         });

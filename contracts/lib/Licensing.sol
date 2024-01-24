@@ -70,8 +70,8 @@ library Licensing {
         /// Array with values for parameters verifying conditions to activate a license. Empty bytes for index if
         /// this policy wants to use the default value for the paremeter.
         bytes[] activationParamValues;
-        /// If false, minted licenses will start activated and verification of activationParams will be skipped
-        bool needsActivation;
+        /// If true, licenses minted with this policy will be active by default. If false, they will be inactive
+        bool mintsActive;
         /// Array with values for parameters verifying conditions to link a license to a parent. Empty bytes for index if
         /// this policy wants to use the default value for the paremeter.
         bytes[] linkParentParamValues;

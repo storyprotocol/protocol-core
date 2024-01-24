@@ -314,7 +314,7 @@ contract IntegrationTest is Test {
             frameworkId: licenseFwIds["all_true"],
             mintingParamValues: new bytes[](1),
             activationParamValues: new bytes[](1),
-            needsActivation: true,
+            mintsActive: true,
             linkParentParamValues: new bytes[](1),
             transferParamValues: new bytes[](1)
         });
@@ -329,7 +329,7 @@ contract IntegrationTest is Test {
             frameworkId: licenseFwIds["mint_payment"],
             mintingParamValues: new bytes[](1), // empty value to use default value, which doesn't matter
             activationParamValues: new bytes[](0),
-            needsActivation: false,
+            mintsActive: false,
             linkParentParamValues: new bytes[](0),
             transferParamValues: new bytes[](0)
         });
