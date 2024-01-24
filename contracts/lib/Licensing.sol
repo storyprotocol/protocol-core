@@ -3,7 +3,6 @@
 pragma solidity ^0.8.20;
 import { IParamVerifier } from "../interfaces/licensing/IParamVerifier.sol";
 import { Errors } from "./Errors.sol";
-import "forge-std/console2.sol";
 
 library Licensing {
 
@@ -88,21 +87,10 @@ library Licensing {
         } else if (pvt == ParamVerifierType.LinkParent) {
             return policy.linkParentParamValues;
         } else if (pvt == ParamVerifierType.Transfer) {
-            console2.log(policy.transferParamValues.length);
             return policy.transferParamValues;
         } else {
             revert Errors.LicenseRegistry__InvalidParamVerifierType();
         }
-    }
-
-    /// Describe the ability of the license to be linked to a parent IP
-    /// Burnt license NFT can still be set Inactive by expiration or Disputer module
-    enum LinkStatus {
-        /// License has been minted but not activated
-        NeedsActivation,
-        /// License has been activated and is active
-        Active
-
     }
 
     /// Data that define a License Agreement NFT
@@ -111,7 +99,5 @@ library Licensing {
         uint256 policyId;
         /// Ids for the licensors, meaning the Ip Ids of the parents of the derivative to be created
         address[] licensorIpIds;
-        /// LinkStatus of the license
-        LinkStatus status;
     }
 }
