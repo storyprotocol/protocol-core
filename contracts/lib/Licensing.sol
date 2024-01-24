@@ -97,13 +97,12 @@ library Licensing {
 
     /// Describe the ability of the license to be linked to a parent IP
     /// Burnt license NFT can still be set Inactive by expiration or Disputer module
-    enum Status {
+    enum LinkStatus {
         /// License has been minted but not activated
         NeedsActivation,
         /// License has been activated and is active
-        Active,
-        /// License has been deactivated, by expiration, Disputer module or other.
-        Inactive
+        Active
+
     }
 
     /// Data that define a License Agreement NFT
@@ -112,7 +111,7 @@ library Licensing {
         uint256 policyId;
         /// Ids for the licensors, meaning the Ip Ids of the parents of the derivative to be created
         address[] licensorIpIds;
-        /// Status of the license
-        Status status;
+        /// LinkStatus of the license
+        LinkStatus status;
     }
 }

@@ -317,7 +317,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         Licensing.Policy memory pol = policy(policyId);
         _verifyParams(Licensing.ParamVerifierType.Mint, pol, receiver, amount);
         // We don't check about `mintsActiveByDefault` because policy value always overrides.
-        Licensing.Status status = pol.mintsActive ? Licensing.Status.NeedsActivation : Licensing.Status.Active;
+        Licensing.LinkStatus status = pol.mintsActive ? Licensing.LinkStatus.NeedsActivation : Licensing.LinkStatus.Active;
         Licensing.License memory licenseData = Licensing.License({
             policyId: policyId,
             licensorIpIds: licensorIpIds,
@@ -336,12 +336,12 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
     function activateLicense(uint256 licenseId) external onlyLicensee(licenseId, msg.sender) {
         Licensing.License storage licenseData = _licenses[licenseId];
-        if (licenseData.status != Licensing.Status.NeedsActivation) {
+        if (licenseData.status != Licensing.LinkStatus.NeedsActivation) {
             revert Errors.LicenseRegistry__LicenseAlreadyActivated();
         }
         Licensing.Policy memory pol = policy(licenseData.policyId);
         _verifyParams(Licensing.ParamVerifierType.Activation, pol, msg.sender, 1);
-        licenseData.status = Licensing.Status.Active;
+        licenseData.status = Licensing.LinkStatus.Active;
         emit LicenseActivated(licenseId, msg.sender);
     }
 
@@ -375,7 +375,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         
         // TODO: check if childIpId exists and is owned by holder
         Licensing.License memory licenseData = _licenses[licenseId];
-        if (licenseData.status != Licensing.Status.Active) {
+        if (licenseData.status != Licensing.LinkStatus.Active) {
             revert Errors.LicenseRegistry__LicenseNotActive();
         }
         address[] memory parents = licenseData.licensorIpIds;
@@ -419,6 +419,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
     function totalParentsForIpId(address ipId) external view returns (uint256) {
         return _ipIdParents[ipId].length();
+    }
+
+    function license(uint256 licenseId) external view returns (Licensing.License memory) {
+        return _licenses[licenseId];
     }
 
     function _update(address from, address to, uint256[] memory ids, uint256[] memory values) virtual override internal {

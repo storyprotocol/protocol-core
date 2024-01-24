@@ -68,7 +68,7 @@ contract LicenseRegistryTest is Test {
             frameworkId: 1,
             mintingParamValues: new bytes[](1),
             activationParamValues: new bytes[](1),
-            mintsActive: false,
+            mintsActive: true,
             linkParentParamValues: new bytes[](1),
             transferParamValues: new bytes[](1)
         });
@@ -153,7 +153,6 @@ contract LicenseRegistryTest is Test {
     }
 
 
-
     function test_LicenseRegistry_addPolicyToIpId()
         withFrameworkParams
         public {
@@ -224,8 +223,13 @@ contract LicenseRegistryTest is Test {
         licensorIpIds[0] = ipId1;
         licenseId = registry.mintLicense(policyId, licensorIpIds, 2, licenseHolder);
         assertEq(licenseId, 1);
+        Licensing.License memory license = registry.license(licenseId);
         assertEq(registry.balanceOf(licenseHolder, licenseId), 2);
         assertEq(registry.isLicensee(licenseId, licenseHolder), true);
+        assertEq(uint8(license.status), uint8(Licensing.LinkStatus.Active));
+        assertEq(license.policyId, policyId);
+        assertEq(license.licensorIpIds.length, 1);
+        assertEq(license.licensorIpIds[0], ipId1);
         return licenseId;
     }
 
