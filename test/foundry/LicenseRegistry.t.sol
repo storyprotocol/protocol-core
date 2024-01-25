@@ -144,6 +144,7 @@ contract LicenseRegistryTest is Test {
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
         assertEq(policyId, 1, "policyId not 1");
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
+        assertFalse(registry.isPolicyIdAtIndexSetByLinking(ipId1, 0));
         Licensing.Policy memory storedPolicy = registry.policy(policyId);
         assertEq(keccak256(abi.encode(storedPolicy)), keccak256(abi.encode(policy)), "policy not stored properly");
     }
@@ -155,9 +156,11 @@ contract LicenseRegistryTest is Test {
         (uint256 policyId, bool isNew1, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
         assertTrue(isNew1, "not new");
         assertEq(indexOnIpId, 0);
+        assertFalse(registry.isPolicyIdAtIndexSetByLinking(ipId1, 0));
         (uint256 policyId2, bool isNew2, uint256 indexOnIpId2) = registry.addPolicyToIp(ipId2, policy);
         assertFalse(isNew2, "new");
         assertEq(indexOnIpId2, 0);
+        assertFalse(registry.isPolicyIdAtIndexSetByLinking(ipId2, 0));
         assertEq(policyId, policyId2, "policyId not reused");
     }
 
@@ -178,6 +181,7 @@ contract LicenseRegistryTest is Test {
         assertEq(registry.totalPolicies(), 1, "totalPolicies not incremented");
         assertEq(registry.totalPoliciesForIp(ipId1), 1, "totalPoliciesForIp not incremented");
         assertEq(registry.policyIdForIpAtIndex(ipId1, 0), 1, "policyIdForIpAtIndex not 1");
+        assertFalse(registry.isPolicyIdAtIndexSetByLinking(ipId1, 0));
 
         // Adding different policy to same ipId
         policy.mintingParamValues[0] = abi.encode("test2");
@@ -188,6 +192,7 @@ contract LicenseRegistryTest is Test {
         assertEq(registry.totalPolicies(), 2, "totalPolicies not incremented");
         assertEq(registry.totalPoliciesForIp(ipId1), 2, "totalPoliciesForIp not incremented");
         assertEq(registry.policyIdForIpAtIndex(ipId1, 1), 2, "policyIdForIpAtIndex not 2");
+        assertFalse(registry.isPolicyIdAtIndexSetByLinking(ipId1, 1));
     }
 
     function test_LicenseRegistry_mintLicense()
@@ -216,7 +221,7 @@ contract LicenseRegistryTest is Test {
         return licenseId;
     }
 
-    function test_LicenseRegistry_setParentId() public {
+    function test_LicenseRegistry_linkIpToParent() public {
         // TODO: something cleaner than this
         uint256 licenseId = test_LicenseRegistry_mintLicense();
 
@@ -228,6 +233,8 @@ contract LicenseRegistryTest is Test {
             keccak256(abi.encode(registry.policyForIpAtIndex(ipId1, 0))),
             "policy not copied"
         );
+        assertEq(registry.policyIdForIpAtIndex(ipId2, 0), 1);
+        assertTrue(registry.isPolicyIdAtIndexSetByLinking(ipId2, 0), "not set by linking?");
 
         address[] memory parents = registry.parentIpIds(ipId2);
         assertEq(parents.length, 1, "not 1 parent");

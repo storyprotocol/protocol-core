@@ -26,6 +26,9 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     uint256 private _totalPolicies;
     // DO NOT remove policies, that rugs derivatives and breaks ordering assumptions in set
     mapping(address => EnumerableSet.UintSet) private _policiesPerIpId;
+    //
+    mapping(address => bool[]) private _policyPerIpIdSetByLinking;
+
     mapping(address => EnumerableSet.AddressSet) private _ipIdParents;
 
     mapping(bytes32 => uint256) private _hashedLicenses;
@@ -168,7 +171,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     ) public returns (uint256 policyId, bool isNew, uint256 indexOnIpId) {
         // check protocol auth
         (uint256 polId, bool newPolicy) = _addPolicy(pol);
-        return (polId, newPolicy, _addPolictyIdToIp(ipId, polId));
+        return (polId, newPolicy, _addPolictyIdToIp(ipId, polId, false));
     }
 
     /// Adds a policy to an ipId, which can be used to mint licenses.
@@ -182,7 +185,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         if (!isPolicyDefined(polId)) {
             revert Errors.LicenseRegistry__PolicyNotFound();
         }
-        return _addPolictyIdToIp(ipId, polId);
+        return _addPolictyIdToIp(ipId, polId, false);
     }
 
     function addPolicy(Licensing.Policy memory pol) public returns (uint256 policyId) {
@@ -209,14 +212,16 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// Will revert if policy set already has policyId
     /// @param ipId the IP identifier
     /// @param policyId id of the policy data
+    /// @param setByLinking true if set in linkIpToParent, false otherwise
     /// @return index of the policy added to the set
-    function _addPolictyIdToIp(address ipId, uint256 policyId) internal returns (uint256 index) {
+    function _addPolictyIdToIp(address ipId, uint256 policyId, bool setByLinking) internal returns (uint256 index) {
         EnumerableSet.UintSet storage policySet = _policiesPerIpId[ipId];
         // TODO: check if policy is compatible with the others
         if (!policySet.add(policyId)) {
             revert Errors.LicenseRegistry__PolicyAlreadySetForIpId();
         }
-        emit PolicyAddedToIpId(msg.sender, ipId, policyId);
+        _policyPerIpIdSetByLinking[ipId].push(setByLinking);
+        emit PolicyAddedToIpId(msg.sender, ipId, policyId, setByLinking);
         return policySet.length() - 1;
     }
 
@@ -259,6 +264,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
     function policyForIpAtIndex(address ipId, uint256 index) external view returns (Licensing.Policy memory) {
         return _policies[_policiesPerIpId[ipId].at(index)];
+    }
+
+    function isPolicyIdAtIndexSetByLinking(address ipId, uint256 index) external view returns (bool) {
+        return _policyPerIpIdSetByLinking[ipId][index];
     }
 
     /// Mints license NFTs representing a policy granted by a set of ipIds (licensors). This NFT needs to be burned
@@ -352,8 +361,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         _verifyParams(Licensing.ParamVerifierType.LinkParent, pol, holder, 1);
         
         // Add policy to kid
-        // TODO: return this values
-        addPolicyToIp(childIpId, pol);
+        // TODO: return index of policy in ipId?
+        _addPolictyIdToIp(childIpId, licenseData.policyId, true);
         // Set parent
         for (uint256 i = 0; i < parents.length; i++) {
             // We don't care if it was already a parent, because there might be a case such as:
