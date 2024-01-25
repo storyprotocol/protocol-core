@@ -10,7 +10,9 @@ import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.so
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { SignatureChecker } from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import { AccessPermission } from "contracts/lib/AccessPermission.sol";
-import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import { MetaTx } from "contracts/lib/MetaTx.sol";
+import { Errors } from "contracts/lib/Errors.sol";
 
 /// @title IPAccountImpl
 /// @notice The Story Protocol's implementation of the IPAccount.
@@ -97,54 +99,50 @@ contract IPAccountImpl is IERC165, IIPAccount {
         return IAccessController(accessController).checkPermission(address(this), signer_, to_, selector);
     }
 
-    function isValidSignature(bytes32 hash, bytes memory signature) external view returns (bytes4 magicValue) {
-        bool isValid = SignatureChecker.isValidSignatureNow(owner(), hash, signature);
-        if (isValid) {
-            return IERC1271.isValidSignature.selector;
-        }
-
-        return "";
-    }
-
-    function delegateWithSignature(
-        address delegatee,
-        address module,
-        bytes4 func,
+    /// @notice Executes a transaction from the IP Account on behalf of the signer.
+    /// @param to The recipient of the transaction.
+    /// @param value The amount of Ether to send.
+    /// @param data The data to send along with the transaction.
+    /// @param signer The signer of the transaction.
+    /// @param deadline The deadline of the transaction signature.
+    /// @param signature The signature of the transaction, EIP-712 encoded.
+    function executeWithSig(
+        address to,
+        uint256 value,
+        bytes calldata data,
+        address signer,
         uint256 deadline,
         bytes calldata signature
-    ) external {
+    ) external payable returns (bytes memory result) {
+        if (signer == address(0)) {
+            revert Errors.IPAccount__InvalidSigner();
+        }
 
-        require(_isValidSigner(msg.sender, to_, data_), "Invalid signer");
+        if (deadline < block.timestamp) {
+            revert Errors.IPAccount__ExpiredSignature();
+        }
 
-        ++state;
-
-        IAccessController(accessController).setPermission(
-            address(this),
-            delegatee,
-            module,
-            func,
-            AccessPermission.ALLOW
+        bytes32 digest = MessageHashUtils.toTypedDataHash(
+            MetaTx.calculateDomainSeparator(),
+            MetaTx.getExecuteStructHash(
+                MetaTx.Execute({ to: to, value: value, data: data, nonce: state, deadline: deadline })
+            )
         );
+
+        if (!SignatureChecker.isValidSignatureNow(signer, digest, signature)) {
+            revert Errors.IPAccount__InvalidSignature();
+        }
+
+        result = _execute(signer, to, value, data);
     }
 
     /// @notice Executes a transaction from the IP Account.
-    /// @param to_ The recipient of the transaction.
-    /// @param value_ The amount of Ether to send.
-    /// @param data_ The data to send along with the transaction.
+    /// @param to The recipient of the transaction.
+    /// @param value The amount of Ether to send.
+    /// @param data The data to send along with the transaction.
     /// @return result The return data from the transaction.
-    function execute(address to_, uint256 value_, bytes calldata data_) external payable returns (bytes memory result) {
-        require(_isValidSigner(msg.sender, to_, data_), "Invalid signer");
-
-        ++state;
-
-        bool success;
-        (success, result) = to_.call{ value: value_ }(data_);
-
-        if (!success) {
-            assembly {
-                revert(add(result, 32), mload(result))
-            }
-        }
+    function execute(address to, uint256 value, bytes calldata data) external payable returns (bytes memory result) {
+        result = _execute(msg.sender, to, value, data);
     }
 
     function onERC721Received(address, address, uint256, bytes memory) public pure returns (bytes4) {
@@ -163,5 +161,25 @@ contract IPAccountImpl is IERC165, IIPAccount {
         bytes memory
     ) public pure returns (bytes4) {
         return this.onERC1155BatchReceived.selector;
+    }
+
+    function _execute(
+        address signer,
+        address to,
+        uint256 value,
+        bytes calldata data
+    ) internal returns (bytes memory result) {
+        require(_isValidSigner(signer, to, data), "Invalid signer");
+
+        ++state;
+
+        bool success;
+        (success, result) = to.call{ value: value }(data);
+
+        if (!success) {
+            assembly {
+                revert(add(result, 32), mload(result))
+            }
+        }
     }
 }
