@@ -68,11 +68,13 @@ library Errors {
     error DisputeModule__ZeroArbitrationPolicy();
     error DisputeModule__ZeroArbitrationRelayer();
     error DisputeModule__ZeroDisputeTag();
-    error DisputeModule__ZeroLinkToDisputeSummary();
+    error DisputeModule__ZeroLinkToDisputeEvidence();
     error DisputeModule__NotWhitelistedArbitrationPolicy();
     error DisputeModule__NotWhitelistedDisputeTag();
     error DisputeModule__NotWhitelistedArbitrationRelayer();
     error DisputeModule__NotDisputeInitiator();
+    error DisputeModule__NotInDisputeState();
+    error DisputeModule__NotAbleToResolve();
 
     error ArbitrationPolicySP__ZeroDisputeModule();
     error ArbitrationPolicySP__ZeroPaymentToken();
