@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
-import { IPResolver} from "contracts/resolvers/IPResolver.sol";
+import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { IRegistrationModule } from "contracts/interfaces/modules/IRegistrationModule.sol";
@@ -19,7 +19,6 @@ import { BaseModule } from "contracts/modules/BaseModule.sol";
 ///         into the protocol, create a resolver, and bind to it any licenses
 ///         and terms specified by the IP registrant (IP account owner).
 contract RegistrationModule is BaseModule, IRegistrationModule {
-
     /// @notice The metadata resolver used by the registration module.
     IPResolver public resolver;
 
@@ -67,7 +66,14 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         }
 
         // Perform core IP registration and IP account creation.
-        address ipId = IP_RECORD_REGISTRY.register(block.chainid, tokenContract, tokenId, address(resolver), true, address(metadataProvider));
+        address ipId = IP_RECORD_REGISTRY.register(
+            block.chainid,
+            tokenContract,
+            tokenId,
+            address(resolver),
+            true,
+            address(metadataProvider)
+        );
 
         // Perform core IP policy creation.
         if (policyId != 0) {
@@ -86,7 +92,6 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
     /// @param tokenContract The address of the NFT bound to the derivative IP.
     /// @param tokenId The token id of the NFT bound to the derivative IP.
     /// @param ipName The name assigned to the new IP.
-    /// @param ipDescription A string description to assign to the IP.
     /// @param contentHash The content hash of the IP being registered.
     /// @param externalURL An external URI to link to the IP.
     /// TODO: Replace all metadata with a generic bytes parameter type, and do
@@ -96,7 +101,6 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         address tokenContract,
         uint256 tokenId,
         string memory ipName,
-        string memory ipDescription,
         bytes32 contentHash,
         string calldata externalURL
     ) external {
@@ -107,7 +111,14 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
             revert Errors.RegistrationModule__InvalidOwner();
         }
 
-        address ipId = IP_RECORD_REGISTRY.register(block.chainid, tokenContract, tokenId, address(resolver), true, address(metadataProvider));
+        address ipId = IP_RECORD_REGISTRY.register(
+            block.chainid,
+            tokenContract,
+            tokenId,
+            address(resolver),
+            true,
+            address(metadataProvider)
+        );
         // ACCESS_CONTROLLER.setPermission(
         //     ipId,
         //     address(this),

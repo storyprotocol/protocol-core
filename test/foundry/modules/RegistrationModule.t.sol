@@ -34,7 +34,6 @@ contract RegistrationModuleTest is ModuleBaseTest {
 
     // Default IP record attributes.
     string public constant RECORD_NAME = "IPRecord";
-    string public constant RECORD_DESCRIPTION = "IPs all the way down.";
     bytes32 public constant RECORD_HASH = "";
     string public constant RECORD_URL = "https://ipasset.xyz";
 
@@ -163,7 +162,6 @@ contract RegistrationModuleTest is ModuleBaseTest {
             tokenAddress,
             tokenId2,
             RECORD_NAME,
-            RECORD_DESCRIPTION,
             RECORD_HASH,
             RECORD_URL
         );
@@ -187,7 +185,6 @@ contract RegistrationModuleTest is ModuleBaseTest {
             tokenAddress,
             tokenId,
             RECORD_NAME,
-            RECORD_DESCRIPTION,
             RECORD_HASH,
             RECORD_URL
         );

@@ -19,7 +19,6 @@ import { IP_RESOLVER_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 ///        and supported interface (address, interfaceId) to tie to an IP asset.
 /// TODO: Add support for multicall, so multiple records may be set at once.
 contract IPResolver is KeyValueResolver {
-
     /// @notice Initializes the IP metadata resolver.
     /// @param accessController The access controller used for IP authorization.
     /// @param ipRecordRegistry The address of the IP record registry.
@@ -43,5 +42,4 @@ contract IPResolver is KeyValueResolver {
     function name() public pure override(BaseModule, IModule) returns (string memory) {
         return IP_RESOLVER_MODULE_KEY;
     }
-
 }

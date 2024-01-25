@@ -5,7 +5,6 @@ pragma solidity ^0.8.23;
 /// @title IP Library
 /// @notice Library for constants, structs, and helper functions used for IP.
 library IP {
-
     /// @notice Core metadata to associate with each IP.
     struct Metadata {
         // The name associated with the IP.

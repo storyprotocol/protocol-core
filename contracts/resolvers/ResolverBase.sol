@@ -7,13 +7,17 @@ import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
 
 /// @notice IP Resolver Base Contract
 abstract contract ResolverBase is IResolver, BaseModule {
-
     /// @notice Initializes the base module contract.
     /// @param controller The access controller used for IP authorization.
     /// @param recordRegistry The address of the IP record registry.
     /// @param accountRegistry The address of the IP account registry.
     /// @param licenseRegistry The address of the license registry.
-    constructor(address controller, address recordRegistry, address accountRegistry, address licenseRegistry) BaseModule(controller, recordRegistry, accountRegistry, licenseRegistry) {}
+    constructor(
+        address controller,
+        address recordRegistry,
+        address accountRegistry,
+        address licenseRegistry
+    ) BaseModule(controller, recordRegistry, accountRegistry, licenseRegistry) {}
 
     /// @notice Checks whether the resolver interface is supported.
     /// @param id The resolver interface identifier.

@@ -139,5 +139,4 @@ library Errors {
     error TaggingModule__SrcIpIdDoesNotHaveSrcTag();
     error TaggingModule__DstIpIdDoesNotHaveDstTag();
     error TaggingModule__RelationTypeDoesNotExist();
-
 }

@@ -197,7 +197,7 @@ contract IPRecordRegistryTest is BaseTest {
 
     /// @notice Tests registration of IP records works with existing IP accounts.
     function test_IPRecordRegistry_RegisterExistingAccount() public {
-        address ipId = registry.createIPAccount(block.chainid, tokenAddress, tokenId);
+        registry.createIPAccount(block.chainid, tokenAddress, tokenId);
         assertTrue(IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
         vm.prank(registrationModule);
         registry.register(
@@ -229,7 +229,7 @@ contract IPRecordRegistryTest is BaseTest {
     /// @notice Tests generic IP account creation works.
     function test_IPRecordRegistry_CreateIPAccount() public {
         assertTrue(!IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
-        address ipId = registry.createIPAccount(block.chainid, tokenAddress, tokenId);
+        registry.createIPAccount(block.chainid, tokenAddress, tokenId);
         assertTrue(IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
     }
 

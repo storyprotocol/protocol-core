@@ -98,7 +98,6 @@ contract IPRecordRegistry is IIPRecordRegistry {
         return _records[id].metadataProvider;
     }
 
-
     /// @notice Gets the resolver bound to an IP based on its NFT attributes.
     /// @param chainId The chain identifier of where the NFT resides.
     /// @param tokenContract The address of the NFT.
@@ -165,10 +164,7 @@ contract IPRecordRegistry is IIPRecordRegistry {
     /// @notice Sets the underlying metadata provider for an IP asset.
     /// @param id The canonical ID of the IP.
     /// @param provider Address of the metadata provider associated with the IP.
-    function setMetadataProvider(
-        address id,
-        address provider
-    ) external onlyRegistrationModule {
+    function setMetadataProvider(address id, address provider) external onlyRegistrationModule {
         // Metadata may not be set unless the IP was registered into the protocol.
         if (_records[id].resolver == address(0)) {
             revert Errors.IPRecordRegistry_NotYetRegistered();
