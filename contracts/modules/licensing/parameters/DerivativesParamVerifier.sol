@@ -42,7 +42,7 @@ contract DerivativesParamVerifier is BaseParamVerifier, IMintingParamVerifier {
         ) {
             revert Errors.DerivativesParamVerifier__InvalidDerivativesConfig();
         }
-        // TODO: check if commercial use is allowed
+        // TODO: check if commercial use is allowed? How do yo we enforce this on verification? we need structure
         if (config.withRevenueShare && config.revenueSharePercentage == 0) {
             revert Errors.DerivativesParamVerifier__ZeroShare();
         }
