@@ -1,10 +1,11 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.23;
 
-interface IParamVerifier {
-    function verifyMinting(address caller, uint256 amount, bytes memory data) external returns (bool);
-    function verifyTransfer(address caller, uint256 amount, bytes memory data) external returns (bool);
-    function verifyLinkParent(address caller, bytes memory data) external returns (bool);
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+
+interface IParamVerifier is IERC165 {
+    function name() external view returns (string memory);
     function json() external view returns (string memory);
+    function allowsOtherPolicyOnSameIp(bytes memory data) external view returns (bool);
 }

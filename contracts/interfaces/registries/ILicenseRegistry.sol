@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
 import { Licensing } from "contracts/lib/Licensing.sol";
@@ -73,6 +73,8 @@ interface ILicenseRegistry {
 
     function isLicensee(uint256 licenseId, address holder) external view returns (bool);
 
+    function licensorIpIds(uint256 licenseId) external view returns (address[] memory);
+    function license(uint256 licenseId) external view returns (Licensing.License memory);
     function isParent(address parentIpId, address childIpId) external view returns (bool);
 
     function parentIpIds(address ipId) external view returns (address[] memory);

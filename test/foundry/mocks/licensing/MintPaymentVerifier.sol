@@ -35,6 +35,10 @@ contract MintPaymentVerifier is IParamVerifier {
 		return true;
 	}
 
+    function name() external pure returns (string memory) {
+        return "MintPaymentVerifier";
+    }
+
     function json() external pure returns (string memory) {
         return "";
     }
