@@ -2,11 +2,12 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-// external
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-// contracts
+
+import { IPResolver} from "contracts/resolvers/IPResolver.sol";
+import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
+import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { IRegistrationModule } from "contracts/interfaces/modules/IRegistrationModule.sol";
-import { IIPMetadataResolver } from "contracts/interfaces/resolvers/IIPMetadataResolver.sol";
 import { REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { IP } from "contracts/lib/IP.sol";
@@ -18,8 +19,12 @@ import { BaseModule } from "contracts/modules/BaseModule.sol";
 ///         into the protocol, create a resolver, and bind to it any licenses
 ///         and terms specified by the IP registrant (IP account owner).
 contract RegistrationModule is BaseModule, IRegistrationModule {
+
     /// @notice The metadata resolver used by the registration module.
-    IIPMetadataResolver public resolver;
+    IPResolver public resolver;
+
+    /// @notice Metadata storage provider contract.
+    IPMetadataProvider public metadataProvider;
 
     /// @notice Initializes the registration module contract.
     /// @param controller The access controller used for IP authorization.
@@ -32,9 +37,11 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         address recordRegistry,
         address accountRegistry,
         address licenseRegistry,
-        address resolverAddr
+        address resolverAddr,
+        address metadataProviderAddr
     ) BaseModule(controller, recordRegistry, accountRegistry, licenseRegistry) {
-        resolver = IIPMetadataResolver(resolverAddr);
+        metadataProvider = IPMetadataProvider(metadataProviderAddr);
+        resolver = IPResolver(resolverAddr);
     }
 
     /// @notice Registers a root-level IP into the protocol. Root-level IPs can
@@ -60,7 +67,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         }
 
         // Perform core IP registration and IP account creation.
-        address ipId = IP_RECORD_REGISTRY.register(block.chainid, tokenContract, tokenId, address(resolver), true);
+        address ipId = IP_RECORD_REGISTRY.register(block.chainid, tokenContract, tokenId, address(resolver), true, address(metadataProvider));
 
         // Perform core IP policy creation.
         if (policyId != 0) {
@@ -81,13 +88,17 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
     /// @param ipName The name assigned to the new IP.
     /// @param ipDescription A string description to assign to the IP.
     /// @param contentHash The content hash of the IP being registered.
+    /// @param externalURL An external URI to link to the IP.
+    /// TODO: Replace all metadata with a generic bytes parameter type, and do
+    ///       encoding on the periphery contract level instead.
     function registerDerivativeIp(
         uint256 licenseId,
         address tokenContract,
         uint256 tokenId,
         string memory ipName,
         string memory ipDescription,
-        bytes32 contentHash
+        bytes32 contentHash,
+        string calldata externalURL
     ) external {
         // Check that the caller is authorized to perform the registration.
         // TODO: Perform additional registration authorization logic, allowing
@@ -96,32 +107,30 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
             revert Errors.RegistrationModule__InvalidOwner();
         }
 
+        address ipId = IP_RECORD_REGISTRY.register(block.chainid, tokenContract, tokenId, address(resolver), true, address(metadataProvider));
+        // ACCESS_CONTROLLER.setPermission(
+        //     ipId,
+        //     address(this),
+        //     address(resolver),
+        //     IPResolver.setMetadata.selector,
+        //     1
+        // );
+
         // Perform core IP registration and IP account creation.
-        address ipId = IP_RECORD_REGISTRY.register(block.chainid, tokenContract, tokenId, address(resolver), true);
-        ACCESS_CONTROLLER.setPermission(
-            ipId,
-            address(this),
-            address(resolver),
-            IIPMetadataResolver.setMetadata.selector,
-            1
+        bytes memory metadata = abi.encode(
+            IP.Metadata({
+                name: ipName,
+                hash: contentHash,
+                registrationDate: uint64(block.timestamp),
+                registrant: msg.sender,
+                uri: externalURL
+            })
         );
+        metadataProvider.setMetadata(ipId, metadata);
 
         // Perform core IP derivative licensing - the license must be owned by the caller.
         // TODO: return resulting policy index
         LICENSE_REGISTRY.linkIpToParent(licenseId, ipId, msg.sender);
-
-        // Perform metadata attribution setting.
-        resolver.setMetadata(
-            ipId,
-            IP.MetadataRecord({
-                name: ipName,
-                description: ipDescription,
-                hash: contentHash,
-                registrationDate: uint64(block.timestamp),
-                registrant: msg.sender,
-                uri: ""
-            })
-        );
 
         emit DerivativeIPRegistered(msg.sender, ipId, licenseId);
     }
