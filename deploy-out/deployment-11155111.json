@@ -1,0 +1,15 @@
+{
+  "main": {
+    "AccessController": "0xe48c7E55cd62585993a9048fd208290Bb1235F64",
+    "DisputeModule": "0xc3fFE6c3E6153E23C2347E6b543B021153588535",
+    "IPAccountImpl": "0xD581fb87CD232689309e805eAcc2225c4F0ED5a9",
+    "IPAccountRegistry": "0xFa35Ea2dbBf484a81a61E5B16fc114bFaD79E12a",
+    "IPMetadataResolver": "0x048c91B47230fcAa6a52B7E5BDCf5Ba66305F6aA",
+    "IPRecordRegistry": "0x25A9b23821D46dc8ad2996718c388A691D51af8D",
+    "LicenseRegistry": "0x5Cc1D16ce1Ae60E612faA4B2e1107Da1614844fB",
+    "ModuleRegistry": "0xc8CdAe1cB705440eE35F153934E1638b0DE6b7Eb",
+    "RegistrationModule": "0xd958E076F61437858Ed29B9620f4Ac7D6CD7b112",
+    "RoyaltyModule": "0x7E27e1D14827B69c5Bc004FF4F7D5D6a4A25442B",
+    "TaggingModule": "0x7a78377c90f1db070bbcE187e7998634ad410468"
+  }
+}

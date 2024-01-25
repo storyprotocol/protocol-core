@@ -7,7 +7,7 @@ import { ILinkParentParamVerifier } from "contracts/interfaces/licensing/ILinkPa
 import { BaseParamVerifier } from "contracts/modules/licensing/parameters/BaseParamVerifier.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
-contract DerivativesParamVerifier is BaseParamVerifier, IMintingParamVerifier {
+contract DerivativesParamVerifier is BaseParamVerifier, IMintingParamVerifier, ILinkParentParamVerifier {
     string public constant override name = "Derivatives";
 
     event DerivativeApproved(address indexed licenseId, address indexed ipId, address indexed licensor, bool licensorApproval, bool approved);
@@ -28,7 +28,7 @@ contract DerivativesParamVerifier is BaseParamVerifier, IMintingParamVerifier {
     }
 
     // License Id => IP Id => licensor => approved
-    mapping(licenseId => mapping(address => mapping(address => bool)) private _approvals;
+    mapping(licenseId => mapping(address => mapping(address => bool))) private _approvals;
     mapping(licenseId => mapping(address => uint256)) private _totalLicensorApprovals;
 
     constructor(address licenseRegistry) BaseParamVerifier(licenseRegistry) {
@@ -79,7 +79,7 @@ contract DerivativesParamVerifier is BaseParamVerifier, IMintingParamVerifier {
         }
     }
 
-    function isDerivativeApproved(address licenseId, address ipId) external view returns (bool) {
+    function isDerivativeApproved(address licenseId, address ipId) public view returns (bool) {
         return _totalLicensorApprovals[licenseId][ipId] == LICENSE_REGISTRY.getLicensors(licenseId).length;
     }
 
@@ -128,10 +128,9 @@ contract DerivativesParamVerifier is BaseParamVerifier, IMintingParamVerifier {
             // What happens if called twice?
         }
         if (config.withApproval) {
-
-        } else {
-            return true;
+            return isDerivativeApproved(licenseId, ipId);
         }
+        return true;
     }
 
     function json() view returns (string memory) {

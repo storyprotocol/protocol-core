@@ -27,6 +27,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     // DO NOT remove policies, that rugs derivatives and breaks ordering assumptions in set
     mapping(address => EnumerableSet.UintSet) private _policiesPerIpId;
     mapping(address => bool[]) private _policyPerIpIdSetByLinking;
+    
     mapping(address => EnumerableSet.AddressSet) private _ipIdParents;
 
     mapping(bytes32 => uint256) private _hashedLicenses;
@@ -210,7 +211,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// Will revert if policy set already has policyId
     /// @param ipId the IP identifier
     /// @param policyId id of the policy data
-    /// @param setByLinking if true, the policy was set by linking a license, if false, it was set by adding a policy
+    /// @param setByLinking true if set in linkIpToParent, false otherwise
     /// @return index of the policy added to the set
     function _addPolictyIdToIp(address ipId, uint256 policyId, bool setByLinking) internal returns (uint256 index) {
         EnumerableSet.UintSet storage policySet = _policiesPerIpId[ipId];
@@ -218,8 +219,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         if (!policySet.add(policyId)) {
             revert Errors.LicenseRegistry__PolicyAlreadySetForIpId();
         }
-        index = policySet.length() - 1;
         _policyPerIpIdSetByLinking[ipId].push(setByLinking);
+        index = policySet.length() - 1;
         emit PolicyAddedToIpId(msg.sender, ipId, policyId, index, setByLinking);
         return index;
     }
@@ -267,6 +268,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
     function policyForIpAtIndex(address ipId, uint256 index) external view returns (Licensing.Policy memory) {
         return _policies[_policiesPerIpId[ipId].at(index)];
+    }
+
+    function isPolicyIdAtIndexSetByLinking(address ipId, uint256 index) external view returns (bool) {
+        return _policyPerIpIdSetByLinking[ipId][index];
     }
 
     /// Mints license NFTs representing a policy granted by a set of ipIds (licensors). This NFT needs to be burned
@@ -360,7 +365,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         _verifyParams(Licensing.ParamVerifierType.LinkParent, pol, holder, 1);
         
         // Add policy to kid
-        // TODO: return this values
+        // TODO: return index of policy in ipId?
         _addPolictyIdToIp(childIpId, licenseData.policyId, true);
         // Set parent
         for (uint256 i = 0; i < parents.length; i++) {

@@ -6,6 +6,8 @@ forge-cache/
 
 # Ignores development broadcast logs
 !/broadcast
+# ignore 1 for now, it's tenderly fork
+/broadcast/*/1/
 /broadcast/*/31337/
 /broadcast/**/dry-run/
 
@@ -24,3 +26,11 @@ node_modules/
 pnpm-lock.yaml
 
 coverage
+
+# contracts
+abi
+typechain
+!./script/out
+
+# hardhat-tenderly plugin
+deployments
