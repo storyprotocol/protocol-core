@@ -49,14 +49,17 @@ library Errors {
     error LicenseRegistry__PolicyAlreadySetForIpId();
     error LicenseRegistry__FrameworkNotFound();
     error LicenseRegistry__EmptyLicenseUrl();
+    error LicenseRegistry__PolicyAlreadyAdded();
     error LicenseRegistry__ParamVerifierLengthMismatch();
     error LicenseRegistry__InvalidParamVerifierType();
     error LicenseRegistry__PolicyNotFound();
     error LicenseRegistry__NotLicensee();
     error LicenseRegistry__ParentIdEqualThanChild();
     error LicenseRegistry__LicensorDoesntHaveThisPolicy();
-    error LicenseRegistry__MintParamFailed();
+    error LicenseRegistry__ParamVerifierFailed(uint8 verifierType, address verifier);
     error LicenseRegistry__LinkParentParamFailed();
+    error LicenseRegistry__LicenseMustHaveLicensors();
+    error LicenseRegistry__InvalidLicensor();
 
     ////////////////////////////////////////////////////////////////////////////
     //                            Dispute Module                              //

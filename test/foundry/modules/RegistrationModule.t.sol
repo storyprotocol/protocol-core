@@ -129,12 +129,9 @@ contract RegistrationModuleTest is ModuleBaseTest {
         );
 
         // Mint license
-        Licensing.License memory licenseData = Licensing.License({
-            policyId: policyId,
-            licensorIpIds: new address[](1)
-        });
-        licenseData.licensorIpIds[0] = ipId;
-        uint256 licenseId = licenseRegistry.mintLicense(licenseData, 1, bob);
+        address[] memory licensorIpIds = new address[](1);
+        licensorIpIds[0] = ipId;
+        uint256 licenseId = licenseRegistry.mintLicense(policyId, licensorIpIds, 1, bob);
         uint256 totalSupply = ipRecordRegistry.totalSupply();
         
 
@@ -200,42 +197,36 @@ contract RegistrationModuleTest is ModuleBaseTest {
 
     // TODO: put this in the base test
     function _initLicensing() private {
-        IParamVerifier[] memory mintingParamVerifiers = new IParamVerifier[](1);
+        IParamVerifier[] memory mintingVerifiers = new IParamVerifier[](1);
         MockIParamVerifier verifier = new MockIParamVerifier();
-        mintingParamVerifiers[0] = verifier;
-        bytes[] memory mintingParamDefaultValues = new bytes[](1);
-        mintingParamDefaultValues[0] = abi.encode(true);
-        IParamVerifier[] memory activationParamVerifiers = new IParamVerifier[](1);
-        activationParamVerifiers[0] = verifier;
-        bytes[] memory activationParamDefaultValues = new bytes[](1);
-        activationParamDefaultValues[0] = abi.encode(true);
-        IParamVerifier[] memory linkParentParamVerifiers = new IParamVerifier[](1);
-        linkParentParamVerifiers[0] = verifier;
-        bytes[] memory linkParentParamDefaultValues = new bytes[](1);
-        linkParentParamDefaultValues[0] = abi.encode(true);
+        mintingVerifiers[0] = verifier;
+        bytes[] memory mintingDefaultValues = new bytes[](1);
+        mintingDefaultValues[0] = abi.encode(true);
+        IParamVerifier[] memory linkParentVerifiers = new IParamVerifier[](1);
+        linkParentVerifiers[0] = verifier;
+        bytes[] memory linkParentDefaultValues = new bytes[](1);
+        linkParentDefaultValues[0] = abi.encode(true);
 
         Licensing.FrameworkCreationParams memory fwParams = Licensing.FrameworkCreationParams({
-            mintingParamVerifiers: mintingParamVerifiers,
-            mintingParamDefaultValues: mintingParamDefaultValues,
-            activationParamVerifiers: activationParamVerifiers,
-            activationParamDefaultValues: activationParamDefaultValues,
-            defaultNeedsActivation: true,
-            linkParentParamVerifiers: linkParentParamVerifiers,
-            linkParentParamDefaultValues: linkParentParamDefaultValues,
+            mintingVerifiers: mintingVerifiers,
+            mintingDefaultValues: mintingDefaultValues,
+            linkParentVerifiers: linkParentVerifiers,
+            linkParentDefaultValues: linkParentDefaultValues,
+            transferVerifiers: new IParamVerifier[](0),
+            transferDefaultValues: new bytes[](0),
             licenseUrl: "https://example.com"
         });
         licenseRegistry.addLicenseFramework(fwParams);
         Licensing.Policy memory policy = Licensing.Policy({
             frameworkId: 1,
             mintingParamValues: new bytes[](1),
-            activationParamValues: new bytes[](1),
-            needsActivation: false,
-            linkParentParamValues: new bytes[](1)
+            linkParentParamValues: new bytes[](1),
+            transferParamValues: new bytes[](1)
         });
         policy.mintingParamValues[0] = abi.encode(true);
-        policy.activationParamValues[0] = abi.encode(true);
         policy.linkParentParamValues[0] = abi.encode(true);
-        (uint256 polId, bool isNew) = licenseRegistry.addPolicy(policy);
+        policy.transferParamValues[0] = abi.encode(true);
+        (uint256 polId) = licenseRegistry.addPolicy(policy);
         
         policyId = polId;
     }
