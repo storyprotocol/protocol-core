@@ -7,7 +7,7 @@ import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.so
 interface ILinkParentParamVerifier is IParamVerifier {
     function verifyLink(
         address licenseId,
-        address licenseHolder,
+        address caller,
         address ipId,
         address parentIpId,
         bytes calldata data

@@ -23,4 +23,12 @@ contract MockIParamVerifier is IParamVerifier {
     function json() external pure returns (string memory) {
         return "";
     }
+
+    function name() external pure override returns (string memory) {
+        return "Mock";
+    }
+
+    function allowsOtherPolicyOnSameIp(bytes memory data) external view override returns (bool) {
+        return true;
+    }
 }

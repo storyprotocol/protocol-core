@@ -36,10 +36,10 @@ abstract contract BaseParamVerifier is IParamVerifier {
 
     /// @notice Gets the protocol string identifier associated with the module.
     /// @return The string identifier of the module.
-    function name() public pure virtual override returns (string memory);
+    function name() external pure virtual override returns (string memory);
 
     /// @notice Returns the JSON metadata associated with the module, following OpenSea standards.
-    function json() public pure virtual override returns (string memory);
+    function json() external pure virtual override returns (string memory);
 
-    function allowsOtherPolicyOnSameIp(bytes memory data) public pure virtual override returns (bool);
+    function allowsOtherPolicyOnSameIp(bytes memory data) external pure virtual override returns (bool);
 }

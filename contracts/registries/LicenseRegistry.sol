@@ -282,22 +282,22 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// The licensing terms that regulate creating new licenses will be verified to allow minting.
     /// Reverts if caller is not authorized by licensors.
     /// @param policyId id of the policy to be minted
-    /// @param licensorIpIds array of IP Ids that are granting the license
+    /// @param licensorIds array of IP Ids that are granting the license
     /// @param amount of licenses to be minted. License NFT is fungible for same policy and same licensors
     /// @param receiver of the License NFT(s).
     /// @return licenseId of the NFT(s).
     function mintLicense(
         uint256 policyId,
-        address[] memory licensorIpIds,
+        address[] memory licensorIds,
         uint256 amount,
         address receiver
     ) external returns (uint256 licenseId) {
-        uint256 licensorAmount = licensorIpIds.length;
+        uint256 licensorAmount = licensorIds.length;
         if (licensorAmount == 0) {
             revert Errors.LicenseRegistry__LicenseMustHaveLicensors();
         }
         for (uint256 i = 0; i < licensorAmount; i++) {
-            address licensor = licensorIpIds[i];
+            address licensor = licensorIds[i];
             // TODO: check duplicates
             // TODO: check if licensors are valid IP Ids
             // TODO: check if licensors they have been tagged by disputer
@@ -313,7 +313,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         _verifyParams(Licensing.ParamVerifierType.Mint, pol, receiver, amount);
         Licensing.License memory licenseData = Licensing.License({
             policyId: policyId,
-            licensorIpIds: licensorIpIds
+            licensorIpIds: licensorIds
         });
         (uint256 lId, bool isNew) = _addIdOrGetExisting(abi.encode(licenseData), _hashedLicenses, _totalLicenses);
         licenseId = lId;

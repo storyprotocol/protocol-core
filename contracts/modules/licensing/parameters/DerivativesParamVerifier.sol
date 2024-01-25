@@ -2,13 +2,13 @@
 
 pragma solidity ^0.8.23;
 
-import { IMintingParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
+import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
+import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ILinkParentParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { BaseParamVerifier } from "contracts/modules/licensing/parameters/BaseParamVerifier.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
-contract DerivativesParamVerifier is BaseParamVerifier, IMintingParamVerifier, ILinkParentParamVerifier {
-    string public constant override name = "Derivatives";
+contract DerivativesParamVerifier is BaseParamVerifier, IMintParamVerifier, ILinkParentParamVerifier {
 
     event DerivativeApproved(address indexed licenseId, address indexed ipId, address indexed licensor, bool licensorApproval, bool approved);
 
@@ -28,8 +28,9 @@ contract DerivativesParamVerifier is BaseParamVerifier, IMintingParamVerifier, I
     }
 
     // License Id => IP Id => licensor => approved
-    mapping(licenseId => mapping(address => mapping(address => bool))) private _approvals;
-    mapping(licenseId => mapping(address => uint256)) private _totalLicensorApprovals;
+    mapping(uint256 => mapping(address => mapping(address => bool))) private _approvals;
+    // License Id => IP Id => licensor => total approvals
+    mapping(uint256 => mapping(address => uint256)) private _totalLicensorApprovals;
 
     constructor(address licenseRegistry) BaseParamVerifier(licenseRegistry) {
 
@@ -57,6 +58,7 @@ contract DerivativesParamVerifier is BaseParamVerifier, IMintingParamVerifier, I
         address[] memory licensors = LICENSE_REGISTRY.getLicensors(licenseId);
         uint256 totalLicensors = licensors.length;
         bool callerIsLicensor = false;
+        address caller = msg.sender;
         for (uint256 i = 0; i < totalLicensors; i++) {
             if (caller == licensors[i]) {
                 // TODO: check delegation too?
@@ -84,13 +86,14 @@ contract DerivativesParamVerifier is BaseParamVerifier, IMintingParamVerifier, I
     }
 
     function verifyMint(
-        address licenseHolder,
+        address caller,
         uint256 policyId,
         bool policyAddedByLinking,
         address[] memory licensors,
+        address receiver,
         uint256 amount,
         bytes memory data
-    ) external view override returns (bool) {
+    ) external view returns (bool) {
         DerivativesConfig memory config = abi.decode(data, (DerivativesConfig));
         if (config.derivativesAllowed && config.withReciprocal) {
             // Permissionless
@@ -133,11 +136,15 @@ contract DerivativesParamVerifier is BaseParamVerifier, IMintingParamVerifier, I
         return true;
     }
 
-    function json() view returns (string memory) {
+    function json() external pure override(IParamVerifier, BaseParamVerifier) returns (string memory) {
         return "";
     }
 
-    function allowsOtherPolicyOnSameIp(bytes memory data) external pure override returns (bool) {
+    function name() external pure override(IParamVerifier, BaseParamVerifier) returns (string memory) {
+        return "Derivatives";
+    }
+
+    function allowsOtherPolicyOnSameIp(bytes memory data) external pure override(IParamVerifier, BaseParamVerifier) returns (bool) {
         DerivativesConfig memory config = abi.decode(data, (DerivativesConfig));
         return !config.withReciprocal;
     }

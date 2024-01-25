@@ -31,9 +31,9 @@ contract MintPaymentVerifier is IParamVerifier {
         return true;
     }
 
-	function verifyActivation(address, bytes memory) external pure returns (bool) {
-		return true;
-	}
+    function verifyActivation(address, bytes memory) external pure returns (bool) {
+        return true;
+    }
 
     function name() external pure returns (string memory) {
         return "MintPaymentVerifier";
@@ -42,4 +42,9 @@ contract MintPaymentVerifier is IParamVerifier {
     function json() external pure returns (string memory) {
         return "";
     }
+
+    function allowsOtherPolicyOnSameIp(bytes memory data) external view returns (bool) {
+        return true;
+    }
+
 }
