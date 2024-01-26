@@ -13,15 +13,17 @@ import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransfer
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 
-contract MintPaymentVerifier is ERC165, BaseParamVerifier, IMintParamVerifier {
+contract MintPaymentVerifier is BaseParamVerifier, ERC165, IMintParamVerifier {
     using ShortStrings for *;
 
     IERC20 public token;
     uint256 public payment;
 
-    string constant NAME = "MintPaymentVerifier";
-
-    constructor(address licenseRegistry, address _token, uint256 _payment) BaseParamVerifier(licenseRegistry) {
+    constructor(
+        address licenseRegistry,
+        address _token,
+        uint256 _payment
+    ) BaseParamVerifier(licenseRegistry, "MintPaymentVerifier") {
         token = IERC20(_token);
         payment = _payment;
     }
@@ -61,18 +63,6 @@ contract MintPaymentVerifier is ERC165, BaseParamVerifier, IMintParamVerifier {
 
     function verifyActivation(address, bytes memory) external pure returns (bool) {
         return true;
-    }
-
-    function name() external pure returns (bytes32) {
-        return ShortStringOps.stringToBytes32(NAME);
-    }
-
-    function nameString() external pure returns (string memory) {
-        return NAME;
-    }
-
-    function json() external pure returns (string memory) {
-        return "";
     }
 
     function allowsOtherPolicyOnSameIp(bytes memory data) external pure returns (bool) {

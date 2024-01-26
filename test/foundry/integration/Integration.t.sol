@@ -22,7 +22,7 @@ import { MockAccessController } from "test/foundry/mocks/MockAccessController.so
 import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { MockModule } from "test/foundry/mocks/MockModule.sol";
-import { MockIParamVerifier } from "test/foundry/mocks/licensing/MockParamVerifier.sol";
+import { MockParamVerifier } from "test/foundry/mocks/licensing/MockParamVerifier.sol";
 import { MintPaymentVerifier } from "test/foundry/mocks/licensing/MintPaymentVerifier.sol";
 import { Users, UsersLib } from "test/foundry/utils/Users.sol";
 
@@ -48,7 +48,7 @@ contract IntegrationTest is Test {
     MockAccessController internal accessController = new MockAccessController();
     MockERC20 internal mockToken = new MockERC20();
     MockERC721s internal nft;
-    MockIParamVerifier public mockLicenseVerifier = new MockIParamVerifier();
+    MockParamVerifier public mockLicenseVerifier;
     MintPaymentVerifier internal mintPaymentVerifier;
     // MockModule internal module = new MockModule(address(registry), address(moduleRegistry), "MockModule");
 
@@ -100,6 +100,7 @@ contract IntegrationTest is Test {
         arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), USDC, ARBITRATION_PRICE);
         royaltyModule = new RoyaltyModule();
         royaltyPolicyLS = new RoyaltyPolicyLS(address(royaltyModule), LIQUID_SPLIT_FACTORY, LIQUID_SPLIT_MAIN);
+        mockLicenseVerifier = new MockParamVerifier(address(licenseRegistry), "Mock");
 
         nft = MockERC721s({ a: new MockERC721(), b: new MockERC721(), c: new MockERC721() });
         u = UsersLib.createMockUsers(vm);
