@@ -66,7 +66,6 @@ library Errors {
     error LicenseRegistry__EmptyLicenseUrl();
     error LicenseRegistry__PolicyAlreadyAdded();
     error LicenseRegistry__ParamVerifierLengthMismatch();
-    error LicenseRegistry__InvalidParamVerifierType();
     error LicenseRegistry__PolicyNotFound();
     error LicenseRegistry__NotLicensee();
     error LicenseRegistry__ParentIdEqualThanChild();
@@ -75,6 +74,17 @@ library Errors {
     error LicenseRegistry__LinkParentParamFailed();
     error LicenseRegistry__InvalidLicensor();
     error LicenseRegistry__ParamVerifierAlreadySet();
+    error LicenseRegistry__CommercialTermInNonCommercialPolicy();
+    error LicenseRegistry__EmptyParamName();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                            PolicyCreator                               //
+    ////////////////////////////////////////////////////////////////////////////
+
+    error PolicyCreator__IncompatibleDerivatives();
+    error PolicyCreator__IncompatibleCommercialUse();
+    error PolicyCreator__ZeroAddressConstructor();
+
 
     ////////////////////////////////////////////////////////////////////////////
     //                            BaseParamVerifier                           //

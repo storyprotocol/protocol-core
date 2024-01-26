@@ -15,13 +15,6 @@ library Licensing {
         bytes defaultValue;
     }
 
-    /// Moment of the license lifetime where a Parameter will be verified
-    enum ParamVerifierType {
-        Mint,
-        LinkParent,
-        Transfer
-    }
-
     /// Describes a licensing framework, which is a set of licensing terms (parameters)
     /// that come into effect in different moments of the licensing life cycle.
     /// Must correspond to human (or at least lawyer) readable text describing them in licenseUrl.

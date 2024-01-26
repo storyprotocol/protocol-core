@@ -187,9 +187,24 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return polId;
     }
 
+    function _verifyPolicy(Licensing.Policy memory pol) internal view {
+        uint256 paramLength = pol.paramNames.length;
+        Licensing.Framework storage fw = _framework(pol.frameworkId);
+        mapping(bytes32 => Parameter) parameters = fw.parameters;
+        for (uint256 i = 0; i < paramLength; i++) {
+            if (pol.paramNames[i].equal("")) {
+                revert Errors.LicenseRegistry__EmptyParamName();
+            }
+            Parameter memory param = parameters[pol.paramNames[i]];
+            if (!pol.commercialUse && param.verifier.isCommercial()) {
+                revert Errors.LicenseRegistry__CommercialTermInNonCommercialPolicy();
+            }
+            // Should we also check for derivatives here?
+        }
+    }
+
     function _addPolicy(Licensing.Policy memory pol) public returns (uint256 policyId, bool isNew) {
-        // We ignore the return value, we just want to check if the framework exists
-        _framework(pol.frameworkId);
+        _verifyPolicy(pol);
         (uint256 polId, bool newPol) = _addIdOrGetExisting(abi.encode(pol), _hashedPolicies, _totalPolicies);
         if (newPol) {
             _totalPolicies = polId;

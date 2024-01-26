@@ -8,15 +8,6 @@ import { Errors } from "contracts/lib/Errors.sol";
 
 
 abstract contract BaseParamVerifier is IParamVerifier {
-    // /// @notice Gets the protocol-wide module access controller.
-    // IAccessController public immutable ACCESS_CONTROLLER;
-
-    // /// @notice Gets the protocol-wide IP account registry.
-    // IPAccountRegistry public immutable IP_ACCOUNT_REGISTRY;
-
-    // /// @notice Gets the protocol-wide IP record registry.
-    // IPRecordRegistry public immutable IP_RECORD_REGISTRY;
-
     /// @notice Gets the protocol-wide license registry.
     LicenseRegistry public immutable LICENSE_REGISTRY;
 
