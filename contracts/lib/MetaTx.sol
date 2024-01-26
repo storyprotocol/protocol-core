@@ -7,12 +7,12 @@ pragma solidity ^0.8.23;
 library MetaTx {
     /// @dev Version of the EIP712 domain.
     string constant EIP712_DOMAIN_VERSION = "1";
-    /// @dev Hash of the EIP712 domain version.    
+    /// @dev Hash of the EIP712 domain version.
     bytes32 constant EIP712_DOMAIN_VERSION_HASH = keccak256(bytes(EIP712_DOMAIN_VERSION));
-    /// @dev EIP712 domain type hash.    
+    /// @dev EIP712 domain type hash.
     bytes32 constant EIP712_DOMAIN =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
-    /// @dev Execute type hash.        
+    /// @dev Execute type hash.
     bytes32 constant EXECUTE = keccak256("Execute(address to,uint256 value,bytes data,uint256 nonce,uint256 deadline)");
 
     /// @dev Structure for the Execute type.
@@ -52,14 +52,14 @@ library MetaTx {
     function getExecuteStructHash(Execute memory execute) internal pure returns (bytes32) {
         return
             keccak256(
-            abi.encode(
-                MetaTx.EXECUTE,
-                execute.to,
-                execute.value,
-                keccak256(execute.data),
-                execute.nonce,
-                execute.deadline
-            )
-        );
+                abi.encode(
+                    MetaTx.EXECUTE,
+                    execute.to,
+                    execute.value,
+                    keccak256(execute.data),
+                    execute.nonce,
+                    execute.deadline
+                )
+            );
     }
 }
