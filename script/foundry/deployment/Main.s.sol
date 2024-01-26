@@ -57,7 +57,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     TaggingModule public taggingModule;
     RoyaltyModule public royaltyModule;
     DisputeModule public disputeModule;
-    IPMetadataResolver public ipMetadataResolver;
+    IPResolver public ipResolver;
 
     mapping(uint256 => uint256) internal nftIds;
     mapping(uint256 => uint256) internal policyIds;
@@ -201,7 +201,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
     function _configureModuleRegistry() private {
         moduleRegistry.registerModule("REGISTRATION_MODULE", address(registrationModule));
-        moduleRegistry.registerModule("METADATA_RESOLVER_MODULE", address(ipMetadataResolver));
+        moduleRegistry.registerModule("METADATA_RESOLVER_MODULE", address(ipResolver));
     }
 
     function _configureInteractions() private {
@@ -305,8 +305,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             address(mockNft),
             nftIds[3],
             "best derivative ip",
-            "some of the best description",
-            bytes32("rand_hash")
+            bytes32("some of the best description"),
+            "https://example.com/best-derivative-ip"
         );
 
         // /*///////////////////////////////////////////////////////////////

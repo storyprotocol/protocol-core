@@ -21,7 +21,7 @@ import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
-import { IPMetadataResolver } from "contracts/resolvers/IPMetadataResolver.sol";
+import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 
 import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
@@ -48,7 +48,7 @@ contract Integration is Script, BroadcastManager, JsonDeploymentHandler {
     ModuleRegistry internal moduleRegistry = ModuleRegistry(0xE48ce7F62Ddcc0339b0B4ca56A600aA31bc4479c);
     DisputeModule internal disputeModule = DisputeModule(0x9e94233357f3Ff8FEc75E45cF759f48937CA985d);
     RegistrationModule internal registrationModule = RegistrationModule(0x72632232caBF975dA1AedCB46062844E16234713);
-    IPMetadataResolver internal ipResolver = IPMetadataResolver(0x88f3a4cc4Eaa2433c44A7c502C7AbBd2C76b03e2);
+    IPResolver internal ipResolver = IPResolver(0x88f3a4cc4Eaa2433c44A7c502C7AbBd2C76b03e2);
     TaggingModule internal taggingModule = TaggingModule(0xC00744062741d2256e13a267aa9f30d186bfF610);
     // RegistrationModule internal registrationModule = new RegistrationModule(
     // 	address(accessController),
