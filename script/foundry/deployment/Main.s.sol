@@ -15,16 +15,19 @@ import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
+import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
+import { IPAssetRenderer } from "contracts/registries/metadata/IPAssetRenderer.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
+import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
 import { MockERC721 } from "contracts/mocks/MockERC721.sol";
-import { IPMetadataResolver } from "contracts/resolvers/IPMetadataResolver.sol";
+
 // script
 import { StringUtil } from "script/foundry/utils/StringUtil.sol";
 import { BroadcastManager } from "script/foundry/utils/BroadcastManager.s.sol";
@@ -37,6 +40,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     address public constant ERC6551_REGISTRY = address(0x000000006551c19487814612e58FE06813775758);
     AccessController public accessController;
 
+    IPAssetRenderer public renderer;
+    IPMetadataProvider public metadataProvider;
     IPAccountRegistry public ipAccountRegistry;
     IPRecordRegistry public ipRecordRegistry;
     LicenseRegistry public licenseRegistry;
@@ -117,15 +122,20 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         ipRecordRegistry = new IPRecordRegistry(address(moduleRegistry), address(ipAccountRegistry));
         _postdeploy(contractKey, address(ipRecordRegistry));
 
-        contractKey = "IPMetadataResolver";
+        contractKey = "IPResolver";
         _predeploy(contractKey);
-        ipMetadataResolver = new IPMetadataResolver(
+        ipResolver = new IPResolver(
             address(accessController),
             address(ipRecordRegistry),
             address(ipAccountRegistry),
             address(licenseRegistry)
         );
-        _postdeploy(contractKey, address(ipMetadataResolver));
+        _postdeploy(contractKey, address(ipResolver));
+
+        contractKey = "MetadataProvider";
+        _predeploy(contractKey);
+        metadataProvider = new IPMetadataProvider(address(moduleRegistry));
+        _postdeploy(contractKey, address(metadataProvider));
 
         contractKey = "RegistrationModule";
         _predeploy(contractKey);
@@ -134,7 +144,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             address(ipRecordRegistry),
             address(ipAccountRegistry),
             address(licenseRegistry),
-            address(ipMetadataResolver)
+            address(ipResolver),
+            address(metadataProvider)
         );
         _postdeploy(contractKey, address(registrationModule));
 
@@ -152,6 +163,17 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         _predeploy(contractKey);
         disputeModule = new DisputeModule();
         _postdeploy(contractKey, address(disputeModule));
+
+        contractKey = "IPAssetRenderer";
+        _predeploy(contractKey);
+        renderer = new IPAssetRenderer(
+            address(ipRecordRegistry),
+            address(licenseRegistry),
+            address(taggingModule),
+            address(royaltyModule)
+        );
+        _postdeploy(contractKey, address(renderer));
+
 
         // mockModule = new MockModule(address(ipAccountRegistry), address(moduleRegistry), "MockModule");
     }

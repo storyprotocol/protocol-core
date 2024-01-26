@@ -16,7 +16,6 @@ import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
 import { IIPRecordRegistry } from "contracts/interfaces/registries/IIPRecordRegistry.sol";
 import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
-import { IIPMetadataResolver } from "contracts/interfaces/resolvers/IIPMetadataResolver.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { Errors } from "contracts/lib/Errors.sol";

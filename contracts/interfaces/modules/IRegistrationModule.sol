@@ -13,7 +13,7 @@ interface IRegistrationModule {
         address tokenContract,
         uint256 tokenId,
         string memory ipName,
-        string memory ipDescription,
-        bytes32 hash
+        bytes32 hash,
+        string calldata externalURL
     ) external;
 }

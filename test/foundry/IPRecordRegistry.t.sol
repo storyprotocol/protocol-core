@@ -5,6 +5,7 @@ import { BaseTest } from "./utils/BaseTest.sol";
 import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
 import { IIPRecordRegistry } from "contracts/interfaces/registries/IIPRecordRegistry.sol";
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
+import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
@@ -34,6 +35,9 @@ contract IPRecordRegistryTest is BaseTest {
     /// @notice The IP account registry used for account creation.
     IPAccountRegistry public ipAccountRegistry;
 
+    /// @notice The IP metadata provider associated with an IP.
+    IPMetadataProvider public metadataProvider;
+
     /// @notice Mock NFT address for IP registration testing.
     address public tokenAddress;
 
@@ -54,6 +58,7 @@ contract IPRecordRegistryTest is BaseTest {
         moduleRegistry = IModuleRegistry(
             address(new MockModuleRegistry(registrationModule))
         );
+        metadataProvider = new IPMetadataProvider(address(moduleRegistry));
         ipAccountImpl = address(new IPAccountImpl());
         ipAccountRegistry = new IPAccountRegistry(
             erc6551Registry,
@@ -124,7 +129,8 @@ contract IPRecordRegistryTest is BaseTest {
             block.chainid,
             tokenAddress,
             tokenId,
-            resolver
+            resolver,
+            address(metadataProvider)
         );
         vm.prank(registrationModule);
         registry.register(
@@ -132,7 +138,8 @@ contract IPRecordRegistryTest is BaseTest {
             tokenAddress,
             tokenId,
             resolver,
-            true
+            true,
+            address(metadataProvider)
         );
 
         /// Ensures IP record post-registration conditions are met.
@@ -168,7 +175,8 @@ contract IPRecordRegistryTest is BaseTest {
             block.chainid,
             tokenAddress,
             tokenId,
-            resolver
+            resolver,
+            address(metadataProvider)
         );
         vm.prank(registrationModule);
         registry.register(
@@ -176,7 +184,8 @@ contract IPRecordRegistryTest is BaseTest {
             tokenAddress,
             tokenId,
             resolver,
-            false
+            false,
+            address(metadataProvider)
         );
 
         /// Ensures IP record post-registration conditions are met.
@@ -188,7 +197,7 @@ contract IPRecordRegistryTest is BaseTest {
 
     /// @notice Tests registration of IP records works with existing IP accounts.
     function test_IPRecordRegistry_RegisterExistingAccount() public {
-        address ipId = registry.createIPAccount(block.chainid, tokenAddress, tokenId);
+        registry.createIPAccount(block.chainid, tokenAddress, tokenId);
         assertTrue(IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
         vm.prank(registrationModule);
         registry.register(
@@ -196,7 +205,8 @@ contract IPRecordRegistryTest is BaseTest {
             tokenAddress,
             tokenId,
             resolver,
-            true
+            true,
+            address(metadataProvider)
         );
 
     }
@@ -204,22 +214,22 @@ contract IPRecordRegistryTest is BaseTest {
     /// @notice Tests registration of IP reverts when an IP has already been registered.
     function test_IPRecordRegistry_Register_Reverts_ExistingRegistration() public {
         vm.startPrank(registrationModule);
-        registry.register(block.chainid, tokenAddress, tokenId, resolver, false);
+        registry.register(block.chainid, tokenAddress, tokenId, resolver, false, address(metadataProvider));
         vm.expectRevert(Errors.IPRecordRegistry_AlreadyRegistered.selector);
-        registry.register(block.chainid, tokenAddress, tokenId, resolver, false);
+        registry.register(block.chainid, tokenAddress, tokenId, resolver, false, address(metadataProvider));
     }
 
     /// @notice Tests registration of IP reverts if not called by a registration module.
     function test_IPRecordRegistry_Register_Reverts_InvalidRegistrationModule() public {
         vm.expectRevert(Errors.IPRecordRegistry_Unauthorized.selector);
         vm.prank(alice);
-        registry.register(block.chainid, tokenAddress, tokenId, resolver, false);
+        registry.register(block.chainid, tokenAddress, tokenId, resolver, false, address(metadataProvider));
     }
 
     /// @notice Tests generic IP account creation works.
     function test_IPRecordRegistry_CreateIPAccount() public {
         assertTrue(!IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
-        address ipId = registry.createIPAccount(block.chainid, tokenAddress, tokenId);
+        registry.createIPAccount(block.chainid, tokenAddress, tokenId);
         assertTrue(IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
     }
 
@@ -240,7 +250,7 @@ contract IPRecordRegistryTest is BaseTest {
             ipAccountRegistry.IP_ACCOUNT_SALT()
         );
         vm.startPrank(registrationModule);
-        registry.register(block.chainid, tokenAddress, tokenId, resolver, false);
+        registry.register(block.chainid, tokenAddress, tokenId, resolver, false, address(metadataProvider));
 
         vm.expectEmit(true, true, true, true);
         emit IIPRecordRegistry.IPResolverSet(
