@@ -4,6 +4,7 @@ pragma solidity ^0.8.23;
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { BaseTest } from "test/foundry/utils/BaseTest.sol";
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
+import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { ModuleBaseTest } from "./ModuleBase.t.sol";
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
@@ -12,19 +13,19 @@ import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
 import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { IPMetadataResolver } from "contracts/resolvers/IPMetadataResolver.sol";
+import { IPAssetRenderer } from "contracts/registries/metadata/IPAssetRenderer.sol";
+import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
 import { IIPRecordRegistry } from "contracts/interfaces/registries/IIPRecordRegistry.sol";
 import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
-import { IIPMetadataResolver } from "contracts/interfaces/resolvers/IIPMetadataResolver.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { MockIParamVerifier } from "test/foundry/mocks/licensing/MockParamVerifier.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { Errors } from "contracts/lib/Errors.sol";
-import { METADATA_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
+import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 
 /// @title IP Registration Module Test Contract
@@ -33,14 +34,20 @@ contract RegistrationModuleTest is ModuleBaseTest {
 
     // Default IP record attributes.
     string public constant RECORD_NAME = "IPRecord";
-    string public constant RECORD_DESCRIPTION = "IPs all the way down.";
     bytes32 public constant RECORD_HASH = "";
+    string public constant RECORD_URL = "https://ipasset.xyz";
+
+    /// @notice IP metadata rendering contract.
+    IPAssetRenderer public renderer;
+
+    /// @notice The Story Protocol default IP resolver.
+    IPResolver public resolver;
 
     /// @notice The registration module SUT.
     RegistrationModule public registrationModule;
 
-    /// @notice Gets the IP metadata resolver tied to the registration module.
-    IIPMetadataResolver public resolver;
+    /// @notice Gets the contract responsible for IP metadata provisioning.
+    IPMetadataProvider public metadataProvider;
 
     /// @notice Mock NFT address for IP registration testing.
     address public tokenAddress;
@@ -58,15 +65,22 @@ contract RegistrationModuleTest is ModuleBaseTest {
     function setUp() public virtual override(ModuleBaseTest) {
         ModuleBaseTest.setUp();
         _initLicensing();
-        resolver = new IPMetadataResolver(
+        resolver = new IPResolver(
             address(accessController),
             address(ipRecordRegistry),
             address(ipAccountRegistry),
             address(licenseRegistry)
         );
+        metadataProvider = new IPMetadataProvider(address(moduleRegistry));
         registrationModule = RegistrationModule(_deployModule());
+        renderer = new IPAssetRenderer(
+            address(ipRecordRegistry),
+            address(licenseRegistry),
+            vm.addr(0x1111), // TODO: Incorporate tagging module into renderer.
+            vm.addr(0x2111) // TODO: Incorporate royalty module into renderer.
+        );
         moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
-        moduleRegistry.registerModule(METADATA_RESOLVER_MODULE_KEY, address(resolver));
+        moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(resolver));
         MockERC721 erc721 = new MockERC721();
         tokenAddress = address(erc721);
         tokenId = erc721.mintId(alice, 99);
@@ -79,7 +93,6 @@ contract RegistrationModuleTest is ModuleBaseTest {
         assertEq(address(registrationModule.IP_ACCOUNT_REGISTRY()), address(ipAccountRegistry));
         assertEq(address(registrationModule.IP_RECORD_REGISTRY()), address(ipRecordRegistry));
         assertEq(address(registrationModule.LICENSE_REGISTRY()), address(licenseRegistry));
-        assertEq(address(registrationModule.resolver()), address(resolver));
     }
 
     /// @notice Checks whether root IP registration operates as expected.
@@ -102,6 +115,7 @@ contract RegistrationModuleTest is ModuleBaseTest {
 
         /// Ensure registered IP postconditiosn are met.
         assertEq(ipRecordRegistry.resolver(ipId), address(resolver));
+        assertEq(ipRecordRegistry.metadataProvider(ipId), address(metadataProvider));
         assertEq(totalSupply + 1, ipRecordRegistry.totalSupply());
         assertTrue(ipRecordRegistry.isRegistered(ipId));
         assertTrue(ipRecordRegistry.isRegistered(block.chainid, tokenAddress, tokenId));
@@ -148,8 +162,8 @@ contract RegistrationModuleTest is ModuleBaseTest {
             tokenAddress,
             tokenId2,
             RECORD_NAME,
-            RECORD_DESCRIPTION,
-            RECORD_HASH
+            RECORD_HASH,
+            RECORD_URL
         );
 
 
@@ -158,10 +172,9 @@ contract RegistrationModuleTest is ModuleBaseTest {
         assertEq(totalSupply + 1, ipRecordRegistry.totalSupply());
         assertTrue(ipRecordRegistry.isRegistered(ipId2));
         assertTrue(ipRecordRegistry.isRegistered(block.chainid, tokenAddress, tokenId2));
-        assertEq(resolver.name(ipId2), RECORD_NAME);
-        assertEq(resolver.description(ipId2), RECORD_DESCRIPTION);
-        assertEq(resolver.hash(ipId2), RECORD_HASH);
-        assertEq(resolver.owner(ipId2), bob);
+        assertEq(renderer.name(ipId2), RECORD_NAME);
+        assertEq(renderer.hash(ipId2), RECORD_HASH);
+        assertEq(renderer.owner(ipId2), bob);
     }
 
     /// @notice Checks that registration reverts when called by an invalid owner.
@@ -172,8 +185,8 @@ contract RegistrationModuleTest is ModuleBaseTest {
             tokenAddress,
             tokenId,
             RECORD_NAME,
-            RECORD_DESCRIPTION,
-            RECORD_HASH
+            RECORD_HASH,
+            RECORD_URL
         );
     }
 
@@ -185,7 +198,8 @@ contract RegistrationModuleTest is ModuleBaseTest {
                 address(ipRecordRegistry),
                 address(ipAccountRegistry),
                 address(licenseRegistry),
-                address(resolver)
+                address(resolver),
+                address(metadataProvider)
             )
         );
     }

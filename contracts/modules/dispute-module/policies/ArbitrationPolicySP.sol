@@ -54,7 +54,7 @@ contract ArbitrationPolicySP is IArbitrationPolicy {
     /// @notice Executes custom logic on raise dispute
     /// @param _caller Address of the caller
     function onRaiseDispute(address _caller, bytes calldata) external onlyDisputeModule {
-        // TODO: we can add permit if the token supports it
+        // requires that the caller has given approve() to this contract
         IERC20(PAYMENT_TOKEN).safeTransferFrom(_caller, address(this), ARBITRATION_PRICE);
     }
 
@@ -63,7 +63,7 @@ contract ArbitrationPolicySP is IArbitrationPolicy {
     /// @param _decision The decision of the dispute
     function onDisputeJudgement(uint256 _disputeId, bool _decision, bytes calldata) external onlyDisputeModule {
         if (_decision) {
-            (, address disputeInitiator, , , ) = IDisputeModule(DISPUTE_MODULE).disputes(_disputeId);
+            (, address disputeInitiator,,,,) = IDisputeModule(DISPUTE_MODULE).disputes(_disputeId);
             IERC20(PAYMENT_TOKEN).safeTransfer(disputeInitiator, ARBITRATION_PRICE);
         }
     }
@@ -76,5 +76,6 @@ contract ArbitrationPolicySP is IArbitrationPolicy {
     function withdraw(uint256 _amount) external onlyGovernance {
         // TODO: where is governance address defined?
         /* IERC20(PAYMENT_TOKEN).safeTransfer(governance, _amount); */
+        // TODO: emit event
     }
 }

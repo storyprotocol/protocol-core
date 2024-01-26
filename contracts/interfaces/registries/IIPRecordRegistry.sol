@@ -11,12 +11,14 @@ interface IIPRecordRegistry {
     /// @param tokenContract The address of the IP.
     /// @param tokenId The token identifier of the IP.
     /// @param resolver The address of the resolver linked to the IP.
+    /// @param provider The address of the metadata provider linked to the IP.
     event IPRegistered(
         address ipId,
         uint256 indexed chainId,
         address indexed tokenContract,
         uint256 indexed tokenId,
-        address resolver
+        address resolver,
+        address provider
     );
 
     /// @notice Emits when an IP account is created for an IP.
@@ -37,6 +39,14 @@ interface IIPRecordRegistry {
     event IPResolverSet(
         address ipId,
         address resolver
+    );
+
+    /// @notice Emits when a metadata provider is set for an IP.
+    /// @param ipId The canonical identifier of the specified IP.
+    /// @param metadataProvider Address of the metadata provider associated with the IP.
+    event MetadataProviderSet(
+        address ipId,
+        address metadataProvider
     );
 
     /// @notice Gets the canonical IP identifier associated with an IP (NFT).
@@ -87,18 +97,26 @@ interface IIPRecordRegistry {
         uint256 tokenId
     ) external view returns (address);
 
+    /// @notice Gets the metadata provider linked to an IP based on its ID.
+    /// @param id The canonical identifier for the IP.
+    /// @return The metadata that was bound to this IP at creation time.
+    function metadataProvider(address id) external view returns (address);
+
     /// @notice Registers an NFT as IP, creating a corresponding IP record.
     /// @dev This is only callable by an authorized registration module.
     /// @param chainId The chain identifier of where the IP resides.
     /// @param tokenContract The address of the IP.
     /// @param tokenId The token identifier of the IP.
+    /// @param resolverAddr The address of the resolver to associate with the IP.
     /// @param createAccount Whether to create an IP account in the process.
+    /// @param metadataProvider The metadata provider to associate with the IP.
     function register(
         uint256 chainId,
         address tokenContract,
         uint256 tokenId,
         address resolverAddr,
-        bool createAccount
+        bool createAccount,
+        address metadataProvider
     ) external returns (address);
 
     /// @notice Creates the IP account for the specified IP.

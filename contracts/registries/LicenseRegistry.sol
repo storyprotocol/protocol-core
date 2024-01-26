@@ -303,6 +303,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         }
         // Verify minting param
         Licensing.Policy memory pol = policy(policyId);
+<<<<<<< HEAD
         Licensing.Framework storage fw = _framework(pol.frameworkId);
         uint256 policyParamsLength = pol.paramNames.length;
         bool setByLinking = _policySetups[licensorIp][policyId].setByLinking;
@@ -327,6 +328,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
             policyId: policyId,
             licensorIpId: licensorIp
         });
+=======
+        _verifyParams(Licensing.ParamVerifierType.Mint, pol, receiver, amount);
+        Licensing.License memory licenseData = Licensing.License({ policyId: policyId, licensorIpIds: licensorIpIds });
+>>>>>>> main
         (uint256 lId, bool isNew) = _addIdOrGetExisting(abi.encode(licenseData), _hashedLicenses, _totalLicenses);
         licenseId = lId;
         if (isNew) {
@@ -364,7 +369,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         address childIpId,
         address holder
     ) external onlyLicensee(licenseId, holder) {
-        
         // TODO: check if childIpId exists and is owned by holder
         Licensing.License memory licenseData = _licenses[licenseId];
         address parentIpId = licenseData.licensorIpId;
@@ -376,6 +380,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
         // Verify linking params
         Licensing.Policy memory pol = policy(licenseData.policyId);
+<<<<<<< HEAD
         Licensing.Framework storage fw = _framework(pol.frameworkId);
         uint256 policyParamsLength = pol.paramNames.length;
         bool verificationOk = true;
@@ -394,6 +399,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
             }
         }
         
+=======
+        _verifyParams(Licensing.ParamVerifierType.LinkParent, pol, holder, 1);
+
+>>>>>>> main
         // Add policy to kid
         _addPolictyIdToIp(childIpId, licenseData.policyId, true);
         // Set parent
@@ -421,6 +430,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return _licenses[licenseId];
     }
 
+<<<<<<< HEAD
     function licensorIpId(uint256 licenseId) external view returns (address) {
         return _licenses[licenseId].licensorIpId;
     }
@@ -451,12 +461,60 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
                     }
                 }
             }   
+=======
+    function _update(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values
+    ) internal virtual override {
+        // We are interested in transfers, minting and burning are checked in mintLicense and linkIpToParent respectively.
+
+        if (from != address(0) && to != address(0)) {
+            uint256 length = ids.length;
+            for (uint256 i = 0; i < length; i++) {
+                _verifyParams(Licensing.ParamVerifierType.Transfer, policyForLicense(ids[i]), to, values[i]);
+            }
+>>>>>>> main
         }
         super._update(from, to, ids, values);
     }
 
+<<<<<<< HEAD
 
+=======
+    function _verifyParams(
+        Licensing.ParamVerifierType pvt,
+        Licensing.Policy memory pol,
+        address holder,
+        uint256 amount
+    ) internal {
+        Licensing.Framework storage fw = _framework(pol.frameworkId);
+        Licensing.Parameter[] storage params = fw.parameters[pvt];
+        uint256 paramsLength = params.length;
+        bytes[] memory values = pol.getValues(pvt);
 
+        for (uint256 i = 0; i < paramsLength; i++) {
+            Licensing.Parameter memory param = params[i];
+            // Empty bytes => use default value specified in license framework creation params.
+            bytes memory data = values[i].length == 0 ? param.defaultValue : values[i];
+            bool verificationOk = false;
+            if (pvt == Licensing.ParamVerifierType.Mint) {
+                verificationOk = param.verifier.verifyMinting(holder, amount, data);
+            } else if (pvt == Licensing.ParamVerifierType.LinkParent) {
+                verificationOk = param.verifier.verifyLinkParent(holder, data);
+            } else if (pvt == Licensing.ParamVerifierType.Transfer) {
+                verificationOk = param.verifier.verifyTransfer(holder, amount, data);
+            } else {
+                // This should never happen since getValues checks for pvt validity
+                revert Errors.LicenseRegistry__InvalidParamVerifierType();
+            }
+            if (!verificationOk) {
+                revert Errors.LicenseRegistry__ParamVerifierFailed(uint8(pvt), address(param.verifier));
+            }
+        }
+    }
+>>>>>>> main
 
     // TODO: tokenUri from parameters, from a metadata resolver contract
 }

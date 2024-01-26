@@ -6,6 +6,14 @@ pragma solidity ^0.8.19;
 /// @notice Library for all Story Protocol contract errors.
 library Errors {
     ////////////////////////////////////////////////////////////////////////////
+    //                                IPAccount                               //
+    ////////////////////////////////////////////////////////////////////////////
+    error IPAccount__InvalidSigner();
+    error IPAccount__InvalidSignature();
+    error IPAccount__ExpiredSignature();
+
+
+    ////////////////////////////////////////////////////////////////////////////
     //                                   Module                               //
     ////////////////////////////////////////////////////////////////////////////
 
@@ -40,6 +48,13 @@ library Errors {
 
     /// @notice Caller not authorized to perform the IP resolver function call.
     error IPResolver_Unauthorized();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                          Metadata Provider                            ///
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Caller does not access to set metadata storage for the provider.
+    error MetadataProvider_Unauthorized();
 
     ////////////////////////////////////////////////////////////////////////////
     //                            LicenseRegistry                             //
@@ -79,11 +94,13 @@ library Errors {
     error DisputeModule__ZeroArbitrationPolicy();
     error DisputeModule__ZeroArbitrationRelayer();
     error DisputeModule__ZeroDisputeTag();
-    error DisputeModule__ZeroLinkToDisputeSummary();
+    error DisputeModule__ZeroLinkToDisputeEvidence();
     error DisputeModule__NotWhitelistedArbitrationPolicy();
     error DisputeModule__NotWhitelistedDisputeTag();
     error DisputeModule__NotWhitelistedArbitrationRelayer();
     error DisputeModule__NotDisputeInitiator();
+    error DisputeModule__NotInDisputeState();
+    error DisputeModule__NotAbleToResolve();
 
     error ArbitrationPolicySP__ZeroDisputeModule();
     error ArbitrationPolicySP__ZeroPaymentToken();
@@ -141,5 +158,4 @@ library Errors {
     error TaggingModule__SrcIpIdDoesNotHaveSrcTag();
     error TaggingModule__DstIpIdDoesNotHaveDstTag();
     error TaggingModule__RelationTypeDoesNotExist();
-
 }
