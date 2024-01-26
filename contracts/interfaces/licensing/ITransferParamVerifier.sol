@@ -11,5 +11,5 @@ interface ITransferParamVerifier is IParamVerifier {
         address to,
         uint256 amount,
         bytes memory data
-    ) external view returns (bool);
+    ) external returns (bool);
 }

@@ -60,7 +60,7 @@ library Licensing {
     struct License {
         /// the id for the Policy this License will set to the desired derivative IP after being burned.
         uint256 policyId;
-        /// Ids for the licensors, meaning the Ip Ids of the parents of the derivative to be created
-        address[] licensorIpIds;
+        /// Id for the licensor of the Ip Id
+        address licensorIpId;
     }
 }

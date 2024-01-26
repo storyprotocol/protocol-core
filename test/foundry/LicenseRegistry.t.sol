@@ -9,9 +9,12 @@ import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.so
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import "forge-std/console2.sol";
 import { Errors } from "contracts/lib/Errors.sol";
+import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
+import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 
 contract LicenseRegistryTest is Test {
     using Strings for *;
+    using ShortStrings for *;
 
     LicenseRegistry public registry;
     Licensing.Framework public framework;
@@ -32,26 +35,14 @@ contract LicenseRegistryTest is Test {
 
     // TODO: use ModuleBaseTest for this
     function _initFwParams() private {
-        IParamVerifier[] memory mintingVerifiers = new IParamVerifier[](1);
-        mintingVerifiers[0] = verifier;
-        bytes[] memory mintingDefaultValues = new bytes[](1);
-        mintingDefaultValues[0] = abi.encode(true);
-        IParamVerifier[] memory linkParentVerifiers = new IParamVerifier[](1);
-        linkParentVerifiers[0] = verifier;
-        bytes[] memory linkParentDefaultValues = new bytes[](1);
-        linkParentDefaultValues[0] = abi.encode(true);
-        IParamVerifier[] memory transferVerifiers = new IParamVerifier[](1);
-        transferVerifiers[0] = verifier;
-        bytes[] memory transferDefaultValues = new bytes[](1);
-        transferDefaultValues[0] = abi.encode(true);
+        IParamVerifier[] memory parameters = new IParamVerifier[](1);
+        parameters[0] = verifier;
+        bytes[] memory values = new bytes[](1);
+        values[0] = abi.encode(true);
 
         fwParams = Licensing.FrameworkCreationParams({
-            mintingVerifiers: mintingVerifiers,
-            mintingDefaultValues: mintingDefaultValues,
-            linkParentVerifiers: linkParentVerifiers,
-            linkParentDefaultValues: linkParentDefaultValues,
-            transferVerifiers: transferVerifiers,
-            transferDefaultValues: transferDefaultValues,
+            parameters: parameters,
+            defaultValues: values,
             licenseUrl: licenseUrl
         });
     }
@@ -59,13 +50,13 @@ contract LicenseRegistryTest is Test {
     function _createPolicy() pure internal returns(Licensing.Policy memory pol) {
         pol = Licensing.Policy({
             frameworkId: 1,
-            mintingParamValues: new bytes[](1),
-            linkParentParamValues: new bytes[](1),
-            transferParamValues: new bytes[](1)
+            commercialUse: true,
+            derivatives: true,
+            paramNames: new bytes32[](1),
+            paramValues: new bytes[](1)
         });
-        pol.mintingParamValues[0] = abi.encode(true);
-        pol.linkParentParamValues[0] = abi.encode(true);
-        pol.transferParamValues[0] = abi.encode(true);
+        pol.paramNames[0] = ShortStringOps.stringToBytes32("Mock");
+        pol.paramValues[0] = abi.encode(true);
         return pol;
     }
 
@@ -80,36 +71,10 @@ contract LicenseRegistryTest is Test {
         assertEq(fwId, 1, "not incrementing fw id");
         assertTrue(fwParams.licenseUrl.equal(registry.frameworkUrl(fwId)), "licenseUrl not set");
         assertEq(registry.totalFrameworks(), 1, "totalFrameworks not incremented");
-        assertEq(registry.frameworkParams(fwId, Licensing.ParamVerifierType.Mint).length, 1);
-        assertEq(registry.totalFrameworks(), 1, "total frameworks not updated");
-        _assertEqualParams(
-            registry.frameworkParams(fwId, Licensing.ParamVerifierType.Mint),
-            fwParams.mintingVerifiers,
-            fwParams.mintingDefaultValues
-        );
-        _assertEqualParams(
-            registry.frameworkParams(fwId, Licensing.ParamVerifierType.LinkParent),
-            fwParams.linkParentVerifiers,
-            fwParams.linkParentDefaultValues
-        );
-        _assertEqualParams(
-            registry.frameworkParams(fwId, Licensing.ParamVerifierType.Transfer),
-            fwParams.transferVerifiers,
-            fwParams.transferDefaultValues
-        );
-    }
-
-    function _assertEqualParams(
-        Licensing.Parameter[] memory params1,
-        IParamVerifier[] memory verifiers,
-        bytes[] memory defaultValues
-    ) private {
-        assertEq(params1.length, verifiers.length, "length mismatch");
-        assertEq(params1.length, defaultValues.length, "length mismatch");
-        for (uint256 i = 0; i < params1.length; i++) {
-            assertEq(address(params1[i].verifier), address(verifiers[i]), "verifier mismatch");
-            assertEq(params1[i].defaultValue, defaultValues[i], "default value mismatch");
-        }
+        string memory paramName = fwParams.parameters[0].nameString();
+        Licensing.Parameter memory storedParam = registry.frameworkParam(1, paramName);
+        assertEq(address(storedParam.verifier), address(fwParams.parameters[0]), "verifier not equal");
+        assertEq(storedParam.defaultValue, fwParams.defaultValues[0], "defaultValue not equal");
     }
 
     function test_LicenseRegistry_addPolicy()
@@ -144,7 +109,7 @@ contract LicenseRegistryTest is Test {
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
         assertEq(policyId, 1, "policyId not 1");
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
-        assertFalse(registry.isPolicyIdAtIndexSetByLinking(ipId1, 0));
+        assertFalse(registry.isPolicySetByLinking(ipId1, policyId));
         Licensing.Policy memory storedPolicy = registry.policy(policyId);
         assertEq(keccak256(abi.encode(storedPolicy)), keccak256(abi.encode(policy)), "policy not stored properly");
     }
@@ -156,11 +121,11 @@ contract LicenseRegistryTest is Test {
         (uint256 policyId, bool isNew1, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
         assertTrue(isNew1, "not new");
         assertEq(indexOnIpId, 0);
-        assertFalse(registry.isPolicyIdAtIndexSetByLinking(ipId1, 0));
+        assertFalse(registry.isPolicySetByLinking(ipId1, policyId));
         (uint256 policyId2, bool isNew2, uint256 indexOnIpId2) = registry.addPolicyToIp(ipId2, policy);
         assertFalse(isNew2, "new");
         assertEq(indexOnIpId2, 0);
-        assertFalse(registry.isPolicyIdAtIndexSetByLinking(ipId2, 0));
+        assertFalse(registry.isPolicySetByLinking(ipId2, policyId));
         assertEq(policyId, policyId2, "policyId not reused");
     }
 
@@ -181,10 +146,10 @@ contract LicenseRegistryTest is Test {
         assertEq(registry.totalPolicies(), 1, "totalPolicies not incremented");
         assertEq(registry.totalPoliciesForIp(ipId1), 1, "totalPoliciesForIp not incremented");
         assertEq(registry.policyIdForIpAtIndex(ipId1, 0), 1, "policyIdForIpAtIndex not 1");
-        assertFalse(registry.isPolicyIdAtIndexSetByLinking(ipId1, 0));
+        assertFalse(registry.isPolicySetByLinking(ipId1, policyId));
 
         // Adding different policy to same ipId
-        policy.mintingParamValues[0] = abi.encode("test2");
+        policy.paramValues[0] = abi.encode("test2");
         (uint256 policyId2, bool isNew2, uint256 indexOnIpId2) = registry.addPolicyToIp(ipId1, policy);
         assertTrue(isNew2, "not new");
         assertEq(policyId2, 2, "policyId not 2");
@@ -192,7 +157,7 @@ contract LicenseRegistryTest is Test {
         assertEq(registry.totalPolicies(), 2, "totalPolicies not incremented");
         assertEq(registry.totalPoliciesForIp(ipId1), 2, "totalPoliciesForIp not incremented");
         assertEq(registry.policyIdForIpAtIndex(ipId1, 1), 2, "policyIdForIpAtIndex not 2");
-        assertFalse(registry.isPolicyIdAtIndexSetByLinking(ipId1, 1));
+        assertFalse(registry.isPolicySetByLinking(ipId1, policyId2));
     }
 
     function test_LicenseRegistry_mintLicense()
@@ -208,16 +173,13 @@ contract LicenseRegistryTest is Test {
         assertEq(policyIds.length, 1);
         assertEq(policyIds[indexOnIpId], policyId);
 
-        address[] memory licensorIpIds = new address[](1);
-        licensorIpIds[0] = ipId1;
-        licenseId = registry.mintLicense(policyId, licensorIpIds, 2, licenseHolder);
+        licenseId = registry.mintLicense(policyId, ipId1, 2, licenseHolder);
         assertEq(licenseId, 1);
         Licensing.License memory license = registry.license(licenseId);
         assertEq(registry.balanceOf(licenseHolder, licenseId), 2);
         assertEq(registry.isLicensee(licenseId, licenseHolder), true);
         assertEq(license.policyId, policyId);
-        assertEq(license.licensorIpIds.length, 1);
-        assertEq(license.licensorIpIds[0], ipId1);
+        assertEq(license.licensorIpId, ipId1);
         return licenseId;
     }
 
@@ -234,7 +196,7 @@ contract LicenseRegistryTest is Test {
             "policy not copied"
         );
         assertEq(registry.policyIdForIpAtIndex(ipId2, 0), 1);
-        assertTrue(registry.isPolicyIdAtIndexSetByLinking(ipId2, 0), "not set by linking?");
+        assertTrue(registry.isPolicySetByLinking(ipId2, 1));
 
         address[] memory parents = registry.parentIpIds(ipId2);
         assertEq(parents.length, 1, "not 1 parent");
@@ -254,9 +216,7 @@ contract LicenseRegistryTest is Test {
         // solhint-disable-next-line no-unused-vars
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
 
-        address[] memory licensorIpIds = new address[](1);
-        licensorIpIds[0] = ipId1;
-        uint256 licenseId = registry.mintLicense(policyId, licensorIpIds, 2, licenseHolder);
+        uint256 licenseId = registry.mintLicense(policyId, ipId1, 2, licenseHolder);
         address licenseHolder2 = address(0x102);
         vm.prank(licenseHolder);
         registry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
@@ -268,9 +228,7 @@ contract LicenseRegistryTest is Test {
         withFrameworkParams
         public {
         Licensing.Policy memory policy = _createPolicy();
-        policy.transferParamValues[0] = abi.encode(false);
-        console2.logBytes(policy.transferParamValues[0]);
-        console2.log("policy.transferParamValues.length", policy.transferParamValues.length);
+        policy.paramValues[0] = abi.encode(false);
     
         // solhint-disable-next-line no-unused-vars
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);

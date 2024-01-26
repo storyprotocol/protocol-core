@@ -45,7 +45,7 @@ interface ILicenseRegistry {
 
     function mintLicense(
         uint256 policyId,
-        address[] calldata licensorIpIds,
+        address licensorIpId,
         uint256 amount,
         address receiver
     ) external returns (uint256 licenseId);
@@ -58,7 +58,7 @@ interface ILicenseRegistry {
 
     function totalFrameworks() external view returns (uint256);
 
-    function frameworkParams(uint256 frameworkId, Licensing.ParamVerifierType pvt) external view returns (Licensing.Parameter[] memory);
+    function frameworkParam(uint256 frameworkId, string calldata name) external view returns (Licensing.Parameter memory);
     function frameworkUrl(uint256 frameworkId) external view returns (string memory);
 
     function totalPolicies() external view returns (uint256);
@@ -83,7 +83,7 @@ interface ILicenseRegistry {
 
     function isLicensee(uint256 licenseId, address holder) external view returns (bool);
 
-    function licensorIpIds(uint256 licenseId) external view returns (address[] memory);
+    function licensorIpId(uint256 licenseId) external view returns (address);
     function license(uint256 licenseId) external view returns (Licensing.License memory);
     function isParent(address parentIpId, address childIpId) external view returns (bool);
 

@@ -11,6 +11,8 @@ import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC16
 // contracts
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
+import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
+import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
 import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
@@ -41,7 +43,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// index of the policy in the ipId policy set
     /// Policies can't be removed, but they can be deactivated by setting active to false
     /// @dev ipId => policyId => PolicySetup
-    mapping(address => mapping(uint256 => PolicySetup) private _policySetups;
+    mapping(address => mapping(uint256 => PolicySetup)) private _policySetups;
     mapping(address => EnumerableSet.UintSet) private _policiesPerIpId;
     
     mapping(address => EnumerableSet.AddressSet) private _ipIdParents;
@@ -82,11 +84,11 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         if (paramLength != fwCreation.defaultValues.length) {
             revert Errors.LicenseRegistry__ParamVerifierLengthMismatch();
         }
-        mapping(bytes32 => Parameter[]) storage parameters = fw.parameters[pvt];
+        mapping(bytes32 => Licensing.Parameter) storage params = fw.parameters;
         for (uint256 i = 0; i < paramLength; i++) {
             IParamVerifier verifier = fwCreation.parameters[i];
             bytes32 paramName = verifier.name();
-            if (params[paramName].verifier != address(0)) {
+            if (address(params[paramName].verifier) != address(0)) {
                 revert Errors.LicenseRegistry__ParamVerifierAlreadySet();
             }
             params[paramName] = Licensing.Parameter({ verifier: verifier, defaultValue: fwCreation.defaultValues[i] });
@@ -105,7 +107,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// Returns framework for id. Reverts if not found
     function frameworkParam(uint256 frameworkId, string calldata name) public view returns (Licensing.Parameter memory) {
         Licensing.Framework storage fw = _framework(frameworkId);
-        return fw.parameters[name.toShortString()];
+        return fw.parameters[ShortString.unwrap(name.toShortString())];
     }
 
     function _framework(uint256 frameworkId) internal view returns (Licensing.Framework storage fw) {
@@ -279,57 +281,51 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// The licensing terms that regulate creating new licenses will be verified to allow minting.
     /// Reverts if caller is not authorized by licensors.
     /// @param policyId id of the policy to be minted
-    /// @param licensorIds array of IP Ids that are granting the license
+    /// @param licensorIp IP Id granting the license
     /// @param amount of licenses to be minted. License NFT is fungible for same policy and same licensors
     /// @param receiver of the License NFT(s).
     /// @return licenseId of the NFT(s).
     function mintLicense(
         uint256 policyId,
-        address[] memory licensorIds,
+        address licensorIp,
         uint256 amount,
         address receiver
     ) external returns (uint256 licenseId) {
-        uint256 licensorAmount = licensorIds.length;
-        if (licensorAmount == 0) {
-            revert Errors.LicenseRegistry__LicenseMustHaveLicensors();
+        // TODO: check if licensor are valid IP Ids
+        // TODO: check if licensor has been tagged by disputer
+        // TODO: check if licensor allowed sender to mint in their behalf
+        // TODO: licensor == msg.sender, expect if derivatives && withReciprocal
+        if (licensorIp == address(0)) {
+            revert Errors.LicenseRegistry__InvalidLicensor();
         }
-        for (uint256 i = 0; i < licensorAmount; i++) {
-            address licensor = licensorIds[i];
-            // TODO: check duplicates
-            // TODO: check if licensors are valid IP Ids
-            // TODO: check if licensors they have been tagged by disputer
-            // TODO: check if licensor allowed sender to mint in their behalf
-            if (licensor == address(0)) {
-                revert Errors.LicenseRegistry__InvalidLicensor();
-            }
-            if (!_policiesPerIpId[licensor].contains(policyId)) {
-                revert Errors.LicenseRegistry__LicensorDoesntHaveThisPolicy();
-            }
+        if (!_policiesPerIpId[licensorIp].contains(policyId)) {
+            revert Errors.LicenseRegistry__LicensorDoesntHaveThisPolicy();
         }
+        // Verify minting param
         Licensing.Policy memory pol = policy(policyId);
         Licensing.Framework storage fw = _framework(pol.frameworkId);
         uint256 policyParamsLength = pol.paramNames.length;
+        bool setByLinking = _policySetups[licensorIp][policyId].setByLinking;
         bool verificationOk = true;
         for (uint256 i = 0; i < policyParamsLength; i++) {
             Licensing.Parameter memory param = fw.parameters[pol.paramNames[i]];
 
             if (ERC165Checker.supportsInterface(address(param.verifier), type(IMintParamVerifier).interfaceId)) {
                 bytes memory data = pol.paramValues[i].length == 0 ? param.defaultValue : pol.paramValues[i];
-                verificationOk = IMintParamVerifier(param.verifier).verifyMint(
+                verificationOk = IMintParamVerifier(address(param.verifier)).verifyMint(
                     msg.sender,
                     policyId,
-                    isPolicyIdAtIndexSetByLinking,
-                    address[] memory licensors,
-                    address receiver,
-                    uint256 amount,
-                    bytes memory data
-                ) external view returns (bool) 
+                    setByLinking,
+                    licensorIp,
+                    receiver,
+                    data
+                );
             }
         }
         
         Licensing.License memory licenseData = Licensing.License({
             policyId: policyId,
-            licensorIpIds: licensorIds
+            licensorIpId: licensorIp
         });
         (uint256 lId, bool isNew) = _addIdOrGetExisting(abi.encode(licenseData), _hashedLicenses, _totalLicenses);
         licenseId = lId;
@@ -371,31 +367,38 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         
         // TODO: check if childIpId exists and is owned by holder
         Licensing.License memory licenseData = _licenses[licenseId];
-        address[] memory parents = licenseData.licensorIpIds;
-        for (uint256 i = 0; i < parents.length; i++) {
-            // TODO: check licensor exist
-            // TODO: check licensor not part of a branch tagged by disputer
+        address parentIpId = licenseData.licensorIpId;
+        if (parentIpId == childIpId) {
+            revert Errors.LicenseRegistry__ParentIdEqualThanChild();
         }
+        // TODO: check licensor exist
+        // TODO: check licensor not part of a branch tagged by disputer
 
+        // Verify linking params
         Licensing.Policy memory pol = policy(licenseData.policyId);
-        _verifyParams(Licensing.ParamVerifierType.LinkParent, pol, holder, 1);
+        Licensing.Framework storage fw = _framework(pol.frameworkId);
+        uint256 policyParamsLength = pol.paramNames.length;
+        bool verificationOk = true;
+        for (uint256 i = 0; i < policyParamsLength; i++) {
+            Licensing.Parameter memory param = fw.parameters[pol.paramNames[i]];
+
+            if (ERC165Checker.supportsInterface(address(param.verifier), type(ILinkParamVerifier).interfaceId)) {
+                bytes memory data = pol.paramValues[i].length == 0 ? param.defaultValue : pol.paramValues[i];
+                verificationOk = ILinkParamVerifier(address(param.verifier)).verifyLink(
+                    licenseId,
+                    msg.sender,
+                    childIpId,
+                    parentIpId,
+                    data
+                );
+            }
+        }
         
         // Add policy to kid
-        // TODO: return index of policy in ipId?
         _addPolictyIdToIp(childIpId, licenseData.policyId, true);
         // Set parent
-        for (uint256 i = 0; i < parents.length; i++) {
-            // We don't care if it was already a parent, because there might be a case such as:
-            // 1. IP2 is created from IP1 with L1(non commercial)
-            // 2. IP1 releases L2 with commercial terms, and IP2 wants permission to commercially exploit
-            // 3. IP2 gets L2, burns it to set commercial policy
-            address parent = parents[i];
-            if (parent == childIpId) {
-                revert Errors.LicenseRegistry__ParentIdEqualThanChild();
-            }
-            _ipIdParents[childIpId].add(parent);
-            emit IpIdLinkedToParent(msg.sender, childIpId, parent);
-        }
+        _ipIdParents[childIpId].add(parentIpId);
+        emit IpIdLinkedToParent(msg.sender, childIpId, parentIpId);
 
         // Burn license
         _burn(holder, licenseId, 1);
@@ -418,8 +421,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return _licenses[licenseId];
     }
 
-    function licensorIpIds(uint256 licenseId) external view returns (address[] memory) {
-        return _licenses[licenseId].licensorIpIds;
+    function licensorIpId(uint256 licenseId) external view returns (address) {
+        return _licenses[licenseId].licensorIpId;
     }
 
     function _update(address from, address to, uint256[] memory ids, uint256[] memory values) virtual override internal {
@@ -427,52 +430,32 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         if (from != address(0) && to != address(0)) {
             uint256 length = ids.length;
             for (uint256 i = 0; i < length; i++) {
-                _verifyParams(Licensing.ParamVerifierType.Transfer, policyForLicense(ids[i]), to, values[i]);
+                // Verify transfer params
+                uint256 licenseId = ids[i];
+                Licensing.Policy memory pol = policy(_licenses[licenseId].policyId);
+                Licensing.Framework storage fw = _framework(pol.frameworkId);
+                uint256 policyParamsLength = pol.paramNames.length;
+                bool verificationOk = true;
+                for (uint256 j = 0; j < policyParamsLength; j++) {
+                    Licensing.Parameter memory param = fw.parameters[pol.paramNames[j]];
+                    bytes memory paramValue = pol.paramValues[j];
+                    if (ERC165Checker.supportsInterface(address(param.verifier), type(ITransferParamVerifier).interfaceId)) {
+                        bytes memory data = paramValue.length == 0 ? param.defaultValue : paramValue;
+                        verificationOk = ITransferParamVerifier(address(param.verifier)).verifyTransfer(
+                            licenseId,
+                            from,
+                            to,
+                            values[i],
+                            data
+                        );
+                    }
+                }
             }   
         }
         super._update(from, to, ids, values);
     }
 
 
-
-    function _verifyParams(Licensing.ParamVerifierType pvt, Licensing.Policy memory pol, address holder, uint256 amount) internal {
-        Licensing.Framework storage fw = _framework(pol.frameworkId);
-        Licensing.Parameter[] storage params = fw.parameters[pvt];
-        uint256 paramsLength = params.length;
-        bytes[] memory values = pol.getValues(pvt);
-        
-        for (uint256 i = 0; i < paramsLength; i++) {
-            Licensing.Parameter memory param = params[i];
-            // Empty bytes => use default value specified in license framework creation params.
-            bytes memory data = values[i].length == 0 ? param.defaultValue : values[i];
-            bool verificationOk = false;
-            if (pvt == Licensing.ParamVerifierType.Mint) {
-                
-            } else if (pvt == Licensing.ParamVerifierType.LinkParent) {
-                verificationOk = param.verifier.verifyLink(
-                    address licenseId,
-                    address licenseHolder,
-                    address ipId,
-                    address parentIpId,
-                    bytes calldata data
-                )
-            } else if (pvt == Licensing.ParamVerifierType.Transfer) {
-                verificationOk = param.verifier.verifyTransfer(
-                    uint256 licenseId,
-                    address from,
-                    address to,
-                    uint256 amount,
-                    bytes memory data
-                );
-            } else {
-                // This should never happen since getValues checks for pvt validity
-                revert Errors.LicenseRegistry__InvalidParamVerifierType();
-            }
-            if (!verificationOk) {
-                revert Errors.LicenseRegistry__ParamVerifierFailed(uint8(pvt), address(param.verifier));
-            }
-        }
-    }
 
 
     // TODO: tokenUri from parameters, from a metadata resolver contract

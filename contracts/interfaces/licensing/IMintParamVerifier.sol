@@ -8,10 +8,9 @@ interface IMintParamVerifier is IParamVerifier {
         address caller,
         uint256 policyId,
         bool policyAddedByLinking,
-        address[] memory licensors,
+        address licensors,
         address receiver,
-        uint256 amount,
         bytes memory data
-    ) external view returns (bool);
+    ) external returns (bool);
 }
 

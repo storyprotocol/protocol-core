@@ -6,10 +6,10 @@ import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.so
 
 interface ILinkParamVerifier is IParamVerifier {
     function verifyLink(
-        address licenseId,
+        uint256 licenseId,
         address caller,
         address ipId,
         address parentIpId,
         bytes calldata data
-    ) external view returns (bool);
+    ) external returns (bool);
 }
