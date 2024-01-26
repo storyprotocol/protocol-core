@@ -304,7 +304,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     function mintLicense(
         uint256 policyId,
         address licensorIp,
-        uint256 amount,
+        uint256 amount, // mint amount
         address receiver
     ) external returns (uint256 licenseId) {
         // TODO: check if licensor are valid IP Ids
@@ -320,9 +320,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         // Verify minting param
         Licensing.Policy memory pol = policy(policyId);
         Licensing.Framework storage fw = _framework(pol.frameworkId);
-        uint256 policyParamsLength = pol.paramNames.length;
         bool setByLinking = _policySetups[licensorIp][policyId].setByLinking;
-        for (uint256 i = 0; i < policyParamsLength; i++) {
+        for (uint256 i = 0; i < pol.paramNames.length; i++) {
             Licensing.Parameter memory param = fw.parameters[pol.paramNames[i]];
 
             if (ERC165Checker.supportsInterface(address(param.verifier), type(IMintParamVerifier).interfaceId)) {
@@ -332,6 +331,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
                     setByLinking,
                     licensorIp,
                     receiver,
+                    amount,
                     pol.paramValues[i].length == 0 ? param.defaultValue : pol.paramValues[i]
                 );
 
@@ -399,13 +399,12 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
             Licensing.Parameter memory param = fw.parameters[pol.paramNames[i]];
 
             if (ERC165Checker.supportsInterface(address(param.verifier), type(ILinkParamVerifier).interfaceId)) {
-                bytes memory data = pol.paramValues[i].length == 0 ? param.defaultValue : pol.paramValues[i];
                 bool verificationOk = ILinkParamVerifier(address(param.verifier)).verifyLink(
                     licenseId,
                     msg.sender,
                     childIpId,
                     parentIpId,
-                    data
+                    pol.paramValues[i].length == 0 ? param.defaultValue : pol.paramValues[i]
                 );
 
                 if (!verificationOk) {
