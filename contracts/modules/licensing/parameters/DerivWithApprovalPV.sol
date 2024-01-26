@@ -17,7 +17,7 @@ contract DerivWithApprovalPV is BaseParamVerifier, ILinkParamVerifier {
     // License Id => childIpId => approved
     mapping(uint256 => mapping(address => bool)) private _approvals;
 
-    constructor(address licenseRegistry) BaseParamVerifier(licenseRegistry) {}
+    constructor(address licenseRegistry, string memory name) BaseParamVerifier(licenseRegistry, name) {}
 
     // TODO: meta tx version
     function setApproval(uint256 licenseId, bool approved) external {
@@ -25,13 +25,13 @@ contract DerivWithApprovalPV is BaseParamVerifier, ILinkParamVerifier {
         // TODO: ACL
         bool callerIsLicensor = true; // msg.sender is licensorIpId owner ;
         if (!callerIsLicensor) {
-            revert Errors.DerivativesParamVerifier__Unauthorized();
+            revert Errors.DerivWithApprovalPV__Unauthorized();
         }
         _approvals[licenseId][licensorIpId] = approved;
         emit DerivativeApproved(licenseId, licensorIpId, msg.sender, approved);
     }
 
-    function isDerivativeApproved(address licenseId, address licensorIpId) public view returns (bool) {
+    function isDerivativeApproved(uint256 licenseId, address licensorIpId) public view returns (bool) {
         return _approvals[licenseId][licensorIpId];
     }
 
@@ -42,7 +42,7 @@ contract DerivWithApprovalPV is BaseParamVerifier, ILinkParamVerifier {
         address parentIpId,
         bytes calldata data
     ) external view returns (bool) {
-        return isDerivativeApproved(parentIpId, ipId);
+        return isDerivativeApproved(licenseId, parentIpId);
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, ERC165) returns (bool) {
@@ -52,20 +52,12 @@ contract DerivWithApprovalPV is BaseParamVerifier, ILinkParamVerifier {
             super.supportsInterface(interfaceId);
     }
 
-    function json() external pure override returns (string memory) {
+    function json() external pure virtual override(BaseParamVerifier, IParamVerifier) returns (string memory) {
         return "";
     }
 
     function isCommercial() external pure override returns (bool) {
         return false;
-    }
-
-    function nameString() external pure override returns (string memory) {
-        return "Derivatives-With-Approval";
-    }
-
-    function name() external pure override returns (bytes32) {
-        return ShortStringOps.stringToBytes32("Derivatives-With-Approval");
     }
 
     function allowsOtherPolicyOnSameIp(bytes memory data) external pure override returns (bool) {

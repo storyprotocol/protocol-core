@@ -92,10 +92,9 @@ library Errors {
     error BaseParamVerifier__Unauthorized();
 
     ////////////////////////////////////////////////////////////////////////////
-    //                     DerivativesParamVerifier                           //
+    //                     DerivWithApprovalPV                                //
     ////////////////////////////////////////////////////////////////////////////
-    error DerivativesParamVerifier__InvalidDerivativesConfig();
-    error DerivativesParamVerifier__ZeroShare();
+    error DerivWithApprovalPV__Unauthorized();
 
     ////////////////////////////////////////////////////////////////////////////
     //                            Dispute Module                              //

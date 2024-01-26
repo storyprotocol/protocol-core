@@ -50,7 +50,7 @@ contract PolicyCreator {
     function createPolicy(UMLPolicy calldata policy) external returns (uint256) {
         _verifyPolicy(policy);
         uint256 totalParams = 0;
-        mapping(uint256 => IParamVerifier) storage paramVerifiers; // this should be transient
+        // mapping(uint256 => IParamVerifier) storage paramVerifiers; // this should be transient
         if (policy.commWithAttribution) {
 
             totalParams++;
