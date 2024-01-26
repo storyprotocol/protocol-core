@@ -75,6 +75,10 @@ contract MintPaymentVerifier is ERC165, BaseParamVerifier, IMintParamVerifier {
         return "";
     }
 
+    function isCommercial() external pure returns (bool) {
+        return false;
+    }
+
     function allowsOtherPolicyOnSameIp(bytes memory data) external pure returns (bool) {
         return true;
     }

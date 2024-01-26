@@ -28,6 +28,10 @@ contract MockIParamVerifier is IParamVerifier, IMintParamVerifier, ILinkParamVer
         return ShortStringOps.stringToBytes32("Mock");
     }
 
+    function isCommercial() external pure override returns (bool) {
+        return false;
+    }
+
     function allowsOtherPolicyOnSameIp(bytes memory data) external view override returns (bool) {
         return true;
     }

@@ -5,6 +5,10 @@ pragma solidity ^0.8.23;
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { BaseParamVerifier } from "contracts/modules/licensing/parameters/BaseParamVerifier.sol";
 import { Errors } from "contracts/lib/Errors.sol";
+import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
+import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
+import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
+import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 contract DerivWithApprovalPV is BaseParamVerifier, ILinkParamVerifier {
 
@@ -32,24 +36,39 @@ contract DerivWithApprovalPV is BaseParamVerifier, ILinkParamVerifier {
     }
 
     function verifyLink(
-        address licenseId,
-        address licenseHolder,
+        uint256 licenseId,
+        address caller,
         address ipId,
         address parentIpId,
         bytes calldata data
-    ) external view override returns (bool) {
-        return isDerivativeApproved(licenseId, parentIpId);
+    ) external view returns (bool) {
+        return isDerivativeApproved(parentIpId, ipId);
     }
 
-    function json() external pure override(IParamVerifier, BaseParamVerifier) returns (string memory) {
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, ERC165) returns (bool) {
+        return
+            interfaceId == type(IParamVerifier).interfaceId ||
+            interfaceId == type(ILinkParamVerifier).interfaceId ||
+            super.supportsInterface(interfaceId);
+    }
+
+    function json() external pure override returns (string memory) {
         return "";
     }
 
-    function name() external pure override(IParamVerifier, BaseParamVerifier) returns (string memory) {
+    function isCommercial() external pure override returns (bool) {
+        return false;
+    }
+
+    function nameString() external pure override returns (string memory) {
         return "Derivatives-With-Approval";
     }
 
-    function allowsOtherPolicyOnSameIp(bytes memory data) external pure override(IParamVerifier, BaseParamVerifier) returns (bool) {
+    function name() external pure override returns (bytes32) {
+        return ShortStringOps.stringToBytes32("Derivatives-With-Approval");
+    }
+
+    function allowsOtherPolicyOnSameIp(bytes memory data) external pure override returns (bool) {
         return true;
     }
 }

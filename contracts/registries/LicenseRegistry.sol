@@ -9,6 +9,7 @@ import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortSt
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 // contracts
+import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
@@ -191,12 +192,12 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     function _verifyPolicy(Licensing.Policy memory pol) internal view {
         uint256 paramLength = pol.paramNames.length;
         Licensing.Framework storage fw = _framework(pol.frameworkId);
-        mapping(bytes32 => Parameter) parameters = fw.parameters;
+        mapping(bytes32 => Licensing.Parameter) storage parameters = fw.parameters;
         for (uint256 i = 0; i < paramLength; i++) {
-            if (pol.paramNames[i].equal("")) {
+            if (ShortStringOps.equal(pol.paramNames[i], "")) {
                 revert Errors.LicenseRegistry__EmptyParamName();
             }
-            Parameter memory param = parameters[pol.paramNames[i]];
+            Licensing.Parameter memory param = parameters[pol.paramNames[i]];
             if (!pol.commercialUse && param.verifier.isCommercial()) {
                 revert Errors.LicenseRegistry__CommercialTermInNonCommercialPolicy();
             }

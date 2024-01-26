@@ -5,9 +5,9 @@ pragma solidity ^0.8.23;
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Errors } from "contracts/lib/Errors.sol";
+import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
-
-abstract contract BaseParamVerifier is IParamVerifier {
+abstract contract BaseParamVerifier is IParamVerifier, ERC165 {
     /// @notice Gets the protocol-wide license registry.
     LicenseRegistry public immutable LICENSE_REGISTRY;
 
