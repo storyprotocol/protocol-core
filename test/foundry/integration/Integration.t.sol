@@ -111,7 +111,11 @@ contract IntegrationTest is Test {
         mockToken.mint(u.carl, 1000 * 10 ** mockToken.decimals());
 
         // 1 mock token payment per mint
-        mintPaymentVerifier = new MintPaymentVerifier(address(mockToken), 1 * 10 ** mockToken.decimals());
+        mintPaymentVerifier = new MintPaymentVerifier(
+            address(licenseRegistry),
+            address(mockToken),
+            1 * 10 ** mockToken.decimals()
+        );
 
         vm.label(address(disputeModule), "disputeModule");
         vm.label(address(arbitrationPolicySP), "arbitrationPolicySP");
@@ -325,7 +329,7 @@ contract IntegrationTest is Test {
         /*///////////////////////////////////////////////////////////////
                             MINT LICENSES ON POLICIES
         ////////////////////////////////////////////////////////////////*/
- 
+
         uint256 policyId = policyIds["test_true"][getIpId(u.alice, nft.a, 1)];
 
         // Carl mints 1 license for policy "test_true" on alice's NFT A IPAccount
@@ -373,19 +377,21 @@ contract IntegrationTest is Test {
         mockToken.approve(address(mintPaymentVerifier), 2 * 10 ** mockToken.decimals());
         vm.stopPrank();
 
-        policyId = policyIds["expensive_mint"][getIpId(u.carl, nft.c, 1)];
+        uint256 policyId_Carl_NftC_Id1 = policyIds["expensive_mint"][getIpId(u.carl, nft.c, 1)];
 
         // Bob mints 2 license for policy "expensive_mint" on carl's NFT C IPAccount
 
         mockTokenBalanceBefore[u.bob] = mockToken.balanceOf(u.bob);
         mockTokenBalanceBefore[address(mintPaymentVerifier)] = mockToken.balanceOf(address(mintPaymentVerifier));
 
-        licenseIds[u.bob][policyIds["expensive_mint"][getIpId(u.carl, nft.c, 1)]] = licenseRegistry.mintLicense(
-            policyId,
-            getIpId(u.carl, nft.c, 1),
+        vm.startPrank(u.bob);
+        licenseIds[u.bob][policyId_Carl_NftC_Id1] = licenseRegistry.mintLicense(
+            policyId_Carl_NftC_Id1,
+            getIpId(u.carl, nft.c, 1), // licensorIpId
             2,
             u.bob
         );
+        vm.stopPrank();
 
         mockTokenBalanceAfter[u.bob] = mockToken.balanceOf(u.bob);
         mockTokenBalanceAfter[address(mintPaymentVerifier)] = mockToken.balanceOf(address(mintPaymentVerifier));
@@ -393,11 +399,7 @@ contract IntegrationTest is Test {
         // Bob activates above license on his NFT A IPAccount, linking as child to Carl's NFT C IPAccount
 
         vm.prank(u.bob);
-        licenseRegistry.linkIpToParent(
-            licenseIds[u.bob][policyIds["expensive_mint"][getIpId(u.carl, nft.c, 1)]],
-            getIpId(u.bob, nft.a, 2),
-            u.bob
-        );
+        licenseRegistry.linkIpToParent(licenseIds[u.bob][policyId_Carl_NftC_Id1], getIpId(u.bob, nft.a, 2), u.bob);
 
         assertEq(
             licenseRegistry.balanceOf(u.bob, licenseIds[u.bob][policyIds["expensive_mint"][getIpId(u.carl, nft.c, 1)]]),
@@ -413,12 +415,12 @@ contract IntegrationTest is Test {
 
         assertEq(
             mockTokenBalanceBefore[u.bob] - mockTokenBalanceAfter[u.bob],
-            2 * 10 ** mockToken.decimals(),
+            2 * mintPaymentVerifier.payment(),
             "Bob didn't pay Carl"
         );
         assertEq(
             mockTokenBalanceAfter[address(mintPaymentVerifier)] - mockTokenBalanceBefore[address(mintPaymentVerifier)],
-            2 * 10 ** mockToken.decimals(),
+            2 * mintPaymentVerifier.payment(),
             "Carl didn't receive payment"
         );
 

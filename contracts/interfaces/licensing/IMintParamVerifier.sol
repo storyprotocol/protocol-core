@@ -10,6 +10,7 @@ interface IMintParamVerifier is IParamVerifier {
         bool policyAddedByLinking,
         address licensors,
         address receiver,
+        uint256 mintAmount,
         bytes memory data
     ) external returns (bool);
 }

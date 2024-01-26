@@ -8,11 +8,11 @@ import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransfer
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 
 contract MockIParamVerifier is IParamVerifier, IMintParamVerifier, ILinkParamVerifier, ITransferParamVerifier {
-    
     function supportsInterface(bytes4 interfaceId) external view returns (bool) {
-        return interfaceId == type(IParamVerifier).interfaceId &&
-            interfaceId == type(IMintParamVerifier).interfaceId &&
-            interfaceId == type(ILinkParamVerifier).interfaceId &&
+        return
+            interfaceId == type(IParamVerifier).interfaceId ||
+            interfaceId == type(IMintParamVerifier).interfaceId ||
+            interfaceId == type(ILinkParamVerifier).interfaceId ||
             interfaceId == type(ITransferParamVerifier).interfaceId;
     }
 
@@ -23,6 +23,7 @@ contract MockIParamVerifier is IParamVerifier, IMintParamVerifier, ILinkParamVer
     function nameString() external pure override returns (string memory) {
         return "Mock";
     }
+
     function name() external pure override returns (bytes32) {
         return ShortStringOps.stringToBytes32("Mock");
     }
@@ -31,24 +32,11 @@ contract MockIParamVerifier is IParamVerifier, IMintParamVerifier, ILinkParamVer
         return true;
     }
 
-    function verifyMint(
-        address,
-        uint256,
-        bool,
-        address,
-        address,
-        bytes memory data
-    ) external view returns (bool) {
+    function verifyMint(address, uint256, bool, address, address, uint256, bytes memory data) external view returns (bool) {
         return abi.decode(data, (bool));
     }
 
-    function verifyLink(
-        uint256,
-        address,
-        address,
-        address,
-        bytes calldata data
-    ) external view override returns (bool) {
+    function verifyLink(uint256, address, address, address, bytes calldata data) external view override returns (bool) {
         return abi.decode(data, (bool));
     }
 
