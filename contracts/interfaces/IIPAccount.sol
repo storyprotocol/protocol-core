@@ -15,12 +15,42 @@ import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.so
 /// This allows for seamless operations on the state and data of IP.
 /// IPAccount is core identity for all actions.
 interface IIPAccount is IERC6551Account, IERC721Receiver, IERC1155Receiver {
+    /// @notice Emitted when a transaction is executed.
+    event Executed(address indexed to, uint256 value, bytes data, uint256 nonce);
+
+    /// @notice Emitted when a transaction is executed on behalf of the signer.
+    event ExecutedWithSig(
+        address indexed to,
+        uint256 value,
+        bytes data,
+        uint256 nonce,
+        uint256 deadline,
+        address indexed signer,
+        bytes signature
+    );
+
     /// @notice Executes a transaction from the IP Account.
     /// @param to_ The recipient of the transaction.
     /// @param value_ The amount of Ether to send.
     /// @param data_ The data to send along with the transaction.
     /// @return The return data from the transaction.
     function execute(address to_, uint256 value_, bytes calldata data_) external payable returns (bytes memory);
+
+    /// @notice Executes a transaction from the IP Account on behalf of the signer.
+    /// @param to The recipient of the transaction.
+    /// @param value The amount of Ether to send.
+    /// @param data The data to send along with the transaction.
+    /// @param signer The signer of the transaction.
+    /// @param deadline The deadline of the transaction signature.
+    /// @param signature The signature of the transaction, EIP-712 encoded.
+    function executeWithSig(
+        address to,
+        uint256 value,
+        bytes calldata data,
+        address signer,
+        uint256 deadline,
+        bytes calldata signature
+    ) external payable returns (bytes memory);
 
     /// @notice Returns the owner of the IP Account.
     /// @return The address of the owner.
