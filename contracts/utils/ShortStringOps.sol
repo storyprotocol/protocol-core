@@ -43,6 +43,4 @@ library ShortStringOps {
     }
 }
 
-library EnumerableShortStringSet {
-
-}
+library EnumerableShortStringSet {}

@@ -42,6 +42,13 @@ library Errors {
     error IPResolver_Unauthorized();
 
     ////////////////////////////////////////////////////////////////////////////
+    //                          Metadata Provider                            ///
+    ////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Caller does not access to set metadata storage for the provider.
+    error MetadataProvider_Unauthorized();
+
+    ////////////////////////////////////////////////////////////////////////////
     //                            LicenseRegistry                             //
     ////////////////////////////////////////////////////////////////////////////
 
@@ -132,5 +139,4 @@ library Errors {
     error TaggingModule__SrcIpIdDoesNotHaveSrcTag();
     error TaggingModule__DstIpIdDoesNotHaveDstTag();
     error TaggingModule__RelationTypeDoesNotExist();
-
 }
