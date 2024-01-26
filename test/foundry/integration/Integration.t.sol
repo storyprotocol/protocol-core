@@ -272,8 +272,7 @@ contract IntegrationTest is Test {
             defaultValues: byteValueTrue,
             licenseUrl: "https://very-nice-verifier-license.com"
         });
-
-        fwAllTrue.parameters[0] = byteValueTrue;
+        fwAllTrue.parameters[0] = mockLicenseVerifier;
 
         Licensing.FrameworkCreationParams memory fwMintPayment = Licensing.FrameworkCreationParams({
             parameters: new IParamVerifier[](1),
@@ -281,7 +280,7 @@ contract IntegrationTest is Test {
             licenseUrl: "https://expensive-minting-license.com"
         });
 
-        fwMintPayment.mintingVerifiers[0] = mintPaymentVerifier;
+        fwMintPayment.parameters[0] = mintPaymentVerifier;
 
         addLicenseFramework("all_true", fwAllTrue);
         addLicenseFramework("mint_payment", fwMintPayment);
@@ -292,22 +291,26 @@ contract IntegrationTest is Test {
 
         policy["test_true"] = Licensing.Policy({
             frameworkId: licenseFwIds["all_true"],
-            mintingParamValues: new bytes[](1),
-            linkParentParamValues: new bytes[](1),
-            transferParamValues: new bytes[](1)
+            commercialUse: true,
+            derivatives: true,
+            paramNames: new bytes32[](1),
+            paramValues: new bytes[](1)
         });
 
-        // TODO: test failure (verifier condition check fails) by setting to false
-        policy["test_true"].mintingParamValues[0] = abi.encode(true);
-        policy["test_true"].linkParentParamValues[0] = abi.encode(true);
-        policy["test_true"].transferParamValues[0] = abi.encode(true);
+        policy["test_true"].paramNames[0] = mockLicenseVerifier.name();
+        policy["test_true"].paramValues[0] = abi.encode(true);
 
         policy["expensive_mint"] = Licensing.Policy({
             frameworkId: licenseFwIds["mint_payment"],
-            mintingParamValues: new bytes[](1), // empty value to use default value, which doesn't matter
-            linkParentParamValues: new bytes[](0),
-            transferParamValues: new bytes[](0)
+            commercialUse: true,
+            derivatives: true,
+            paramNames: new bytes32[](1),
+            paramValues: new bytes[](1)
         });
+
+        policy["expensive_mint"].paramNames[0] = mintPaymentVerifier.name();
+        // value doesn't matter bc mintPaymentVerifier ignores data (just requires payment)
+        policy["expensive_mint"].paramValues[0] = abi.encode(true);
 
         licenseRegistry.addPolicy(policy["test_true"]);
         licenseRegistry.addPolicy(policy["expensive_mint"]);
@@ -324,13 +327,11 @@ contract IntegrationTest is Test {
         ////////////////////////////////////////////////////////////////*/
  
         uint256 policyId = policyIds["test_true"][getIpId(u.alice, nft.a, 1)];
-        address[] memory licensorIpIds = new address[](1);
-        licensorIpIds[0] = getIpId(u.alice, nft.a, 1);
 
         // Carl mints 1 license for policy "test_true" on alice's NFT A IPAccount
         licenseIds[u.carl][policyIds["test_true"][getIpId(u.alice, nft.a, 1)]] = licenseRegistry.mintLicense(
             policyId,
-            licensorIpIds,
+            getIpId(u.alice, nft.a, 1),
             1,
             u.carl
         );
@@ -373,8 +374,6 @@ contract IntegrationTest is Test {
         vm.stopPrank();
 
         policyId = policyIds["expensive_mint"][getIpId(u.carl, nft.c, 1)];
-        licensorIpIds = new address[](1);
-        licensorIpIds[0] = getIpId(u.carl, nft.c, 1);
 
         // Bob mints 2 license for policy "expensive_mint" on carl's NFT C IPAccount
 
@@ -383,7 +382,7 @@ contract IntegrationTest is Test {
 
         licenseIds[u.bob][policyIds["expensive_mint"][getIpId(u.carl, nft.c, 1)]] = licenseRegistry.mintLicense(
             policyId,
-            licensorIpIds,
+            getIpId(u.carl, nft.c, 1),
             2,
             u.bob
         );
