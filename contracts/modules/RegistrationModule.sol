@@ -6,7 +6,6 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
-import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { IRegistrationModule } from "contracts/interfaces/modules/IRegistrationModule.sol";
 import { REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { Errors } from "contracts/lib/Errors.sol";
