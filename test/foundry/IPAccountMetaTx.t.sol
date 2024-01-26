@@ -82,7 +82,7 @@ contract IPAccountMetaTxTest is Test {
                     to: address(module),
                     value: 0,
                     data: abi.encodeWithSignature("executeSuccessfully(string)", "test"),
-                    nonce: ipAccount.state(),
+                    nonce: ipAccount.state() + 1,
                     deadline: deadline
                 })
             )
@@ -128,7 +128,7 @@ contract IPAccountMetaTxTest is Test {
                         bytes4(0),
                         AccessPermission.ALLOW
                     ),
-                    nonce: ipAccount.state(),
+                    nonce: ipAccount.state() + 1,
                     deadline: deadline
                 })
             )
@@ -167,7 +167,7 @@ contract IPAccountMetaTxTest is Test {
                     to: address(module),
                     value: 0,
                     data: abi.encodeWithSignature("executeSuccessfully(string)", "test"),
-                    nonce: ipAccount.state(),
+                    nonce: ipAccount.state() + 1,
                     deadline: deadline
                 })
             )
@@ -201,7 +201,7 @@ contract IPAccountMetaTxTest is Test {
                     to: address(module),
                     value: 0,
                     data: abi.encodeWithSignature("executeSuccessfully(string)", "test"),
-                    nonce: ipAccount.state(),
+                    nonce: ipAccount.state() + 1,
                     deadline: deadline
                 })
             )
@@ -235,7 +235,7 @@ contract IPAccountMetaTxTest is Test {
                     to: address(module),
                     value: 0,
                     data: abi.encodeWithSignature("UnMatchedFunction(string)", "test"),
-                    nonce: ipAccount.state(),
+                    nonce: ipAccount.state() + 1,
                     deadline: deadline
                 })
             )
@@ -269,7 +269,7 @@ contract IPAccountMetaTxTest is Test {
                     to: address(module),
                     value: 0,
                     data: abi.encodeWithSignature("executeSuccessfully(string)", "test"),
-                    nonce: ipAccount.state(),
+                    nonce: ipAccount.state() + 1,
                     deadline: deadline
                 })
             )
@@ -344,7 +344,7 @@ contract IPAccountMetaTxTest is Test {
                     to: address(module),
                     value: 0,
                     data: abi.encodeWithSignature("executeSuccessfully(string)", "test"),
-                    nonce: ipAccount.state(),
+                    nonce: ipAccount.state() + 1,
                     deadline: deadline
                 })
             )
@@ -379,7 +379,7 @@ contract IPAccountMetaTxTest is Test {
                     to: address(module),
                     value: 0,
                     data: abi.encodeWithSignature("executeSuccessfully(string)", "test"),
-                    nonce: ipAccount.state(),
+                    nonce: ipAccount.state() + 1,
                     deadline: deadline
                 })
             )
@@ -416,7 +416,7 @@ contract IPAccountMetaTxTest is Test {
                     to: address(module),
                     value: 0,
                     data: abi.encodeWithSignature("executeSuccessfully(string)", "test"),
-                    nonce: ipAccount.state(),
+                    nonce: ipAccount.state() + 1,
                     deadline: deadline
                 })
             )
@@ -450,7 +450,7 @@ contract IPAccountMetaTxTest is Test {
                     to: address(module),
                     value: 0,
                     data: abi.encodeWithSignature("executeSuccessfully(string)", "test"),
-                    nonce: ipAccount.state(),
+                    nonce: ipAccount.state() + 1,
                     deadline: deadline
                 })
             )

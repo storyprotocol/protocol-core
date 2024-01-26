@@ -15,6 +15,20 @@ import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.so
 /// This allows for seamless operations on the state and data of IP.
 /// IPAccount is core identity for all actions.
 interface IIPAccount is IERC6551Account, IERC721Receiver, IERC1155Receiver {
+    /// @notice Emitted when a transaction is executed.
+    event Executed(address indexed to, uint256 value, bytes data, uint256 nonce);
+
+    /// @notice Emitted when a transaction is executed on behalf of the signer.
+    event ExecutedWithSig(
+        address indexed to,
+        uint256 value,
+        bytes data,
+        uint256 nonce,
+        uint256 deadline,
+        address indexed signer,
+        bytes signature
+    );
+
     /// @notice Executes a transaction from the IP Account.
     /// @param to_ The recipient of the transaction.
     /// @param value_ The amount of Ether to send.

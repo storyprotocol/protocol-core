@@ -122,6 +122,8 @@ contract IPAccountImpl is IERC165, IIPAccount {
             revert Errors.IPAccount__ExpiredSignature();
         }
 
+        ++state;
+
         bytes32 digest = MessageHashUtils.toTypedDataHash(
             MetaTx.calculateDomainSeparator(),
             MetaTx.getExecuteStructHash(
@@ -134,6 +136,7 @@ contract IPAccountImpl is IERC165, IIPAccount {
         }
 
         result = _execute(signer, to, value, data);
+        emit ExecutedWithSig(to, value, data, state, deadline, signer, signature);
     }
 
     /// @notice Executes a transaction from the IP Account.
@@ -142,7 +145,9 @@ contract IPAccountImpl is IERC165, IIPAccount {
     /// @param data The data to send along with the transaction.
     /// @return result The return data from the transaction.
     function execute(address to, uint256 value, bytes calldata data) external payable returns (bytes memory result) {
+        ++state;
         result = _execute(msg.sender, to, value, data);
+        emit Executed(to, value, data, state);
     }
 
     function onERC721Received(address, address, uint256, bytes memory) public pure returns (bytes4) {
@@ -171,8 +176,6 @@ contract IPAccountImpl is IERC165, IIPAccount {
     ) internal returns (bytes memory result) {
         require(_isValidSigner(signer, to, data), "Invalid signer");
 
-        ++state;
-
         bool success;
         (success, result) = to.call{ value: value }(data);
 
@@ -182,4 +185,5 @@ contract IPAccountImpl is IERC165, IIPAccount {
             }
         }
     }
+
 }
