@@ -43,7 +43,7 @@ contract MintPaymentVerifier is IParamVerifier {
         return "";
     }
 
-    function allowsOtherPolicyOnSameIp(bytes memory data) external view returns (bool) {
+    function allowsOtherPolicyOnSameIp(bytes memory data) external pure returns (bool) {
         return true;
     }
 

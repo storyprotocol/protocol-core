@@ -417,6 +417,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         super._update(from, to, ids, values);
     }
 
+    function _verifyLinkParams(uint256 licenseId, address holder, address childIpId, address parentIpId, bytes memory data) {
+        
+    }
+
     function _verifyParams(Licensing.ParamVerifierType pvt, Licensing.Policy memory pol, address holder, uint256 amount) internal {
         Licensing.Framework storage fw = _framework(pol.frameworkId);
         Licensing.Parameter[] storage params = fw.parameters[pvt];
@@ -429,11 +433,31 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
             bytes memory data = values[i].length == 0 ? param.defaultValue : values[i];
             bool verificationOk = false;
             if (pvt == Licensing.ParamVerifierType.Mint) {
-                verificationOk = param.verifier.verifyMinting(holder, amount, data);
+                verificationOk = param.verifier.function verifyMint(
+                    address caller,
+                    uint256 policyId,
+                    bool policyAddedByLinking,
+                    address[] memory licensors,
+                    address receiver,
+                    uint256 amount,
+                    bytes memory data
+                ) external view returns (bool) 
             } else if (pvt == Licensing.ParamVerifierType.LinkParent) {
-                verificationOk = param.verifier.verifyLinkParent(holder, data);
+                verificationOk = param.verifier.verifyLink(
+                    address licenseId,
+                    address licenseHolder,
+                    address ipId,
+                    address parentIpId,
+                    bytes calldata data
+                )
             } else if (pvt == Licensing.ParamVerifierType.Transfer) {
-                verificationOk = param.verifier.verifyTransfer(holder, amount, data);
+                verificationOk = param.verifier.verifyTransfer(
+                    uint256 licenseId,
+                    address from,
+                    address to,
+                    uint256 amount,
+                    bytes memory data
+                );
             } else {
                 // This should never happen since getValues checks for pvt validity
                 revert Errors.LicenseRegistry__InvalidParamVerifierType();

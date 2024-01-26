@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 
-interface ILinkParentParamVerifier is IParamVerifier {
+interface ILinkParamVerifier is IParamVerifier {
     function verifyLink(
         address licenseId,
         address caller,

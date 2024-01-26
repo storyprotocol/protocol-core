@@ -4,11 +4,22 @@ pragma solidity ^0.8.23;
 
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
-import { ILinkParentParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
+import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { BaseParamVerifier } from "contracts/modules/licensing/parameters/BaseParamVerifier.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
-contract DerivativesParamVerifier is BaseParamVerifier, IMintParamVerifier, ILinkParentParamVerifier {
+/// This corresponds with 1 term in UML text, but it's actually 5 interconnected parameters (hooks if you will)
+/*
+| Parameter                  | On chain              | Can be enabled if  | Can be enabled if | Incompatibility with other policy        | Side effect                          |   |
+|----------------------------|-----------------------|--------------------|-------------------|------------------------------------------|--------------------------------------|---|
+| Derivatives                | yes                   | -                  | -                 | -                                        | -                                    |   |
+| Deriv With Attribution     | Yes (verify offchain) | Derivatives = true | -                 | -                                        | -                                    |   |
+| Deriv With Approval        | yes                   | Derivatives = true | -                 | -                                        | –                                    |   |
+| Deriv With Reciprocal      | yes                   | Derivatives = true | -                 | Disallow different policies on same IpId | Address other than licensor can mint |   |
+| Deriv With Revenue Share   | yes                   | Derivatives = true | Commercial = true | -                                        | Royalties set on linking             |   |
+| Deriv With Revenue Ceiling | no                    | Derivatives = true | Commercial = true | -                                        | -                                    |   |
+*/
+contract DerivativesParamVerifier is BaseParamVerifier, IMintParamVerifier, ILinkParamVerifier {
 
     event DerivativeApproved(address indexed licenseId, address indexed ipId, address indexed licensor, bool licensorApproval, bool approved);
 
