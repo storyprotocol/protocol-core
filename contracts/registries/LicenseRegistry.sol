@@ -432,20 +432,20 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return _licenses[licenseId].licensorIpId;
     }
 
+    /// @dev Pre-hook for ERC1155's _update() called on transfers.
     function _update(
         address from,
         address to,
-        uint256[] memory licenseIds,
+        uint256[] memory ids,
         uint256[] memory values
     ) internal virtual override {
         // We are interested in transfers, minting and burning are checked in mintLicense and linkIpToParent respectively.
         if (from != address(0) && to != address(0)) {
-            for (uint256 i = 0; i < licenseIds.length; i++) {
+            for (uint256 i = 0; i < ids.length; i++) {
                 // Verify transfer params
-                Licensing.Policy memory pol = policy(_licenses[licenseIds[i]].policyId);
+                Licensing.Policy memory pol = policy(_licenses[ids[i]].policyId);
                 Licensing.Framework storage fw = _framework(pol.frameworkId);
-                uint256 policyParamsLength = pol.paramNames.length;
-                for (uint256 j = 0; j < policyParamsLength; j++) {
+                for (uint256 j = 0; j < pol.paramNames.length; j++) {
                     Licensing.Parameter memory param = fw.parameters[pol.paramNames[j]];
                     bytes memory paramValue = pol.paramValues[j];
                     if (
@@ -455,7 +455,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
                         )
                     ) {
                         bool verificationOk = ITransferParamVerifier(address(param.verifier)).verifyTransfer(
-                            licenseIds[i],
+                            ids[i],
                             from,
                             to,
                             values[i],
@@ -472,7 +472,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
                 }
             }
         }
-        super._update(from, to, licenseIds, values);
+        super._update(from, to, ids, values);
     }
 
     // TODO: tokenUri from parameters, from a metadata resolver contract
