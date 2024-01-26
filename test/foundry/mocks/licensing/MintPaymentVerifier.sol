@@ -32,7 +32,7 @@ contract MintPaymentVerifier is IParamVerifier, IMintParamVerifier, ERC165 {
         address licensors,
         address receiver,
         bytes memory data
-    ) external view returns (bool) {
+    ) external returns (bool) {
         // TODO: return false on approval or transfer failure
         require(token.allowance(caller, address(this)) >= payment, "MintPaymentVerifier: Approval");
         require(token.transferFrom(caller, address(this), payment), "MintPaymentVerifier: Transfer");
