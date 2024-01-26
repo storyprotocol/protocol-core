@@ -77,7 +77,9 @@ interface ILicenseRegistry {
 
     function policyForIpAtIndex(address ipId, uint256 index) external view returns (Licensing.Policy memory);
 
-    function isPolicyIdAtIndexSetByLinking(address ipId, uint256 index) external view returns (bool);
+    function indexOfPolicyForIp(address ipId, uint256 policyId) external view returns (uint256 index);
+    
+    function isPolicySetByLinking(address ipId, uint256 policyId) external view returns (bool);
 
     function isLicensee(uint256 licenseId, address holder) external view returns (bool);
 

@@ -18,6 +18,9 @@ import { Errors } from "contracts/lib/Errors.sol";
 | Deriv With Reciprocal      | yes                   | Derivatives = true | -                 | Disallow different policies on same IpId | Address other than licensor can mint |   |
 | Deriv With Revenue Share   | yes                   | Derivatives = true | Commercial = true | -                                        | Royalties set on linking             |   |
 | Deriv With Revenue Ceiling | no                    | Derivatives = true | Commercial = true | -                                        | -                                    |   |
+
+
+
 */
 contract DerivativesParamVerifier is BaseParamVerifier, IMintParamVerifier, ILinkParamVerifier {
 
@@ -33,7 +36,7 @@ contract DerivativesParamVerifier is BaseParamVerifier, IMintParamVerifier, ILin
         bool withReciprocal; // Allowed-With-Reciprocal
         // Allowed-With-Revenue-Share
         // Can only be tagged if commercial use is allowed
-        bool withRevenueShare;
+        bool withRevenueShare; -> link
         uint256 revenueSharePercentage;
         // TODO: Allowed-With-Revenue-Ceiling
     }
