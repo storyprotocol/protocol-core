@@ -4,10 +4,9 @@ pragma solidity ^0.8.13;
 import { Test } from "forge-std/Test.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
-import { MockParamVerifier } from "test/foundry/mocks/licensing/MockParamVerifier.sol";
+import { MockParamVerifier, MockParamVerifierConfig } from "test/foundry/mocks/licensing/MockParamVerifier.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import "forge-std/console2.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
@@ -21,31 +20,46 @@ contract LicenseRegistryTest is Test {
 
     MockParamVerifier public verifier1;
     MockParamVerifier public verifier2;
+    Licensing.FrameworkCreationParams public fwParams;
+
     string public licenseUrl = "https://example.com/license";
-    Licensing.FrameworkCreationParams fwParams;
     address public ipId1 = address(0x111);
     address public ipId2 = address(0x222);
     address public licenseHolder = address(0x101);
 
     function setUp() public {
         registry = new LicenseRegistry("https://example.com/{id}.json");
-        verifier1 = new MockParamVerifier(address(registry), "Mock1");
-        verifier2 = new MockParamVerifier(address(registry), "Mock2");
+        verifier1 = new MockParamVerifier(MockParamVerifierConfig({
+            licenseRegistry: address(registry),
+            name: "MockForVerifyingMint",
+            supportVerifyLink: false,
+            supportVerifyMint: true,
+            supportVerifyTransfer: false
+        }));
+        verifier2 = new MockParamVerifier(MockParamVerifierConfig({
+            licenseRegistry: address(registry),
+            name: "MockForVerifyingTransfer",
+            supportVerifyLink: false,
+            supportVerifyMint: false,
+            supportVerifyTransfer: true
+        }));
     }
 
     // TODO: add parameter config for initial framework for 100% test
     modifier withFrameworkParams() {
         _initFwParams();
-        registry.addLicenseFramework(fwParams);
+        registry.addLicenseFramework(fwParams); // framework ID = 1
         _;
     }
 
     // TODO: use ModuleBaseTest for this
     function _initFwParams() private {
-        IParamVerifier[] memory parameters = new IParamVerifier[](1);
+        IParamVerifier[] memory parameters = new IParamVerifier[](2);
         parameters[0] = verifier1;
-        bytes[] memory values = new bytes[](1);
-        values[0] = abi.encode(true);
+        parameters[1] = verifier2;
+        bytes[] memory values = new bytes[](2);
+        values[0] = abi.encode(false);
+        values[0] = abi.encode(false);
 
         fwParams = Licensing.FrameworkCreationParams({
             parameters: parameters,
@@ -63,8 +77,8 @@ contract LicenseRegistryTest is Test {
             paramValues: new bytes[](2)
         });
         pol.paramNames[0] = verifier1.name();
-        pol.paramValues[0] = abi.encode(true);
         pol.paramNames[1] = verifier2.name();
+        pol.paramValues[0] = abi.encode(true);
         pol.paramValues[1] = abi.encode(true);
         return pol;
     }
@@ -234,7 +248,7 @@ contract LicenseRegistryTest is Test {
             abi.encodeWithSelector(
                 Errors.LicenseRegistry__ParamVerifierFailed.selector,
                 uint8(Licensing.ParamVerifierType.Transfer),
-                address(verifier1)
+                address(verifier2)
             )
         );
         registry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");

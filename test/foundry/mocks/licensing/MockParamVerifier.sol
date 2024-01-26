@@ -10,25 +10,36 @@ import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.so
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
 import { BaseParamVerifier } from "contracts/modules/licensing/parameters/BaseParamVerifier.sol";
 
+struct MockParamVerifierConfig {
+    address licenseRegistry;
+    string name;
+    bool supportVerifyLink;
+    bool supportVerifyMint;
+    bool supportVerifyTransfer;
+}
+
 contract MockParamVerifier is
     ERC165,
     BaseParamVerifier,
-    IMintParamVerifier,
     ILinkParamVerifier,
+    IMintParamVerifier,
     ITransferParamVerifier
 {
-    constructor(address licenseRegistry, string memory name) BaseParamVerifier(licenseRegistry, name) {}
+    MockParamVerifierConfig internal config;
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
-        return
-            interfaceId == type(IParamVerifier).interfaceId ||
-            interfaceId == type(IMintParamVerifier).interfaceId ||
-            interfaceId == type(ILinkParamVerifier).interfaceId ||
-            interfaceId == type(ITransferParamVerifier).interfaceId ||
-            super.supportsInterface(interfaceId);
+    constructor(MockParamVerifierConfig memory conf) BaseParamVerifier(conf.licenseRegistry, conf.name) {
+        config = conf;
     }
 
-    function allowsOtherPolicyOnSameIp(bytes memory data) external view override returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
+        if (interfaceId == type(IParamVerifier).interfaceId) return true;
+        if (interfaceId == type(ILinkParamVerifier).interfaceId) return config.supportVerifyLink;
+        if (interfaceId == type(IMintParamVerifier).interfaceId) return config.supportVerifyMint;
+        if (interfaceId == type(ITransferParamVerifier).interfaceId) return config.supportVerifyTransfer;
+        return super.supportsInterface(interfaceId);
+    }
+
+    function allowsOtherPolicyOnSameIp(bytes memory data) external pure override returns (bool) {
         return true;
     }
 
@@ -40,11 +51,11 @@ contract MockParamVerifier is
         address,
         uint256,
         bytes memory data
-    ) external view returns (bool) {
+    ) external pure returns (bool) {
         return abi.decode(data, (bool));
     }
 
-    function verifyLink(uint256, address, address, address, bytes calldata data) external view override returns (bool) {
+    function verifyLink(uint256, address, address, address, bytes calldata data) external pure override returns (bool) {
         return abi.decode(data, (bool));
     }
 
@@ -54,7 +65,7 @@ contract MockParamVerifier is
         address,
         uint256,
         bytes memory data
-    ) external view override returns (bool) {
+    ) external pure override returns (bool) {
         return abi.decode(data, (bool));
     }
 }

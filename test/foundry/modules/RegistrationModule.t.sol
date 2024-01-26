@@ -21,7 +21,7 @@ import { IIPRecordRegistry } from "contracts/interfaces/registries/IIPRecordRegi
 import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
-import { MockParamVerifier } from "test/foundry/mocks/licensing/MockParamVerifier.sol";
+import { MockParamVerifier, MockParamVerifierConfig } from "test/foundry/mocks/licensing/MockParamVerifier.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { Errors } from "contracts/lib/Errors.sol";
@@ -211,7 +211,13 @@ contract RegistrationModuleTest is ModuleBaseTest {
     // TODO: put this in the base test
     function _initLicensing() private {
         IParamVerifier[] memory mintingVerifiers = new IParamVerifier[](1);
-        MockParamVerifier verifier = new MockParamVerifier(address(licenseRegistry), "Mock");
+        MockParamVerifier verifier = new MockParamVerifier(MockParamVerifierConfig({
+            licenseRegistry: address(licenseRegistry),
+            name: "MockParamVerifier",
+            supportVerifyLink: true,
+            supportVerifyMint: true,
+            supportVerifyTransfer: true
+        }));
         mintingVerifiers[0] = verifier;
         bytes[] memory mintingDefaultValues = new bytes[](1);
         mintingDefaultValues[0] = abi.encode(true);

@@ -22,7 +22,7 @@ import { MockAccessController } from "test/foundry/mocks/MockAccessController.so
 import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { MockModule } from "test/foundry/mocks/MockModule.sol";
-import { MockParamVerifier } from "test/foundry/mocks/licensing/MockParamVerifier.sol";
+import { MockParamVerifier, MockParamVerifierConfig } from "test/foundry/mocks/licensing/MockParamVerifier.sol";
 import { MintPaymentVerifier } from "test/foundry/mocks/licensing/MintPaymentVerifier.sol";
 import { Users, UsersLib } from "test/foundry/utils/Users.sol";
 
@@ -35,20 +35,20 @@ struct MockERC721s {
 contract IntegrationTest is Test {
     using EnumerableSet for EnumerableSet.UintSet;
 
-    ERC6551Registry public erc6551Registry = new ERC6551Registry();
+    ERC6551Registry internal erc6551Registry = new ERC6551Registry();
     IPAccountImpl internal ipacctImpl;
     IPAccountRegistry internal ipacctRegistry;
     LicenseRegistry internal licenseRegistry;
 
-    DisputeModule public disputeModule;
-    ArbitrationPolicySP public arbitrationPolicySP;
-    RoyaltyModule public royaltyModule;
-    RoyaltyPolicyLS public royaltyPolicyLS;
+    DisputeModule internal disputeModule;
+    ArbitrationPolicySP internal arbitrationPolicySP;
+    RoyaltyModule internal royaltyModule;
+    RoyaltyPolicyLS internal royaltyPolicyLS;
 
     MockAccessController internal accessController = new MockAccessController();
     MockERC20 internal mockToken = new MockERC20();
     MockERC721s internal nft;
-    MockParamVerifier public mockLicenseVerifier;
+    MockParamVerifier internal mockLicenseVerifier;
     MintPaymentVerifier internal mintPaymentVerifier;
     // MockModule internal module = new MockModule(address(registry), address(moduleRegistry), "MockModule");
 
@@ -100,7 +100,13 @@ contract IntegrationTest is Test {
         arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), USDC, ARBITRATION_PRICE);
         royaltyModule = new RoyaltyModule();
         royaltyPolicyLS = new RoyaltyPolicyLS(address(royaltyModule), LIQUID_SPLIT_FACTORY, LIQUID_SPLIT_MAIN);
-        mockLicenseVerifier = new MockParamVerifier(address(licenseRegistry), "Mock");
+        mockLicenseVerifier = new MockParamVerifier(MockParamVerifierConfig({
+            licenseRegistry: address(licenseRegistry),
+            name: "MockLicenseVerifier",
+            supportVerifyLink: true,
+            supportVerifyMint: true,
+            supportVerifyTransfer: true
+        }));
 
         nft = MockERC721s({ a: new MockERC721(), b: new MockERC721(), c: new MockERC721() });
         u = UsersLib.createMockUsers(vm);
