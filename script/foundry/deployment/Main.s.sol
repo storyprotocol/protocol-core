@@ -217,52 +217,25 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                             CREATE LICENSE FRAMEWORKS
         ////////////////////////////////////////////////////////////////*/
 
-        // All trues for MockVerifier means it will always return true on condition checks
-        bytes[] memory byteValueTrue = new bytes[](1);
-        byteValueTrue[0] = abi.encode(true);
-
-        // Licensing.FrameworkCreationParams memory fwAllTrue = Licensing.FrameworkCreationParams({
-        //     mintingParamVerifiers: new IParamVerifier[](1),
-        //     mintingParamDefaultValues: byteValueTrue,
-        //     activationParamVerifiers: new IParamVerifier[](1),
-        //     activationParamDefaultValues: byteValueTrue,
-        //     defaultNeedsActivation: true,
-        //     linkParentParamVerifiers: new IParamVerifier[](1),
-        //     linkParentParamDefaultValues: byteValueTrue,
-        //     licenseUrl: "https://very-nice-verifier-license.com"
-        // });
         fwCreationParams["all_true"] = Licensing.FrameworkCreationParams({
-            mintingParamVerifiers: new IParamVerifier[](0),
-            mintingParamDefaultValues: new bytes[](0),
-            // mintingParamDefaultValues: byteValueTrue,
-            activationParamVerifiers: new IParamVerifier[](0),
-            activationParamDefaultValues: new bytes[](0),
-            // activationParamDefaultValues: byteValueTrue,
-            defaultNeedsActivation: true,
-            linkParentParamVerifiers: new IParamVerifier[](0),
-            linkParentParamDefaultValues: new bytes[](0),
-            // linkParentParamDefaultValues: byteValueTrue,
+            mintingVerifiers: new IParamVerifier[](0),
+            mintingDefaultValues: new bytes[](0),
+            linkParentVerifiers: new IParamVerifier[](0),
+            linkParentDefaultValues: new bytes[](0),
+            transferVerifiers: new IParamVerifier[](0),
+            transferDefaultValues: new bytes[](0),
             licenseUrl: "https://very-nice-verifier-license.com"
         });
 
-        // fwCreationParams["all_true"].mintingParamVerifiers[0] = mockLicenseVerifier;
-        // fwCreationParams["all_true"].activationParamVerifiers[0] = mockLicenseVerifier;
-        // fwCreationParams["all_true"].linkParentParamVerifiers[0] = mockLicenseVerifier;
-
         fwCreationParams["mint_payment"] = Licensing.FrameworkCreationParams({
-            mintingParamVerifiers: new IParamVerifier[](0),
-            mintingParamDefaultValues: new bytes[](0),
-            // mintingParamVerifiers: new IParamVerifier[](1),
-            // mintingParamDefaultValues: byteValueTrue, // value here doesn't matter for MintPaymentVerifier
-            activationParamVerifiers: new IParamVerifier[](0),
-            activationParamDefaultValues: new bytes[](0),
-            defaultNeedsActivation: false,
-            linkParentParamVerifiers: new IParamVerifier[](0),
-            linkParentParamDefaultValues: new bytes[](0),
+            mintingVerifiers: new IParamVerifier[](0),
+            mintingDefaultValues: new bytes[](0),
+            linkParentVerifiers: new IParamVerifier[](0),
+            linkParentDefaultValues: new bytes[](0),
+            transferVerifiers: new IParamVerifier[](0),
+            transferDefaultValues: new bytes[](0),
             licenseUrl: "https://expensive-minting-license.com"
         });
-
-        // fwCreationParams["mint_payment"].mintingParamVerifiers[0] = mintPaymentVerifier;
 
         fwIds["all_true"] = licenseRegistry.addLicenseFramework(fwCreationParams["all_true"]);
         fwIds["mint_payment"] = licenseRegistry.addLicenseFramework(fwCreationParams["mint_payment"]);
@@ -274,21 +247,19 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         policies["test_true"] = Licensing.Policy({
             frameworkId: fwIds["all_true"],
             mintingParamValues: new bytes[](0),
-            activationParamValues: new bytes[](0),
-            needsActivation: true,
-            linkParentParamValues: new bytes[](0)
+            linkParentParamValues: new bytes[](0),
+            transferParamValues: new bytes[](0)
         });
 
         policies["expensive_mint"] = Licensing.Policy({
             frameworkId: fwIds["mint_payment"],
             mintingParamValues: new bytes[](0),
-            activationParamValues: new bytes[](0),
-            needsActivation: false,
-            linkParentParamValues: new bytes[](0)
+            linkParentParamValues: new bytes[](0),
+            transferParamValues: new bytes[](0)
         });
 
-        (uint256 policyId_test_true, ) = licenseRegistry.addPolicy(policies["test_true"]);
-        (uint256 policyId_exp_mint, ) = licenseRegistry.addPolicy(policies["expensive_mint"]);
+        uint256 policyId_test_true = licenseRegistry.addPolicy(policies["test_true"]);
+        uint256 policyId_exp_mint = licenseRegistry.addPolicy(policies["expensive_mint"]);
 
         // /*///////////////////////////////////////////////////////////////
         //                     ADD POLICIES TO IPACCOUNTS
@@ -301,14 +272,11 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         //                     MINT LICENSES ON POLICIES
         // ////////////////////////////////////////////////////////////////*/
 
-        Licensing.License memory licenseData = Licensing.License({
-            policyId: policyId_test_true,
-            licensorIpIds: new address[](1)
-        });
-        licenseData.licensorIpIds[0] = getIpId(mockNft, nftIds[1]);
+        address[] memory licensorIpIds = new address[](1);
+        licensorIpIds[0] = getIpId(mockNft, nftIds[1]);
 
         // Mints 1 license for policy "test_true" on NFT id 1 IPAccount
-        uint256 licenseId1 = licenseRegistry.mintLicense(licenseData, 2, deployer);
+        uint256 licenseId1 = licenseRegistry.mintLicense(policyId_test_true, licensorIpIds, 2, deployer);
 
         registrationModule.registerDerivativeIp(
             licenseId1,

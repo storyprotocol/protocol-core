@@ -315,12 +315,8 @@ contract Integration is Script, BroadcastManager, JsonDeploymentHandler {
         uint256 amount
     ) public returns (uint256 licenseId) {
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = attachPolicyToIPID(ipId, policyName);
-        Licensing.License memory licenseData = Licensing.License({
-            policyId: policyId,
-            licensorIpIds: new address[](1)
-        });
-        licenseData.licensorIpIds[0] = ipId;
-        licenseId = licenseRegistry.mintLicense(licenseData, amount, licensee);
+        address[] memory licensorIpIds = new address[](1);
+        licenseId = licenseRegistry.mintLicense(policyId, licensorIpIds, amount, licensee);
         licenseIds[licensee][policyId] = licenseId;
     }
 }
