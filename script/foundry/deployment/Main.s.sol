@@ -27,6 +27,7 @@ import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
 import { MockERC721 } from "contracts/mocks/MockERC721.sol";
+import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 
 // script
 import { StringUtil } from "script/foundry/utils/StringUtil.sol";
