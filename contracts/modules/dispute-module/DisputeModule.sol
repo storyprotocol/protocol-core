@@ -15,12 +15,16 @@ import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 contract DisputeModule is IDisputeModule, ReentrancyGuard {
     /// @notice Dispute struct
     struct Dispute {
-        address ipId; // The ipId
+        address targetIpId; // The ipId that is the target of the dispute
         address disputeInitiator; // The address of the dispute initiator
         address arbitrationPolicy; // The address of the arbitration policy
-        bytes32 linkToDisputeSummary; // The link of the dispute summary
-        bytes32 tag; // The target tag of the dispute // TODO: move to tagging module?
+        bytes32 linkToDisputeEvidence; // The link of the dispute summary
+        bytes32 targetTag; // The target tag of the dispute
+        bytes32 currentTag; // The current tag of the dispute
     }
+
+    // TODO: confirm if contracts will be upgradeable or not
+    bytes32 public constant IN_DISPUTE = bytes32("IN_DISPUTE");
 
     /// @notice Dispute id
     uint256 public disputeId;
@@ -35,8 +39,8 @@ contract DisputeModule is IDisputeModule, ReentrancyGuard {
     mapping(address arbitrationPolicy => bool allowed) public isWhitelistedArbitrationPolicy;
 
     /// @notice Indicates if an arbitration relayer is whitelisted for a given arbitration policy
-    mapping(address arbitrationPolicy => mapping(address arbitrationRelayer => bool allowed))
-        public isWhitelistedArbitrationRelayer;
+    mapping(address arbitrationPolicy => mapping(address arbitrationRelayer => bool allowed)) public
+        isWhitelistedArbitrationRelayer;
 
     /// @notice Restricts the calls to the governance address
     modifier onlyGovernance() {
@@ -52,7 +56,7 @@ contract DisputeModule is IDisputeModule, ReentrancyGuard {
 
         isWhitelistedDisputeTag[_tag] = _allowed;
 
-        // TODO: emit event
+        emit TagWhitelistUpdated(_tag, _allowed);
     }
 
     /// @notice Whitelists an arbitration policy
@@ -63,66 +67,66 @@ contract DisputeModule is IDisputeModule, ReentrancyGuard {
 
         isWhitelistedArbitrationPolicy[_arbitrationPolicy] = _allowed;
 
-        // TODO: emit event
+        emit ArbitrationPolicyWhitelistUpdated(_arbitrationPolicy, _allowed);
     }
 
     /// @notice Whitelists an arbitration relayer for a given arbitration policy
     /// @param _arbitrationPolicy The address of the arbitration policy
     /// @param _arbPolicyRelayer The address of the arbitration relayer
     /// @param _allowed Indicates if the arbitration relayer is whitelisted or not
-    function whitelistArbitrationRelayer(
-        address _arbitrationPolicy,
-        address _arbPolicyRelayer,
-        bool _allowed
-    ) external onlyGovernance {
+    function whitelistArbitrationRelayer(address _arbitrationPolicy, address _arbPolicyRelayer, bool _allowed)
+        external
+        onlyGovernance
+    {
         if (_arbitrationPolicy == address(0)) revert Errors.DisputeModule__ZeroArbitrationPolicy();
         if (_arbPolicyRelayer == address(0)) revert Errors.DisputeModule__ZeroArbitrationRelayer();
 
         isWhitelistedArbitrationRelayer[_arbitrationPolicy][_arbPolicyRelayer] = _allowed;
 
-        // TODO: emit event
+        emit ArbitrationRelayerWhitelistUpdated(_arbitrationPolicy, _arbPolicyRelayer, _allowed);
     }
 
     /// @notice Raises a dispute
-    /// @param _ipId The ipId
+    /// @param _targetIpId The ipId that is the target of the dispute
     /// @param _arbitrationPolicy The address of the arbitration policy
-    /// @param _linkToDisputeSummary The link of the dispute summary
+    /// @param _linkToDisputeEvidence The link of the dispute evidence
     /// @param _targetTag The target tag of the dispute
     /// @param _data The data to initialize the policy
     /// @return disputeId The dispute id
     function raiseDispute(
-        address _ipId,
+        address _targetIpId,
         address _arbitrationPolicy,
-        string memory _linkToDisputeSummary,
+        string memory _linkToDisputeEvidence,
         bytes32 _targetTag,
         bytes calldata _data
     ) external nonReentrant returns (uint256) {
-        // TODO: make call to ensure ipId exists/has been registered
+        // TODO: ensure the _targetIpId address is an existing/valid IPAccount
         if (!isWhitelistedArbitrationPolicy[_arbitrationPolicy]) {
             revert Errors.DisputeModule__NotWhitelistedArbitrationPolicy();
         }
         if (!isWhitelistedDisputeTag[_targetTag]) revert Errors.DisputeModule__NotWhitelistedDisputeTag();
 
-        bytes32 linkToDisputeSummary = ShortStringOps.stringToBytes32(_linkToDisputeSummary);
-        if (linkToDisputeSummary == bytes32(0)) revert Errors.DisputeModule__ZeroLinkToDisputeSummary();
+        bytes32 linkToDisputeEvidence = ShortStringOps.stringToBytes32(_linkToDisputeEvidence);
+        if (linkToDisputeEvidence == bytes32(0)) revert Errors.DisputeModule__ZeroLinkToDisputeEvidence();
 
-        disputeId++;
+        uint256 disputeId_ = ++disputeId;
 
-        disputes[disputeId] = Dispute({
-            ipId: _ipId,
+        disputes[disputeId_] = Dispute({
+            targetIpId: _targetIpId,
             disputeInitiator: msg.sender,
             arbitrationPolicy: _arbitrationPolicy,
-            linkToDisputeSummary: linkToDisputeSummary,
-            tag: _targetTag
+            linkToDisputeEvidence: linkToDisputeEvidence,
+            targetTag: _targetTag,
+            currentTag: IN_DISPUTE
         });
-
-        // TODO: set tag to "in-dispute" state
 
         IArbitrationPolicy(_arbitrationPolicy).onRaiseDispute(msg.sender, _data);
 
-        // TODO: emit event
+        emit DisputeRaised(
+            disputeId_, _targetIpId, msg.sender, _arbitrationPolicy, linkToDisputeEvidence, _targetTag, _data
+        );
 
-        return disputeId;
+        return disputeId_;
     }
 
     /// @notice Sets the dispute judgement
@@ -130,46 +134,50 @@ contract DisputeModule is IDisputeModule, ReentrancyGuard {
     /// @param _decision The decision of the dispute
     /// @param _data The data to set the dispute judgement
     function setDisputeJudgement(uint256 _disputeId, bool _decision, bytes calldata _data) external nonReentrant {
-        address _arbitrationPolicy = disputes[_disputeId].arbitrationPolicy;
+        Dispute memory dispute = disputes[_disputeId];
 
-        // TODO: if dispute tag is not in "in-dispute" state then the function should revert - the same disputeId cannot be set twice + cancelled cannot be set
-        if (!isWhitelistedArbitrationRelayer[_arbitrationPolicy][msg.sender]) {
+        if (dispute.currentTag != IN_DISPUTE) revert Errors.DisputeModule__NotInDisputeState();
+        if (!isWhitelistedArbitrationRelayer[dispute.arbitrationPolicy][msg.sender]) {
             revert Errors.DisputeModule__NotWhitelistedArbitrationRelayer();
         }
 
         if (_decision) {
-            // TODO: set tag to the target dispute tag state
+            disputes[_disputeId].currentTag = dispute.targetTag;
         } else {
-            // TODO: remove tag/set dispute tag to null state
+            disputes[_disputeId].currentTag = bytes32(0);
         }
 
-        IArbitrationPolicy(_arbitrationPolicy).onDisputeJudgement(_disputeId, _decision, _data);
+        IArbitrationPolicy(dispute.arbitrationPolicy).onDisputeJudgement(_disputeId, _decision, _data);
 
-        // TODO: emit event
+        emit DisputeJudgementSet(_disputeId, _decision, _data);
     }
 
     /// @notice Cancels an ongoing dispute
     /// @param _disputeId The dispute id
     /// @param _data The data to cancel the dispute
     function cancelDispute(uint256 _disputeId, bytes calldata _data) external nonReentrant {
-        if (msg.sender != disputes[_disputeId].disputeInitiator) revert Errors.DisputeModule__NotDisputeInitiator();
-        // TODO: if tag is not "in-dispute" then revert
+        Dispute memory dispute = disputes[_disputeId];
 
-        IArbitrationPolicy(disputes[_disputeId].arbitrationPolicy).onDisputeCancel(msg.sender, _disputeId, _data);
+        if (dispute.currentTag != IN_DISPUTE) revert Errors.DisputeModule__NotInDisputeState();
+        if (msg.sender != dispute.disputeInitiator) revert Errors.DisputeModule__NotDisputeInitiator();
 
-        // TODO: remove tag/set dispute tag to null state
+        IArbitrationPolicy(dispute.arbitrationPolicy).onDisputeCancel(msg.sender, _disputeId, _data);
 
-        // TODO: emit event
+        disputes[_disputeId].currentTag = bytes32(0);
+
+        emit DisputeCancelled(_disputeId, _data);
     }
 
     /// @notice Resolves a dispute after it has been judged
     /// @param _disputeId The dispute id
     function resolveDispute(uint256 _disputeId) external {
-        if (msg.sender != disputes[_disputeId].disputeInitiator) revert Errors.DisputeModule__NotDisputeInitiator();
-        // TODO: if tag is in "in-dispute" or already "null" then revert
+        Dispute memory dispute = disputes[_disputeId];
 
-        // TODO: remove tag/set dispute tag to null state
+        if (dispute.currentTag == IN_DISPUTE) revert Errors.DisputeModule__NotAbleToResolve();
+        if (msg.sender != dispute.disputeInitiator) revert Errors.DisputeModule__NotDisputeInitiator();
 
-        // TODO: emit event
+        disputes[_disputeId].currentTag = bytes32(0);
+
+        emit DisputeResolved(_disputeId);
     }
 }

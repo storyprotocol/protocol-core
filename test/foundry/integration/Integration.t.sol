@@ -191,12 +191,9 @@ contract IntegrationTest is Test {
         uint256 amount
     ) public returns (uint256 licenseId) {
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = attachPolicyToIPID(ipId, policyName);
-        Licensing.License memory licenseData = Licensing.License({
-            policyId: policyId,
-            licensorIpIds: new address[](1)
-        });
-        licenseData.licensorIpIds[0] = ipId;
-        licenseId = licenseRegistry.mintLicense(licenseData, amount, licensee);
+        address[] memory licensorIpIds = new address[](1);
+        licensorIpIds[0] = ipId;
+        licenseId = licenseRegistry.mintLicense(policyId, licensorIpIds, amount, licensee);
         licenseIds[licensee][policyId] = licenseId;
     }
 
@@ -274,32 +271,30 @@ contract IntegrationTest is Test {
         byteValueTrue[0] = abi.encode(true);
 
         Licensing.FrameworkCreationParams memory fwAllTrue = Licensing.FrameworkCreationParams({
-            mintingParamVerifiers: new IParamVerifier[](1),
-            mintingParamDefaultValues: byteValueTrue,
-            activationParamVerifiers: new IParamVerifier[](1),
-            activationParamDefaultValues: byteValueTrue,
-            defaultNeedsActivation: true,
-            linkParentParamVerifiers: new IParamVerifier[](1),
-            linkParentParamDefaultValues: byteValueTrue,
+            mintingVerifiers: new IParamVerifier[](1),
+            mintingDefaultValues: byteValueTrue,
+            linkParentVerifiers: new IParamVerifier[](1),
+            linkParentDefaultValues: byteValueTrue,
+            transferVerifiers: new IParamVerifier[](1),
+            transferDefaultValues: byteValueTrue,
             licenseUrl: "https://very-nice-verifier-license.com"
         });
 
-        fwAllTrue.mintingParamVerifiers[0] = mockLicenseVerifier;
-        fwAllTrue.activationParamVerifiers[0] = mockLicenseVerifier;
-        fwAllTrue.linkParentParamVerifiers[0] = mockLicenseVerifier;
+        fwAllTrue.mintingVerifiers[0] = mockLicenseVerifier;
+        fwAllTrue.linkParentVerifiers[0] = mockLicenseVerifier;
+        fwAllTrue.transferVerifiers[0] = mockLicenseVerifier;
 
         Licensing.FrameworkCreationParams memory fwMintPayment = Licensing.FrameworkCreationParams({
-            mintingParamVerifiers: new IParamVerifier[](1),
-            mintingParamDefaultValues: byteValueTrue, // value here doesn't matter for MintPaymentVerifier
-            activationParamVerifiers: new IParamVerifier[](0),
-            activationParamDefaultValues: new bytes[](0),
-            defaultNeedsActivation: false,
-            linkParentParamVerifiers: new IParamVerifier[](0),
-            linkParentParamDefaultValues: new bytes[](0),
+            mintingVerifiers: new IParamVerifier[](1),
+            mintingDefaultValues: byteValueTrue, // value here doesn't matter for MintPaymentVerifier
+            linkParentVerifiers: new IParamVerifier[](0),
+            linkParentDefaultValues: new bytes[](0),
+            transferVerifiers: new IParamVerifier[](0),
+            transferDefaultValues: new bytes[](0),
             licenseUrl: "https://expensive-minting-license.com"
         });
 
-        fwMintPayment.mintingParamVerifiers[0] = mintPaymentVerifier;
+        fwMintPayment.mintingVerifiers[0] = mintPaymentVerifier;
 
         addLicenseFramework("all_true", fwAllTrue);
         addLicenseFramework("mint_payment", fwMintPayment);
@@ -311,22 +306,20 @@ contract IntegrationTest is Test {
         policy["test_true"] = Licensing.Policy({
             frameworkId: licenseFwIds["all_true"],
             mintingParamValues: new bytes[](1),
-            activationParamValues: new bytes[](1),
-            needsActivation: true,
-            linkParentParamValues: new bytes[](1)
+            linkParentParamValues: new bytes[](1),
+            transferParamValues: new bytes[](1)
         });
 
         // TODO: test failure (verifier condition check fails) by setting to false
         policy["test_true"].mintingParamValues[0] = abi.encode(true);
-        policy["test_true"].activationParamValues[0] = abi.encode(true);
         policy["test_true"].linkParentParamValues[0] = abi.encode(true);
+        policy["test_true"].transferParamValues[0] = abi.encode(true);
 
         policy["expensive_mint"] = Licensing.Policy({
             frameworkId: licenseFwIds["mint_payment"],
             mintingParamValues: new bytes[](1), // empty value to use default value, which doesn't matter
-            activationParamValues: new bytes[](0),
-            needsActivation: false,
-            linkParentParamValues: new bytes[](0)
+            linkParentParamValues: new bytes[](0),
+            transferParamValues: new bytes[](0)
         });
 
         licenseRegistry.addPolicy(policy["test_true"]);
@@ -342,16 +335,15 @@ contract IntegrationTest is Test {
         /*///////////////////////////////////////////////////////////////
                             MINT LICENSES ON POLICIES
         ////////////////////////////////////////////////////////////////*/
-
-        Licensing.License memory licenseData = Licensing.License({
-            policyId: policyIds["test_true"][getIpId(u.alice, nft.a, 1)],
-            licensorIpIds: new address[](1)
-        });
-        licenseData.licensorIpIds[0] = getIpId(u.alice, nft.a, 1);
+ 
+        uint256 policyId = policyIds["test_true"][getIpId(u.alice, nft.a, 1)];
+        address[] memory licensorIpIds = new address[](1);
+        licensorIpIds[0] = getIpId(u.alice, nft.a, 1);
 
         // Carl mints 1 license for policy "test_true" on alice's NFT A IPAccount
         licenseIds[u.carl][policyIds["test_true"][getIpId(u.alice, nft.a, 1)]] = licenseRegistry.mintLicense(
-            licenseData,
+            policyId,
+            licensorIpIds,
             1,
             u.carl
         );
@@ -393,11 +385,9 @@ contract IntegrationTest is Test {
         mockToken.approve(address(mintPaymentVerifier), 2 * 10 ** mockToken.decimals());
         vm.stopPrank();
 
-        licenseData = Licensing.License({
-            policyId: policyIds["expensive_mint"][getIpId(u.carl, nft.c, 1)],
-            licensorIpIds: new address[](1)
-        });
-        licenseData.licensorIpIds[0] = getIpId(u.carl, nft.c, 1);
+        policyId = policyIds["expensive_mint"][getIpId(u.carl, nft.c, 1)];
+        licensorIpIds = new address[](1);
+        licensorIpIds[0] = getIpId(u.carl, nft.c, 1);
 
         // Bob mints 2 license for policy "expensive_mint" on carl's NFT C IPAccount
 
@@ -405,7 +395,8 @@ contract IntegrationTest is Test {
         mockTokenBalanceBefore[address(mintPaymentVerifier)] = mockToken.balanceOf(address(mintPaymentVerifier));
 
         licenseIds[u.bob][policyIds["expensive_mint"][getIpId(u.carl, nft.c, 1)]] = licenseRegistry.mintLicense(
-            licenseData,
+            policyId,
+            licensorIpIds,
             2,
             u.bob
         );

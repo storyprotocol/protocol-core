@@ -31,7 +31,7 @@ contract JsonDeploymentHandler is Script {
 
     function _readDeployment() internal {
         string memory root = vm.projectRoot();
-        string memory filePath = string.concat("/deployment-", (block.chainid).toString(), ".json");
+        string memory filePath = string.concat("./deploy-out/deployment-", (block.chainid).toString(), ".json");
         string memory path = string.concat(root, filePath);
         readJson = vm.readFile(path);
     }
@@ -41,10 +41,10 @@ contract JsonDeploymentHandler is Script {
     }
 
     function _writeToJson(string memory contractKey, string memory value) internal {
-        vm.writeJson(value, string.concat("./deployment-", chainId, ".json"), contractKey);
+        vm.writeJson(value, string.concat("./deploy-out/deployment-", chainId, ".json"), contractKey);
     }
 
-    function _writeDeployment(string memory prePath) internal {
-        vm.writeJson(output, string.concat(prePath, "/./deployment-", chainId, ".json"), string.concat(".", key));
+    function _writeDeployment() internal {
+        vm.writeJson(output, string.concat("./deploy-out/deployment-", chainId, ".json"), string.concat(".", key));
     }
 }

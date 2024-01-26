@@ -2,8 +2,10 @@
 
 pragma solidity ^0.8.20;
 import { IParamVerifier } from "../interfaces/licensing/IParamVerifier.sol";
+import { Errors } from "./Errors.sol";
 
 library Licensing {
+
     /// Identifies a license parameter (term) from a license framework
     struct Parameter {
         /// Contract that must check if the condition of the paremeter is set
@@ -14,9 +16,9 @@ library Licensing {
 
     /// Moment of the license lifetime where a Parameter will be verified
     enum ParamVerifierType {
-        Minting,
-        Activate,
-        LinkParent
+        Mint,
+        LinkParent,
+        Transfer
     }
 
     /// Describes a licensing framework, which is a set of licensing terms (parameters)
@@ -25,33 +27,28 @@ library Licensing {
     /// To be valid in Story Protocol, the parameters described in the text must express default values
     /// corresponding to those of each Parameter struct
     struct Framework {
-        /// These parameters need to be verified when minting a license
-        Parameter[] mintingParams;
-        /// License may need to be activated before linking, these parameters must be verified to activate.
-        Parameter[] activationParams;
-        /// The framework might have activation terms defined, but the default settings say they are disabled
-        /// (so defaultNeedsActivation should be true). If the policy doesn't change this, it means licenses
-        /// will be minted Active and can't be linked out of the box (if linkParentParams are true)
-        bool defaultNeedsActivation;
-        /// These parameters need to be verified so the owner of a license can link to a parent ipId/policy
-        Parameter[] linkParentParams;
-        /// URL to the file containing the legal text for the license agreement
+        /// @notice Stores the parameters that need to be verified in each moment of the license lifetime
+        /// ParamVerifierType.Mint --> These parameters need to be verified when minting a license
+        /// ParamVerifierType.LinkParent --> Verified before the owner of a license links to a parent ipId/policy,
+        /// burning the license and setting the policy for the ipId.
+        /// ParamVerifierType.Transfer -> verified when transfering NFT
+        mapping(ParamVerifierType => Parameter[]) parameters;
+        /// @notice URL to the file containing the legal text for the license agreement
         string licenseUrl;
     }
 
     // Needed because Solidity doesn't support passing nested struct arrays to storage
     struct FrameworkCreationParams {
-        IParamVerifier[] mintingParamVerifiers;
-        bytes[] mintingParamDefaultValues;
-        IParamVerifier[] activationParamVerifiers;
-        bytes[] activationParamDefaultValues;
-        bool defaultNeedsActivation;
-        IParamVerifier[] linkParentParamVerifiers;
-        bytes[] linkParentParamDefaultValues;
+        IParamVerifier[] mintingVerifiers;
+        bytes[] mintingDefaultValues;
+        IParamVerifier[] linkParentVerifiers;
+        bytes[] linkParentDefaultValues;
+        IParamVerifier[] transferVerifiers;
+        bytes[] transferDefaultValues;
         string licenseUrl;
     }
-
-    /// A particular configuration of a Licensing Framework, setting (or not) values for the licensing
+    
+    /// A particular configuration of a Licensing Framework, setting (or not) values fo the licensing
     /// terms (parameters) of the framework.
     /// The lengths of the param value arrays must correspond to the Parameter[] of the framework.
     struct Policy {
@@ -60,14 +57,24 @@ library Licensing {
         /// Array with values for parameters verifying conditions to mint a license. Empty bytes for index if
         /// this policy wants to use the default value for the paremeter.
         bytes[] mintingParamValues;
-        /// Array with values for parameters verifying conditions to activate a license. Empty bytes for index if
-        /// this policy wants to use the default value for the paremeter.
-        bytes[] activationParamValues;
-        /// If false, minted licenses will start activated and verification of activationParams will be skipped
-        bool needsActivation;
-        /// Array with values for params verifying conditions to link a license to a parent. Empty bytes for index if
+        /// Array with values for parameters verifying conditions to link a license to a parent. Empty bytes for index if
         /// this policy wants to use the default value for the paremeter.
         bytes[] linkParentParamValues;
+        /// Array with values for parameters verifying conditions to transfer a license. Empty bytes for index if
+        /// this policy wants to use the default value for the paremeter.
+        bytes[] transferParamValues;
+    }
+
+    function getValues(Policy memory policy, ParamVerifierType pvt) internal returns(bytes[] memory) {
+        if (pvt == ParamVerifierType.Mint) {
+            return policy.mintingParamValues;
+        } else if (pvt == ParamVerifierType.LinkParent) {
+            return policy.linkParentParamValues;
+        } else if (pvt == ParamVerifierType.Transfer) {
+            return policy.transferParamValues;
+        } else {
+            revert Errors.LicenseRegistry__InvalidParamVerifierType();
+        }
     }
 
     /// Data that define a License Agreement NFT

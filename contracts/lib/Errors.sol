@@ -49,14 +49,17 @@ library Errors {
     error LicenseRegistry__PolicyAlreadySetForIpId();
     error LicenseRegistry__FrameworkNotFound();
     error LicenseRegistry__EmptyLicenseUrl();
+    error LicenseRegistry__PolicyAlreadyAdded();
     error LicenseRegistry__ParamVerifierLengthMismatch();
     error LicenseRegistry__InvalidParamVerifierType();
     error LicenseRegistry__PolicyNotFound();
     error LicenseRegistry__NotLicensee();
     error LicenseRegistry__ParentIdEqualThanChild();
     error LicenseRegistry__LicensorDoesntHaveThisPolicy();
-    error LicenseRegistry__MintParamFailed();
+    error LicenseRegistry__ParamVerifierFailed(uint8 verifierType, address verifier);
     error LicenseRegistry__LinkParentParamFailed();
+    error LicenseRegistry__LicenseMustHaveLicensors();
+    error LicenseRegistry__InvalidLicensor();
 
     ////////////////////////////////////////////////////////////////////////////
     //                            Dispute Module                              //
@@ -65,11 +68,13 @@ library Errors {
     error DisputeModule__ZeroArbitrationPolicy();
     error DisputeModule__ZeroArbitrationRelayer();
     error DisputeModule__ZeroDisputeTag();
-    error DisputeModule__ZeroLinkToDisputeSummary();
+    error DisputeModule__ZeroLinkToDisputeEvidence();
     error DisputeModule__NotWhitelistedArbitrationPolicy();
     error DisputeModule__NotWhitelistedDisputeTag();
     error DisputeModule__NotWhitelistedArbitrationRelayer();
     error DisputeModule__NotDisputeInitiator();
+    error DisputeModule__NotInDisputeState();
+    error DisputeModule__NotAbleToResolve();
 
     error ArbitrationPolicySP__ZeroDisputeModule();
     error ArbitrationPolicySP__ZeroPaymentToken();

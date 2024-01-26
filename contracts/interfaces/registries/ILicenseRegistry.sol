@@ -12,7 +12,7 @@ interface ILicenseRegistry {
 
     event PolicyCreated(address indexed creator, uint256 indexed policyId, Licensing.Policy policy);
 
-    event PolicyAddedToIpId(address indexed caller, address indexed ipId, uint256 indexed policyId);
+    event PolicyAddedToIpId(address indexed caller, address indexed ipId, uint256 indexed policyId, bool setByLinking);
 
     event LicenseMinted(
         address indexed creator,
@@ -35,10 +35,11 @@ interface ILicenseRegistry {
 
     function addPolicyToIp(address ipId, uint256 polId) external returns (uint256 indexOnIpId);
 
-    function addPolicy(Licensing.Policy memory pol) external returns (uint256 policyId, bool isNew);
+    function addPolicy(Licensing.Policy memory pol) external returns (uint256 policyId);
 
     function mintLicense(
-        Licensing.License calldata licenseData,
+        uint256 policyId,
+        address[] calldata licensorIpIds,
         uint256 amount,
         address receiver
     ) external returns (uint256 licenseId);
@@ -51,7 +52,9 @@ interface ILicenseRegistry {
 
     function totalFrameworks() external view returns (uint256);
 
-    function framework(uint256 frameworkId) external view returns (Licensing.Framework memory fw);
+    function frameworkParams(uint256 frameworkId, Licensing.ParamVerifierType pvt) external view returns (Licensing.Parameter[] memory);
+    function frameworkUrl(uint256 frameworkId) external view returns (string memory);
+
 
     function totalPolicies() external view returns (uint256);
 
@@ -68,6 +71,8 @@ interface ILicenseRegistry {
     function policyIdForIpAtIndex(address ipId, uint256 index) external view returns (uint256 policyId);
 
     function policyForIpAtIndex(address ipId, uint256 index) external view returns (Licensing.Policy memory);
+
+    function isPolicyIdAtIndexSetByLinking(address ipId, uint256 index) external view returns (bool);
 
     function isLicensee(uint256 licenseId, address holder) external view returns (bool);
 
