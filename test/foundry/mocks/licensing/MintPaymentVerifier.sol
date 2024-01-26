@@ -7,6 +7,7 @@ import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortSt
 
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
+import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 
 contract MintPaymentVerifier is IParamVerifier, IMintParamVerifier, ERC165 {
 
@@ -51,7 +52,7 @@ contract MintPaymentVerifier is IParamVerifier, IMintParamVerifier, ERC165 {
     }
 
     function name() external pure returns (bytes32) {
-        return NAME.toShortString();
+        return ShortStringOps.stringToBytes32(NAME);
     }
 
     function nameString() external pure returns (string memory) {

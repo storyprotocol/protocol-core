@@ -191,9 +191,7 @@ contract IntegrationTest is Test {
         uint256 amount
     ) public returns (uint256 licenseId) {
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = attachPolicyToIPID(ipId, policyName);
-        address[] memory licensorIpIds = new address[](1);
-        licensorIpIds[0] = ipId;
-        licenseId = licenseRegistry.mintLicense(policyId, licensorIpIds, amount, licensee);
+        licenseId = licenseRegistry.mintLicense(policyId, ipId, amount, licensee);
         licenseIds[licensee][policyId] = licenseId;
     }
 
@@ -269,28 +267,17 @@ contract IntegrationTest is Test {
         // All trues for MockVerifier means it will always return true on condition checks
         bytes[] memory byteValueTrue = new bytes[](1);
         byteValueTrue[0] = abi.encode(true);
-
         Licensing.FrameworkCreationParams memory fwAllTrue = Licensing.FrameworkCreationParams({
-            mintingVerifiers: new IParamVerifier[](1),
-            mintingDefaultValues: byteValueTrue,
-            linkParentVerifiers: new IParamVerifier[](1),
-            linkParentDefaultValues: byteValueTrue,
-            transferVerifiers: new IParamVerifier[](1),
-            transferDefaultValues: byteValueTrue,
+            parameters: new IParamVerifier[](1),
+            defaultValues: byteValueTrue,
             licenseUrl: "https://very-nice-verifier-license.com"
         });
 
-        fwAllTrue.mintingVerifiers[0] = mockLicenseVerifier;
-        fwAllTrue.linkParentVerifiers[0] = mockLicenseVerifier;
-        fwAllTrue.transferVerifiers[0] = mockLicenseVerifier;
+        fwAllTrue.parameters[0] = byteValueTrue;
 
         Licensing.FrameworkCreationParams memory fwMintPayment = Licensing.FrameworkCreationParams({
-            mintingVerifiers: new IParamVerifier[](1),
-            mintingDefaultValues: byteValueTrue, // value here doesn't matter for MintPaymentVerifier
-            linkParentVerifiers: new IParamVerifier[](0),
-            linkParentDefaultValues: new bytes[](0),
-            transferVerifiers: new IParamVerifier[](0),
-            transferDefaultValues: new bytes[](0),
+            parameters: new IParamVerifier[](1),
+            defaultValues: byteValueTrue,
             licenseUrl: "https://expensive-minting-license.com"
         });
 

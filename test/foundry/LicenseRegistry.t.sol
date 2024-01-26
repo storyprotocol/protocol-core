@@ -233,9 +233,8 @@ contract LicenseRegistryTest is Test {
         // solhint-disable-next-line no-unused-vars
         (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
 
-        address[] memory licensorIpIds = new address[](1);
-        licensorIpIds[0] = ipId1;
-        uint256 licenseId = registry.mintLicense(policyId, licensorIpIds, 2, licenseHolder);
+
+        uint256 licenseId = registry.mintLicense(policyId, ipId1, 2, licenseHolder);
 
         address licenseHolder2 = address(0x102);
         vm.prank(licenseHolder);
