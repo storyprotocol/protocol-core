@@ -175,7 +175,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         );
         _postdeploy(contractKey, address(renderer));
 
-
         // mockModule = new MockModule(address(ipAccountRegistry), address(moduleRegistry), "MockModule");
     }
 
@@ -241,22 +240,14 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         ////////////////////////////////////////////////////////////////*/
 
         fwCreationParams["all_true"] = Licensing.FrameworkCreationParams({
-            mintingVerifiers: new IParamVerifier[](0),
-            mintingDefaultValues: new bytes[](0),
-            linkParentVerifiers: new IParamVerifier[](0),
-            linkParentDefaultValues: new bytes[](0),
-            transferVerifiers: new IParamVerifier[](0),
-            transferDefaultValues: new bytes[](0),
+            parameters: new IParamVerifier[](0),
+            defaultValues: new bytes[](0),
             licenseUrl: "https://very-nice-verifier-license.com"
         });
 
         fwCreationParams["mint_payment"] = Licensing.FrameworkCreationParams({
-            mintingVerifiers: new IParamVerifier[](0),
-            mintingDefaultValues: new bytes[](0),
-            linkParentVerifiers: new IParamVerifier[](0),
-            linkParentDefaultValues: new bytes[](0),
-            transferVerifiers: new IParamVerifier[](0),
-            transferDefaultValues: new bytes[](0),
+            parameters: new IParamVerifier[](0),
+            defaultValues: new bytes[](0),
             licenseUrl: "https://expensive-minting-license.com"
         });
 
@@ -269,16 +260,18 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         policies["test_true"] = Licensing.Policy({
             frameworkId: fwIds["all_true"],
-            mintingParamValues: new bytes[](0),
-            linkParentParamValues: new bytes[](0),
-            transferParamValues: new bytes[](0)
+            commercialUse: true,
+            derivatives: true,
+            paramNames: new bytes32[](0),
+            paramValues: new bytes[](0)
         });
 
         policies["expensive_mint"] = Licensing.Policy({
             frameworkId: fwIds["mint_payment"],
-            mintingParamValues: new bytes[](0),
-            linkParentParamValues: new bytes[](0),
-            transferParamValues: new bytes[](0)
+            commercialUse: true,
+            derivatives: true,
+            paramNames: new bytes32[](0),
+            paramValues: new bytes[](0)
         });
 
         uint256 policyId_test_true = licenseRegistry.addPolicy(policies["test_true"]);
@@ -295,11 +288,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         //                     MINT LICENSES ON POLICIES
         // ////////////////////////////////////////////////////////////////*/
 
-        address[] memory licensorIpIds = new address[](1);
-        licensorIpIds[0] = getIpId(mockNft, nftIds[1]);
-
         // Mints 1 license for policy "test_true" on NFT id 1 IPAccount
-        uint256 licenseId1 = licenseRegistry.mintLicense(policyId_test_true, licensorIpIds, 2, deployer);
+        uint256 licenseId1 = licenseRegistry.mintLicense(policyId_test_true, getIpId(mockNft, nftIds[1]), 2, deployer);
 
         registrationModule.registerDerivativeIp(
             licenseId1,
