@@ -243,14 +243,14 @@ contract LicenseRegistryTest is Test {
         uint256 licenseId = registry.mintLicense(policyId, ipId1, 2, licenseHolder);
 
         address licenseHolder2 = address(0x102);
-        vm.prank(licenseHolder);
         vm.expectRevert(
             abi.encodeWithSelector(
                 Errors.LicenseRegistry__ParamVerifierFailed.selector,
-                420, //uint8(Licensing.ParamVerifierType.Transfer),
+                verifier2.name(),
                 address(verifier2)
             )
         );
+        vm.prank(licenseHolder);
         registry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
     }
 }

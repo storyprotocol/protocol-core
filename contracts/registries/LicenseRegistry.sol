@@ -338,7 +338,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
                 if (!verificationOk) {
                     revert Errors.LicenseRegistry__ParamVerifierFailed(
-                        123,//uint8(Licensing.ParamVerifierType.Mint),
+                        param.verifier.name(),
                         address(param.verifier)
                     );
                 }
@@ -410,7 +410,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
                 if (!verificationOk) {
                     revert Errors.LicenseRegistry__ParamVerifierFailed(
-                        123,// uint8(Licensing.ParamVerifierType.LinkParent),
+                        param.verifier.name(),
                         address(param.verifier)
                     );
                 }
@@ -480,7 +480,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
                         if (!verificationOk) {
                             revert Errors.LicenseRegistry__ParamVerifierFailed(
-                                123, //uint8(Licensing.ParamVerifierType.Transfer),
+                                param.verifier.name(),
                                 address(param.verifier)
                             );
                         }

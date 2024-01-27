@@ -70,7 +70,7 @@ library Errors {
     error LicenseRegistry__NotLicensee();
     error LicenseRegistry__ParentIdEqualThanChild();
     error LicenseRegistry__LicensorDoesntHaveThisPolicy();
-    error LicenseRegistry__ParamVerifierFailed(uint8 verifierType, address verifier);
+    error LicenseRegistry__ParamVerifierFailed(bytes32 name, address verifier);
     error LicenseRegistry__LinkParentParamFailed();
     error LicenseRegistry__InvalidLicensor();
     error LicenseRegistry__ParamVerifierAlreadySet();
