@@ -8,6 +8,7 @@ import { DisputeModule } from "../../contracts/modules/dispute-module/DisputeMod
 import { ArbitrationPolicySP } from "../../contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
 import { RoyaltyModule } from "../../contracts/modules/royalty-module/RoyaltyModule.sol";
 import { RoyaltyPolicyLS } from "../../contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
+import { LSClaimer } from "../../contracts/modules/royalty-module/policies/LSClaimer.sol";
 import { MockUSDC } from "../foundry/mocks/MockUSDC.sol";
 
 contract DeployHelper is Test {
@@ -15,6 +16,7 @@ contract DeployHelper is Test {
     ArbitrationPolicySP public arbitrationPolicySP;
     RoyaltyModule public royaltyModule;
     RoyaltyPolicyLS public royaltyPolicyLS;
+    LSClaimer public lsClaimer;
 
     uint256 public constant ARBITRATION_PRICE = 1000 * 10 ** 6; // 1000 USDC
 

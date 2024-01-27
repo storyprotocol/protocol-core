@@ -130,6 +130,8 @@ library Errors {
     error RoyaltyPolicyLS__NotRoyaltyModule();
     error RoyaltyPolicyLS__TransferFailed();
 
+    error LSClaimer__InvalidPath();
+
     ////////////////////////////////////////////////////////////////////////////
     //                             ModuleRegistry                             //
     ////////////////////////////////////////////////////////////////////////////

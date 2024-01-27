@@ -27,8 +27,15 @@ contract RoyaltyPolicyLS is IRoyaltyPolicy {
     /// @notice LiquidSplitMain address
     address public immutable LIQUID_SPLIT_MAIN;
 
-    /// @notice Indicates the address of the LiquidSplitClone contract for a given ipId
-    mapping(address ipId => address splitClone) public splitClones;
+    struct LSRoyaltyData {
+        address splitClone; // Indicates the address of the LiquidSplitClone contract for a given ipId
+        address claimer; // Indicates the address of the claimer contract for a given ipId
+        uint32 royaltyStack; // Indicates the royalty stack for a given ipId
+        uint32 minRoyalty; // Indicates the minimum royalty for a given ipId
+    }
+
+    /// @notice Links the ipId to its royalty data
+    mapping(address ipId => LSRoyaltyData) public royaltyData;
 
     /// @notice Restricts the calls to the royalty module
     modifier onlyRoyaltyModule() {
@@ -54,21 +61,41 @@ contract RoyaltyPolicyLS is IRoyaltyPolicy {
     /// @param _ipId The ipId
     /// @param _data The data to initialize the policy
     function initPolicy(address _ipId, bytes calldata _data) external onlyRoyaltyModule {
-        (address[] memory accounts, uint32[] memory initAllocations, uint32 distributorFee, address splitOwner) = abi
-            .decode(_data, (address[], uint32[], uint32, address));
+        (address[] memory accounts, uint32[] memory initAllocations, uint256 minRoyalty) = abi.decode(
+            _data,
+            (address[], uint32[], uint256)
+        );
 
-        // TODO: input validation: accounts & initAllocations - can we make up to 1000 parents with tx going through - if not alternative may be to create new contract to claim RNFTs
-        // TODO: input validation: distributorFee
-        // TODO: input validation: splitOwner
+        // TODO: input validation: accounts - parentsIds should be correctly passed in through the licensing contract so that we do not need to check them here
+        // TODO: input validation: initAllocations
+
+        // deploy claimer
+        address claimer;
+        // address[] memory accounts = new address[](2);
+        // accounts[0] = _ipId;
+        // accounts[1] = claimer;
+        // uint32[] memory allocations = new uint32[](2);
+        // allocations[0] = uint32(1000) - currentRoyaltyStack;
+        // allocations[1] = currentRoyaltyStack;
 
         address splitClone = ILiquidSplitFactory(LIQUID_SPLIT_FACTORY).createLiquidSplitClone(
             accounts,
             initAllocations,
-            distributorFee,
-            splitOwner
+            0, // distributorFee
+            address(0) // splitOwner
         );
 
-        splitClones[_ipId] = splitClone;
+        // verify final state - _verifyInitPolicyFinalState()
+        // The loop below is bounded to 1000 max iterations otherwise
+        // it will revert on the split clone creation
+        /*         uint32 currentRoyaltyStack;
+        for (uint32 i = 0; i < accounts.length; i++) {
+            currentRoyaltyStack = royaltyData[accounts[i]].royaltyStack;
+        } */
+        // RNFT balance of ipId should be 1000 - royalty stack
+        // RNFT balance of claimer should be royalty stack
+
+        //splitClones[_ipId] = splitClone;
     }
 
     /// @notice Distributes funds to the accounts in the LiquidSplitClone contract
@@ -82,7 +109,7 @@ contract RoyaltyPolicyLS is IRoyaltyPolicy {
         address[] calldata _accounts,
         address _distributorAddress
     ) external {
-        ILiquidSplitClone(splitClones[_ipId]).distributeFunds(_token, _accounts, _distributorAddress);
+        ILiquidSplitClone(royaltyData[_ipId].splitClone).distributeFunds(_token, _accounts, _distributorAddress);
     }
 
     /// @notice Claims the available royalties for a given account
@@ -104,7 +131,7 @@ contract RoyaltyPolicyLS is IRoyaltyPolicy {
         address _token,
         uint256 _amount
     ) external onlyRoyaltyModule {
-        address destination = splitClones[_ipId];
+        address destination = royaltyData[_ipId].splitClone;
         IERC20(_token).safeTransferFrom(_caller, destination, _amount);
     }
 }
