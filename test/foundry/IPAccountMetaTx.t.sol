@@ -22,14 +22,15 @@ import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/Mes
 import { SignatureChecker } from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import { MetaTx } from "contracts/lib/MetaTx.sol";
 import "contracts/lib/AccessPermission.sol";
+import { Governance } from "contracts/governance/Governance.sol";
 
 contract IPAccountMetaTxTest is Test {
     IPAccountRegistry public registry;
     IPAccountImpl public implementation;
     MockERC721 nft = new MockERC721();
     ERC6551Registry public erc6551Registry = new ERC6551Registry();
-    AccessController public accessController = new AccessController();
-    ModuleRegistry public moduleRegistry = new ModuleRegistry();
+    AccessController public accessController;
+    ModuleRegistry public moduleRegistry;
     MockModule public module;
     MockMetaTxModule public metaTxModule;
 
@@ -37,8 +38,12 @@ contract IPAccountMetaTxTest is Test {
     uint256 public callerPrivateKey;
     address public owner;
     address public caller;
+    Governance public governance;
 
     function setUp() public {
+        governance = new Governance(address(this));
+        accessController = new AccessController(address(governance));
+        moduleRegistry = new ModuleRegistry(address(governance));
         ownerPrivateKey = 0xA11111;
         callerPrivateKey = 0xB22222;
         owner = vm.addr(ownerPrivateKey);

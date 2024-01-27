@@ -28,6 +28,7 @@ import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.so
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
 import { MockERC721 } from "contracts/mocks/MockERC721.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
+import { Governance } from "contracts/governance/Governance.sol";
 
 // script
 import { StringUtil } from "script/foundry/utils/StringUtil.sol";
@@ -37,6 +38,8 @@ import { JsonDeploymentHandler } from "script/foundry/utils/JsonDeploymentHandle
 contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     using StringUtil for uint256;
     using stdJson for string;
+
+    Governance public governance;
 
     address public constant ERC6551_REGISTRY = address(0x000000006551c19487814612e58FE06813775758);
     AccessController public accessController;
@@ -91,11 +94,16 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     function _deployProtocolContracts(address accessControldeployer) private {
         string memory contractKey;
 
+        contractKey = "Governance";
+        _predeploy(contractKey);
+        governance = new Governance(accessControldeployer);
+        _postdeploy(contractKey, address(governance));
+
         mockNft = new MockERC721();
 
         contractKey = "AccessController";
         _predeploy(contractKey);
-        accessController = new AccessController();
+        accessController = new AccessController(address(governance));
         _postdeploy(contractKey, address(accessController));
 
         contractKey = "IPAccountImpl";
@@ -105,7 +113,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "ModuleRegistry";
         _predeploy(contractKey);
-        moduleRegistry = new ModuleRegistry();
+        moduleRegistry = new ModuleRegistry(address(governance));
         _postdeploy(contractKey, address(moduleRegistry));
 
         contractKey = "LicenseRegistry";

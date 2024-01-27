@@ -18,6 +18,7 @@ import { MockAccessController } from "test/foundry/mocks/MockAccessController.so
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { MockModule } from "test/foundry/mocks/MockModule.sol";
 import { MockOrchestratorModule } from "test/foundry/mocks/MockOrchestratorModule.sol";
+import { Governance } from "contracts/governance/Governance.sol";
 
 contract AccessControllerTest is Test {
     AccessController public accessController;
@@ -31,27 +32,24 @@ contract AccessControllerTest is Test {
     ERC6551Registry public erc6551Registry = new ERC6551Registry();
     address owner = vm.addr(1);
     uint256 tokenId = 100;
+    Governance public governance;
 
     function setUp() public {
-        accessController = new AccessController();
+        governance = new Governance(address(this));
+        accessController = new AccessController(address(governance));
         implementation = new IPAccountImpl();
         ipAccountRegistry = new IPAccountRegistry(
             address(erc6551Registry),
             address(accessController),
             address(implementation)
         );
-        moduleRegistry = new ModuleRegistry();
+        moduleRegistry = new ModuleRegistry(address(governance));
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
         nft.mintId(owner, tokenId);
         address deployedAccount = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), tokenId);
         ipAccount = IIPAccount(payable(deployedAccount));
 
         mockModule = new MockModule(address(ipAccountRegistry), address(moduleRegistry), "MockModule");
-        //        moduleWithoutPermission = new MockModule(
-        //            address(ipAccountRegistry),
-        //            address(moduleRegistry),
-        //            "ModuleWithoutPermission"
-        //        );
     }
 
     // test owner can set permission

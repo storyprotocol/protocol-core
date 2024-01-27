@@ -6,18 +6,21 @@ import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry
 import { Errors } from "contracts/lib/Errors.sol";
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { Governable } from "contracts/governance/Governable.sol";
 
 /// @title ModuleRegistry
-contract ModuleRegistry is IModuleRegistry {
+contract ModuleRegistry is IModuleRegistry, Governable {
     using Strings for *;
 
     mapping(string => address) public _modules;
     mapping(address => bool) public _isModule;
 
+    constructor(address governance) Governable(governance) {}
+
     /// @notice Registers a new module in the protocol.
     /// @param name The name of the module.
     /// @param moduleAddress The address of the module.
-    function registerModule(string memory name, address moduleAddress) external {
+    function registerModule(string memory name, address moduleAddress) external onlyProtocolAdmin {
         // TODO: check can only called by protocol admin
         if (moduleAddress == address(0)) {
             revert Errors.ModuleRegistry__ModuleAddressZeroAddress();
@@ -45,7 +48,7 @@ contract ModuleRegistry is IModuleRegistry {
 
     /// @notice Removes a module from the protocol.
     /// @param name The name of the module to be removed.
-    function removeModule(string memory name) external {
+    function removeModule(string memory name) external onlyProtocolAdmin {
         if (bytes(name).length == 0) {
             revert Errors.ModuleRegistry__NameEmptyString();
         }
