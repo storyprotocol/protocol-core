@@ -15,16 +15,20 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { MockModule } from "test/foundry/mocks/MockModule.sol";
+import { Governance } from "contracts/governance/Governance.sol";
 
 contract ModuleRegistryTest is Test {
     IPAccountRegistry public registry;
     IPAccountImpl public implementation;
-    ModuleRegistry public moduleRegistry = new ModuleRegistry();
+    ModuleRegistry public moduleRegistry;
     ERC6551Registry public erc6551Registry = new ERC6551Registry();
     MockAccessController public accessController = new MockAccessController();
     MockModule public module;
+    Governance public governance;
 
     function setUp() public {
+        governance = new Governance(address(this));
+        moduleRegistry = new ModuleRegistry(address(governance));
         implementation = new IPAccountImpl();
         registry = new IPAccountRegistry(address(erc6551Registry), address(accessController), address(implementation));
         module = new MockModule(address(registry), address(moduleRegistry), "MockModule");
