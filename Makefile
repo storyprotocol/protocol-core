@@ -33,12 +33,18 @@ snapshot :; forge snapshot
 
 slither :; slither ./contracts
 
-format :; npx prettier --write contracts/**/*.sol && npx prettier --write contracts/*.sol
+# glob doesn't work for nested folders, so we do it manually
+format:
+	npx prettier --write contracts/*.sol
+	npx prettier --write contracts/**/*.sol
+	npx prettier --write contracts/**/**/*.sol
+	npx prettier --write contracts/**/**/**/*.sol
+	npx prettier --write contracts/**/**/**/**/*.sol
 
 coverage:
 	mkdir -p coverage
 	forge coverage --report lcov --fork-url https://rpc.ankr.com/eth --fork-block-number 19042069
-	lcov --remove lcov.info -o lcov.info 'test/*'
+	lcov --remove lcov.info -o lcov.info 'test/*' 'script/*' 'contracts/mocks/*'
 	genhtml lcov.info --output-dir coverage
 
 abi:
@@ -77,11 +83,3 @@ deploy-tenderly:
 	rm -rf deployments/hardhat/*.json
 	npx hardhat run script/hardhat/post-deployment/99-revert-chain.ts --network tenderly
 	npx hardhat run script/hardhat/deployment/00-deploy-main.ts --network tenderly
-
-verify-access-controller:
-	forge verify-contract \
-	--chain sepolia \
-	--etherscan-api-key ${ETHERSCAN_API_KEY} \
-	--watch 0xB76441f5802DBfA7244C904871F3747E371C3C78 \
-	--libraries contracts/lib/registries/IPAccountChecker.sol:IPAccountChecker:0x4a2C3Fb88aCe93224A496749Ff6c5D4Ef6Db443b \
-	contracts/AccessController.sol:AccessController
