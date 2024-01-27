@@ -71,7 +71,13 @@ contract AccessController is IAccessController, Governable {
     /// @param to_ The recipient of the transaction (support wildcard permission)
     /// @param func_ The function selector (support wildcard permission)
     /// @param permission_ The permission level (0 => ABSTAIN, 1 => ALLOW, 3 => DENY)
-    function setPermission(address ipAccount_, address signer_, address to_, bytes4 func_, uint8 permission_) external {
+    function setPermission(
+        address ipAccount_,
+        address signer_,
+        address to_,
+        bytes4 func_,
+        uint8 permission_
+    ) external whenNotPaused {
         // IPAccount and signer does not support wildcard permission
         if (ipAccount_ == address(0)) {
             revert Errors.AccessController__IPAccountIsZeroAddress();
@@ -123,7 +129,7 @@ contract AccessController is IAccessController, Governable {
         address signer_,
         address to_,
         bytes4 func_
-    ) external view returns (bool) {
+    ) external view whenNotPaused returns (bool) {
         // ipAccount_ can only call registered modules or set Permissions
         if (to_ != address(this) && !IModuleRegistry(MODULE_REGISTRY).isRegistered(to_)) {
             return false;

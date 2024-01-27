@@ -3,10 +3,10 @@
 pragma solidity ^0.8.23;
 
 import { Errors } from "contracts/lib/Errors.sol";
-import { Governance } from "contracts/governance/Governance.sol";
-import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
+import { IGovernance } from "contracts/interfaces/governance/IGovernance.sol";
 import { IGovernable } from "../interfaces/governance/IGovernable.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { GovernanceLib } from "contracts/lib/GovernanceLib.sol";
 /// @title Governable
 /// @dev All contracts managed by governance should inherit from this contract.
 abstract contract Governable is IGovernable {
@@ -15,8 +15,15 @@ abstract contract Governable is IGovernable {
 
     /// @dev Ensures that the function is called by the protocol admin.
     modifier onlyProtocolAdmin() {
-        if(!Governance(governance).hasRole(Governance(governance).PROTOCOL_ADMIN(), msg.sender)) {
+        if(!IGovernance(governance).hasRole(GovernanceLib.PROTOCOL_ADMIN, msg.sender)) {
             revert Errors.Governance__OnlyProtocolAdmin();
+        }
+        _;
+    }
+
+    modifier whenNotPaused() {
+        if (IGovernance(governance).getState() == GovernanceLib.ProtocolState.Paused) {
+            revert Errors.Governance__ProtocolPaused();
         }
         _;
     }
@@ -33,8 +40,10 @@ abstract contract Governable is IGovernable {
     /// @param newGovernance The address of the new governance.
     function setGovernance(address newGovernance) external onlyProtocolAdmin {
         if (newGovernance == address(0)) revert Errors.Governance__ZeroAddress();
-        if (!ERC165Checker.supportsInterface(newGovernance, type(IAccessControl).interfaceId))
-            revert Errors.Governance__UnsupportedInterface("IAccessControl");
+        if (!ERC165Checker.supportsInterface(newGovernance, type(IGovernance).interfaceId))
+            revert Errors.Governance__UnsupportedInterface("IGovernance");
+        if (IGovernance(newGovernance).getState() != IGovernance(governance).getState())
+            revert Errors.Governance__InconsistentState();
         governance = newGovernance;
         emit GovernanceUpdated(newGovernance);
     }
