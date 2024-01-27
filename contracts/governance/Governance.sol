@@ -19,6 +19,4 @@ contract Governance is AccessControl {
         if (admin_ == address(0)) revert Errors.Governance__ZeroAddress();
         _grantRole(PROTOCOL_ADMIN, admin_);
     }
-
-
 }
