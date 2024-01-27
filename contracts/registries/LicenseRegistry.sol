@@ -18,6 +18,8 @@ import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegist
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 
+import "forge-std/console2.sol";
+
 // TODO: consider disabling operators/approvals on creation
 contract LicenseRegistry is ERC1155, ILicenseRegistry {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -192,6 +194,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     function _verifyPolicy(Licensing.Policy memory pol) internal view {
         uint256 paramLength = pol.paramNames.length;
         Licensing.Framework storage fw = _framework(pol.frameworkId);
+        console2.log(paramLength);
+        console2.logBytes32(pol.paramNames[0]);
         mapping(bytes32 => Licensing.Parameter) storage parameters = fw.parameters;
         for (uint256 i = 0; i < paramLength; i++) {
             if (ShortStringOps.equal(pol.paramNames[i], "")) {

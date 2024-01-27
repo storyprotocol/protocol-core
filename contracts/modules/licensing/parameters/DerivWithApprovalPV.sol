@@ -17,7 +17,7 @@ contract DerivWithApprovalPV is BaseParamVerifier, ILinkParamVerifier {
     // License Id => childIpId => approved
     mapping(uint256 => mapping(address => bool)) private _approvals;
 
-    constructor(address licenseRegistry, string memory name) BaseParamVerifier(licenseRegistry, name) {}
+    constructor(address licenseRegistry) BaseParamVerifier(licenseRegistry) {}
 
     // TODO: meta tx version
     function setApproval(uint256 licenseId, bool approved) external {
@@ -54,6 +54,10 @@ contract DerivWithApprovalPV is BaseParamVerifier, ILinkParamVerifier {
 
     function json() external pure virtual override(BaseParamVerifier, IParamVerifier) returns (string memory) {
         return "";
+    }
+
+    function name() public view virtual override(BaseParamVerifier, IParamVerifier) returns (bytes32) {
+        return ShortStringOps.stringToBytes32("Derivatives-With-Approval");
     }
 
     function isCommercial() external pure override returns (bool) {

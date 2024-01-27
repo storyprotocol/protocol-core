@@ -9,6 +9,7 @@ import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVer
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
 import { BaseParamVerifier } from "contracts/modules/licensing/parameters/BaseParamVerifier.sol";
+import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 
 struct MockParamVerifierConfig {
     address licenseRegistry;
@@ -27,7 +28,7 @@ contract MockParamVerifier is
 {
     MockParamVerifierConfig internal config;
 
-    constructor(MockParamVerifierConfig memory conf) BaseParamVerifier(conf.licenseRegistry, conf.name) {
+    constructor(MockParamVerifierConfig memory conf) BaseParamVerifier(conf.licenseRegistry) {
         config = conf;
     }
 
@@ -41,6 +42,10 @@ contract MockParamVerifier is
 
     function allowsOtherPolicyOnSameIp(bytes memory data) external pure override returns (bool) {
         return true;
+    }
+
+    function name() public view virtual override(BaseParamVerifier, IParamVerifier) returns (bytes32) {
+        return ShortStringOps.stringToBytes32(config.name);
     }
 
     function isCommercial() external pure override returns (bool) {

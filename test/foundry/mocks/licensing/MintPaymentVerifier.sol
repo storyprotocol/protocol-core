@@ -23,7 +23,7 @@ contract MintPaymentVerifier is BaseParamVerifier, IMintParamVerifier {
         address licenseRegistry,
         address _token,
         uint256 _payment
-    ) BaseParamVerifier(licenseRegistry, "MintPaymentVerifier") {
+    ) BaseParamVerifier(licenseRegistry) {
         token = IERC20(_token);
         payment = _payment;
     }
@@ -51,6 +51,10 @@ contract MintPaymentVerifier is BaseParamVerifier, IMintParamVerifier {
         require(token.allowance(caller, address(this)) >= payment_, "MintPaymentVerifier: Approval");
         require(token.transferFrom(caller, address(this), payment_), "MintPaymentVerifier: Transfer");
         return true;
+    }
+
+    function name() public view virtual override(BaseParamVerifier, IParamVerifier) returns (bytes32) {
+        return ShortStringOps.stringToBytes32("MintPaymentVerifier");
     }
 
     function isCommercial() external pure returns (bool) {

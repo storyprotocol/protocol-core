@@ -10,20 +10,20 @@ import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransfer
 import { Errors } from "contracts/lib/Errors.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
+
 // external
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
 
 abstract contract BaseParamVerifier is IParamVerifier, ERC165 {
+    using ShortStrings for *;
     /// @notice Gets the protocol-wide license registry.
     LicenseRegistry public immutable LICENSE_REGISTRY;
 
-    string internal NAME;
-
     /// @notice Initializes the base module contract.
     /// @param licenseRegistry The address of the license registry.
-    constructor(address licenseRegistry, string memory name_) {
+    constructor(address licenseRegistry) {
         LICENSE_REGISTRY = LicenseRegistry(licenseRegistry);
-        NAME = name_;
     }
 
     /// @notice Modifier for authorizing the calling entity.
@@ -34,12 +34,10 @@ abstract contract BaseParamVerifier is IParamVerifier, ERC165 {
         _;
     }
 
-    function name() external view override returns (bytes32) {
-        return ShortStringOps.stringToBytes32(NAME);
-    }
+    function name() public view virtual override returns (bytes32);
 
     function nameString() external view override returns (string memory) {
-        return NAME;
+        return ShortStringOps.bytes32ToString(name());
     }
 
     // TODO: implement flexible json()
