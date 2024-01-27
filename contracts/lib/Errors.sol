@@ -73,8 +73,19 @@ library Errors {
     error LicenseRegistry__LicensorDoesntHaveThisPolicy();
     error LicenseRegistry__ParamVerifierFailed(uint8 verifierType, address verifier);
     error LicenseRegistry__LinkParentParamFailed();
-    error LicenseRegistry__LicenseMustHaveLicensors();
     error LicenseRegistry__InvalidLicensor();
+    error LicenseRegistry__ParamVerifierAlreadySet();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                            BaseParamVerifier                           //
+    ////////////////////////////////////////////////////////////////////////////
+    error BaseParamVerifier__Unauthorized();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                     DerivativesParamVerifier                           //
+    ////////////////////////////////////////////////////////////////////////////
+    error DerivativesParamVerifier__InvalidDerivativesConfig();
+    error DerivativesParamVerifier__ZeroShare();
 
     ////////////////////////////////////////////////////////////////////////////
     //                            Dispute Module                              //

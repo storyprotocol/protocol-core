@@ -42,5 +42,3 @@ library ShortStringOps {
         return ShortString.unwrap(s.toShortString());
     }
 }
-
-library EnumerableShortStringSet {}
