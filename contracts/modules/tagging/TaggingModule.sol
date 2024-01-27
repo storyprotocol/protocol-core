@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.23;
 
 import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";

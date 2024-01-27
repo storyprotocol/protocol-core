@@ -33,12 +33,18 @@ snapshot :; forge snapshot
 
 slither :; slither ./contracts
 
-format :; npx prettier --write contracts/**/*.sol && npx prettier --write contracts/*.sol
+# glob doesn't work for nested folders, so we do it manually
+format:
+	npx prettier --write contracts/*.sol
+	npx prettier --write contracts/**/*.sol
+	npx prettier --write contracts/**/**/*.sol
+	npx prettier --write contracts/**/**/**/*.sol
+	npx prettier --write contracts/**/**/**/**/*.sol
 
 coverage:
 	mkdir -p coverage
 	forge coverage --report lcov --fork-url https://rpc.ankr.com/eth --fork-block-number 19042069
-	lcov --remove lcov.info -o lcov.info 'test/*'
+	lcov --remove lcov.info -o lcov.info 'test/*' 'script/*' 'contracts/mocks/*'
 	genhtml lcov.info --output-dir coverage
 
 abi:
@@ -71,6 +77,9 @@ anvil :; anvil -m 'test test test test test test test test test test test junk'
 deploy-main :; forge script script/foundry/deployment/Main.s.sol:Main --rpc-url ${RPC_URL} --broadcast --verify -vvvv
 
 deploy-main-hh:
+	npx hardhat run script/hardhat/deployment/00-deploy-main.ts --network ${NETWORK}
+
+deploy-tenderly:
 	rm -rf deployments/hardhat/*.json
 	npx hardhat run script/hardhat/post-deployment/99-revert-chain.ts --network tenderly
 	npx hardhat run script/hardhat/deployment/00-deploy-main.ts --network tenderly

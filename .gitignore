@@ -34,3 +34,6 @@ typechain
 
 # hardhat-tenderly plugin
 deployments
+
+# converage
+lcov.info
