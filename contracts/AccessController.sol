@@ -10,6 +10,7 @@ import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol"
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 import { Errors } from "contracts/lib/Errors.sol";
+import { Governable } from "contracts/governance/Governable.sol";
 
 /// @title AccessController
 /// @dev This contract is used to control access permissions for different function calls in the protocol.
@@ -26,7 +27,7 @@ import { Errors } from "contracts/lib/Errors.sol";
 /// - setPermission: Sets the permission for a specific function call.
 /// - getPermission: Returns the permission level for a specific function call.
 /// - checkPermission: Checks if a specific function call is allowed.
-contract AccessController is IAccessController {
+contract AccessController is IAccessController, Governable {
     using IPAccountChecker for IIPAccountRegistry;
 
     address public IP_ACCOUNT_REGISTRY;
@@ -34,15 +35,20 @@ contract AccessController is IAccessController {
 
     mapping(address => mapping(address => mapping(address => mapping(bytes4 => uint8)))) public permissions;
 
-    // TODO: can only be called by protocol admin
-    function initialize(address ipAccountRegistry_, address moduleRegistry_) external {
-        IP_ACCOUNT_REGISTRY = ipAccountRegistry_;
-        MODULE_REGISTRY = moduleRegistry_;
+    constructor(address governance) Governable(governance) {}
+
+    function initialize(address ipAccountRegistry, address moduleRegistry) external onlyProtocolAdmin {
+        IP_ACCOUNT_REGISTRY = ipAccountRegistry;
+        MODULE_REGISTRY = moduleRegistry;
     }
 
     /// @notice Sets the permission for all IPAccounts
-    function setGlobalPermission(address signer_, address to_, bytes4 func_, uint8 permission_) external {
-        // TODO: access controller can only be called by protocol admin
+    function setGlobalPermission(
+        address signer_,
+        address to_,
+        bytes4 func_,
+        uint8 permission_
+    ) external onlyProtocolAdmin {
         if (signer_ == address(0)) {
             revert Errors.AccessController__SignerIsZeroAddress();
         }

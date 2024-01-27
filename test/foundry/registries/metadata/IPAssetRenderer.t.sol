@@ -27,6 +27,7 @@ import { ModuleBaseTest } from "test/foundry/modules/ModuleBase.t.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
+import { Governance } from "contracts/governance/Governance.sol";
 
 /// @title IP Asset Renderer Test Contract
 /// @notice Tests IP asset rendering functionality.
@@ -75,13 +76,16 @@ contract IPAssetRendererTest is BaseTest {
     /// @notice Mock IP identifier for resolver testing.
     address public ipId;
 
+    Governance public governance;
+
     /// @notice Initializes the base token contract for testing.
     function setUp() public virtual override(BaseTest) {
         BaseTest.setUp();
+        governance = new Governance(address(this));
         // TODO: Create an IP record registry mock instead.
         licenseRegistry = new LicenseRegistry("");
-        accessController = new AccessController();
-        moduleRegistry = new ModuleRegistry();
+        accessController = new AccessController(address(governance));
+        moduleRegistry = new ModuleRegistry(address(governance));
         MockERC721 erc721 = new MockERC721();
         ipAccountRegistry = new IPAccountRegistry(
             address(new ERC6551Registry()),

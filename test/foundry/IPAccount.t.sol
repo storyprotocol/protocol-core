@@ -14,6 +14,7 @@ import "contracts/registries/ModuleRegistry.sol";
 import "test/foundry/mocks/MockAccessController.sol";
 import "test/foundry/mocks/MockERC721.sol";
 import "test/foundry/mocks/MockModule.sol";
+import { Governance } from "contracts/governance/Governance.sol";
 
 contract IPAccountTest is Test {
     IPAccountRegistry public registry;
@@ -21,10 +22,13 @@ contract IPAccountTest is Test {
     MockERC721 nft = new MockERC721();
     ERC6551Registry public erc6551Registry = new ERC6551Registry();
     MockAccessController public accessController = new MockAccessController();
-    ModuleRegistry public moduleRegistry = new ModuleRegistry();
+    ModuleRegistry public moduleRegistry;
     MockModule public module;
+    Governance public governance;
 
     function setUp() public {
+        governance = new Governance(address(this));
+        moduleRegistry = new ModuleRegistry(address(governance));
         implementation = new IPAccountImpl();
         registry = new IPAccountRegistry(address(erc6551Registry), address(accessController), address(implementation));
         module = new MockModule(address(registry), address(moduleRegistry), "MockModule");

@@ -19,6 +19,7 @@ import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { Errors } from "contracts/lib/Errors.sol";
+import { Governance } from "contracts/governance/Governance.sol";
 
 /// @title Module Base Test Contract
 /// @notice Base contract for testing standard module functionality.
@@ -42,12 +43,15 @@ abstract contract ModuleBaseTest is BaseTest {
     /// @notice The module SUT.
     IModule public baseModule;
 
+    Governance public governance;
+
     /// @notice Initializes the base module for testing.
     function setUp() public virtual override(BaseTest) {
         BaseTest.setUp();
+        governance = new Governance(address(this));
         licenseRegistry = new LicenseRegistry("");
-        accessController = new AccessController();
-        moduleRegistry = new ModuleRegistry();
+        accessController = new AccessController(address(governance));
+        moduleRegistry = new ModuleRegistry(address(governance));
         ipAccountRegistry = new IPAccountRegistry(
             address(new ERC6551Registry()),
             address(accessController),
