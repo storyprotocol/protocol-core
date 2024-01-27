@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
 import { Licensing } from "contracts/lib/Licensing.sol";
@@ -12,7 +12,13 @@ interface ILicenseRegistry {
 
     event PolicyCreated(address indexed creator, uint256 indexed policyId, Licensing.Policy policy);
 
-    event PolicyAddedToIpId(address indexed caller, address indexed ipId, uint256 indexed policyId, bool setByLinking);
+    event PolicyAddedToIpId(
+        address indexed caller,
+        address indexed ipId,
+        uint256 indexed policyId,
+        uint256 index,
+        bool setByLinking
+    );
 
     event LicenseMinted(
         address indexed creator,
@@ -39,7 +45,7 @@ interface ILicenseRegistry {
 
     function mintLicense(
         uint256 policyId,
-        address[] calldata licensorIpIds,
+        address licensorIpId,
         uint256 amount,
         address receiver
     ) external returns (uint256 licenseId);
@@ -52,9 +58,8 @@ interface ILicenseRegistry {
 
     function totalFrameworks() external view returns (uint256);
 
-    function frameworkParams(uint256 frameworkId, Licensing.ParamVerifierType pvt) external view returns (Licensing.Parameter[] memory);
+    function frameworkParam(uint256 frameworkId, string calldata name) external view returns (Licensing.Parameter memory);
     function frameworkUrl(uint256 frameworkId) external view returns (string memory);
-
 
     function totalPolicies() external view returns (uint256);
 
@@ -72,10 +77,14 @@ interface ILicenseRegistry {
 
     function policyForIpAtIndex(address ipId, uint256 index) external view returns (Licensing.Policy memory);
 
-    function isPolicyIdAtIndexSetByLinking(address ipId, uint256 index) external view returns (bool);
+    function indexOfPolicyForIp(address ipId, uint256 policyId) external view returns (uint256 index);
+    
+    function isPolicySetByLinking(address ipId, uint256 policyId) external view returns (bool);
 
     function isLicensee(uint256 licenseId, address holder) external view returns (bool);
 
+    function licensorIpId(uint256 licenseId) external view returns (address);
+    function license(uint256 licenseId) external view returns (Licensing.License memory);
     function isParent(address parentIpId, address childIpId) external view returns (bool);
 
     function parentIpIds(address ipId) external view returns (address[] memory);
