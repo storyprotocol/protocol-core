@@ -58,6 +58,12 @@ jobs:
           forge test -vvv --fork-url https://eth.drpc.org --fork-block-number 18613489
         id: forge-test
 
+      - name: Run solhint
+        run: npx solhint contracts/**/*.sol
+
+      - name: Run solhint
+        run: npx solhint contracts/*.sol
+
       # - name: Gas Difference
       #   run:
       #     forge snapshot --gas-report --diff --desc
