@@ -5,8 +5,6 @@ import { IParamVerifier } from "../interfaces/licensing/IParamVerifier.sol";
 import { Errors } from "./Errors.sol";
 
 library Licensing {
-
-
     /// Identifies a license parameter (term) from a license framework
     struct Parameter {
         /// Contract that must check if the condition of the paremeter is set
