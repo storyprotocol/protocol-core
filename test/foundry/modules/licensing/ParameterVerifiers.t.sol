@@ -65,7 +65,65 @@ contract LicenseRegistryTest is Test {
         return pol;
     }
 
-    function test_ParamVerifiers_derivWithApprovalPV_linkApprovedIpId() public {
+    function test_ParamVerifier_commercialUse_disallowed_revert_settingIncompatibleTerms public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_ParamVerifier_commercialUse_setAllowedCommercializers() public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_ParamVerifier_commercialUse_setAllowedWithAttribution() public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_ParamVerifier_commercialUse_revenueShareSetOnLinking() public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_ParamVerifier_derivatives_notAllowed_revert_creating2ndDerivative() public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_ParamVerifier_derivatives_notAllowed_revert_settingIncompatibleTerms public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_ParamVerifier_derivatives_setAllowedWithAttribution() public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_ParamVerifiers_derivatives_setReciprocal() public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_ParamVerifiers_derivatives_setRevenueShareValue() public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_ParamVerifiers_derivatives_setRevenueShareWhenLinking2ndDerivative() public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_ParamVerifiers_derivativesWithApproval_revert_linkNotApproved() public {
+        Licensing.Policy memory pol = _createPolicy(true, false, derivWithApprovalPv, abi.encode(true));
+        uint256 policyId = registry.addPolicy(pol);
+        registry.addPolicyToIp(ipId1, policyId);
+        uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
+        
+        assertFalse(derivWithApprovalPv.isDerivativeApproved(licenseId, ipId1));
+        derivWithApprovalPv.setApproval(licenseId, false);
+        assertFalse(derivWithApprovalPv.isDerivativeApproved(licenseId, ipId1));
+
+        vm.expectRevert(
+            Errors.LicenseRegistry__ParamVerifierFailed(
+                param.verifier.name(),
+                address(param.verifier)
+            );
+        );
+        registry.linkIpToParent(licenseId, ipId2, licenseHolder);
+    }
+    function test_ParamVerifiers_derivatives_withApproval_linkApprovedIpId() public {
         Licensing.Policy memory pol = _createPolicy(true, false, derivWithApprovalPv, abi.encode(true));
         uint256 policyId = registry.addPolicy(pol);
         registry.addPolicyToIp(ipId1, policyId);
@@ -78,5 +136,42 @@ contract LicenseRegistryTest is Test {
         registry.linkIpToParent(licenseId, ipId2, licenseHolder);
         assertTrue(registry.isParent(ipId1, ipId2));
     }
+
+    function test_ParamVerifiers_derivatives_withApproval_revert_approverNotLicensor() public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_ParamVerifiers_setTerritory() public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_ParamVerifiers_setChannelsOfDistribution() public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_ParamVerifiers_setAttributionInReproduction() public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_ParamVerifiers_setContentStandards() public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_ParamVerifiers_transferrable() public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_ParamVerifiers_nonTransferrable_revertIfTransferExceptFromLicensor() public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_ParamVerifiers_mintFee() public {
+        assertFalse(true, "not implemented");
+    }
+
+    function test_tokenUri() public {
+        assertFalse(true, "not implemented");
+    }
+
 
 }
