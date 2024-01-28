@@ -33,6 +33,8 @@ contract AccessController is IAccessController, Governable {
     address public IP_ACCOUNT_REGISTRY;
     address public MODULE_REGISTRY;
 
+    /// @dev encoded permission => permission
+    /// encoded permission = keccak256(abi.encodePacked(ipAccount, signer, to, func))
     mapping(bytes32 => uint8) public permissions;
 
     constructor(address governance) Governable(governance) {}
@@ -170,6 +172,7 @@ contract AccessController is IAccessController, Governable {
         return permissions[_encodePermission(ipAccount_, signer_, to_, func_)];
     }
 
+    /// @dev the permission will be encoded as key in the permissions mapping to save storage
     function _setPermission(
         address ipAccount_,
         address signer_,
@@ -180,6 +183,7 @@ contract AccessController is IAccessController, Governable {
         permissions[_encodePermission(ipAccount_, signer_, to_, func_)] = permission_;
     }
 
+    /// @dev encode permission to hash
     function _encodePermission(
         address ipAccount_,
         address signer_,
