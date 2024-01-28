@@ -33,7 +33,7 @@ contract AccessController is IAccessController, Governable {
     address public IP_ACCOUNT_REGISTRY;
     address public MODULE_REGISTRY;
 
-    mapping(address => mapping(address => mapping(address => mapping(bytes4 => uint8)))) public permissions;
+    mapping(bytes32 => uint8) public permissions;
 
     constructor(address governance) Governable(governance) {}
 
@@ -56,7 +56,8 @@ contract AccessController is IAccessController, Governable {
         if (permission_ > 2) {
             revert Errors.AccessController__PermissionIsNotValid();
         }
-        permissions[address(0)][signer_][to_][func_] = permission_;
+        _setPermission(address(0), signer_, to_, func_, permission_);
+        emit PermissionSet(address(0), signer_, to_, func_, permission_);
     }
 
     /// @notice Sets the permission for a specific function call
@@ -95,24 +96,9 @@ contract AccessController is IAccessController, Governable {
         if (!IModuleRegistry(MODULE_REGISTRY).isRegistered(msg.sender) && ipAccount_ != msg.sender) {
             revert Errors.AccessController__CallerIsNotIPAccount();
         }
-        permissions[ipAccount_][signer_][to_][func_] = permission_;
+        _setPermission(ipAccount_, signer_, to_, func_, permission_);
 
         emit PermissionSet(ipAccount_, signer_, to_, func_, permission_);
-    }
-
-    /// @notice Returns the permission level for a specific function call.
-    /// @param ipAccount_ The account that owns the IP.
-    /// @param signer_ The account that signs the transaction.
-    /// @param to_ The recipient of the transaction.
-    /// @param func_ The function selector.
-    /// @return The permission level for the specific function call.
-    function getPermission(
-        address ipAccount_,
-        address signer_,
-        address to_,
-        bytes4 func_
-    ) external view returns (uint8) {
-        return permissions[ipAccount_][signer_][to_][func_];
     }
 
     /// @notice Checks if a specific function call is allowed.
@@ -124,6 +110,7 @@ contract AccessController is IAccessController, Governable {
     /// @param to_ The recipient of the transaction.
     /// @param func_ The function selector.
     /// @return True if the function call is allowed, false otherwise.
+    // solhint-disable code-complexity
     function checkPermission(
         address ipAccount_,
         address signer_,
@@ -144,27 +131,61 @@ contract AccessController is IAccessController, Governable {
         }
 
         // Specific function permission overrides wildcard/general permission
-        if (permissions[ipAccount_][signer_][to_][func_] == AccessPermission.ALLOW) {
+        if (getPermission(ipAccount_, signer_, to_, func_) == AccessPermission.ALLOW) {
             return true;
         }
 
         // If specific function permission is ABSTAIN, check module level permission
-        if (permissions[ipAccount_][signer_][to_][func_] == AccessPermission.ABSTAIN) {
+        if (getPermission(ipAccount_, signer_, to_, func_) == AccessPermission.ABSTAIN) {
             // Return true if allow to call all functions of the module
-            if (permissions[ipAccount_][signer_][to_][bytes4(0)] == AccessPermission.ALLOW) {
+            if (getPermission(ipAccount_, signer_, to_, bytes4(0)) == AccessPermission.ALLOW) {
                 return true;
             }
             // If module level permission is ABSTAIN, check transaction signer level permission
-            if (permissions[ipAccount_][signer_][to_][bytes4(0)] == AccessPermission.ABSTAIN) {
-                if (permissions[address(0)][signer_][to_][func_] == AccessPermission.ALLOW) {
+            if (getPermission(ipAccount_, signer_, to_, bytes4(0)) == AccessPermission.ABSTAIN) {
+                if (getPermission(address(0), signer_, to_, func_) == AccessPermission.ALLOW) {
                     return true;
                 }
                 // Return true if the ipAccount allow the signer can call all functions of all modules
                 // Otherwise, return false
-                return permissions[ipAccount_][signer_][address(0)][bytes4(0)] == AccessPermission.ALLOW;
+                return getPermission(ipAccount_, signer_, address(0), bytes4(0)) == AccessPermission.ALLOW;
             }
             return false;
         }
         return false;
+    }
+
+    /// @notice Returns the permission level for a specific function call.
+    /// @param ipAccount_ The account that owns the IP.
+    /// @param signer_ The account that signs the transaction.
+    /// @param to_ The recipient of the transaction.
+    /// @param func_ The function selector.
+    /// @return The permission level for the specific function call.
+    function getPermission(
+        address ipAccount_,
+        address signer_,
+        address to_,
+        bytes4 func_
+    ) public view returns (uint8) {
+        return permissions[_encodePermission(ipAccount_, signer_, to_, func_)];
+    }
+
+    function _setPermission(
+        address ipAccount_,
+        address signer_,
+        address to_,
+        bytes4 func_,
+        uint8 permission_
+    ) internal {
+        permissions[_encodePermission(ipAccount_, signer_, to_, func_)] = permission_;
+    }
+
+    function _encodePermission(
+        address ipAccount_,
+        address signer_,
+        address to_,
+        bytes4 func_
+    ) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(ipAccount_, signer_, to_, func_));
     }
 }
