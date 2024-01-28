@@ -167,6 +167,11 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return _addPolictyIdToIp(ipId, polId, false);
     }
 
+    /// Adds a particular configuration of license terms to the protocol.
+    /// Must be called by a LicensingModule, which is responsible for verifying the parameters 
+    /// are valid and the configuration makes sense.
+    /// @param pol policy data
+    /// @return policyId if policy data was in the contract, policyId is reused, if it's new, id will be new.
     function addPolicy(Licensing.Policy memory pol) public returns (uint256 policyId) {
         address licensingModule = _framework(pol.frameworkId).licensingModule;
         if (msg.sender != licensingModule) {
@@ -201,6 +206,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         if (!_pols.add(policyId)) {
             revert Errors.LicenseRegistry__PolicyAlreadySetForIpId();
         }
+        // TODO: check for policy compatibility.
+        // compatibilityManager.isPolicyCompatible(newPolicy, policiesInIpId);
         index = _pols.length() - 1;
         PolicySetup storage setup = _policySetups[ipId][policyId];
         // This should not happen, but just in case
