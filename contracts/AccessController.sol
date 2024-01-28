@@ -172,7 +172,7 @@ contract AccessController is IAccessController, Governable {
         return permissions[_encodePermission(ipAccount, signer, to, func)];
     }
 
-    /// @dev the permission will be encoded as key in the permissions mapping to save storage
+    /// @dev the permission parameters will be encoded into bytes32 as key in the permissions mapping to save storage
     function _setPermission(
         address ipAccount,
         address signer,
@@ -183,7 +183,7 @@ contract AccessController is IAccessController, Governable {
         permissions[_encodePermission(ipAccount, signer, to, func)] = permission;
     }
 
-    /// @dev encode permission to hash
+    /// @dev encode permission to hash (bytes32)
     function _encodePermission(
         address ipAccount,
         address signer,
