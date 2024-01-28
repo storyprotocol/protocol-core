@@ -158,38 +158,38 @@ contract AccessController is IAccessController, Governable {
     }
 
     /// @notice Returns the permission level for a specific function call.
-    /// @param ipAccount_ The account that owns the IP.
-    /// @param signer_ The account that signs the transaction.
-    /// @param to_ The recipient of the transaction.
-    /// @param func_ The function selector.
+    /// @param ipAccount The account that owns the IP.
+    /// @param signer The account that signs the transaction.
+    /// @param to The recipient of the transaction.
+    /// @param func The function selector.
     /// @return The permission level for the specific function call.
     function getPermission(
-        address ipAccount_,
-        address signer_,
-        address to_,
-        bytes4 func_
+        address ipAccount,
+        address signer,
+        address to,
+        bytes4 func
     ) public view returns (uint8) {
-        return permissions[_encodePermission(ipAccount_, signer_, to_, func_)];
+        return permissions[_encodePermission(ipAccount, signer, to, func)];
     }
 
     /// @dev the permission will be encoded as key in the permissions mapping to save storage
     function _setPermission(
-        address ipAccount_,
-        address signer_,
-        address to_,
-        bytes4 func_,
-        uint8 permission_
+        address ipAccount,
+        address signer,
+        address to,
+        bytes4 func,
+        uint8 permission
     ) internal {
-        permissions[_encodePermission(ipAccount_, signer_, to_, func_)] = permission_;
+        permissions[_encodePermission(ipAccount, signer, to, func)] = permission;
     }
 
     /// @dev encode permission to hash
     function _encodePermission(
-        address ipAccount_,
-        address signer_,
-        address to_,
-        bytes4 func_
+        address ipAccount,
+        address signer,
+        address to,
+        bytes4 func
     ) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(ipAccount_, signer_, to_, func_));
+        return keccak256(abi.encodePacked(ipAccount, signer, to, func));
     }
 }
