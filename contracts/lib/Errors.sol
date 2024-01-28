@@ -70,20 +70,23 @@ library Errors {
     error LicenseRegistry__NotLicensee();
     error LicenseRegistry__ParentIdEqualThanChild();
     error LicenseRegistry__LicensorDoesntHaveThisPolicy();
-    error LicenseRegistry__ParamVerifierFailed(bytes32 name, address verifier);
+    error LicenseRegistry__MintLicenseParamFailed();
     error LicenseRegistry__LinkParentParamFailed();
+    error LicenseRegistry__TransferParentParamFailed();
     error LicenseRegistry__InvalidLicensor();
     error LicenseRegistry__ParamVerifierAlreadySet();
     error LicenseRegistry__CommercialTermInNonCommercialPolicy();
     error LicenseRegistry__EmptyParamName();
 
     ////////////////////////////////////////////////////////////////////////////
-    //                            PolicyCreator                               //
+    //                         LicensingModuleUML                             //
     ////////////////////////////////////////////////////////////////////////////
 
-    error PolicyCreator__IncompatibleDerivatives();
-    error PolicyCreator__IncompatibleCommercialUse();
-    error PolicyCreator__ZeroAddressConstructor();
+    error LicensingModuleUML_CommecialDisabled_CantAddAttribution();
+    error LicensingModuleUML_CommecialDisabled_CantAddCommercializers();
+    error LicensingModuleUML_CommecialDisabled_CantAddRevShare();
+    error LicensingModuleUML_CommecialDisabled_CantAddDerivRevShare();
+
 
 
     ////////////////////////////////////////////////////////////////////////////

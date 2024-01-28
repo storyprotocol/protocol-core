@@ -6,12 +6,11 @@ import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.so
 interface IMintParamVerifier is IParamVerifier {
     function verifyMint(
         address caller,
-        uint256 policyId,
         bool policyAddedByLinking,
+        bytes memory policyData,
         address licensors,
         address receiver,
         uint256 mintAmount,
-        bytes memory data
     ) external returns (bool);
 }
 
