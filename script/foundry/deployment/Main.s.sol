@@ -8,13 +8,16 @@ import { Script } from "forge-std/Script.sol";
 import { stdJson } from "forge-std/StdJson.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.sol";
+
 // contracts
 import { AccessController } from "contracts/AccessController.sol";
+import { Governance } from "contracts/governance/Governance.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
+import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
@@ -26,14 +29,14 @@ import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
-import { MockERC721 } from "contracts/mocks/MockERC721.sol";
-import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-import { Governance } from "contracts/governance/Governance.sol";
 
 // script
 import { StringUtil } from "script/foundry/utils/StringUtil.sol";
 import { BroadcastManager } from "script/foundry/utils/BroadcastManager.s.sol";
 import { JsonDeploymentHandler } from "script/foundry/utils/JsonDeploymentHandler.s.sol";
+
+// test
+import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 
 contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     using StringUtil for uint256;
@@ -86,20 +89,21 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             _deployProtocolContracts(deployer);
             _configureDeployment();
         }
+        // _configureDeployedProtocolContracts();
 
         _writeDeployment(); // write deployment json to deployments/deployment-{chainId}.json
         _endBroadcast(); // BroadcastManager.s.sol
     }
 
-    function _deployProtocolContracts(address accessControldeployer) private {
+    function _deployProtocolContracts(address accessControlDeployer) private {
         string memory contractKey;
 
         contractKey = "Governance";
         _predeploy(contractKey);
-        governance = new Governance(accessControldeployer);
+        governance = new Governance(accessControlDeployer);
         _postdeploy(contractKey, address(governance));
 
-        mockNft = new MockERC721();
+        mockNft = new MockERC721("MockERC721");
 
         contractKey = "AccessController";
         _predeploy(contractKey);
@@ -186,7 +190,26 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         // mockModule = new MockModule(address(ipAccountRegistry), address(moduleRegistry), "MockModule");
     }
 
-    function _predeploy(string memory contractKey) private {
+    function _configureDeployedProtocolContracts() private {
+        _readDeployment();
+
+        accessController = AccessController(_readAddress("main.AccessController"));
+        ipAccountRegistry = IPAccountRegistry(_readAddress("main.IPAccountRegistry"));
+        moduleRegistry = ModuleRegistry(_readAddress("main.ModuleRegistry"));
+        licenseRegistry = LicenseRegistry(_readAddress("main.LicenseRegistry"));
+        ipRecordRegistry = IPRecordRegistry(_readAddress("main.IPRecordRegistry"));
+        ipResolver = IPResolver(_readAddress("main.IPResolver"));
+        metadataProvider = IPMetadataProvider(_readAddress("main.MetadataProvider"));
+        registrationModule = RegistrationModule(_readAddress("main.RegistrationModule"));
+        taggingModule = TaggingModule(_readAddress("main.TaggingModule"));
+        royaltyModule = RoyaltyModule(_readAddress("main.RoyaltyModule"));
+        disputeModule = DisputeModule(_readAddress("main.DisputeModule"));
+        renderer = IPAssetRenderer(_readAddress("main.IPAssetRenderer"));
+
+        _configureInteractions();
+    }
+
+    function _predeploy(string memory contractKey) private view {
         console2.log(string.concat("Deploying ", contractKey, "..."));
     }
 
@@ -199,8 +222,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         _configureAccessController();
         _configureModuleRegistry();
         _configureInteractions();
-        // _configureIPAccountRegistry();
-        // _configureIPRecordRegistry();
     }
 
     function _configureAccessController() private {
@@ -208,8 +229,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     }
 
     function _configureModuleRegistry() private {
-        moduleRegistry.registerModule("REGISTRATION_MODULE", address(registrationModule));
-        moduleRegistry.registerModule("METADATA_RESOLVER_MODULE", address(ipResolver));
+        moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
+        moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));
     }
 
     function _configureInteractions() private {
@@ -230,22 +251,22 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         );
 
         // wildcard allow
-        IIPAccount(payable(getIpId(deployer, mockNft, nftIds[1]))).execute(
+        IIPAccount(payable(getIpId(mockNft, nftIds[1]))).execute(
             address(accessController),
             0,
             abi.encodeWithSignature(
                 "setPermission(address,address,address,bytes4,uint8)",
-                getIpId(deployer, mockNft, 1),
+                getIpId(mockNft, nftIds[1]),
                 deployer,
-                address(0),
+                address(licenseRegistry),
                 bytes4(0),
                 1 // AccessPermission.ALLOW
             )
         );
 
-        /*///////////////////////////////////////////////////////////////
-                            CREATE LICENSE FRAMEWORKS
-        ////////////////////////////////////////////////////////////////*/
+        // /*///////////////////////////////////////////////////////////////
+        //                     CREATE LICENSE FRAMEWORKS
+        // ////////////////////////////////////////////////////////////////*/
 
         fwCreationParams["all_true"] = Licensing.FrameworkCreationParams({
             parameters: new IParamVerifier[](0),
@@ -316,11 +337,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     }
 
     function getIpId(MockERC721 mnft, uint256 tokenId) public view returns (address ipId) {
-        return ipAccountRegistry.ipAccount(block.chainid, address(mnft), tokenId);
-    }
-
-    function getIpId(address user, MockERC721 mnft, uint256 tokenId) public view returns (address ipId) {
-        require(mnft.ownerOf(tokenId) == user, "getIpId: not owner");
         return ipAccountRegistry.ipAccount(block.chainid, address(mnft), tokenId);
     }
 }

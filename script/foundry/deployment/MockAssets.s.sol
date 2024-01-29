@@ -24,20 +24,13 @@ contract MockAssets is Script, BroadcastManager, JsonDeploymentHandler {
     function run() public {
         _beginBroadcast(); // BroadcastManager.s.sol
 
-        bool configByMultisig = vm.envBool("DEPLOYMENT_CONFIG_BY_MULTISIG");
-        console2.log("configByMultisig:", configByMultisig);
-
-        if (configByMultisig) {
-            _deployProtocolContracts(multisig);
-        } else {
-            _deployProtocolContracts(deployer);
-        }
+        _deployProtocolContracts();
 
         _writeDeployment(); // write deployment json to deploy-out/deployment-{chainId}.json
         _endBroadcast(); // BroadcastManager.s.sol
     }
 
-    function _deployProtocolContracts(address accessControlAdmin) private {
+    function _deployProtocolContracts() private {
         _predeploy("MockERC20");
         MockERC20 mockERC20 = new MockERC20();
         _postdeploy("MockERC20", address(mockERC20));
