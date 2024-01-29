@@ -8,6 +8,8 @@ import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVer
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
+import { Errors } from "contracts/lib/Errors.sol";
+import { Licensing } from "contracts/lib/Licensing.sol";
 import { BaseLicensingFramework } from "contracts/modules/licensing/BaseLicensingFramework.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 
@@ -33,12 +35,17 @@ contract MockLicensingFramework is
 {
     MockLicensingFrameworkConfig internal config;
 
-    constructor(MockLicensingFrameworkConfig memory conf)
-        BaseLicensingFramework(conf.licenseRegistry, conf.licenseUrl) {
+    event MockPolicyAdded(uint256 indexed policyId, MockPolicy policy);
+
+    constructor(
+        MockLicensingFrameworkConfig memory conf
+    ) BaseLicensingFramework(conf.licenseRegistry, conf.licenseUrl) {
         config = conf;
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, BaseLicensingFramework) returns (bool) {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(IERC165, BaseLicensingFramework) returns (bool) {
         if (interfaceId == type(IParamVerifier).interfaceId) return true;
         if (interfaceId == type(ILinkParamVerifier).interfaceId) return config.supportVerifyLink;
         if (interfaceId == type(IMintParamVerifier).interfaceId) return config.supportVerifyMint;
@@ -46,14 +53,31 @@ contract MockLicensingFramework is
         return super.supportsInterface(interfaceId);
     }
 
-    function verifyMint(
-        address,
-        bool,
-        address,
-        address,
-        uint256,
-        bytes memory data
-    ) external view returns (bool) {
+    function addPolicy(MockPolicy calldata mockPolicy) external returns (uint256 policyId) {
+        if (frameworkId == 0) {
+            revert Errors.LicensingFrameworkUML_FrameworkNotYetRegistered();
+        }
+
+        // can verify mockPolicy if needed
+
+        Licensing.Policy memory protocolPolicy = Licensing.Policy({
+            frameworkId: frameworkId,
+            data: abi.encode(mockPolicy)
+        });
+
+        return LICENSE_REGISTRY.addPolicy(protocolPolicy);
+        emit MockPolicyAdded(policyId, mockPolicy);
+    }
+
+    function policyIdToMockPolicy(uint256 policyId) public view returns (MockPolicy memory policy) {
+        Licensing.Policy memory protocolPolicy = LICENSE_REGISTRY.policy(policyId);
+        if (protocolPolicy.frameworkId != frameworkId) {
+            revert Errors.LicenseRegistry__FrameworkNotFound();
+        }
+        policy = abi.decode(protocolPolicy.data, (MockPolicy));
+    }
+
+    function verifyMint(address, bool, address, address, uint256, bytes memory data) external view returns (bool) {
         MockPolicy memory policy = abi.decode(data, (MockPolicy));
         return policy.returnVerifyMint;
     }
@@ -77,5 +101,4 @@ contract MockLicensingFramework is
     function policyToJson(bytes memory policyData) public pure returns (string memory) {
         return "MockLicensingFramework";
     }
-
 }

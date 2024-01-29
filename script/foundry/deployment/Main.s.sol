@@ -1,326 +1,346 @@
-// /* solhint-disable no-console */
-// // SPDX-License-Identifier: MIT
-// pragma solidity ^0.8.23;
+/* solhint-disable no-console */
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.23;
 
-// // external
-// import { console2 } from "forge-std/console2.sol";
-// import { Script } from "forge-std/Script.sol";
-// import { stdJson } from "forge-std/StdJson.sol";
-// import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
-// import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.sol";
-// // contracts
-// import { AccessController } from "contracts/AccessController.sol";
-// import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
-// import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-// import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
-// import { Errors } from "contracts/lib/Errors.sol";
-// import { Licensing } from "contracts/lib/Licensing.sol";
-// import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
-// import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-// import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
-// import { IPAssetRenderer } from "contracts/registries/metadata/IPAssetRenderer.sol";
-// import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
-// import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
-// import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-// import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
-// import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
-// import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
-// import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
-// import { MockERC721 } from "contracts/mocks/MockERC721.sol";
-// import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-// import { Governance } from "contracts/governance/Governance.sol";
+// external
+import { console2 } from "forge-std/console2.sol";
+import { Script } from "forge-std/Script.sol";
+import { stdJson } from "forge-std/StdJson.sol";
+import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
+import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.sol";
+// contracts
+import { AccessController } from "contracts/AccessController.sol";
+import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
+import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
+import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
+import { Errors } from "contracts/lib/Errors.sol";
+import { Licensing } from "contracts/lib/Licensing.sol";
+import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
+import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
+import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
+import { IPAssetRenderer } from "contracts/registries/metadata/IPAssetRenderer.sol";
+import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
+import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
+import { IPResolver } from "contracts/resolvers/IPResolver.sol";
+import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
+import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
+import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
+import { IPResolver } from "contracts/resolvers/IPResolver.sol";
+import { Governance } from "contracts/governance/Governance.sol";
+import { LicensingFrameworkUML, UMLv1Policy } from "contracts/modules/licensing/LicensingFrameworkUML.sol";
 
-// // script
-// import { StringUtil } from "script/foundry/utils/StringUtil.sol";
-// import { BroadcastManager } from "script/foundry/utils/BroadcastManager.s.sol";
-// import { JsonDeploymentHandler } from "script/foundry/utils/JsonDeploymentHandler.s.sol";
+// test
+import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 
-// contract Main is Script, BroadcastManager, JsonDeploymentHandler {
-//     using StringUtil for uint256;
-//     using stdJson for string;
+// script
+import { StringUtil } from "script/foundry/utils/StringUtil.sol";
+import { BroadcastManager } from "script/foundry/utils/BroadcastManager.s.sol";
+import { JsonDeploymentHandler } from "script/foundry/utils/JsonDeploymentHandler.s.sol";
 
-//     Governance public governance;
+contract Main is Script, BroadcastManager, JsonDeploymentHandler {
+    using StringUtil for uint256;
+    using stdJson for string;
 
-//     address public constant ERC6551_REGISTRY = address(0x000000006551c19487814612e58FE06813775758);
-//     AccessController public accessController;
+    Governance public governance;
 
-//     IPAssetRenderer public renderer;
-//     IPMetadataProvider public metadataProvider;
-//     IPAccountRegistry public ipAccountRegistry;
-//     IPRecordRegistry public ipRecordRegistry;
-//     LicenseRegistry public licenseRegistry;
-//     ModuleRegistry public moduleRegistry;
+    address public constant ERC6551_REGISTRY = address(0x000000006551c19487814612e58FE06813775758);
+    AccessController public accessController;
 
-//     IPAccountImpl public implementation;
-//     MockERC721 public mockNft;
+    IPAssetRenderer public renderer;
+    IPMetadataProvider public metadataProvider;
+    IPAccountRegistry public ipAccountRegistry;
+    IPRecordRegistry public ipRecordRegistry;
+    LicenseRegistry public licenseRegistry;
+    ModuleRegistry public moduleRegistry;
 
-//     IIPAccount public ipAccount;
-//     //    ERC6551Registry public erc6551Registry;
+    IPAccountImpl public implementation;
+    MockERC721 public mockNft;
 
-//     RegistrationModule public registrationModule;
-//     TaggingModule public taggingModule;
-//     RoyaltyModule public royaltyModule;
-//     DisputeModule public disputeModule;
-//     IPResolver public ipResolver;
+    IIPAccount public ipAccount;
+    //    ERC6551Registry public erc6551Registry;
 
-//     mapping(uint256 => uint256) internal nftIds;
-//     mapping(uint256 => uint256) internal policyIds;
-//     mapping(string => uint256) internal fwIds;
-//     mapping(string => Licensing.Framework) internal fwCreationParams;
-//     mapping(string => Licensing.Policy) internal policies;
+    RegistrationModule public registrationModule;
+    TaggingModule public taggingModule;
+    RoyaltyModule public royaltyModule;
+    DisputeModule public disputeModule;
+    IPResolver public ipResolver;
 
-//     constructor() JsonDeploymentHandler("main") {}
+    mapping(uint256 => uint256) internal nftIds;
+    mapping(string => uint256) internal policyIds;
+    mapping(string => uint256) internal frameworkIds;
 
-//     /// @dev To use, run the following command (e.g. for Sepolia):
-//     /// forge script script/foundry/deployment/Main.s.sol:Main --rpc-url $RPC_URL --broadcast --verify -vvvv
+    constructor() JsonDeploymentHandler("main") {}
 
-//     function run() public {
-//         _beginBroadcast(); // BroadcastManager.s.sol
+    /// @dev To use, run the following command (e.g. for Sepolia):
+    /// forge script script/foundry/deployment/Main.s.sol:Main --rpc-url $RPC_URL --broadcast --verify -vvvv
 
-//         bool configByMultisig = vm.envBool("DEPLOYMENT_CONFIG_BY_MULTISIG");
-//         console2.log("configByMultisig:", configByMultisig);
+    function run() public {
+        _beginBroadcast(); // BroadcastManager.s.sol
 
-//         if (configByMultisig) {
-//             _deployProtocolContracts(multisig);
-//         } else {
-//             _deployProtocolContracts(deployer);
-//             _configureDeployment();
-//         }
+        bool configByMultisig = vm.envBool("DEPLOYMENT_CONFIG_BY_MULTISIG");
+        console2.log("configByMultisig:", configByMultisig);
 
-//         _writeDeployment(); // write deployment json to deployments/deployment-{chainId}.json
-//         _endBroadcast(); // BroadcastManager.s.sol
-//     }
+        if (configByMultisig) {
+            _deployProtocolContracts(multisig);
+        } else {
+            _deployProtocolContracts(deployer);
+            _configureDeployment();
+        }
 
-//     function _deployProtocolContracts(address accessControldeployer) private {
-//         string memory contractKey;
+        _writeDeployment(); // write deployment json to deployments/deployment-{chainId}.json
+        _endBroadcast(); // BroadcastManager.s.sol
+    }
 
-//         contractKey = "Governance";
-//         _predeploy(contractKey);
-//         governance = new Governance(accessControldeployer);
-//         _postdeploy(contractKey, address(governance));
+    function _deployProtocolContracts(address accessControldeployer) private {
+        string memory contractKey;
 
-//         mockNft = new MockERC721();
+        contractKey = "Governance";
+        _predeploy(contractKey);
+        governance = new Governance(accessControldeployer);
+        _postdeploy(contractKey, address(governance));
 
-//         contractKey = "AccessController";
-//         _predeploy(contractKey);
-//         accessController = new AccessController(address(governance));
-//         _postdeploy(contractKey, address(accessController));
+        mockNft = new MockERC721("MockERC721");
 
-//         contractKey = "IPAccountImpl";
-//         _predeploy(contractKey);
-//         implementation = new IPAccountImpl();
-//         _postdeploy(contractKey, address(implementation));
+        contractKey = "AccessController";
+        _predeploy(contractKey);
+        accessController = new AccessController(address(governance));
+        _postdeploy(contractKey, address(accessController));
 
-//         contractKey = "ModuleRegistry";
-//         _predeploy(contractKey);
-//         moduleRegistry = new ModuleRegistry(address(governance));
-//         _postdeploy(contractKey, address(moduleRegistry));
+        contractKey = "IPAccountImpl";
+        _predeploy(contractKey);
+        implementation = new IPAccountImpl();
+        _postdeploy(contractKey, address(implementation));
 
-//         contractKey = "LicenseRegistry";
-//         _predeploy(contractKey);
-//         licenseRegistry = new LicenseRegistry();
-//         _postdeploy(contractKey, address(licenseRegistry));
+        contractKey = "ModuleRegistry";
+        _predeploy(contractKey);
+        moduleRegistry = new ModuleRegistry(address(governance));
+        _postdeploy(contractKey, address(moduleRegistry));
 
-//         contractKey = "IPAccountRegistry";
-//         _predeploy(contractKey);
-//         ipAccountRegistry = new IPAccountRegistry(ERC6551_REGISTRY, address(accessController), address(implementation));
-//         _postdeploy(contractKey, address(ipAccountRegistry));
+        contractKey = "LicenseRegistry";
+        _predeploy(contractKey);
+        licenseRegistry = new LicenseRegistry();
+        _postdeploy(contractKey, address(licenseRegistry));
 
-//         contractKey = "IPRecordRegistry";
-//         _predeploy(contractKey);
-//         ipRecordRegistry = new IPRecordRegistry(address(moduleRegistry), address(ipAccountRegistry));
-//         _postdeploy(contractKey, address(ipRecordRegistry));
+        contractKey = "IPAccountRegistry";
+        _predeploy(contractKey);
+        ipAccountRegistry = new IPAccountRegistry(ERC6551_REGISTRY, address(accessController), address(implementation));
+        _postdeploy(contractKey, address(ipAccountRegistry));
 
-//         contractKey = "IPResolver";
-//         _predeploy(contractKey);
-//         ipResolver = new IPResolver(
-//             address(accessController),
-//             address(ipRecordRegistry),
-//             address(ipAccountRegistry),
-//             address(licenseRegistry)
-//         );
-//         _postdeploy(contractKey, address(ipResolver));
+        contractKey = "IPRecordRegistry";
+        _predeploy(contractKey);
+        ipRecordRegistry = new IPRecordRegistry(address(moduleRegistry), address(ipAccountRegistry));
+        _postdeploy(contractKey, address(ipRecordRegistry));
 
-//         contractKey = "MetadataProvider";
-//         _predeploy(contractKey);
-//         metadataProvider = new IPMetadataProvider(address(moduleRegistry));
-//         _postdeploy(contractKey, address(metadataProvider));
+        contractKey = "IPResolver";
+        _predeploy(contractKey);
+        ipResolver = new IPResolver(
+            address(accessController),
+            address(ipRecordRegistry),
+            address(ipAccountRegistry),
+            address(licenseRegistry)
+        );
+        _postdeploy(contractKey, address(ipResolver));
 
-//         contractKey = "RegistrationModule";
-//         _predeploy(contractKey);
-//         registrationModule = new RegistrationModule(
-//             address(accessController),
-//             address(ipRecordRegistry),
-//             address(ipAccountRegistry),
-//             address(licenseRegistry),
-//             address(ipResolver),
-//             address(metadataProvider)
-//         );
-//         _postdeploy(contractKey, address(registrationModule));
+        contractKey = "MetadataProvider";
+        _predeploy(contractKey);
+        metadataProvider = new IPMetadataProvider(address(moduleRegistry));
+        _postdeploy(contractKey, address(metadataProvider));
 
-//         contractKey = "TaggingModule";
-//         _predeploy(contractKey);
-//         taggingModule = new TaggingModule();
-//         _postdeploy(contractKey, address(taggingModule));
+        contractKey = "RegistrationModule";
+        _predeploy(contractKey);
+        registrationModule = new RegistrationModule(
+            address(accessController),
+            address(ipRecordRegistry),
+            address(ipAccountRegistry),
+            address(licenseRegistry),
+            address(ipResolver),
+            address(metadataProvider)
+        );
+        _postdeploy(contractKey, address(registrationModule));
 
-//         contractKey = "RoyaltyModule";
-//         _predeploy(contractKey);
-//         royaltyModule = new RoyaltyModule();
-//         _postdeploy(contractKey, address(royaltyModule));
+        contractKey = "TaggingModule";
+        _predeploy(contractKey);
+        taggingModule = new TaggingModule();
+        _postdeploy(contractKey, address(taggingModule));
 
-//         contractKey = "DisputeModule";
-//         _predeploy(contractKey);
-//         disputeModule = new DisputeModule();
-//         _postdeploy(contractKey, address(disputeModule));
+        contractKey = "RoyaltyModule";
+        _predeploy(contractKey);
+        royaltyModule = new RoyaltyModule();
+        _postdeploy(contractKey, address(royaltyModule));
 
-//         contractKey = "IPAssetRenderer";
-//         _predeploy(contractKey);
-//         renderer = new IPAssetRenderer(
-//             address(ipRecordRegistry),
-//             address(licenseRegistry),
-//             address(taggingModule),
-//             address(royaltyModule)
-//         );
-//         _postdeploy(contractKey, address(renderer));
+        contractKey = "DisputeModule";
+        _predeploy(contractKey);
+        disputeModule = new DisputeModule();
+        _postdeploy(contractKey, address(disputeModule));
 
-//         // mockModule = new MockModule(address(ipAccountRegistry), address(moduleRegistry), "MockModule");
-//     }
+        contractKey = "IPAssetRenderer";
+        _predeploy(contractKey);
+        renderer = new IPAssetRenderer(
+            address(ipRecordRegistry),
+            address(licenseRegistry),
+            address(taggingModule),
+            address(royaltyModule)
+        );
+        _postdeploy(contractKey, address(renderer));
 
-//     function _predeploy(string memory contractKey) private {
-//         console2.log(string.concat("Deploying ", contractKey, "..."));
-//     }
+        // mockModule = new MockModule(address(ipAccountRegistry), address(moduleRegistry), "MockModule");
+    }
 
-//     function _postdeploy(string memory contractKey, address newAddress) private {
-//         _writeAddress(contractKey, newAddress);
-//         console2.log(string.concat(contractKey, " deployed to:"), newAddress);
-//     }
+    function _predeploy(string memory contractKey) private {
+        console2.log(string.concat("Deploying ", contractKey, "..."));
+    }
 
-//     function _configureDeployment() private {
-//         _configureAccessController();
-//         _configureModuleRegistry();
-//         _configureInteractions();
-//         // _configureIPAccountRegistry();
-//         // _configureIPRecordRegistry();
-//     }
+    function _postdeploy(string memory contractKey, address newAddress) private {
+        _writeAddress(contractKey, newAddress);
+        console2.log(string.concat(contractKey, " deployed to:"), newAddress);
+    }
 
-//     function _configureAccessController() private {
-//         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-//     }
+    function _configureDeployment() private {
+        _configureAccessController();
+        _configureModuleRegistry();
+        _configureInteractions();
+        // _configureIPAccountRegistry();
+        // _configureIPRecordRegistry();
+    }
 
-//     function _configureModuleRegistry() private {
-//         moduleRegistry.registerModule("REGISTRATION_MODULE", address(registrationModule));
-//         moduleRegistry.registerModule("METADATA_RESOLVER_MODULE", address(ipResolver));
-//     }
+    function _configureAccessController() private {
+        accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
+    }
 
-//     function _configureInteractions() private {
-//         nftIds[1] = mockNft.mint(deployer);
-//         nftIds[2] = mockNft.mint(deployer);
-//         nftIds[3] = mockNft.mint(deployer);
-//         nftIds[4] = mockNft.mint(deployer);
+    function _configureModuleRegistry() private {
+        moduleRegistry.registerModule("REGISTRATION_MODULE", address(registrationModule));
+        moduleRegistry.registerModule("METADATA_RESOLVER_MODULE", address(ipResolver));
+    }
 
-//         // registerIPAccount(deployer, mockNft, token[deployer][mockNft][0]);
-//         registrationModule.registerRootIp(0, address(mockNft), nftIds[1]);
-//         registrationModule.registerRootIp(0, address(mockNft), nftIds[2]);
+    function _configureInteractions() private {
+        nftIds[1] = mockNft.mint(deployer);
+        nftIds[2] = mockNft.mint(deployer);
+        nftIds[3] = mockNft.mint(deployer);
+        nftIds[4] = mockNft.mint(deployer);
 
-//         accessController.setGlobalPermission(
-//             address(registrationModule),
-//             address(licenseRegistry),
-//             bytes4(0), // wildcard
-//             1 // AccessPermission.ALLOW
-//         );
+        // registerIPAccount(deployer, mockNft, token[deployer][mockNft][0]);
+        registrationModule.registerRootIp(0, address(mockNft), nftIds[1]);
+        registrationModule.registerRootIp(0, address(mockNft), nftIds[2]);
 
-//         // wildcard allow
-//         IIPAccount(payable(getIpId(deployer, mockNft, nftIds[1]))).execute(
-//             address(accessController),
-//             0,
-//             abi.encodeWithSignature(
-//                 "setPermission(address,address,address,bytes4,uint8)",
-//                 getIpId(deployer, mockNft, 1),
-//                 deployer,
-//                 address(0),
-//                 bytes4(0),
-//                 1 // AccessPermission.ALLOW
-//             )
-//         );
+        accessController.setGlobalPermission(
+            address(registrationModule),
+            address(licenseRegistry),
+            bytes4(0), // wildcard
+            1 // AccessPermission.ALLOW
+        );
 
-//         /*///////////////////////////////////////////////////////////////
-//                             CREATE LICENSE FRAMEWORKS
-//         ////////////////////////////////////////////////////////////////*/
+        // wildcard allow
+        IIPAccount(payable(getIpId(deployer, mockNft, nftIds[1]))).execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setPermission(address,address,address,bytes4,uint8)",
+                getIpId(deployer, mockNft, 1),
+                deployer,
+                address(0),
+                bytes4(0),
+                1 // AccessPermission.ALLOW
+            )
+        );
 
-//         fwCreationParams["all_true"] = Licensing.FrameworkCreationParams({
-//             parameters: new IParamVerifier[](0),
-//             defaultValues: new bytes[](0),
-//             licenseUrl: "https://very-nice-verifier-license.com"
-//         });
+        /*///////////////////////////////////////////////////////////////
+                            CREATE LICENSE FRAMEWORKS
+        ////////////////////////////////////////////////////////////////*/
 
-//         fwCreationParams["mint_payment"] = Licensing.FrameworkCreationParams({
-//             parameters: new IParamVerifier[](0),
-//             defaultValues: new bytes[](0),
-//             licenseUrl: "https://expensive-minting-license.com"
-//         });
+        LicensingFrameworkUML umlAllTrue = new LicensingFrameworkUML(
+            address(licenseRegistry),
+            "https://very-nice-verifier-license.com/{id}.json"
+        );
+        LicensingFrameworkUML umlMintPayment = new LicensingFrameworkUML(
+            address(licenseRegistry),
+            "https://expensive-minting-license.com/{id}.json"
+        );
 
-//         fwIds["all_true"] = licenseRegistry.addLicenseFramework(fwCreationParams["all_true"]);
-//         fwIds["mint_payment"] = licenseRegistry.addLicenseFramework(fwCreationParams["mint_payment"]);
+        frameworkIds["all_true"] = umlAllTrue.register();
+        frameworkIds["mint_payment"] = umlMintPayment.register();
 
-//         // /*///////////////////////////////////////////////////////////////
-//         //                         CREATE POLICIES
-//         // ////////////////////////////////////////////////////////////////*/
+        // /*///////////////////////////////////////////////////////////////
+        //                         CREATE POLICIES
+        // ////////////////////////////////////////////////////////////////*/
 
-//         policies["test_true"] = Licensing.Policy({
-//             frameworkId: fwIds["all_true"],
-//             commercialUse: true,
-//             derivatives: true,
-//             paramNames: new bytes32[](0),
-//             paramValues: new bytes[](0)
-//         });
+        policyIds["test_true"] = umlAllTrue.addPolicy(
+            UMLv1Policy({
+                attribution: true,
+                transferable: true,
+                commercialUse: true,
+                commercialAttribution: true,
+                commercializers: new string[](0),
+                commercialRevShare: 0,
+                derivativesAllowed: true,
+                derivativesAttribution: true,
+                derivativesApproval: true,
+                derivativesReciprocal: true,
+                derivativesRevShare: 0,
+                territories: new string[](0),
+                distributionChannels: new string[](0)
+            })
+        );
 
-//         policies["expensive_mint"] = Licensing.Policy({
-//             frameworkId: fwIds["mint_payment"],
-//             commercialUse: true,
-//             derivatives: true,
-//             paramNames: new bytes32[](0),
-//             paramValues: new bytes[](0)
-//         });
+        policyIds["expensive_mint"] = umlAllTrue.addPolicy(
+            UMLv1Policy({
+                attribution: true,
+                transferable: true,
+                commercialUse: true,
+                commercialAttribution: true,
+                commercializers: new string[](0),
+                commercialRevShare: 0,
+                derivativesAllowed: true,
+                derivativesAttribution: true,
+                derivativesApproval: true,
+                derivativesReciprocal: true,
+                derivativesRevShare: 0,
+                territories: new string[](0),
+                distributionChannels: new string[](0)
+            })
+        );
 
-//         uint256 policyId_test_true = licenseRegistry.addPolicy(policies["test_true"]);
-//         uint256 policyId_exp_mint = licenseRegistry.addPolicy(policies["expensive_mint"]);
+        // /*///////////////////////////////////////////////////////////////
+        //                     ADD POLICIES TO IPACCOUNTS
+        // ////////////////////////////////////////////////////////////////*/
 
-//         // /*///////////////////////////////////////////////////////////////
-//         //                     ADD POLICIES TO IPACCOUNTS
-//         // ////////////////////////////////////////////////////////////////*/
+        licenseRegistry.addPolicyToIp(getIpId(mockNft, nftIds[1]), policyIds["test_true"]);
+        licenseRegistry.addPolicyToIp(getIpId(mockNft, nftIds[2]), policyIds["expensive_mint"]);
 
-//         licenseRegistry.addPolicyToIp(getIpId(mockNft, nftIds[1]), policyId_test_true);
-//         licenseRegistry.addPolicyToIp(getIpId(mockNft, nftIds[2]), policyId_exp_mint);
+        // /*///////////////////////////////////////////////////////////////
+        //                     MINT LICENSES ON POLICIES
+        // ////////////////////////////////////////////////////////////////*/
 
-//         // /*///////////////////////////////////////////////////////////////
-//         //                     MINT LICENSES ON POLICIES
-//         // ////////////////////////////////////////////////////////////////*/
+        // Mints 1 license for policy "test_true" on NFT id 1 IPAccount
+        uint256 licenseId1 = licenseRegistry.mintLicense(
+            policyIds["test_true"],
+            getIpId(mockNft, nftIds[1]),
+            2,
+            deployer
+        );
 
-//         // Mints 1 license for policy "test_true" on NFT id 1 IPAccount
-//         uint256 licenseId1 = licenseRegistry.mintLicense(policyId_test_true, getIpId(mockNft, nftIds[1]), 2, deployer);
+        registrationModule.registerDerivativeIp(
+            licenseId1,
+            address(mockNft),
+            nftIds[3],
+            "best derivative ip",
+            bytes32("some of the best description"),
+            "https://example.com/best-derivative-ip"
+        );
 
-//         registrationModule.registerDerivativeIp(
-//             licenseId1,
-//             address(mockNft),
-//             nftIds[3],
-//             "best derivative ip",
-//             bytes32("some of the best description"),
-//             "https://example.com/best-derivative-ip"
-//         );
+        // /*///////////////////////////////////////////////////////////////
+        //             LINK IPACCOUNTS TO PARENTS USING LICENSES
+        // ////////////////////////////////////////////////////////////////*/
 
-//         // /*///////////////////////////////////////////////////////////////
-//         //             LINK IPACCOUNTS TO PARENTS USING LICENSES
-//         // ////////////////////////////////////////////////////////////////*/
+        licenseRegistry.linkIpToParent(licenseId1, getIpId(mockNft, nftIds[4]), deployer);
+    }
 
-//         licenseRegistry.linkIpToParent(licenseId1, getIpId(mockNft, nftIds[4]), deployer);
-//     }
+    function getIpId(MockERC721 mnft, uint256 tokenId) public view returns (address ipId) {
+        return ipAccountRegistry.ipAccount(block.chainid, address(mnft), tokenId);
+    }
 
-//     function getIpId(MockERC721 mnft, uint256 tokenId) public view returns (address ipId) {
-//         return ipAccountRegistry.ipAccount(block.chainid, address(mnft), tokenId);
-//     }
-
-//     function getIpId(address user, MockERC721 mnft, uint256 tokenId) public view returns (address ipId) {
-//         require(mnft.ownerOf(tokenId) == user, "getIpId: not owner");
-//         return ipAccountRegistry.ipAccount(block.chainid, address(mnft), tokenId);
-//     }
-// }
+    function getIpId(address user, MockERC721 mnft, uint256 tokenId) public view returns (address ipId) {
+        require(mnft.ownerOf(tokenId) == user, "getIpId: not owner");
+        return ipAccountRegistry.ipAccount(block.chainid, address(mnft), tokenId);
+    }
+}

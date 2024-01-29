@@ -17,8 +17,6 @@ import { LicensorApprovalManager } from "contracts/modules/licensing/parameter-h
 // external
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
-import "forge-std/console2.sol";
-
 struct UMLv1Policy {
     bool attribution;
     bool transferable;
@@ -41,18 +39,16 @@ contract LicensingFrameworkUML is
     IMintParamVerifier,
     ITransferParamVerifier,
     LicensorApprovalManager
-    {
-
-    
+{
     event UMLv1PolicyAdded(uint256 indexed policyId, UMLv1Policy policy);
 
     constructor(address licRegistry, string memory licenseUrl) BaseLicensingFramework(licRegistry, licenseUrl) {}
 
-    function licenseRegistry() view override external returns (address) {
+    function licenseRegistry() external view override returns (address) {
         return address(LICENSE_REGISTRY);
     }
-    
-    function addPolicy(UMLv1Policy calldata umlPolicy) external returns(uint256 policyId) {
+
+    function addPolicy(UMLv1Policy calldata umlPolicy) external returns (uint256 policyId) {
         if (frameworkId == 0) {
             revert Errors.LicensingFrameworkUML_FrameworkNotYetRegistered();
         }
@@ -68,7 +64,7 @@ contract LicensingFrameworkUML is
 
     function getPolicy(uint256 policyId) public view returns (UMLv1Policy memory policy) {
         Licensing.Policy memory protocolPolicy = LICENSE_REGISTRY.policy(policyId);
-        if(protocolPolicy.frameworkId != frameworkId) {
+        if (protocolPolicy.frameworkId != frameworkId) {
             revert Errors.LicenseRegistry__FrameworkNotFound();
         }
         policy = abi.decode(protocolPolicy.data, (UMLv1Policy));
@@ -78,8 +74,11 @@ contract LicensingFrameworkUML is
         return "TODO";
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(BaseLicensingFramework, IERC165) returns (bool) {
-        return super.supportsInterface(interfaceId) ||
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(BaseLicensingFramework, IERC165) returns (bool) {
+        return
+            super.supportsInterface(interfaceId) ||
             interfaceId == type(ILinkParamVerifier).interfaceId ||
             interfaceId == type(IMintParamVerifier).interfaceId ||
             interfaceId == type(ITransferParamVerifier).interfaceId;
@@ -91,10 +90,7 @@ contract LicensingFrameworkUML is
         address ipId,
         address,
         bytes calldata policyData
-    )
-        external override 
-        onlyLicenseRegistry
-        returns (bool) {
+    ) external override onlyLicenseRegistry returns (bool) {
         UMLv1Policy memory policy = abi.decode(policyData, (UMLv1Policy));
         bool linkingOK = true;
         if (policy.commercialRevShare > 0) {

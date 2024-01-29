@@ -19,7 +19,7 @@ import { Governance } from "contracts/governance/Governance.sol";
 contract IPAccountTest is Test {
     IPAccountRegistry public registry;
     IPAccountImpl public implementation;
-    MockERC721 nft = new MockERC721();
+    MockERC721 nft = new MockERC721("MockERC721");
     ERC6551Registry public erc6551Registry = new ERC6551Registry();
     MockAccessController public accessController = new MockAccessController();
     ModuleRegistry public moduleRegistry;
