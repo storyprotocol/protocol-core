@@ -28,7 +28,7 @@ import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.so
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { Governance } from "contracts/governance/Governance.sol";
-import { LicensingFrameworkUML, UMLv1Policy } from "contracts/modules/licensing/LicensingFrameworkUML.sol";
+import { UMLPolicyFrameworkManager, UMLv1Policy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
 // test
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
@@ -248,11 +248,11 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                             CREATE LICENSE FRAMEWORKS
         ////////////////////////////////////////////////////////////////*/
 
-        LicensingFrameworkUML umlAllTrue = new LicensingFrameworkUML(
+        UMLPolicyFrameworkManager umlAllTrue = new UMLPolicyFrameworkManager(
             address(licenseRegistry),
             "https://very-nice-verifier-license.com/{id}.json"
         );
-        LicensingFrameworkUML umlMintPayment = new LicensingFrameworkUML(
+        UMLPolicyFrameworkManager umlMintPayment = new UMLPolicyFrameworkManager(
             address(licenseRegistry),
             "https://expensive-minting-license.com/{id}.json"
         );

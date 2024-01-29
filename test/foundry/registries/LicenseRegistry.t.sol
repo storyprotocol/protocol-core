@@ -4,8 +4,8 @@ pragma solidity ^0.8.13;
 import { Test } from "forge-std/Test.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
-import { MockLicensingFramework, MockLicensingFrameworkConfig, MockPolicy }
-    from "test/foundry/mocks/licensing/MockLicensingFramework.sol";
+import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy }
+    from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
@@ -18,7 +18,7 @@ contract LicenseRegistryTest is Test {
     LicenseRegistry public registry;
     Licensing.PolicyFramework public framework;
 
-    MockLicensingFramework public module1;
+    MockPolicyFrameworkManager public module1;
 
     string public licenseUrl = "https://example.com/license";
     address public ipId1 = address(0x111);
@@ -27,7 +27,7 @@ contract LicenseRegistryTest is Test {
 
     function setUp() public {
         registry = new LicenseRegistry();
-        module1 = new MockLicensingFramework(MockLicensingFrameworkConfig({
+        module1 = new MockPolicyFrameworkManager(MockPolicyFrameworkConfig({
             licenseRegistry: address(registry),
             licenseUrl: licenseUrl,
             supportVerifyLink: true,
@@ -63,7 +63,7 @@ contract LicenseRegistryTest is Test {
         assertEq(registry.totalFrameworks(), 1, "totalFrameworks not incremented");
         Licensing.PolicyFramework memory storedFw = registry.framework(fwId);
         assertEq(storedFw.licenseUrl, licenseUrl, "licenseUrl not equal");
-        assertEq(storedFw.licensingFramework, address(module1), "licensingFramework not equal");
+        assertEq(storedFw.policyFramework, address(module1), "policyFramework not equal");
     }
 
     function test_LicenseRegistry_addPolicy() public {

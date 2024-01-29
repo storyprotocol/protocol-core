@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 
 // contracts
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
-import { ILicensingFramework } from "contracts/interfaces/licensing/ILicensingFramework.sol";
+import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { Errors } from "contracts/lib/Errors.sol";
@@ -14,7 +14,7 @@ import { LicenseRegistryAware } from "contracts/modules/licensing/LicenseRegistr
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-abstract contract BaseLicensingFramework is IParamVerifier, ILicensingFramework, ERC165, LicenseRegistryAware {
+abstract contract BasePolicyFrameworkManager is IParamVerifier, IPolicyFrameworkManager, ERC165, LicenseRegistryAware {
     string public licenseUrl;
 
     uint256 public frameworkId;
@@ -27,7 +27,7 @@ abstract contract BaseLicensingFramework is IParamVerifier, ILicensingFramework,
 
     function register() external returns (uint256) {
         Licensing.PolicyFramework memory framework = Licensing.PolicyFramework({
-            licensingFramework: address(this),
+            policyFramework: address(this),
             licenseUrl: licenseUrl
         });
         frameworkId = LICENSE_REGISTRY.addPolicyFramework(framework);
@@ -35,7 +35,7 @@ abstract contract BaseLicensingFramework is IParamVerifier, ILicensingFramework,
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, ERC165) returns (bool) {
-        return interfaceId == type(ILicensingFramework).interfaceId || super.supportsInterface(interfaceId);
+        return interfaceId == type(IPolicyFrameworkManager).interfaceId || super.supportsInterface(interfaceId);
     }
 
     function licenseRegistry() external view virtual override returns (address) {

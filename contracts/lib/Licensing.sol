@@ -12,7 +12,7 @@ library Licensing {
     /// To be valid in Story Protocol, the parameters described in the text must express default values
     /// corresponding to those of each Parameter struct
     struct PolicyFramework {
-        address licensingFramework;
+        address policyFramework;
         /// @notice URL to the file containing the legal text for the license agreement
         string licenseUrl;
     }

@@ -17,14 +17,14 @@ import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.so
 import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
-import { LicensingFrameworkUML, UMLv1Policy } from "contracts/modules/licensing/LicensingFrameworkUML.sol";
+import { UMLPolicyFrameworkManager, UMLv1Policy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { MockModule } from "test/foundry/mocks/MockModule.sol";
-import { MockLicensingFramework, MockLicensingFrameworkConfig, MockPolicy } from "test/foundry/mocks/licensing/MockLicensingFramework.sol";
-import { MintPaymentLicensingFramework, MintPaymentPolicy } from "test/foundry/mocks/licensing/MintPaymentLicensingFramework.sol";
+import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy } from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
+import { MintPaymentPolicyFrameworkManager, MintPaymentPolicy } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
 import { Users, UsersLib } from "test/foundry/utils/Users.sol";
 
 struct MockERC721s {
@@ -218,17 +218,17 @@ contract IntegrationTest is Test {
                             CREATE LICENSE FRAMEWORKS
         ////////////////////////////////////////////////////////////////*/
 
-        MockLicensingFramework mock_lf_AllTrue = new MockLicensingFramework(
-            MockLicensingFrameworkConfig({
+        MockPolicyFrameworkManager mock_lf_AllTrue = new MockPolicyFrameworkManager(
+            MockPolicyFrameworkConfig({
                 licenseRegistry: address(licenseRegistry),
-                licenseUrl: "https://MockLicensingFramework.com/{id}.json",
+                licenseUrl: "https://MockPolicyFrameworkManager.com/{id}.json",
                 supportVerifyLink: true,
                 supportVerifyMint: true,
                 supportVerifyTransfer: true
             })
         );
 
-        MintPaymentLicensingFramework mock_lf_MintPayment = new MintPaymentLicensingFramework(
+        MintPaymentPolicyFrameworkManager mock_lf_MintPayment = new MintPaymentPolicyFrameworkManager(
             address(licenseRegistry),
             "https://expensive-minting-license.com/{id}.json",
             address(mockToken),

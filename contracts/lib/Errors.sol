@@ -74,7 +74,7 @@ library Errors {
     error LicenseRegistry__PolicyAlreadySetForIpId();
     error LicenseRegistry__FrameworkNotFound();
     error LicenseRegistry__EmptyLicenseUrl();
-    error LicenseRegistry__ZeroLicensingFramework();
+    error LicenseRegistry__ZeroPolicyFramework();
     error LicenseRegistry__PolicyAlreadyAdded();
     error LicenseRegistry__ParamVerifierLengthMismatch();
     error LicenseRegistry__PolicyNotFound();
@@ -97,18 +97,18 @@ library Errors {
     error LicenseRegistryAware__CallerNotLicenseRegistry();
 
     ////////////////////////////////////////////////////////////////////////////
-    //                         LicensingFrameworkUML                             //
+    //                         UMLPolicyFrameworkManager                             //
     ////////////////////////////////////////////////////////////////////////////
 
-    error LicensingFrameworkUML_CommecialDisabled_CantAddAttribution();
-    error LicensingFrameworkUML_CommecialDisabled_CantAddCommercializers();
-    error LicensingFrameworkUML_CommecialDisabled_CantAddRevShare();
-    error LicensingFrameworkUML_CommecialDisabled_CantAddDerivRevShare();
-    error LicensingFrameworkUML_DerivativesDisabled_CantAddAttribution();
-    error LicensingFrameworkUML_DerivativesDisabled_CantAddApproval();
-    error LicensingFrameworkUML_DerivativesDisabled_CantAddReciprocal();
-    error LicensingFrameworkUML_DerivativesDisabled_CantAddRevShare();
-    error LicensingFrameworkUML_FrameworkNotYetRegistered();
+    error UMLPolicyFrameworkManager_CommecialDisabled_CantAddAttribution();
+    error UMLPolicyFrameworkManager_CommecialDisabled_CantAddCommercializers();
+    error UMLPolicyFrameworkManager_CommecialDisabled_CantAddRevShare();
+    error UMLPolicyFrameworkManager_CommecialDisabled_CantAddDerivRevShare();
+    error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddAttribution();
+    error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddApproval();
+    error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddReciprocal();
+    error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddRevShare();
+    error UMLPolicyFrameworkManager_FrameworkNotYetRegistered();
     
     ////////////////////////////////////////////////////////////////////////////
     //                     LicensorApprovalManager                            //

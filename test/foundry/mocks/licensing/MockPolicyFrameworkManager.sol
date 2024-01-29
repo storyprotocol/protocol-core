@@ -10,10 +10,10 @@ import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.so
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
-import { BaseLicensingFramework } from "contracts/modules/licensing/BaseLicensingFramework.sol";
+import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 
-struct MockLicensingFrameworkConfig {
+struct MockPolicyFrameworkConfig {
     address licenseRegistry;
     string licenseUrl;
     bool supportVerifyLink;
@@ -27,25 +27,25 @@ struct MockPolicy {
     bool returnVerifyTransfer;
 }
 
-contract MockLicensingFramework is
-    BaseLicensingFramework,
+contract MockPolicyFrameworkManager is
+    BasePolicyFrameworkManager,
     ILinkParamVerifier,
     IMintParamVerifier,
     ITransferParamVerifier
 {
-    MockLicensingFrameworkConfig internal config;
+    MockPolicyFrameworkConfig internal config;
 
     event MockPolicyAdded(uint256 indexed policyId, MockPolicy policy);
 
     constructor(
-        MockLicensingFrameworkConfig memory conf
-    ) BaseLicensingFramework(conf.licenseRegistry, conf.licenseUrl) {
+        MockPolicyFrameworkConfig memory conf
+    ) BasePolicyFrameworkManager(conf.licenseRegistry, conf.licenseUrl) {
         config = conf;
     }
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(IERC165, BaseLicensingFramework) returns (bool) {
+    ) public view virtual override(IERC165, BasePolicyFrameworkManager) returns (bool) {
         if (interfaceId == type(IParamVerifier).interfaceId) return true;
         if (interfaceId == type(ILinkParamVerifier).interfaceId) return config.supportVerifyLink;
         if (interfaceId == type(IMintParamVerifier).interfaceId) return config.supportVerifyMint;
@@ -55,7 +55,7 @@ contract MockLicensingFramework is
 
     function addPolicy(MockPolicy calldata mockPolicy) external returns (uint256 policyId) {
         if (frameworkId == 0) {
-            revert Errors.LicensingFrameworkUML_FrameworkNotYetRegistered();
+            revert Errors.UMLPolicyFrameworkManager_FrameworkNotYetRegistered();
         }
 
         // can verify mockPolicy if needed
@@ -99,6 +99,6 @@ contract MockLicensingFramework is
     }
 
     function policyToJson(bytes memory policyData) public pure returns (string memory) {
-        return "MockLicensingFramework";
+        return "MockPolicyFrameworkManager";
     }
 }

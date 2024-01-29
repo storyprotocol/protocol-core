@@ -11,7 +11,7 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
-import { BaseLicensingFramework } from "contracts/modules/licensing/BaseLicensingFramework.sol";
+import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 import { LicensorApprovalManager } from "contracts/modules/licensing/parameter-helpers/LicensorApprovalManager.sol";
 
 // external
@@ -33,8 +33,8 @@ struct UMLv1Policy {
     string[] distributionChannels;
 }
 
-contract LicensingFrameworkUML is
-    BaseLicensingFramework,
+contract UMLPolicyFrameworkManager is
+    BasePolicyFrameworkManager,
     ILinkParamVerifier,
     IMintParamVerifier,
     ITransferParamVerifier,
@@ -42,7 +42,7 @@ contract LicensingFrameworkUML is
 {
     event UMLv1PolicyAdded(uint256 indexed policyId, UMLv1Policy policy);
 
-    constructor(address licRegistry, string memory licenseUrl) BaseLicensingFramework(licRegistry, licenseUrl) {}
+    constructor(address licRegistry, string memory licenseUrl) BasePolicyFrameworkManager(licRegistry, licenseUrl) {}
 
     function licenseRegistry() external view override returns (address) {
         return address(LICENSE_REGISTRY);
@@ -50,7 +50,7 @@ contract LicensingFrameworkUML is
 
     function addPolicy(UMLv1Policy calldata umlPolicy) external returns (uint256 policyId) {
         if (frameworkId == 0) {
-            revert Errors.LicensingFrameworkUML_FrameworkNotYetRegistered();
+            revert Errors.UMLPolicyFrameworkManager_FrameworkNotYetRegistered();
         }
         _verifyComercialUse(umlPolicy);
         _verifyDerivatives(umlPolicy);
@@ -76,7 +76,7 @@ contract LicensingFrameworkUML is
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(BaseLicensingFramework, IERC165) returns (bool) {
+    ) public view virtual override(BasePolicyFrameworkManager, IERC165) returns (bool) {
         return
             super.supportsInterface(interfaceId) ||
             interfaceId == type(ILinkParamVerifier).interfaceId ||
@@ -139,16 +139,16 @@ contract LicensingFrameworkUML is
     function _verifyComercialUse(UMLv1Policy calldata policy) internal view {
         if (!policy.commercialUse) {
             if (policy.commercialAttribution) {
-                revert Errors.LicensingFrameworkUML_CommecialDisabled_CantAddAttribution();
+                revert Errors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddAttribution();
             }
             if (policy.commercializers.length > 0) {
-                revert Errors.LicensingFrameworkUML_CommecialDisabled_CantAddCommercializers();
+                revert Errors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddCommercializers();
             }
             if (policy.commercialRevShare > 0) {
-                revert Errors.LicensingFrameworkUML_CommecialDisabled_CantAddRevShare();
+                revert Errors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddRevShare();
             }
             if (policy.derivativesRevShare > 0) {
-                revert Errors.LicensingFrameworkUML_CommecialDisabled_CantAddDerivRevShare();
+                revert Errors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddDerivRevShare();
             }
         }
     }
@@ -156,16 +156,16 @@ contract LicensingFrameworkUML is
     function _verifyDerivatives(UMLv1Policy calldata policy) internal pure {
         if (!policy.derivativesAllowed) {
             if (policy.derivativesAttribution) {
-                revert Errors.LicensingFrameworkUML_DerivativesDisabled_CantAddAttribution();
+                revert Errors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddAttribution();
             }
             if (policy.derivativesApproval) {
-                revert Errors.LicensingFrameworkUML_DerivativesDisabled_CantAddApproval();
+                revert Errors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddApproval();
             }
             if (policy.derivativesReciprocal) {
-                revert Errors.LicensingFrameworkUML_DerivativesDisabled_CantAddReciprocal();
+                revert Errors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddReciprocal();
             }
             if (policy.derivativesRevShare > 0) {
-                revert Errors.LicensingFrameworkUML_DerivativesDisabled_CantAddRevShare();
+                revert Errors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddRevShare();
             }
         }
     }

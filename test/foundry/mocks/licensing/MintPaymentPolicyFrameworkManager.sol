@@ -12,14 +12,14 @@ import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransfer
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
-import { BaseLicensingFramework } from "contracts/modules/licensing/BaseLicensingFramework.sol";
+import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 
 struct MintPaymentPolicy {
     bool mustBeTrue;
 }
 
-contract MintPaymentLicensingFramework is BaseLicensingFramework, IMintParamVerifier {
+contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintParamVerifier {
     IERC20 public token;
     uint256 public payment;
 
@@ -30,14 +30,14 @@ contract MintPaymentLicensingFramework is BaseLicensingFramework, IMintParamVeri
         string memory licenseUrl,
         address _token,
         uint256 _payment
-    ) BaseLicensingFramework(licenseRegistry, licenseUrl) {
+    ) BasePolicyFrameworkManager(licenseRegistry, licenseUrl) {
         token = IERC20(_token);
         payment = _payment;
     }
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(IERC165, BaseLicensingFramework) returns (bool) {
+    ) public view virtual override(IERC165, BasePolicyFrameworkManager) returns (bool) {
         // support only mint param verifier
         return
             interfaceId == type(IParamVerifier).interfaceId ||
@@ -47,10 +47,10 @@ contract MintPaymentLicensingFramework is BaseLicensingFramework, IMintParamVeri
 
     function addPolicy(MintPaymentPolicy calldata mmpol) external returns (uint256 policyId) {
         if (frameworkId == 0) {
-            revert Errors.LicensingFrameworkUML_FrameworkNotYetRegistered();
+            revert Errors.UMLPolicyFrameworkManager_FrameworkNotYetRegistered();
         }
 
-        require(mmpol.mustBeTrue, "MintPaymentLicensingFramework: mustBeTrue");
+        require(mmpol.mustBeTrue, "MintPaymentPolicyFrameworkManager: mustBeTrue");
 
         Licensing.Policy memory protocolPolicy = Licensing.Policy({
             frameworkId: frameworkId,
@@ -78,6 +78,6 @@ contract MintPaymentLicensingFramework is BaseLicensingFramework, IMintParamVeri
     }
 
     function policyToJson(bytes memory policyData) public view returns (string memory) {
-        return "MintPaymentLicensingFramework";
+        return "MintPaymentPolicyFrameworkManager";
     }
 }

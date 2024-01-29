@@ -21,8 +21,8 @@ import { IIPRecordRegistry } from "contracts/interfaces/registries/IIPRecordRegi
 import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
-import { MockLicensingFramework, MockLicensingFrameworkConfig, MockPolicy }
-    from "test/foundry/mocks/licensing/MockLicensingFramework.sol";
+import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy }
+    from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { Errors } from "contracts/lib/Errors.sol";
@@ -210,8 +210,8 @@ contract RegistrationModuleTest is ModuleBaseTest {
     }
 
     function _initLicensing() private {
-        MockLicensingFramework licensingFramework = new MockLicensingFramework(
-            MockLicensingFrameworkConfig({
+        MockPolicyFrameworkManager policyFramework = new MockPolicyFrameworkManager(
+            MockPolicyFrameworkConfig({
                 licenseRegistry: address(licenseRegistry),
                 licenseUrl: "https://example.com",
                 supportVerifyLink: true,
@@ -220,7 +220,7 @@ contract RegistrationModuleTest is ModuleBaseTest {
             })
         );
 
-        licensingFramework.register();
+        policyFramework.register();
 
         Licensing.Policy memory policy = Licensing.Policy({
             frameworkId: 1,
@@ -232,7 +232,7 @@ contract RegistrationModuleTest is ModuleBaseTest {
                 })
             )
         });
-        vm.prank(address(licensingFramework));
+        vm.prank(address(policyFramework));
         (uint256 polId) = licenseRegistry.addPolicy(policy);
         policyId = polId;
     }

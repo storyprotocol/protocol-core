@@ -17,7 +17,7 @@ import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransfer
 import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
-import { ILicensingFramework } from "contracts/interfaces/licensing/ILicensingFramework.sol";
+import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 
 
 // TODO: consider disabling operators/approvals on creation
@@ -77,8 +77,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         if (bytes(fwCreation.licenseUrl).length == 0 || fwCreation.licenseUrl.equal("")) {
             revert Errors.LicenseRegistry__EmptyLicenseUrl();
         }
-        if (fwCreation.licensingFramework == address(0)) {
-            revert Errors.LicenseRegistry__ZeroLicensingFramework();
+        if (fwCreation.policyFramework == address(0)) {
+            revert Errors.LicenseRegistry__ZeroPolicyFramework();
         }
         // Todo: check duplications
 
@@ -96,7 +96,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
     function _framework(uint256 frameworkId) internal view returns (Licensing.PolicyFramework storage fw) {
         fw = _frameworks[frameworkId];
-        if (fw.licensingFramework == address(0)) {
+        if (fw.policyFramework == address(0)) {
             revert Errors.LicenseRegistry__FrameworkNotFound();
         }
         return fw;
@@ -150,13 +150,13 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     }
 
     /// Adds a particular configuration of license terms to the protocol.
-    /// Must be called by a LicensingFramework, which is responsible for verifying the parameters 
+    /// Must be called by a PolicyFramework, which is responsible for verifying the parameters 
     /// are valid and the configuration makes sense.
     /// @param pol policy data
     /// @return policyId if policy data was in the contract, policyId is reused, if it's new, id will be new.
     function addPolicy(Licensing.Policy memory pol) public returns (uint256 policyId) {
-        address licensingFramework = _framework(pol.frameworkId).licensingFramework;
-        if (msg.sender != licensingFramework) {
+        address policyFramework = _framework(pol.frameworkId).policyFramework;
+        if (msg.sender != policyFramework) {
             revert Errors.LicenseRegistry__UnregisteredFrameworkAddingPolicy();
         }
         (uint256 polId, bool newPol) = _addIdOrGetExisting(abi.encode(pol), _hashedPolicies, _totalPolicies);
@@ -279,8 +279,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         Licensing.PolicyFramework storage fw = _framework(pol.frameworkId);
         bool inheritedPolicy = _policySetups[licensorIp][policyId].inheritedPolicy;
 
-        if (ERC165Checker.supportsInterface(fw.licensingFramework, type(IMintParamVerifier).interfaceId)) {
-            if(!IMintParamVerifier(fw.licensingFramework).verifyMint(
+        if (ERC165Checker.supportsInterface(fw.policyFramework, type(IMintParamVerifier).interfaceId)) {
+            if(!IMintParamVerifier(fw.policyFramework).verifyMint(
                 msg.sender,
                 inheritedPolicy,
                 licensorIp,
@@ -343,8 +343,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         Licensing.Policy memory pol = policy(licenseData.policyId);
         Licensing.PolicyFramework storage fw = _framework(pol.frameworkId);
 
-        if (ERC165Checker.supportsInterface(fw.licensingFramework, type(ILinkParamVerifier).interfaceId)) {
-            if(!ILinkParamVerifier(fw.licensingFramework).verifyLink(
+        if (ERC165Checker.supportsInterface(fw.policyFramework, type(ILinkParamVerifier).interfaceId)) {
+            if(!ILinkParamVerifier(fw.policyFramework).verifyLink(
                 licenseId,
                 msg.sender,
                 childIpId,
@@ -401,11 +401,11 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
                 if (
                     ERC165Checker.supportsInterface(
-                        fw.licensingFramework,
+                        fw.policyFramework,
                         type(ITransferParamVerifier).interfaceId
                     )
                 ) {
-                    if(!ITransferParamVerifier(fw.licensingFramework).verifyTransfer(
+                    if(!ITransferParamVerifier(fw.policyFramework).verifyTransfer(
                         ids[i],
                         from,
                         to,
@@ -424,6 +424,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         Licensing.License memory licenseData = _licenses[id];
         Licensing.Policy memory pol = policy(licenseData.policyId);
         Licensing.PolicyFramework storage fw = _framework(pol.frameworkId);
-        return ILicensingFramework(fw.licensingFramework).policyToJson(pol.data);
+        return IPolicyFrameworkManager(fw.policyFramework).policyToJson(pol.data);
     }
 }
