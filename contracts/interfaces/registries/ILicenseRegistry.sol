@@ -4,10 +4,10 @@ pragma solidity ^0.8.23;
 import { Licensing } from "contracts/lib/Licensing.sol";
 
 interface ILicenseRegistry {
-    event LicenseFrameworkCreated(
+    event PolicyFrameworkCreated(
         address indexed creator,
         uint256 indexed frameworkId,
-        Licensing.Framework framework
+        Licensing.PolicyFramework framework
     );
 
     event PolicyCreated(address indexed creator, uint256 indexed policyId, Licensing.Policy policy);
@@ -30,7 +30,7 @@ interface ILicenseRegistry {
 
     event IpIdLinkedToParent(address indexed caller, address indexed ipId, address indexed parentIpId);
 
-    function addLicenseFramework(Licensing.Framework calldata fw) external returns (uint256 frameworkId);
+    function addPolicyFramework(Licensing.PolicyFramework calldata fw) external returns (uint256 frameworkId);
 
     function addPolicyToIp(address ipId, uint256 polId) external returns (uint256 indexOnIpId);
 
@@ -51,7 +51,7 @@ interface ILicenseRegistry {
 
     function totalFrameworks() external view returns (uint256);
 
-    function framework(uint256 frameworkId) external view returns (Licensing.Framework memory);
+    function framework(uint256 frameworkId) external view returns (Licensing.PolicyFramework memory);
     function frameworkUrl(uint256 frameworkId) external view returns (string memory);
 
     function totalPolicies() external view returns (uint256);

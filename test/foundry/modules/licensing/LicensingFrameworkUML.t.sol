@@ -14,7 +14,7 @@ import "forge-std/console2.sol";
 contract LicensingFrameworkUMLTest is Test {
 
     LicenseRegistry public registry;
-    Licensing.Framework public framework;
+    Licensing.PolicyFramework public framework;
 
     LicensingFrameworkUML public umlFramework;
     uint256 public frameworkId;

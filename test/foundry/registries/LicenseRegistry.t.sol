@@ -16,7 +16,7 @@ contract LicenseRegistryTest is Test {
     using ShortStrings for *;
 
     LicenseRegistry public registry;
-    Licensing.Framework public framework;
+    Licensing.PolicyFramework public framework;
 
     MockLicensingFramework public module1;
 
@@ -61,7 +61,7 @@ contract LicenseRegistryTest is Test {
         assertEq(fwId, 1, "not incrementing fw id");
         assertTrue(licenseUrl.equal(registry.frameworkUrl(fwId)), "licenseUrl not set");
         assertEq(registry.totalFrameworks(), 1, "totalFrameworks not incremented");
-        Licensing.Framework memory storedFw = registry.framework(fwId);
+        Licensing.PolicyFramework memory storedFw = registry.framework(fwId);
         assertEq(storedFw.licenseUrl, licenseUrl, "licenseUrl not equal");
         assertEq(storedFw.licensingFramework, address(module1), "licensingFramework not equal");
     }

@@ -35,7 +35,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         bool inheritedPolicy;
     }
 
-    mapping(uint256 => Licensing.Framework) private _frameworks;
+    mapping(uint256 => Licensing.PolicyFramework) private _frameworks;
     uint256 private _totalFrameworks;
 
     mapping(bytes32 => uint256) private _hashedPolicies;
@@ -70,8 +70,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// Must be called by protocol admin
     /// @param fwCreation framework parameters
     /// @return frameworkId identifier for framework, starting in 1
-    function addLicenseFramework(
-        Licensing.Framework calldata fwCreation
+    function addPolicyFramework(
+        Licensing.PolicyFramework calldata fwCreation
     ) external returns (uint256 frameworkId) {
         // TODO: check protocol auth
         if (bytes(fwCreation.licenseUrl).length == 0 || fwCreation.licenseUrl.equal("")) {
@@ -85,7 +85,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         ++_totalFrameworks;
         _frameworks[_totalFrameworks] = fwCreation;
 
-        emit LicenseFrameworkCreated(msg.sender, _totalFrameworks, fwCreation);
+        emit PolicyFrameworkCreated(msg.sender, _totalFrameworks, fwCreation);
         return _totalFrameworks;
     }
 
@@ -94,7 +94,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return _totalFrameworks;
     }
 
-    function _framework(uint256 frameworkId) internal view returns (Licensing.Framework storage fw) {
+    function _framework(uint256 frameworkId) internal view returns (Licensing.PolicyFramework storage fw) {
         fw = _frameworks[frameworkId];
         if (fw.licensingFramework == address(0)) {
             revert Errors.LicenseRegistry__FrameworkNotFound();
@@ -102,7 +102,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return fw;
     }
 
-    function framework(uint256 frameworkId) external view returns (Licensing.Framework memory) {
+    function framework(uint256 frameworkId) external view returns (Licensing.PolicyFramework memory) {
         return _framework(frameworkId);
     }
 
@@ -276,7 +276,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         }
         // Verify minting param
         Licensing.Policy memory pol = policy(policyId);
-        Licensing.Framework storage fw = _framework(pol.frameworkId);
+        Licensing.PolicyFramework storage fw = _framework(pol.frameworkId);
         bool inheritedPolicy = _policySetups[licensorIp][policyId].inheritedPolicy;
 
         if (ERC165Checker.supportsInterface(fw.licensingFramework, type(IMintParamVerifier).interfaceId)) {
@@ -341,7 +341,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
         // Verify linking params
         Licensing.Policy memory pol = policy(licenseData.policyId);
-        Licensing.Framework storage fw = _framework(pol.frameworkId);
+        Licensing.PolicyFramework storage fw = _framework(pol.frameworkId);
 
         if (ERC165Checker.supportsInterface(fw.licensingFramework, type(ILinkParamVerifier).interfaceId)) {
             if(!ILinkParamVerifier(fw.licensingFramework).verifyLink(
@@ -397,7 +397,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
             for (uint256 i = 0; i < ids.length; i++) {
                 // Verify transfer params
                 Licensing.Policy memory pol = policy(_licenses[ids[i]].policyId);
-                Licensing.Framework storage fw = _framework(pol.frameworkId);
+                Licensing.PolicyFramework storage fw = _framework(pol.frameworkId);
 
                 if (
                     ERC165Checker.supportsInterface(
@@ -423,7 +423,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     function uri(uint256 id) public view virtual override returns (string memory) {
         Licensing.License memory licenseData = _licenses[id];
         Licensing.Policy memory pol = policy(licenseData.policyId);
-        Licensing.Framework storage fw = _framework(pol.frameworkId);
+        Licensing.PolicyFramework storage fw = _framework(pol.frameworkId);
         return ILicensingFramework(fw.licensingFramework).policyToJson(pol.data);
     }
 }

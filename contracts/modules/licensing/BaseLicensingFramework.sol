@@ -26,11 +26,11 @@ abstract contract BaseLicensingFramework is IParamVerifier, ILicensingFramework,
     }
 
     function register() external returns (uint256) {
-        Licensing.Framework memory framework = Licensing.Framework({
+        Licensing.PolicyFramework memory framework = Licensing.PolicyFramework({
             licensingFramework: address(this),
             licenseUrl: licenseUrl
         });
-        frameworkId = LICENSE_REGISTRY.addLicenseFramework(framework);
+        frameworkId = LICENSE_REGISTRY.addPolicyFramework(framework);
         return frameworkId;
     }
 
