@@ -81,7 +81,7 @@ contract RegistrationModuleTest is ModuleBaseTest {
         );
         moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(resolver));
-        MockERC721 erc721 = new MockERC721();
+        MockERC721 erc721 = new MockERC721("Mock");
         tokenAddress = address(erc721);
         tokenId = erc721.mintId(alice, 99);
         tokenId2 = erc721.mintId(bob, 100);

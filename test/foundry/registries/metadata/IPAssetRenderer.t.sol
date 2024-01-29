@@ -86,7 +86,7 @@ contract IPAssetRendererTest is BaseTest {
         licenseRegistry = new LicenseRegistry("");
         accessController = new AccessController(address(governance));
         moduleRegistry = new ModuleRegistry(address(governance));
-        MockERC721 erc721 = new MockERC721();
+        MockERC721 erc721 = new MockERC721("MockERC721");
         ipAccountRegistry = new IPAccountRegistry(
             address(new ERC6551Registry()),
             address(accessController),
