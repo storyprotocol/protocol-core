@@ -139,12 +139,13 @@ contract AccessController is IAccessController, Governable {
 
         // If specific function permission is ABSTAIN, check module level permission
         if (getPermission(ipAccount_, signer_, to_, func_) == AccessPermission.ABSTAIN) {
+            uint8 modulePermission = getPermission(ipAccount_, signer_, to_, bytes4(0));
             // Return true if allow to call all functions of the module
-            if (getPermission(ipAccount_, signer_, to_, bytes4(0)) == AccessPermission.ALLOW) {
+            if (modulePermission == AccessPermission.ALLOW) {
                 return true;
             }
             // If module level permission is ABSTAIN, check transaction signer level permission
-            if (getPermission(ipAccount_, signer_, to_, bytes4(0)) == AccessPermission.ABSTAIN) {
+            if (modulePermission == AccessPermission.ABSTAIN) {
                 if (getPermission(address(0), signer_, to_, func_) == AccessPermission.ALLOW) {
                     return true;
                 }
