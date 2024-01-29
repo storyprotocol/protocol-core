@@ -32,7 +32,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         uint256 index;
         bool isSet;
         bool active;
-        bool setByLinking;
+        bool inheritedPolicy;
     }
 
     mapping(uint256 => Licensing.Framework) private _frameworks;
@@ -174,9 +174,9 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// Will revert if policy set already has policyId
     /// @param ipId the IP identifier
     /// @param policyId id of the policy data
-    /// @param setByLinking true if set in linkIpToParent, false otherwise
+    /// @param inheritedPolicy true if set in linkIpToParent, false otherwise
     /// @return index of the policy added to the set
-    function _addPolictyIdToIp(address ipId, uint256 policyId, bool setByLinking) internal returns (uint256 index) {
+    function _addPolictyIdToIp(address ipId, uint256 policyId, bool inheritedPolicy) internal returns (uint256 index) {
         EnumerableSet.UintSet storage _pols = _policiesPerIpId[ipId];
         if (!_pols.add(policyId)) {
             revert Errors.LicenseRegistry__PolicyAlreadySetForIpId();
@@ -192,8 +192,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         setup.index = index;
         setup.isSet = true;
         setup.active = true;
-        setup.setByLinking = setByLinking;
-        emit PolicyAddedToIpId(msg.sender, ipId, policyId, index, setByLinking);
+        setup.inheritedPolicy = inheritedPolicy;
+        emit PolicyAddedToIpId(msg.sender, ipId, policyId, index, inheritedPolicy);
         return index;
     }
 
@@ -242,8 +242,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return _policySetups[ipId][policyId].index;
     }
 
-    function isPolicySetByLinking(address ipId, uint256 policyId) external view returns (bool) {
-        return _policySetups[ipId][policyId].setByLinking;
+    function isPolicyInherited(address ipId, uint256 policyId) external view returns (bool) {
+        return _policySetups[ipId][policyId].inheritedPolicy;
     }
 
     /// Mints license NFTs representing a policy granted by a set of ipIds (licensors). This NFT needs to be burned
@@ -277,12 +277,12 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         // Verify minting param
         Licensing.Policy memory pol = policy(policyId);
         Licensing.Framework storage fw = _framework(pol.frameworkId);
-        bool setByLinking = _policySetups[licensorIp][policyId].setByLinking;
+        bool inheritedPolicy = _policySetups[licensorIp][policyId].inheritedPolicy;
 
         if (ERC165Checker.supportsInterface(fw.licensingFramework, type(IMintParamVerifier).interfaceId)) {
             if(!IMintParamVerifier(fw.licensingFramework).verifyMint(
                 msg.sender,
-                setByLinking,
+                inheritedPolicy,
                 licensorIp,
                 receiver,
                 amount,

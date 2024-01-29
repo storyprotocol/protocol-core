@@ -17,7 +17,7 @@ interface ILicenseRegistry {
         address indexed ipId,
         uint256 indexed policyId,
         uint256 index,
-        bool setByLinking
+        bool inheritedPolicy
     );
 
     event LicenseMinted(
@@ -72,7 +72,7 @@ interface ILicenseRegistry {
 
     function indexOfPolicyForIp(address ipId, uint256 policyId) external view returns (uint256 index);
     
-    function isPolicySetByLinking(address ipId, uint256 policyId) external view returns (bool);
+    function isPolicyInherited(address ipId, uint256 policyId) external view returns (bool);
 
     function isLicensee(uint256 licenseId, address holder) external view returns (bool);
 
