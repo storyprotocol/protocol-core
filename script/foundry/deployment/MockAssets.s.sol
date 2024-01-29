@@ -6,9 +6,6 @@ pragma solidity ^0.8.23;
 import { console2 } from "forge-std/console2.sol";
 import { Script } from "forge-std/Script.sol";
 import { stdJson } from "forge-std/StdJson.sol";
-// test
-import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
-import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 // script
 import { BroadcastManager } from "script/foundry/utils/BroadcastManager.s.sol";
 import { JsonDeploymentHandler } from "script/foundry/utils/JsonDeploymentHandler.s.sol";
