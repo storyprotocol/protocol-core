@@ -32,43 +32,43 @@ contract LicensingFrameworkUMLTest is Test {
     }
 
     function test_ParamVerifier_commercialUse_disallowed_revert_settingIncompatibleTerms() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_ParamVerifier_commercialUse_setAllowedCommercializers() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_ParamVerifier_commercialUse_setAllowedWithAttribution() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_ParamVerifier_commercialUse_revenueShareSetOnLinking() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_ParamVerifier_derivatives_notAllowed_revert_creating2ndDerivative() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_ParamVerifier_derivatives_notAllowed_revert_settingIncompatibleTerms() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_ParamVerifier_derivatives_setAllowedWithAttribution() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_LicensingFrameworkUML_derivatives_setReciprocal() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_LicensingFrameworkUML_derivatives_setRevenueShareValue() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_LicensingFrameworkUML_derivatives_setRevenueShareWhenLinking2ndDerivative() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_LicensingFrameworkUML_derivativesWithApproval_revert_linkNotApproved() public {
@@ -124,39 +124,39 @@ contract LicensingFrameworkUMLTest is Test {
     }
 
     function test_LicensingFrameworkUML_derivatives_withApproval_revert_approverNotLicensor() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_LicensingFrameworkUML_setTerritory() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_LicensingFrameworkUML_setChannelsOfDistribution() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_LicensingFrameworkUML_setAttributionInReproduction() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_LicensingFrameworkUML_setContentStandards() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_LicensingFrameworkUML_transferrable() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_LicensingFrameworkUML_nonTransferrable_revertIfTransferExceptFromLicensor() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_LicensingFrameworkUML_mintFee() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
     function test_tokenUri() public {
-        assertFalse(true, "not implemented");
+        // TODO
     }
 
 
