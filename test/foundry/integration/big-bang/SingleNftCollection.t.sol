@@ -60,24 +60,40 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         licenseRegistry.addPolicyToIp(ipAcct[3], policyIds["noncom_deriv_mint_payment"]);
 
         /*///////////////////////////////////////////////////////////////
-                            MINT LICENSES ON POLICIES
+                                MINT & USE LICENSES
         ////////////////////////////////////////////////////////////////*/
 
-        // Carl mints 1 license for policy "com_deriv_all_true" on alice's NFT 1 IPAccount
-        vm.startPrank(u.carl);
-        uint256 carl_license_from_alice = licenseRegistry.mintLicense(
-            policyIds["com_deriv_all_true"],
-            ipAcct[1],
-            1,
-            u.carl
-        );
+        // Carl mints 1 license for policy "com_deriv_all_true" on Alice's NFT 1 IPAccount
+        // Carl activates the license on his NFT 6 IPAccount, linking as child to Alice's NFT 1 IPAccount
+        {
+            vm.startPrank(u.carl);
+            uint256 carl_license_from_root_alice = licenseRegistry.mintLicense(
+                policyIds["com_deriv_all_true"],
+                ipAcct[1],
+                1,
+                u.carl
+            );
 
-        /*///////////////////////////////////////////////////////////////
-                    LINK IPACCOUNTS TO PARENTS USING LICENSES
-        ////////////////////////////////////////////////////////////////*/
+            linkIpToParent(carl_license_from_root_alice, ipAcct[6], u.carl);
+        }
 
-        // Carl activates above license on his NFT 6 IPAccount, linking as child to Alice's NFT 1 IPAccount
+        // Alice mints 2 license for policy "noncom_deriv_mint_payment" on Bob's NFT 3 IPAccount
+        // Alice activates one of the two licenses on her NFT 2 IPAccount, linking as child to Bob's NFT 3 IPAccount
+        // NOTE: since this policy has `MintPaymentVerifier` attached, Alice must pay the mint payment
+        {
+            vm.startPrank(u.alice);
+            uint256 mintAmount = 2;
 
-        linkIpToParent(carl_license_from_alice, ipAcct[6], u.carl);
+            erc20.approve(address(verifier.mintPayment), mintAmount * verifier.mintPayment.payment());
+
+            uint256 alice_license_from_root_bob = licenseRegistry.mintLicense(
+                policyIds["noncom_deriv_mint_payment"],
+                ipAcct[3],
+                2,
+                u.alice
+            );
+
+            linkIpToParent(alice_license_from_root_bob, ipAcct[2], u.alice);
+        }
     }
 }

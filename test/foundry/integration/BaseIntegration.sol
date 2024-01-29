@@ -106,6 +106,7 @@ contract BaseIntegration is Test {
         _deployContracts();
         _configDeployedContracts();
         _deployMockAssets();
+        _mintMockAssets();
         _deployMockVerifiers();
     }
 
@@ -171,6 +172,13 @@ contract BaseIntegration is Test {
     function _deployMockAssets() internal {
         erc20 = new MockERC20();
         erc721 = MockERC721s({ ape: new MockERC721("Ape"), cat: new MockERC721("Cat"), dog: new MockERC721("Dog") });
+    }
+
+    function _mintMockAssets() internal {
+        erc20.mint(u.alice, 1000 * 10 ** erc20.decimals());
+        erc20.mint(u.bob, 1000 * 10 ** erc20.decimals());
+        erc20.mint(u.carl, 1000 * 10 ** erc20.decimals());
+        // skip minting NFTs
     }
 
     function _deployMockVerifiers() internal {
@@ -288,6 +296,7 @@ contract BaseIntegration is Test {
         });
 
         // TODO: fix msg.sender being different from the prank caller of this function
+        //       (since it's another contract calling into this function)
         // vm.expectEmit();
         // emit IRegistrationModule.RootIPRegistered({ caller: address(msg.sender), ipId: expectedAddr, policyId: 0 });
 
