@@ -17,6 +17,7 @@ import { LicensorApprovalManager } from "contracts/modules/licensing/parameter-h
 // external
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
+import "forge-std/console2.sol";
 
 struct UMLv1Policy {
     bool attribution;
@@ -60,11 +61,11 @@ contract LicensingFrameworkUML is
             frameworkId: frameworkId,
             data: abi.encode(umlPolicy)
         });
-        return LICENSE_REGISTRY.addPolicy(protocolPolicy);
         emit UMLv1PolicyAdded(policyId, umlPolicy);
+        return LICENSE_REGISTRY.addPolicy(protocolPolicy);
     }
 
-    function policyToUmlPolicy(uint256 policyId) public view returns (UMLv1Policy memory policy) {
+    function getPolicy(uint256 policyId) public view returns (UMLv1Policy memory policy) {
         Licensing.Policy memory protocolPolicy = LICENSE_REGISTRY.policy(policyId);
         if(protocolPolicy.frameworkId != frameworkId) {
             revert Errors.LicenseRegistry__FrameworkNotFound();
@@ -133,7 +134,7 @@ contract LicensingFrameworkUML is
         return true;
     }
 
-    function _verifyComercialUse(UMLv1Policy calldata policy) internal pure {
+    function _verifyComercialUse(UMLv1Policy calldata policy) internal view {
         if (!policy.commercialUse) {
             if (policy.commercialAttribution) {
                 revert Errors.LicensingFrameworkUML_CommecialDisabled_CantAddAttribution();
