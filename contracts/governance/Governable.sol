@@ -7,6 +7,7 @@ import { IGovernance } from "contracts/interfaces/governance/IGovernance.sol";
 import { IGovernable } from "../interfaces/governance/IGovernable.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import { GovernanceLib } from "contracts/lib/GovernanceLib.sol";
+
 /// @title Governable
 /// @dev All contracts managed by governance should inherit from this contract.
 abstract contract Governable is IGovernable {
@@ -15,7 +16,7 @@ abstract contract Governable is IGovernable {
 
     /// @dev Ensures that the function is called by the protocol admin.
     modifier onlyProtocolAdmin() {
-        if(!IGovernance(governance).hasRole(GovernanceLib.PROTOCOL_ADMIN, msg.sender)) {
+        if (!IGovernance(governance).hasRole(GovernanceLib.PROTOCOL_ADMIN, msg.sender)) {
             revert Errors.Governance__OnlyProtocolAdmin();
         }
         _;

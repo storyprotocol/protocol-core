@@ -1,7 +1,7 @@
 build
 coverage
 out
-lib
+/lib
 assets
 node_modules
 .next

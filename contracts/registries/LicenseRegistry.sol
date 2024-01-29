@@ -439,7 +439,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         uint256[] memory ids,
         uint256[] memory values
     ) internal virtual override {
-        // We are interested in transfers, minting and burning are checked in mintLicense and linkIpToParent respectively.
+        // We are interested in transfers, minting and burning are checked in mintLicense and linkIpToParent
+        // respectively.
         if (from != address(0) && to != address(0)) {
             for (uint256 i = 0; i < ids.length; i++) {
                 // Verify transfer params

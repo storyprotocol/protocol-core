@@ -124,6 +124,7 @@ contract AccessController is IAccessController, Governable {
     /// @param to_ The recipient of the transaction.
     /// @param func_ The function selector.
     /// @return True if the function call is allowed, false otherwise.
+    // solhint-disable code-complexity
     function checkPermission(
         address ipAccount_,
         address signer_,
