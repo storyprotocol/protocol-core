@@ -11,8 +11,6 @@ import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransfer
 import { BaseLicensingFramework } from "contracts/modules/licensing/BaseLicensingFramework.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 
-import "forge-std/console2.sol";
-
 struct MockLicensingFrameworkConfig {
     address licenseRegistry;
     string licenseUrl;
@@ -41,17 +39,6 @@ contract MockLicensingFramework is
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, BaseLicensingFramework) returns (bool) {
-        console2.log("MockLicensingFramework.supportsInterface");
-        console2.logBytes4(interfaceId);
-        console2.log("IParamVerifier");
-        console2.logBytes4(type(IParamVerifier).interfaceId);
-        console2.log("ILinkParamVerifier");
-        console2.logBytes4(type(ILinkParamVerifier).interfaceId);
-        console2.log("IMintParamVerifier");
-        console2.logBytes4(type(IMintParamVerifier).interfaceId);
-        console2.log("ITransferParamVerifier");
-        console2.logBytes4(type(ITransferParamVerifier).interfaceId);
-
         if (interfaceId == type(IParamVerifier).interfaceId) return true;
         if (interfaceId == type(ILinkParamVerifier).interfaceId) return config.supportVerifyLink;
         if (interfaceId == type(IMintParamVerifier).interfaceId) return config.supportVerifyMint;

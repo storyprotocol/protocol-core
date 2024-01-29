@@ -19,7 +19,6 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { ILicensingFramework } from "contracts/interfaces/licensing/ILicensingFramework.sol";
 
-import "forge-std/console2.sol";
 
 // TODO: consider disabling operators/approvals on creation
 contract LicenseRegistry is ERC1155, ILicenseRegistry {
