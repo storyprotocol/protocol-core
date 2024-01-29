@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 
 // contracts
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
-import { ILicensingModule } from "contracts/interfaces/licensing/ILicensingModule.sol";
+import { ILicensingFramework } from "contracts/interfaces/licensing/ILicensingFramework.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { Errors } from "contracts/lib/Errors.sol";
@@ -14,7 +14,7 @@ import { LicenseRegistryAware } from "contracts/modules/licensing/LicenseRegistr
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-abstract contract BaseLicensingModule is IParamVerifier, ILicensingModule, ERC165, LicenseRegistryAware {
+abstract contract BaseLicensingFramework is IParamVerifier, ILicensingFramework, ERC165, LicenseRegistryAware {
 
     string public licenseUrl;
 
@@ -28,7 +28,7 @@ abstract contract BaseLicensingModule is IParamVerifier, ILicensingModule, ERC16
 
     function register() external returns(uint256) {
         Licensing.Framework memory framework = Licensing.Framework({
-            licensingModule: address(this),
+            licensingFramework: address(this),
             licenseUrl: licenseUrl
         });
         frameworkId = LICENSE_REGISTRY.addLicenseFramework(framework);
@@ -36,7 +36,7 @@ abstract contract BaseLicensingModule is IParamVerifier, ILicensingModule, ERC16
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, ERC165) returns (bool) {
-        return interfaceId == type(ILicensingModule).interfaceId || super.supportsInterface(interfaceId);
+        return interfaceId == type(ILicensingFramework).interfaceId || super.supportsInterface(interfaceId);
     }
 
     function licenseRegistry() virtual override external view returns (address) {

@@ -64,7 +64,7 @@ library Errors {
     error LicenseRegistry__PolicyAlreadySetForIpId();
     error LicenseRegistry__FrameworkNotFound();
     error LicenseRegistry__EmptyLicenseUrl();
-    error LicenseRegistry__ZeroLicensingModule();
+    error LicenseRegistry__ZeroLicensingFramework();
     error LicenseRegistry__PolicyAlreadyAdded();
     error LicenseRegistry__ParamVerifierLengthMismatch();
     error LicenseRegistry__PolicyNotFound();
@@ -87,18 +87,18 @@ library Errors {
     error LicenseRegistryAware__CallerNotLicenseRegistry();
 
     ////////////////////////////////////////////////////////////////////////////
-    //                         LicensingModuleUML                             //
+    //                         LicensingFrameworkUML                             //
     ////////////////////////////////////////////////////////////////////////////
 
-    error LicensingModuleUML_CommecialDisabled_CantAddAttribution();
-    error LicensingModuleUML_CommecialDisabled_CantAddCommercializers();
-    error LicensingModuleUML_CommecialDisabled_CantAddRevShare();
-    error LicensingModuleUML_CommecialDisabled_CantAddDerivRevShare();
-    error LicensingModuleUML_DerivativesDisabled_CantAddAttribution();
-    error LicensingModuleUML_DerivativesDisabled_CantAddApproval();
-    error LicensingModuleUML_DerivativesDisabled_CantAddReciprocal();
-    error LicensingModuleUML_DerivativesDisabled_CantAddRevShare();
-    error LicensingModuleUML_FrameworkNotYetRegistered();
+    error LicensingFrameworkUML_CommecialDisabled_CantAddAttribution();
+    error LicensingFrameworkUML_CommecialDisabled_CantAddCommercializers();
+    error LicensingFrameworkUML_CommecialDisabled_CantAddRevShare();
+    error LicensingFrameworkUML_CommecialDisabled_CantAddDerivRevShare();
+    error LicensingFrameworkUML_DerivativesDisabled_CantAddAttribution();
+    error LicensingFrameworkUML_DerivativesDisabled_CantAddApproval();
+    error LicensingFrameworkUML_DerivativesDisabled_CantAddReciprocal();
+    error LicensingFrameworkUML_DerivativesDisabled_CantAddRevShare();
+    error LicensingFrameworkUML_FrameworkNotYetRegistered();
     
     ////////////////////////////////////////////////////////////////////////////
     //                     LicensorApprovalManager                            //

@@ -21,7 +21,8 @@ import { IIPRecordRegistry } from "contracts/interfaces/registries/IIPRecordRegi
 import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
-import { MockLicensingModule, MockLicensingModuleConfig } from "test/foundry/mocks/licensing/MockLicensingModule.sol";
+import { MockLicensingFramework, MockLicensingFrameworkConfig, MockPolicy }
+    from "test/foundry/mocks/licensing/MockLicensingFramework.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { Errors } from "contracts/lib/Errors.sol";
@@ -210,9 +211,8 @@ contract RegistrationModuleTest is ModuleBaseTest {
 
     // TODO: put this in the base test
     function _initLicensing() private {
-        IParamVerifier[] memory mintingVerifiers = new IParamVerifier[](1);
-        MockLicensingModule licensingModule = new MockLicensingModule(
-            MockLicensingModuleConfig({
+        MockLicensingFramework licensingFramework = new MockLicensingFramework(
+            MockLicensingFrameworkConfig({
                 licenseRegistry: address(licenseRegistry),
                 licenseUrl: "https://example.com",
                 supportVerifyLink: true,
@@ -221,13 +221,19 @@ contract RegistrationModuleTest is ModuleBaseTest {
             })
         );
 
-        licensingModule.register();
+        licensingFramework.register();
 
         Licensing.Policy memory policy = Licensing.Policy({
             frameworkId: 1,
-            data: abi.encode(true)
+            data: abi.encode(
+                MockPolicy({
+                    returnVerifyLink: true,
+                    returnVerifyMint: true,
+                    returnVerifyTransfer: true
+                })
+            )
         });
-
+        vm.prank(address(licensingFramework));
         (uint256 polId) = licenseRegistry.addPolicy(policy);
         policyId = polId;
     }

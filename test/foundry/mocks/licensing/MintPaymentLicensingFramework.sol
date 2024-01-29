@@ -6,14 +6,14 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC165, IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 // contracts
-import { BaseLicensingModule } from "contracts/modules/licensing/BaseLicensingModule.sol";
+import { BaseLicensingFramework } from "contracts/modules/licensing/BaseLicensingFramework.sol";
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 
-contract MintPaymentLicensingModule is BaseLicensingModule, IMintParamVerifier {
+contract MintPaymentLicensingFramework is BaseLicensingFramework, IMintParamVerifier {
 
     IERC20 public token;
     uint256 public payment;
@@ -23,14 +23,14 @@ contract MintPaymentLicensingModule is BaseLicensingModule, IMintParamVerifier {
         string memory licenseUrl,
         address _token,
         uint256 _payment
-    ) BaseLicensingModule(licenseRegistry, licenseUrl) {
+    ) BaseLicensingFramework(licenseRegistry, licenseUrl) {
         token = IERC20(_token);
         payment = _payment;
     }
 
     function supportsInterface(bytes4 interfaceId)
         public view virtual
-        override(IERC165, BaseLicensingModule)
+        override(IERC165, BaseLicensingFramework)
         returns (bool) {
         return
             interfaceId == type(IParamVerifier).interfaceId ||
@@ -56,7 +56,7 @@ contract MintPaymentLicensingModule is BaseLicensingModule, IMintParamVerifier {
     }
 
     function policyToJson(bytes memory policyData) public view returns (string memory) {
-        return "MintPaymentLicensingModule";
+        return "MintPaymentLicensingFramework";
     }
 
 }

@@ -8,12 +8,12 @@ import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVer
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
-import { BaseLicensingModule } from "contracts/modules/licensing/BaseLicensingModule.sol";
+import { BaseLicensingFramework } from "contracts/modules/licensing/BaseLicensingFramework.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 
 import "forge-std/console2.sol";
 
-struct MockLicensingModuleConfig {
+struct MockLicensingFrameworkConfig {
     address licenseRegistry;
     string licenseUrl;
     bool supportVerifyLink;
@@ -27,21 +27,21 @@ struct MockPolicy {
     bool returnVerifyTransfer;
 }
 
-contract MockLicensingModule is
-    BaseLicensingModule,
+contract MockLicensingFramework is
+    BaseLicensingFramework,
     ILinkParamVerifier,
     IMintParamVerifier,
     ITransferParamVerifier
 {
-    MockLicensingModuleConfig internal config;
+    MockLicensingFrameworkConfig internal config;
 
-    constructor(MockLicensingModuleConfig memory conf)
-        BaseLicensingModule(conf.licenseRegistry, conf.licenseUrl) {
+    constructor(MockLicensingFrameworkConfig memory conf)
+        BaseLicensingFramework(conf.licenseRegistry, conf.licenseUrl) {
         config = conf;
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, BaseLicensingModule) returns (bool) {
-        console2.log("MockLicensingModule.supportsInterface");
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, BaseLicensingFramework) returns (bool) {
+        console2.log("MockLicensingFramework.supportsInterface");
         console2.logBytes4(interfaceId);
         console2.log("IParamVerifier");
         console2.logBytes4(type(IParamVerifier).interfaceId);
@@ -88,7 +88,7 @@ contract MockLicensingModule is
     }
 
     function policyToJson(bytes memory policyData) public pure returns (string memory) {
-        return "MockLicensingModule";
+        return "MockLicensingFramework";
     }
 
 }
