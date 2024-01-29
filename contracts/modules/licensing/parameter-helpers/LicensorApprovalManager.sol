@@ -10,23 +10,24 @@ abstract contract LicensorApprovalManager is LicenseRegistryAware {
 
     event DerivativeApproved(uint256 indexed licenseId, address indexed ipId, address indexed caller, bool approved);
 
-    // License Id => childIpId => approved
-    mapping(uint256 => mapping(address => bool)) private _approvals;
+    // License Id => licensor => childIpId => approved
+    mapping(uint256 => mapping(address => mapping(address => bool))) private _approvals;
 
     // TODO: meta tx version?
-    function setApproval(uint256 licenseId, bool approved) external {
+    function setApproval(uint256 licenseId, address childIpId, bool approved) external {
         address licensorIpId = LICENSE_REGISTRY.licensorIpId(licenseId);
         // TODO: ACL
         bool callerIsLicensor = true; // msg.sender == IPAccountRegistry(licensorIpId).owner() or IP Account itself;
         if (!callerIsLicensor) {
             revert Errors.LicensorApprovalManager__Unauthorized();
         }
-        _approvals[licenseId][licensorIpId] = approved;
+        _approvals[licenseId][licensorIpId][childIpId] = approved;
         emit DerivativeApproved(licenseId, licensorIpId, msg.sender, approved);
     }
 
-    function isDerivativeApproved(uint256 licenseId, address licensorIpId) public view returns (bool) {
-        return _approvals[licenseId][licensorIpId];
+    function isDerivativeApproved(uint256 licenseId, address childIpId) public view returns (bool) {
+        address licensorIpId = LICENSE_REGISTRY.licensorIpId(licenseId);
+        return _approvals[licenseId][licensorIpId][childIpId];
     }
 
 }

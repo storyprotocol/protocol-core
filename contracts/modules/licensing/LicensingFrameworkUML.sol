@@ -12,10 +12,27 @@ import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVer
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
 import { BaseLicensingFramework } from "contracts/modules/licensing/BaseLicensingFramework.sol";
-import { LicensorApprovalManager } from "contracts/modules/licensing/parameters/LicensorApprovalManager.sol";
+import { LicensorApprovalManager } from "contracts/modules/licensing/parameter-helpers/LicensorApprovalManager.sol";
 
 // external
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+
+import "forge-std/console2.sol";
+
+struct UMLv1Policy {
+    bool attribution;
+    bool commercialUse;
+    bool commercialAttribution;
+    string[] commercializers;
+    uint256 commercialRevShare;
+    bool derivativesAllowed;
+    bool derivativesAttribution;
+    bool derivativesApproval;
+    bool derivativesReciprocal;
+    uint256 derivativesRevShare;
+    string[] territories;
+    string[] distributionChannels;
+}
 
 contract LicensingFrameworkUML is
     BaseLicensingFramework,
@@ -25,20 +42,6 @@ contract LicensingFrameworkUML is
     LicensorApprovalManager
     {
 
-    struct UMLv1Policy {
-        bool attribution;
-        bool commercialUse;
-        bool commercialAttribution;
-        string[] commercializers;
-        uint256 commercialRevShare;
-        bool derivativesAllowed;
-        bool derivativesAttribution;
-        bool derivativesApproval;
-        bool derivativesReciprocal;
-        uint256 derivativesRevShare;
-        string[] territories;
-        string[] distributionChannels;
-    }
     
     event UMLv1PolicyAdded(uint256 indexed policyId, UMLv1Policy policy);
 
@@ -58,7 +61,7 @@ contract LicensingFrameworkUML is
             frameworkId: frameworkId,
             data: abi.encode(umlPolicy)
         });
-        LICENSE_REGISTRY.addPolicy(protocolPolicy);
+        return LICENSE_REGISTRY.addPolicy(protocolPolicy);
         emit UMLv1PolicyAdded(policyId, umlPolicy);
     }
 
