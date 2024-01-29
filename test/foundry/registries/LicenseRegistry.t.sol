@@ -4,8 +4,7 @@ pragma solidity ^0.8.13;
 import { Test } from "forge-std/Test.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
-import { MockParamVerifier, MockParamVerifierConfig } from "test/foundry/mocks/licensing/MockParamVerifier.sol";
-import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
+import { MockLicensingModule, MockLicensingModuleConfig } from "test/foundry/mocks/licensing/MockLicensingModule.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
@@ -18,9 +17,8 @@ contract LicenseRegistryTest is Test {
     LicenseRegistry public registry;
     Licensing.Framework public framework;
 
-    MockParamVerifier public verifier1;
-    MockParamVerifier public verifier2;
-    Licensing.FrameworkCreationParams public fwParams;
+    MockLicensingModule public module1;
+    MockLicensingModule public module2;
 
     string public licenseUrl = "https://example.com/license";
     address public ipId1 = address(0x111);
@@ -28,17 +26,17 @@ contract LicenseRegistryTest is Test {
     address public licenseHolder = address(0x101);
 
     function setUp() public {
-        registry = new LicenseRegistry("https://example.com/{id}.json");
-        verifier1 = new MockParamVerifier(MockParamVerifierConfig({
+        registry = new LicenseRegistry();
+        module1 = new MockLicensingModule(MockLicensingModuleConfig({
             licenseRegistry: address(registry),
-            name: "MockForVerifyingMint",
+            licenseUrl: licenseUrl,
             supportVerifyLink: false,
             supportVerifyMint: true,
             supportVerifyTransfer: false
         }));
-        verifier2 = new MockParamVerifier(MockParamVerifierConfig({
+        module2 = new MockLicensingModule(MockLicensingModuleConfig({
             licenseRegistry: address(registry),
-            name: "MockForVerifyingTransfer",
+            licenseUrl: licenseUrl,
             supportVerifyLink: false,
             supportVerifyMint: false,
             supportVerifyTransfer: true
@@ -47,62 +45,37 @@ contract LicenseRegistryTest is Test {
 
     // TODO: add parameter config for initial framework for 100% test
     modifier withFrameworkParams() {
-        _initFwParams();
-        registry.addLicenseFramework(fwParams); // framework ID = 1
+        module1.register();
         _;
     }
 
-    // TODO: use ModuleBaseTest for this
-    function _initFwParams() private {
-        IParamVerifier[] memory parameters = new IParamVerifier[](2);
-        parameters[0] = verifier1;
-        parameters[1] = verifier2;
-        bytes[] memory values = new bytes[](2);
-        values[0] = abi.encode(false);
-        values[0] = abi.encode(false);
-
-        fwParams = Licensing.FrameworkCreationParams({
-            parameters: parameters,
-            defaultValues: values,
-            licenseUrl: licenseUrl
-        });
-    }
-
-    function _createPolicy() internal view returns (Licensing.Policy memory pol) {
+    function _createPolicy() internal pure returns (Licensing.Policy memory pol) {
         pol = Licensing.Policy({
             frameworkId: 1,
-            commercialUse: true,
-            derivatives: true,
-            paramNames: new bytes32[](2),
-            paramValues: new bytes[](2)
+            data: abi.encode("test")
         });
-        pol.paramNames[0] = verifier1.name();
-        pol.paramNames[1] = verifier2.name();
-        pol.paramValues[0] = abi.encode(true);
-        pol.paramValues[1] = abi.encode(true);
         return pol;
     }
 
     function test_LicenseRegistry_addLicenseFramework() public {
-        _initFwParams();
-        uint256 fwId = registry.addLicenseFramework(fwParams);
+        uint256 fwId = module1.register();
         assertEq(fwId, 1, "not incrementing fw id");
-        assertTrue(fwParams.licenseUrl.equal(registry.frameworkUrl(fwId)), "licenseUrl not set");
+        assertTrue(licenseUrl.equal(registry.frameworkUrl(fwId)), "licenseUrl not set");
         assertEq(registry.totalFrameworks(), 1, "totalFrameworks not incremented");
-        string memory paramName = fwParams.parameters[0].nameString();
-        Licensing.Parameter memory storedParam = registry.frameworkParam(1, paramName);
-        assertEq(address(storedParam.verifier), address(fwParams.parameters[0]), "verifier not equal");
-        // assertEq(address(storedParam.verifier), address(fwParams.parameters[0]), "verifier not equal");
-        assertEq(storedParam.defaultValue, fwParams.defaultValues[0], "defaultValue not equal");
+        Licensing.Framework memory storedFw = registry.framework(fwId);
+        assertEq(storedFw.licenseUrl, licenseUrl, "licenseUrl not equal");
+        assertEq(storedFw.licensingModule, address(module1), "licensingModule not equal");
     }
 
-    function test_LicenseRegistry_addPolicy() public withFrameworkParams {
+    function test_LicenseRegistry_addPolicy() public {
+        module1.register();
         Licensing.Policy memory policy = _createPolicy();
         uint256 polId = registry.addPolicy(policy);
         assertEq(polId, 1, "polId not 1");
     }
 
-    function test_LicenseRegistry_addPolicy_revert_policyAlreadyAdded() public withFrameworkParams {
+    function test_LicenseRegistry_addPolicy_revert_policyAlreadyAdded() public {
+        module1.register();
         Licensing.Policy memory policy = _createPolicy();
         registry.addPolicy(policy);
         vm.expectRevert(Errors.LicenseRegistry__PolicyAlreadyAdded.selector);
@@ -115,9 +88,11 @@ contract LicenseRegistryTest is Test {
         registry.addPolicy(policy);
     }
 
-    function test_LicenseRegistry_addPolicyToIpId() public withFrameworkParams {
+    function test_LicenseRegistry_addPolicyToIpId() public {
+        module1.register();
         Licensing.Policy memory policy = _createPolicy();
-        (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
+        uint256 policyId = registry.addPolicy(policy);
+        uint256 indexOnIpId = registry.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1, "policyId not 1");
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
         assertFalse(registry.isPolicySetByLinking(ipId1, policyId));
@@ -125,29 +100,30 @@ contract LicenseRegistryTest is Test {
         assertEq(keccak256(abi.encode(storedPolicy)), keccak256(abi.encode(policy)), "policy not stored properly");
     }
 
-    function test_LicenseRegistry_addSamePolicyReusesPolicyId() public withFrameworkParams {
+    function test_LicenseRegistry_addSamePolicyReusesPolicyId() public {
+        module1.register();
         Licensing.Policy memory policy = _createPolicy();
-        (uint256 policyId, bool isNew1, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
-        assertTrue(isNew1, "not new");
+        uint256 policyId = registry.addPolicy(policy);
+        uint256 indexOnIpId = registry.addPolicyToIp(ipId1, policyId);
         assertEq(indexOnIpId, 0);
         assertFalse(registry.isPolicySetByLinking(ipId1, policyId));
-        (uint256 policyId2, bool isNew2, uint256 indexOnIpId2) = registry.addPolicyToIp(ipId2, policy);
-        assertFalse(isNew2, "new");
+
+        uint256 indexOnIpId2 = registry.addPolicyToIp(ipId2, policyId);
         assertEq(indexOnIpId2, 0);
         assertFalse(registry.isPolicySetByLinking(ipId2, policyId));
-        assertEq(policyId, policyId2, "policyId not reused");
     }
 
     //function test_LicenseRegistry_revert_policyAlreadyAddedToIpId()
 
-    function test_LicenseRegistry_add2PoliciesToIpId() public withFrameworkParams {
+    function test_LicenseRegistry_add2PoliciesToIpId() public {
+        module1.register();
         assertEq(registry.totalPolicies(), 0);
         assertEq(registry.totalPoliciesForIp(ipId1), 0);
         Licensing.Policy memory policy = _createPolicy();
 
         // First time adding a policy
-        (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
-        assertTrue(isNew, "not new");
+        uint256 policyId = registry.addPolicy(policy);
+        uint256 indexOnIpId = registry.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1, "policyId not 1");
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
         assertEq(registry.totalPolicies(), 1, "totalPolicies not incremented");
@@ -156,9 +132,9 @@ contract LicenseRegistryTest is Test {
         assertFalse(registry.isPolicySetByLinking(ipId1, policyId));
 
         // Adding different policy to same ipId
-        policy.paramValues[0] = abi.encode("test2");
-        (uint256 policyId2, bool isNew2, uint256 indexOnIpId2) = registry.addPolicyToIp(ipId1, policy);
-        assertTrue(isNew2, "not new");
+        policy.data = abi.encode("test2");
+        uint256 policyId2 = registry.addPolicy(policy);
+        uint256 indexOnIpId2 = registry.addPolicyToIp(ipId1, policyId2);
         assertEq(policyId2, 2, "policyId not 2");
         assertEq(indexOnIpId2, 1, "indexOnIpId not 1");
         assertEq(registry.totalPolicies(), 2, "totalPolicies not incremented");
@@ -167,10 +143,11 @@ contract LicenseRegistryTest is Test {
         assertFalse(registry.isPolicySetByLinking(ipId1, policyId2));
     }
 
-    function test_LicenseRegistry_mintLicense() public withFrameworkParams returns (uint256 licenseId) {
+    function test_LicenseRegistry_mintLicense() public returns (uint256 licenseId) {
+        module1.register();
         Licensing.Policy memory policy = _createPolicy();
-        // solhint-disable-next-line no-unused-vars
-        (uint256 policyId, bool isNew, uint256 indexOnIpId) = registry.addPolicyToIp(ipId1, policy);
+        uint256 policyId = registry.addPolicy(policy);
+        uint256 indexOnIpId = registry.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1);
         assertTrue(registry.isPolicyIdSetForIp(ipId1, policyId));
 
@@ -189,6 +166,7 @@ contract LicenseRegistryTest is Test {
     }
 
     function test_LicenseRegistry_linkIpToParent() public {
+
         // TODO: something cleaner than this
         uint256 licenseId = test_LicenseRegistry_mintLicense();
 
@@ -213,10 +191,11 @@ contract LicenseRegistryTest is Test {
         assertEq(parents[0], ipId1, "parent not ipId1");
     }
 
-    function test_LicenseRegistry_singleTransfer_paramVerifyTrue() public withFrameworkParams {
+    function test_LicenseRegistry_singleTransfer_paramVerifyTrue() public {
+        module1.register();
         Licensing.Policy memory policy = _createPolicy();
-
-        (uint256 policyId, , ) = registry.addPolicyToIp(ipId1, policy);
+        uint256 policyId = registry.addPolicy(policy);
+        registry.addPolicyToIp(ipId1, policyId);
 
         uint256 licenseId = registry.mintLicense(policyId, ipId1, 2, licenseHolder);
         address licenseHolder2 = address(0x102);
@@ -225,31 +204,19 @@ contract LicenseRegistryTest is Test {
         assertEq(registry.balanceOf(licenseHolder, licenseId), 1, "not burnt");
     }
 
-    function test_LicenseRegistry_revert_singleTransfer_transferParamVerifyFalse() public withFrameworkParams {
+    function test_LicenseRegistry_revert_singleTransfer_transferParamVerifyFalse() public {
+        module1.register();
         Licensing.Policy memory policy = Licensing.Policy({
             frameworkId: 1,
-            commercialUse: true,
-            derivatives: true,
-            paramNames: new bytes32[](2),
-            paramValues: new bytes[](2)
+            data: abi.encode(false)
         });
-        policy.paramNames[0] = verifier1.name();
-        policy.paramValues[0] = abi.encode(true);
-        policy.paramNames[1] = verifier2.name();
-        policy.paramValues[1] = abi.encode(false);
-
-        (uint256 policyId, , ) = registry.addPolicyToIp(ipId1, policy);
+        uint256 policyId = registry.addPolicy(policy);
+        registry.addPolicyToIp(ipId1, policyId);
 
         uint256 licenseId = registry.mintLicense(policyId, ipId1, 2, licenseHolder);
 
         address licenseHolder2 = address(0x102);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.LicenseRegistry__ParamVerifierFailed.selector,
-                verifier2.name(),
-                address(verifier2)
-            )
-        );
+        vm.expectRevert(Errors.LicenseRegistry__TransferParamFailed.selector);
         vm.prank(licenseHolder);
         registry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
     }

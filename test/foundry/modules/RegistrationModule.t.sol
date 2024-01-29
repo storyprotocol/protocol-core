@@ -21,7 +21,7 @@ import { IIPRecordRegistry } from "contracts/interfaces/registries/IIPRecordRegi
 import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
-import { MockParamVerifier, MockParamVerifierConfig } from "test/foundry/mocks/licensing/MockParamVerifier.sol";
+import { MockLicensingModule, MockLicensingModuleConfig } from "test/foundry/mocks/licensing/MockLicensingModule.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { Errors } from "contracts/lib/Errors.sol";
@@ -211,37 +211,24 @@ contract RegistrationModuleTest is ModuleBaseTest {
     // TODO: put this in the base test
     function _initLicensing() private {
         IParamVerifier[] memory mintingVerifiers = new IParamVerifier[](1);
-        MockParamVerifier verifier = new MockParamVerifier(MockParamVerifierConfig({
-            licenseRegistry: address(licenseRegistry),
-            name: "MockParamVerifier",
-            supportVerifyLink: true,
-            supportVerifyMint: true,
-            supportVerifyTransfer: true
-        }));
-        mintingVerifiers[0] = verifier;
-        bytes[] memory mintingDefaultValues = new bytes[](1);
-        mintingDefaultValues[0] = abi.encode(true);
-        
-        IParamVerifier[] memory parameters;
-        bytes[] memory defaultValues;
+        MockLicensingModule licensingModule = new MockLicensingModule(
+            MockLicensingModuleConfig({
+                licenseRegistry: address(licenseRegistry),
+                licenseUrl: "https://example.com",
+                supportVerifyLink: true,
+                supportVerifyMint: true,
+                supportVerifyTransfer: true
+            })
+        );
 
-        Licensing.FrameworkCreationParams memory fwParams = Licensing.FrameworkCreationParams({
-            parameters: mintingVerifiers,
-            defaultValues: mintingDefaultValues,
-            licenseUrl: "https://example.com"
-        });
-        licenseRegistry.addLicenseFramework(fwParams);
+        licensingModule.register();
+
         Licensing.Policy memory policy = Licensing.Policy({
             frameworkId: 1,
-            commercialUse: true,
-            derivatives: true,
-            paramNames: new bytes32[](1),
-            paramValues: new bytes[](1)
+            data: abi.encode(true)
         });
-        policy.paramNames[0] = verifier.name();
-        policy.paramValues[0] = abi.encode(true);
+
         (uint256 polId) = licenseRegistry.addPolicy(policy);
-        
         policyId = polId;
     }
 

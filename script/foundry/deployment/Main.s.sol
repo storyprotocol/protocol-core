@@ -98,7 +98,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "LicenseRegistry";
         _predeploy(contractKey);
-        licenseRegistry = new LicenseRegistry("https://example.com/{id}.json");
+        licenseRegistry = new LicenseRegistry();
         _postdeploy(contractKey, address(licenseRegistry));
 
         contractKey = "IPAccountRegistry";

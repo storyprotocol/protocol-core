@@ -17,6 +17,7 @@ import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransfer
 import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
+import { ILicensingModule } from "contracts/interfaces/licensing/ILicensingModule.sol";
 
 import "forge-std/console2.sol";
 
@@ -27,7 +28,14 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     using Strings for *;
     using ShortStrings for *;
     using Licensing for *;
-    
+
+    struct PolicySetup {
+        uint256 index;
+        bool isSet;
+        bool active;
+        bool setByLinking;
+    }
+
     mapping(uint256 => Licensing.Framework) private _frameworks;
     uint256 private _totalFrameworks;
 
@@ -57,7 +65,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         _;
     }
 
-    constructor(string memory uri) ERC1155(uri) {}
+    constructor() ERC1155("") {}
 
     /// Adds a license framework to Story Protocol.
     /// Must be called by protocol admin
@@ -66,12 +74,12 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     function addLicenseFramework(
         Licensing.Framework calldata fwCreation
     ) external returns (uint256 frameworkId) {
-        // check protocol auth
+        // TODO: check protocol auth
         if (bytes(fwCreation.licenseUrl).length == 0 || fwCreation.licenseUrl.equal("")) {
             revert Errors.LicenseRegistry__EmptyLicenseUrl();
         }
         if (fwCreation.licensingModule == address(0)) {
-            revert Errors.LicenseRegistry__EmptyLicensingModule();
+            revert Errors.LicenseRegistry__ZeroLicensingModule();
         }
         // Todo: check duplications
 
@@ -89,7 +97,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
     function _framework(uint256 frameworkId) internal view returns (Licensing.Framework storage fw) {
         fw = _frameworks[frameworkId];
-        if (fw.licensingModule == address(0) {
+        if (fw.licensingModule == address(0)) {
             revert Errors.LicenseRegistry__FrameworkNotFound();
         }
         return fw;
@@ -129,24 +137,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     }
 
     /// Adds a policy to an ipId, which can be used to mint licenses.
-    /// Licenses are permissions for ipIds to be derivatives (children).
-    /// If an exact policy already existed, it will reuse the id.
-    /// Will revert if ipId already has the same policy
-    /// @param ipId to receive the policy
-    /// @param pol policy data
-    /// @return policyId if policy data was in the contract, policyId is reused, if it's new, id will be new.
-    /// @return isNew true if policy data was not in the contract, false if it was already stored
-    /// @return indexOnIpId position of policy within the ipIds policy set
-    function addPolicyToIp(
-        address ipId,
-        Licensing.Policy memory pol
-    ) public returns (uint256 policyId, bool isNew, uint256 indexOnIpId) {
-        // check protocol auth
-        (uint256 polId, bool newPolicy) = _addPolicy(pol);
-        return (polId, newPolicy, _addPolictyIdToIp(ipId, polId, false));
-    }
-
-    /// Adds a policy to an ipId, which can be used to mint licenses.
     /// Licnses are permissions for ipIds to be derivatives (children).
     /// if policyId is not defined in LicenseRegistry, reverts.
     /// Will revert if ipId already has the same policy
@@ -168,24 +158,17 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     function addPolicy(Licensing.Policy memory pol) public returns (uint256 policyId) {
         address licensingModule = _framework(pol.frameworkId).licensingModule;
         if (msg.sender != licensingModule) {
-            revert Errors.LicenseRegistry__CannotAddPolicy();
+            revert Errors.LicenseRegistry__UnregisteredFrameworkAddingPolicy();
         }
-        (uint256 polId, bool newPol) = _addPolicy(pol);
+        (uint256 polId, bool newPol) = _addIdOrGetExisting(abi.encode(pol), _hashedPolicies, _totalPolicies);
         if (!newPol) {
             revert Errors.LicenseRegistry__PolicyAlreadyAdded();
-        }
-        return polId;
-    }
-
-    function _addPolicy(Licensing.Policy memory pol) public returns (uint256 policyId, bool isNew) {
-        if (msg.sender != )
-        (uint256 polId, bool newPol) = _addIdOrGetExisting(abi.encode(pol), _hashedPolicies, _totalPolicies);
-        if (newPol) {
+        } else {
             _totalPolicies = polId;
             _policies[polId] = pol;
             emit PolicyCreated(msg.sender, polId, pol);
         }
-        return (polId, newPol);
+        return polId;
     }
 
     /// Adds a policy id to the ipId policy set
@@ -297,14 +280,14 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         Licensing.Framework storage fw = _framework(pol.frameworkId);
         bool setByLinking = _policySetups[licensorIp][policyId].setByLinking;
 
-        if (ERC165Checker.supportsInterface(fw.licensingModule), type(IMintParamVerifier).interfaceId)) {
-            if(!IMintParamVerifier(fw.licensingModule)).verifyMint(
+        if (ERC165Checker.supportsInterface(fw.licensingModule, type(IMintParamVerifier).interfaceId)) {
+            if(!IMintParamVerifier(fw.licensingModule).verifyMint(
                 msg.sender,
                 setByLinking,
-                pol.data,
                 licensorIp,
                 receiver,
                 amount,
+                pol.data
             )) {
                 revert Errors.LicenseRegistry__MintLicenseParamFailed();
             }
@@ -361,8 +344,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         Licensing.Policy memory pol = policy(licenseData.policyId);
         Licensing.Framework storage fw = _framework(pol.frameworkId);
 
-        if (ERC165Checker.supportsInterface(fw.licenseModule, type(ILinkParamVerifier).interfaceId)) {
-            if(!ILinkParamVerifier(fw.licenseModule).verifyLink(
+        if (ERC165Checker.supportsInterface(fw.licensingModule, type(ILinkParamVerifier).interfaceId)) {
+            if(!ILinkParamVerifier(fw.licensingModule).verifyLink(
                 licenseId,
                 msg.sender,
                 childIpId,
@@ -429,7 +412,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
                         to,
                         values[i],
                         pol.data
-                    ) {
+                    )) {
                         revert Errors.LicenseRegistry__TransferParamFailed();
                     }
                 }
@@ -442,6 +425,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         Licensing.License memory licenseData = _licenses[id];
         Licensing.Policy memory pol = policy(licenseData.policyId);
         Licensing.Framework storage fw = _framework(pol.frameworkId);
-        return ILicensingModule(fw.licensingModule).policyToJson(pol);
+        return ILicensingModule(fw.licensingModule).policyToJson(pol.data);
     }
 }

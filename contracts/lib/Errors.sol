@@ -64,6 +64,7 @@ library Errors {
     error LicenseRegistry__PolicyAlreadySetForIpId();
     error LicenseRegistry__FrameworkNotFound();
     error LicenseRegistry__EmptyLicenseUrl();
+    error LicenseRegistry__ZeroLicensingModule();
     error LicenseRegistry__PolicyAlreadyAdded();
     error LicenseRegistry__ParamVerifierLengthMismatch();
     error LicenseRegistry__PolicyNotFound();
@@ -72,11 +73,18 @@ library Errors {
     error LicenseRegistry__LicensorDoesntHaveThisPolicy();
     error LicenseRegistry__MintLicenseParamFailed();
     error LicenseRegistry__LinkParentParamFailed();
-    error LicenseRegistry__TransferParentParamFailed();
+    error LicenseRegistry__TransferParamFailed();
     error LicenseRegistry__InvalidLicensor();
     error LicenseRegistry__ParamVerifierAlreadySet();
     error LicenseRegistry__CommercialTermInNonCommercialPolicy();
     error LicenseRegistry__EmptyParamName();
+    error LicenseRegistry__UnregisteredFrameworkAddingPolicy();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                        LicenseRegistryAware                            //
+    ////////////////////////////////////////////////////////////////////////////
+
+    error LicenseRegistryAware__CallerNotLicenseRegistry();
 
     ////////////////////////////////////////////////////////////////////////////
     //                         LicensingModuleUML                             //
@@ -86,18 +94,16 @@ library Errors {
     error LicensingModuleUML_CommecialDisabled_CantAddCommercializers();
     error LicensingModuleUML_CommecialDisabled_CantAddRevShare();
     error LicensingModuleUML_CommecialDisabled_CantAddDerivRevShare();
-
-
-
+    error LicensingModuleUML_DerivativesDisabled_CantAddAttribution();
+    error LicensingModuleUML_DerivativesDisabled_CantAddApproval();
+    error LicensingModuleUML_DerivativesDisabled_CantAddReciprocal();
+    error LicensingModuleUML_DerivativesDisabled_CantAddRevShare();
+    error LicensingModuleUML_FrameworkNotYetRegistered();
+    
     ////////////////////////////////////////////////////////////////////////////
-    //                            BaseParamVerifier                           //
+    //                     LicensorApprovalManager                            //
     ////////////////////////////////////////////////////////////////////////////
-    error BaseParamVerifier__Unauthorized();
-
-    ////////////////////////////////////////////////////////////////////////////
-    //                     DerivWithApprovalPV                                //
-    ////////////////////////////////////////////////////////////////////////////
-    error DerivWithApprovalPV__Unauthorized();
+    error LicensorApprovalManager__Unauthorized();
 
     ////////////////////////////////////////////////////////////////////////////
     //                            Dispute Module                              //

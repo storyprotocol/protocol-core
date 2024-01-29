@@ -45,7 +45,7 @@ abstract contract ModuleBaseTest is BaseTest {
     /// @notice Initializes the base module for testing.
     function setUp() public virtual override(BaseTest) {
         BaseTest.setUp();
-        licenseRegistry = new LicenseRegistry("");
+        licenseRegistry = new LicenseRegistry();
         accessController = new AccessController();
         moduleRegistry = new ModuleRegistry();
         ipAccountRegistry = new IPAccountRegistry(

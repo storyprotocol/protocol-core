@@ -2,25 +2,27 @@
 
 pragma solidity ^0.8.23;
 
+// contracts
+
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
+import { Licensing } from "contracts/lib/Licensing.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
-import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
-import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
-import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
-import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
+import { BaseLicensingModule } from "contracts/modules/licensing/BaseLicensingModule.sol";
+import { LicensorApprovalManager } from "contracts/modules/licensing/parameters/LicensorApprovalManager.sol";
 
+// external
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 contract LicensingModuleUML is
     BaseLicensingModule,
-    IParamVerifier,
     ILinkParamVerifier,
     IMintParamVerifier,
     ITransferParamVerifier,
-    IPApprovalManager
+    LicensorApprovalManager
     {
 
     struct UMLv1Policy {
@@ -38,61 +40,63 @@ contract LicensingModuleUML is
         string[] distributionChannels;
     }
     
-    emit UMLv1PolicyAdded(uint256 indexed policyId, UMLv1Policy policy);
+    event UMLv1PolicyAdded(uint256 indexed policyId, UMLv1Policy policy);
 
-    constructor(LicenseRegistry licenseRegistry, uint256 frameworkId) {
-        _REGISTRY = licenseRegistry;
-        FRAMEWORK_ID = frameworkId;
-    }
+    constructor(address licRegistry, string memory licenseUrl) BaseLicensingModule(licRegistry, licenseUrl) {}
 
-    function licenseRegistry() external view returns (address) {
-        return address(_REGISTRY);
+    function licenseRegistry() view override external returns (address) {
+        return address(LICENSE_REGISTRY);
     }
     
-    function addPolicy(UMLv1Policy calldata policy) external returns(policyId) {
-        _verifyComercialUse(policy);
-        _verifyDerivatives(policy);
+    function addPolicy(UMLv1Policy calldata umlPolicy) external returns(uint256 policyId) {
+        if (frameworkId == 0) {
+            revert Errors.LicensingModuleUML_FrameworkNotYetRegistered();
+        }
+        _verifyComercialUse(umlPolicy);
+        _verifyDerivatives(umlPolicy);
         Licensing.Policy memory protocolPolicy = Licensing.Policy({
-            frameworkId: FRAMEWORK_ID,
-            data: abi.encode(policy)
-        })
-        _REGISTRY.addPolicy(protocolPolicy);
-        emit UMLv1PolicyAdded(policyId, policy);
+            frameworkId: frameworkId,
+            data: abi.encode(umlPolicy)
+        });
+        LICENSE_REGISTRY.addPolicy(protocolPolicy);
+        emit UMLv1PolicyAdded(policyId, umlPolicy);
     }
 
-    function policy(uint256 policyId) public view returns (UMLv1Policy memory policy) {
-        Licensing.Policy memory protocolPolicy = _REGISTRY.getPolicy(policyId);
-        if(protocolPolicy.frameworkId != FRAMEWORK_ID) {
-            Errors.LicenseRegistry__FrameworkNotFound();
+    function policyToUmlPolicy(uint256 policyId) public view returns (UMLv1Policy memory policy) {
+        Licensing.Policy memory protocolPolicy = LICENSE_REGISTRY.policy(policyId);
+        if(protocolPolicy.frameworkId != frameworkId) {
+            revert Errors.LicenseRegistry__FrameworkNotFound();
         }
         policy = abi.decode(protocolPolicy.data, (UMLv1Policy));
     }
 
-    function policyToJson(uint256 policyId) public view returns (string memory) {
-        // get policy and covert to JSON for metadata
+    function policyToJson(bytes memory) public view returns (string memory) {
+        return "TODO";
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return interfaceId == type(IParamVerifier).interfaceId
-            || interfaceId == type(ILinkParamVerifier).interfaceId
-            || interfaceId == type(IMintParamVerifier).interfaceId
-            || interfaceId == type(ITransferParamVerifier).interfaceId
-            || interfaceId == type(ILicensingModule).interfaceId;
+    function supportsInterface(bytes4 interfaceId) public view virtual override(BaseLicensingModule, IERC165) returns (bool) {
+        return super.supportsInterface(interfaceId) ||
+            interfaceId == type(ILinkParamVerifier).interfaceId ||
+            interfaceId == type(IMintParamVerifier).interfaceId ||
+            interfaceId == type(ITransferParamVerifier).interfaceId;
     }
 
     function verifyLink(
         uint256 licenseId,
-        address caller,
+        address,
         address ipId,
-        address parentIpId,
+        address,
         bytes calldata policyData
-    ) external returns (bool) {
+    )
+        external override 
+        onlyLicenseRegistry
+        returns (bool) {
         UMLv1Policy memory policy = abi.decode(policyData, (UMLv1Policy));
         bool linkingOK = true;
-        if (policy.commercialRevShare) {
+        if (policy.commercialRevShare > 0) {
             // RoyaltyModule.setRevShare()
         }
-        if (policy.derivativesRevShare) {
+        if (policy.derivativesRevShare > 0) {
             // RoyaltyModule.setRevShareForDerivatives()
         }
         if (policy.derivativesApproval) {
@@ -102,12 +106,12 @@ contract LicensingModuleUML is
     }
 
     function verifyMint(
-        address caller,
+        address,
         bool policyAddedByLinking,
-        bytes memory policyData,
-        address licensors,
-        address receiver,
-        uint256 mintAmount,
+        address,
+        address,
+        uint256,
+        bytes memory policyData
     ) external returns (bool) {
         UMLv1Policy memory policy = abi.decode(policyData, (UMLv1Policy));
         if (!policy.derivativesAllowed && policyAddedByLinking) {
@@ -117,6 +121,15 @@ contract LicensingModuleUML is
         return true;
     }
 
+    function verifyTransfer(
+        uint256,
+        address,
+        address,
+        uint256,
+        bytes memory
+    ) external returns (bool) {
+        return true;
+    }
 
     function _verifyComercialUse(UMLv1Policy calldata policy) internal pure {
         if (!policy.commercialUse) {

@@ -7,10 +7,10 @@ interface IMintParamVerifier is IParamVerifier {
     function verifyMint(
         address caller,
         bool policyAddedByLinking,
-        bytes memory policyData,
         address licensors,
         address receiver,
         uint256 mintAmount,
+        bytes memory policyData
     ) external returns (bool);
 }
 

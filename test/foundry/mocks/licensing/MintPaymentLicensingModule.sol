@@ -4,31 +4,34 @@ pragma solidity ^0.8.23;
 // external
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC165, IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
-import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
+
 // contracts
-import { BaseParamVerifier } from "contracts/modules/licensing/parameters/BaseParamVerifier.sol";
+import { BaseLicensingModule } from "contracts/modules/licensing/BaseLicensingModule.sol";
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 
-contract MintPaymentVerifier is BaseParamVerifier, IMintParamVerifier {
-    using ShortStrings for *;
+contract MintPaymentLicensingModule is BaseLicensingModule, IMintParamVerifier {
 
     IERC20 public token;
     uint256 public payment;
 
     constructor(
         address licenseRegistry,
+        string memory licenseUrl,
         address _token,
         uint256 _payment
-    ) BaseParamVerifier(licenseRegistry) {
+    ) BaseLicensingModule(licenseRegistry, licenseUrl) {
         token = IERC20(_token);
         payment = _payment;
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
+    function supportsInterface(bytes4 interfaceId)
+        public view virtual
+        override(IERC165, BaseLicensingModule)
+        returns (bool) {
         return
             interfaceId == type(IParamVerifier).interfaceId ||
             interfaceId == type(IMintParamVerifier).interfaceId ||
@@ -39,12 +42,11 @@ contract MintPaymentVerifier is BaseParamVerifier, IMintParamVerifier {
     /// to return true, pass in abi.encode(true) as the value.
     function verifyMint(
         address caller,
-        uint256 policyId,
         bool policyAddedByLinking,
         address licensors,
         address receiver,
         uint256 mintAmount,
-        bytes memory data
+        bytes memory policyData
     ) external returns (bool) {
         // TODO: return false on approval or transfer failure
         uint256 payment_ = mintAmount * payment;
@@ -53,15 +55,8 @@ contract MintPaymentVerifier is BaseParamVerifier, IMintParamVerifier {
         return true;
     }
 
-    function name() public view virtual override(BaseParamVerifier, IParamVerifier) returns (bytes32) {
-        return ShortStringOps.stringToBytes32("MintPaymentVerifier");
+    function policyToJson(bytes memory policyData) public view returns (string memory) {
+        return "MintPaymentLicensingModule";
     }
 
-    function isCommercial() external pure returns (bool) {
-        return false;
-    }
-
-    function allowsOtherPolicyOnSameIp(bytes memory data) external pure returns (bool) {
-        return true;
-    }
 }

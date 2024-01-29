@@ -79,7 +79,7 @@ contract IPAssetRendererTest is BaseTest {
     function setUp() public virtual override(BaseTest) {
         BaseTest.setUp();
         // TODO: Create an IP record registry mock instead.
-        licenseRegistry = new LicenseRegistry("");
+        licenseRegistry = new LicenseRegistry();
         accessController = new AccessController();
         moduleRegistry = new ModuleRegistry();
         MockERC721 erc721 = new MockERC721();
