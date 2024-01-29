@@ -164,23 +164,12 @@ contract AccessController is IAccessController, Governable {
     /// @param to The recipient of the transaction.
     /// @param func The function selector.
     /// @return The permission level for the specific function call.
-    function getPermission(
-        address ipAccount,
-        address signer,
-        address to,
-        bytes4 func
-    ) public view returns (uint8) {
+    function getPermission(address ipAccount, address signer, address to, bytes4 func) public view returns (uint8) {
         return permissions[_encodePermission(ipAccount, signer, to, func)];
     }
 
     /// @dev the permission parameters will be encoded into bytes32 as key in the permissions mapping to save storage
-    function _setPermission(
-        address ipAccount,
-        address signer,
-        address to,
-        bytes4 func,
-        uint8 permission
-    ) internal {
+    function _setPermission(address ipAccount, address signer, address to, bytes4 func, uint8 permission) internal {
         permissions[_encodePermission(ipAccount, signer, to, func)] = permission;
     }
 
