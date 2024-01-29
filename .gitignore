@@ -32,8 +32,8 @@ abi
 typechain
 !./script/out
 
-# hardhat-tenderly plugin
-deployments
+# deployments
+broadcast
 
 # converage
 lcov.info

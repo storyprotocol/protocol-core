@@ -8,7 +8,6 @@
     "no-empty-blocks": "off",
     "constructor-syntax": "error",
     "func-visibility": ["error", { "ignoreConstructors": true }],
-    "modifier-name-mixedcase":  "error",
     "max-line-length": ["error", 120],
     "not-rely-on-time": "off",
     "reason-string": ["warn", { "maxLength": 64 }],
@@ -17,6 +16,10 @@
     "no-inline-assembly": "off",
     "avoid-low-level-calls": "off",
     "no-global-import": "error",
-    "prettier/prettier": "error"
+    "prettier/prettier": "error",
+    "contract-name-camelcase": "off",
+    "func-name-mixedcase": "off",
+    "modifier-name-mixedcase": "off",
+    "var-name-mixedcase": "off"
   }
 }
