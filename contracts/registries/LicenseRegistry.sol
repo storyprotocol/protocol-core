@@ -27,14 +27,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     using Strings for *;
     using ShortStrings for *;
     using Licensing for *;
-
-    struct PolicySetup {
-        uint256 index;
-        bool isSet;
-        bool active;
-        bool setByLinking;
-    }
-
+    
     mapping(uint256 => Licensing.Framework) private _frameworks;
     uint256 private _totalFrameworks;
 
