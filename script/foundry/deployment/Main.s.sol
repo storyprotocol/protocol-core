@@ -27,7 +27,7 @@ import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.so
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { Governance } from "contracts/governance/Governance.sol";
-import { IUMLPolicyFrameworkManager, UMLPolicy } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
+import { UMLPolicy } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
 // test
