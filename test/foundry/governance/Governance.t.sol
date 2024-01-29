@@ -27,7 +27,7 @@ contract GovernanceTest is Test {
     IPAccountRegistry public ipAccountRegistry;
     IModuleRegistry public moduleRegistry;
     IPAccountImpl public implementation;
-    MockERC721 nft = new MockERC721();
+    MockERC721 nft = new MockERC721("MockERC721");
     MockModule public mockModule;
     MockModule public moduleWithoutPermission;
     IIPAccount public ipAccount;

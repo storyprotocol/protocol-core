@@ -15,7 +15,6 @@ import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 abstract contract BaseLicensingFramework is IParamVerifier, ILicensingFramework, ERC165, LicenseRegistryAware {
-
     string public licenseUrl;
 
     uint256 public frameworkId;
@@ -26,7 +25,7 @@ abstract contract BaseLicensingFramework is IParamVerifier, ILicensingFramework,
         licenseUrl = templateUrl;
     }
 
-    function register() external returns(uint256) {
+    function register() external returns (uint256) {
         Licensing.Framework memory framework = Licensing.Framework({
             licensingFramework: address(this),
             licenseUrl: licenseUrl
@@ -39,7 +38,7 @@ abstract contract BaseLicensingFramework is IParamVerifier, ILicensingFramework,
         return interfaceId == type(ILicensingFramework).interfaceId || super.supportsInterface(interfaceId);
     }
 
-    function licenseRegistry() virtual override external view returns (address) {
+    function licenseRegistry() external view virtual override returns (address) {
         return address(LICENSE_REGISTRY);
     }
 }

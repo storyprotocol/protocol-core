@@ -6,17 +6,24 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC165, IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 // contracts
-import { BaseLicensingFramework } from "contracts/modules/licensing/BaseLicensingFramework.sol";
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
+import { Errors } from "contracts/lib/Errors.sol";
+import { Licensing } from "contracts/lib/Licensing.sol";
+import { BaseLicensingFramework } from "contracts/modules/licensing/BaseLicensingFramework.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 
-contract MintPaymentLicensingFramework is BaseLicensingFramework, IMintParamVerifier {
+struct MintPaymentPolicy {
+    bool mustBeTrue;
+}
 
+contract MintPaymentLicensingFramework is BaseLicensingFramework, IMintParamVerifier {
     IERC20 public token;
     uint256 public payment;
+
+    event MintPaymentPolicyAdded(uint256 indexed policyId, MintPaymentPolicy policy);
 
     constructor(
         address licenseRegistry,
@@ -28,14 +35,29 @@ contract MintPaymentLicensingFramework is BaseLicensingFramework, IMintParamVeri
         payment = _payment;
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public view virtual
-        override(IERC165, BaseLicensingFramework)
-        returns (bool) {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(IERC165, BaseLicensingFramework) returns (bool) {
+        // support only mint param verifier
         return
             interfaceId == type(IParamVerifier).interfaceId ||
             interfaceId == type(IMintParamVerifier).interfaceId ||
             super.supportsInterface(interfaceId);
+    }
+
+    function addPolicy(MintPaymentPolicy calldata mmpol) external returns (uint256 policyId) {
+        if (frameworkId == 0) {
+            revert Errors.LicensingFrameworkUML_FrameworkNotYetRegistered();
+        }
+
+        require(mmpol.mustBeTrue, "MintPaymentLicensingFramework: mustBeTrue");
+
+        Licensing.Policy memory protocolPolicy = Licensing.Policy({
+            frameworkId: frameworkId,
+            data: abi.encode(mmpol)
+        });
+        return LICENSE_REGISTRY.addPolicy(protocolPolicy);
+        emit MintPaymentPolicyAdded(policyId, mmpol);
     }
 
     /// @dev Mock verifies the param by decoding it as a bool. If you want the verifier
@@ -58,5 +80,4 @@ contract MintPaymentLicensingFramework is BaseLicensingFramework, IMintParamVeri
     function policyToJson(bytes memory policyData) public view returns (string memory) {
         return "MintPaymentLicensingFramework";
     }
-
 }
