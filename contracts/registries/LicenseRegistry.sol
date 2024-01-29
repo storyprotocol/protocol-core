@@ -308,7 +308,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
                 revert Errors.LicenseRegistry__MintLicenseParamFailed();
             }
         }
-        
+
         Licensing.License memory licenseData = Licensing.License({ policyId: policyId, licensorIpId: licensorIp });
         bool isNew;
         (licenseId, isNew) = _addIdOrGetExisting(abi.encode(licenseData), _hashedLicenses, _totalLicenses);
