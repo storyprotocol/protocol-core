@@ -21,6 +21,7 @@ import "forge-std/console2.sol";
 
 struct UMLv1Policy {
     bool attribution;
+    bool transferable;
     bool commercialUse;
     bool commercialAttribution;
     string[] commercializers;
@@ -125,12 +126,17 @@ contract LicensingFrameworkUML is
     }
 
     function verifyTransfer(
-        uint256,
+        uint256 licenseId,
+        address from,
         address,
-        address,
         uint256,
-        bytes memory
+        bytes memory policyData
     ) external returns (bool) {
+        UMLv1Policy memory policy = abi.decode(policyData, (UMLv1Policy));
+        if (!policy.transferable) {
+            // True if from == licensor
+            return from == LICENSE_REGISTRY.licensorIpId(licenseId);
+        }
         return true;
     }
 

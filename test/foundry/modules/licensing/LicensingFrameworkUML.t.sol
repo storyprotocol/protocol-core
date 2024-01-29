@@ -39,6 +39,7 @@ contract LicensingFrameworkUMLTest is Test {
         distributionChannels[0] = "test3";
         UMLv1Policy memory umlPolicy = UMLv1Policy({
             attribution: true,
+            transferable: false,
             commercialUse: true,
             commercialAttribution: true,
             commercializers: emptyStringArray,
@@ -62,6 +63,7 @@ contract LicensingFrameworkUMLTest is Test {
         // If no commercial values allowed
         UMLv1Policy memory umlPolicy = UMLv1Policy({
             attribution: false,
+            transferable: false,
             commercialUse: false,
             commercialAttribution: true,
             commercializers: emptyStringArray,
@@ -110,6 +112,7 @@ contract LicensingFrameworkUMLTest is Test {
         commercializers[1] = "test2";
         UMLv1Policy memory umlPolicy = UMLv1Policy({
             attribution: false,
+            transferable: false,
             commercialUse: true,
             commercialAttribution: true,
             commercializers: commercializers,
@@ -140,6 +143,7 @@ contract LicensingFrameworkUMLTest is Test {
         // If no derivative values allowed
         UMLv1Policy memory umlPolicy = UMLv1Policy({
             attribution: false,
+            transferable: false,
             commercialUse: true, // So derivativesRevShare doesn't revert for this
             commercialAttribution: false,
             commercializers: emptyStringArray,
@@ -183,6 +187,7 @@ contract LicensingFrameworkUMLTest is Test {
     function test_LicensingFrameworkUML_derivatives_valuesSetCorrectly() public {
         UMLv1Policy memory umlPolicy = UMLv1Policy({
             attribution: false,
+            transferable: false,
             commercialUse: true, // If false, derivativesRevShare should revert
             commercialAttribution: true,
             commercializers: emptyStringArray,
@@ -204,9 +209,12 @@ contract LicensingFrameworkUMLTest is Test {
         // TODO
     }
 
+    // APPROVAL TERMS
+
     function test_LicensingFrameworkUML_derivativesWithApproval_revert_linkNotApproved() public {
         uint256 policyId = umlFramework.addPolicy(UMLv1Policy({
             attribution: false,
+            transferable: false,
             commercialUse: false,
             commercialAttribution: false,
             commercializers: emptyStringArray,
@@ -233,6 +241,7 @@ contract LicensingFrameworkUMLTest is Test {
     function test_LicensingFrameworkUML_derivatives_withApproval_linkApprovedIpId() public {
         uint256 policyId = umlFramework.addPolicy(UMLv1Policy({
             attribution: false,
+            transferable: false,
             commercialUse: false,
             commercialAttribution: false,
             commercializers: emptyStringArray,
@@ -257,15 +266,63 @@ contract LicensingFrameworkUMLTest is Test {
     }
 
     function test_LicensingFrameworkUML_derivatives_withApproval_revert_approverNotLicensor() public {
-        // TODO
+        // TODO: ACL
     }
 
+    // TRANSFER TERMS
+
     function test_LicensingFrameworkUML_transferrable() public {
-        // TODO
+        UMLv1Policy memory umlPolicy = UMLv1Policy({
+            attribution: false,
+            transferable: true,
+            commercialUse: false,
+            commercialAttribution: false,
+            commercializers: emptyStringArray,
+            commercialRevShare: 0,
+            derivativesAllowed: false, // If false, derivativesRevShare should revert
+            derivativesAttribution: false,
+            derivativesApproval: false,
+            derivativesReciprocal: false,
+            derivativesRevShare: 0,
+            territories: emptyStringArray,
+            distributionChannels: emptyStringArray
+        });
+        uint256 policyId = umlFramework.addPolicy(umlPolicy);
+        registry.addPolicyToIp(ipId1, policyId);
+        uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
+        assertEq(registry.balanceOf(licenseHolder, licenseId), 1);
+        address licenseHolder2 = address(0x222);
+        vm.prank(licenseHolder);
+        registry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
+        assertEq(registry.balanceOf(licenseHolder, licenseId), 0);
+        assertEq(registry.balanceOf(licenseHolder2, licenseId), 1);
     }
 
     function test_LicensingFrameworkUML_nonTransferrable_revertIfTransferExceptFromLicensor() public {
-        // TODO
+        UMLv1Policy memory umlPolicy = UMLv1Policy({
+            attribution: false,
+            transferable: false,
+            commercialUse: false,
+            commercialAttribution: false,
+            commercializers: emptyStringArray,
+            commercialRevShare: 0,
+            derivativesAllowed: false, // If false, derivativesRevShare should revert
+            derivativesAttribution: false,
+            derivativesApproval: false,
+            derivativesReciprocal: false,
+            derivativesRevShare: 0,
+            territories: emptyStringArray,
+            distributionChannels: emptyStringArray
+        });
+        uint256 policyId = umlFramework.addPolicy(umlPolicy);
+        registry.addPolicyToIp(ipId1, policyId);
+        uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
+        assertEq(registry.balanceOf(licenseHolder, licenseId), 1);
+        address licenseHolder2 = address(0x222);
+        vm.startPrank(licenseHolder);
+        vm.expectRevert(Errors.LicenseRegistry__TransferParamFailed.selector);
+        registry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
+        vm.stopPrank();
     }
 
     function test_LicensingFrameworkUML_mintFee() public {
