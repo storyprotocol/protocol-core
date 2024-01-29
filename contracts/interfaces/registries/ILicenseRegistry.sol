@@ -7,7 +7,7 @@ interface ILicenseRegistry {
     event LicenseFrameworkCreated(
         address indexed creator,
         uint256 indexed frameworkId,
-        Licensing.FrameworkCreationParams frameworkCreationParams
+        Licensing.Framework framework
     );
 
     event PolicyCreated(address indexed creator, uint256 indexed policyId, Licensing.Policy policy);
@@ -30,14 +30,7 @@ interface ILicenseRegistry {
 
     event IpIdLinkedToParent(address indexed caller, address indexed ipId, address indexed parentIpId);
 
-    function addLicenseFramework(
-        Licensing.FrameworkCreationParams calldata fwCreation
-    ) external returns (uint256 frameworkId);
-
-    function addPolicyToIp(
-        address ipId,
-        Licensing.Policy memory pol
-    ) external returns (uint256 policyId, bool isNew, uint256 indexOnIpId);
+    function addLicenseFramework(Licensing.Framework calldata fw) external returns (uint256 frameworkId);
 
     function addPolicyToIp(address ipId, uint256 polId) external returns (uint256 indexOnIpId);
 
@@ -58,7 +51,7 @@ interface ILicenseRegistry {
 
     function totalFrameworks() external view returns (uint256);
 
-    function frameworkParam(uint256 frameworkId, string calldata name) external view returns (Licensing.Parameter memory);
+    function framework(uint256 frameworkId) external view returns (Licensing.Framework memory);
     function frameworkUrl(uint256 frameworkId) external view returns (string memory);
 
     function totalPolicies() external view returns (uint256);

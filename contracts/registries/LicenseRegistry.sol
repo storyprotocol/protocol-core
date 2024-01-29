@@ -9,6 +9,7 @@ import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortSt
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 // contracts
+import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
@@ -16,6 +17,8 @@ import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransfer
 import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
+import { ILicensingFramework } from "contracts/interfaces/licensing/ILicensingFramework.sol";
+
 
 // TODO: consider disabling operators/approvals on creation
 contract LicenseRegistry is ERC1155, ILicenseRegistry {
@@ -61,37 +64,26 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         _;
     }
 
-    constructor(string memory uri) ERC1155(uri) {}
+    constructor() ERC1155("") {}
 
     /// Adds a license framework to Story Protocol.
     /// Must be called by protocol admin
-    /// @param fwCreation parameters
+    /// @param fwCreation framework parameters
     /// @return frameworkId identifier for framework, starting in 1
     function addLicenseFramework(
-        Licensing.FrameworkCreationParams calldata fwCreation
+        Licensing.Framework calldata fwCreation
     ) external returns (uint256 frameworkId) {
-        // check protocol auth
+        // TODO: check protocol auth
         if (bytes(fwCreation.licenseUrl).length == 0 || fwCreation.licenseUrl.equal("")) {
             revert Errors.LicenseRegistry__EmptyLicenseUrl();
+        }
+        if (fwCreation.licensingFramework == address(0)) {
+            revert Errors.LicenseRegistry__ZeroLicensingFramework();
         }
         // Todo: check duplications
 
         ++_totalFrameworks;
-        Licensing.Framework storage fw = _frameworks[_totalFrameworks];
-        fw.licenseUrl = fwCreation.licenseUrl;
-        uint256 paramLength = fwCreation.parameters.length;
-        if (paramLength != fwCreation.defaultValues.length) {
-            revert Errors.LicenseRegistry__ParamVerifierLengthMismatch();
-        }
-        mapping(bytes32 => Licensing.Parameter) storage params = fw.parameters;
-        for (uint256 i = 0; i < paramLength; i++) {
-            IParamVerifier verifier = fwCreation.parameters[i];
-            bytes32 paramName = verifier.name();
-            if (address(params[paramName].verifier) != address(0)) {
-                revert Errors.LicenseRegistry__ParamVerifierAlreadySet();
-            }
-            params[paramName] = Licensing.Parameter({ verifier: verifier, defaultValue: fwCreation.defaultValues[i] });
-        }
+        _frameworks[_totalFrameworks] = fwCreation;
 
         emit LicenseFrameworkCreated(msg.sender, _totalFrameworks, fwCreation);
         return _totalFrameworks;
@@ -102,21 +94,16 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return _totalFrameworks;
     }
 
-    /// Returns framework for id. Reverts if not found
-    function frameworkParam(
-        uint256 frameworkId,
-        string calldata name
-    ) public view returns (Licensing.Parameter memory) {
-        Licensing.Framework storage fw = _framework(frameworkId);
-        return fw.parameters[ShortString.unwrap(name.toShortString())];
-    }
-
     function _framework(uint256 frameworkId) internal view returns (Licensing.Framework storage fw) {
         fw = _frameworks[frameworkId];
-        if (bytes(fw.licenseUrl).length == 0) {
+        if (fw.licensingFramework == address(0)) {
             revert Errors.LicenseRegistry__FrameworkNotFound();
         }
         return fw;
+    }
+
+    function framework(uint256 frameworkId) external view returns (Licensing.Framework memory) {
+        return _framework(frameworkId);
     }
 
     function frameworkUrl(uint256 frameworkId) external view returns (string memory) {
@@ -149,24 +136,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     }
 
     /// Adds a policy to an ipId, which can be used to mint licenses.
-    /// Licenses are permissions for ipIds to be derivatives (children).
-    /// If an exact policy already existed, it will reuse the id.
-    /// Will revert if ipId already has the same policy
-    /// @param ipId to receive the policy
-    /// @param pol policy data
-    /// @return policyId if policy data was in the contract, policyId is reused, if it's new, id will be new.
-    /// @return isNew true if policy data was not in the contract, false if it was already stored
-    /// @return indexOnIpId position of policy within the ipIds policy set
-    function addPolicyToIp(
-        address ipId,
-        Licensing.Policy memory pol
-    ) public returns (uint256 policyId, bool isNew, uint256 indexOnIpId) {
-        // check protocol auth
-        (uint256 polId, bool newPolicy) = _addPolicy(pol);
-        return (polId, newPolicy, _addPolictyIdToIp(ipId, polId, false));
-    }
-
-    /// Adds a policy to an ipId, which can be used to mint licenses.
     /// Licnses are permissions for ipIds to be derivatives (children).
     /// if policyId is not defined in LicenseRegistry, reverts.
     /// Will revert if ipId already has the same policy
@@ -180,24 +149,25 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return _addPolictyIdToIp(ipId, polId, false);
     }
 
+    /// Adds a particular configuration of license terms to the protocol.
+    /// Must be called by a LicensingFramework, which is responsible for verifying the parameters 
+    /// are valid and the configuration makes sense.
+    /// @param pol policy data
+    /// @return policyId if policy data was in the contract, policyId is reused, if it's new, id will be new.
     function addPolicy(Licensing.Policy memory pol) public returns (uint256 policyId) {
-        (uint256 polId, bool newPol) = _addPolicy(pol);
+        address licensingFramework = _framework(pol.frameworkId).licensingFramework;
+        if (msg.sender != licensingFramework) {
+            revert Errors.LicenseRegistry__UnregisteredFrameworkAddingPolicy();
+        }
+        (uint256 polId, bool newPol) = _addIdOrGetExisting(abi.encode(pol), _hashedPolicies, _totalPolicies);
         if (!newPol) {
             revert Errors.LicenseRegistry__PolicyAlreadyAdded();
-        }
-        return polId;
-    }
-
-    function _addPolicy(Licensing.Policy memory pol) public returns (uint256 policyId, bool isNew) {
-        // We ignore the return value, we just want to check if the framework exists
-        _framework(pol.frameworkId);
-        (uint256 polId, bool newPol) = _addIdOrGetExisting(abi.encode(pol), _hashedPolicies, _totalPolicies);
-        if (newPol) {
+        } else {
             _totalPolicies = polId;
             _policies[polId] = pol;
             emit PolicyCreated(msg.sender, polId, pol);
         }
-        return (polId, newPol);
+        return polId;
     }
 
     /// Adds a policy id to the ipId policy set
@@ -211,6 +181,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         if (!_pols.add(policyId)) {
             revert Errors.LicenseRegistry__PolicyAlreadySetForIpId();
         }
+        // TODO: check for policy compatibility.
+        // compatibilityManager.isPolicyCompatible(newPolicy, policiesInIpId);
         index = _pols.length() - 1;
         PolicySetup storage setup = _policySetups[ipId][policyId];
         // This should not happen, but just in case
@@ -306,29 +278,20 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         Licensing.Policy memory pol = policy(policyId);
         Licensing.Framework storage fw = _framework(pol.frameworkId);
         bool setByLinking = _policySetups[licensorIp][policyId].setByLinking;
-        for (uint256 i = 0; i < pol.paramNames.length; i++) {
-            Licensing.Parameter memory param = fw.parameters[pol.paramNames[i]];
 
-            if (ERC165Checker.supportsInterface(address(param.verifier), type(IMintParamVerifier).interfaceId)) {
-                bool verificationOk = IMintParamVerifier(address(param.verifier)).verifyMint(
-                    msg.sender,
-                    policyId,
-                    setByLinking,
-                    licensorIp,
-                    receiver,
-                    amount,
-                    pol.paramValues[i].length == 0 ? param.defaultValue : pol.paramValues[i]
-                );
-
-                if (!verificationOk) {
-                    revert Errors.LicenseRegistry__ParamVerifierFailed(
-                        uint8(Licensing.ParamVerifierType.Mint),
-                        address(param.verifier)
-                    );
-                }
+        if (ERC165Checker.supportsInterface(fw.licensingFramework, type(IMintParamVerifier).interfaceId)) {
+            if(!IMintParamVerifier(fw.licensingFramework).verifyMint(
+                msg.sender,
+                setByLinking,
+                licensorIp,
+                receiver,
+                amount,
+                pol.data
+            )) {
+                revert Errors.LicenseRegistry__MintLicenseParamFailed();
             }
         }
-
+        
         Licensing.License memory licenseData = Licensing.License({ policyId: policyId, licensorIpId: licensorIp });
         bool isNew;
         (licenseId, isNew) = _addIdOrGetExisting(abi.encode(licenseData), _hashedLicenses, _totalLicenses);
@@ -380,27 +343,17 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         Licensing.Policy memory pol = policy(licenseData.policyId);
         Licensing.Framework storage fw = _framework(pol.frameworkId);
 
-        for (uint256 i = 0; i < pol.paramNames.length; i++) {
-            Licensing.Parameter memory param = fw.parameters[pol.paramNames[i]];
-
-            if (ERC165Checker.supportsInterface(address(param.verifier), type(ILinkParamVerifier).interfaceId)) {
-                bool verificationOk = ILinkParamVerifier(address(param.verifier)).verifyLink(
-                    licenseId,
-                    msg.sender,
-                    childIpId,
-                    parentIpId,
-                    pol.paramValues[i].length == 0 ? param.defaultValue : pol.paramValues[i]
-                );
-
-                if (!verificationOk) {
-                    revert Errors.LicenseRegistry__ParamVerifierFailed(
-                        uint8(uint8(Licensing.ParamVerifierType.LinkParent)),
-                        address(param.verifier)
-                    );
-                }
+        if (ERC165Checker.supportsInterface(fw.licensingFramework, type(ILinkParamVerifier).interfaceId)) {
+            if(!ILinkParamVerifier(fw.licensingFramework).verifyLink(
+                licenseId,
+                msg.sender,
+                childIpId,
+                parentIpId,
+                pol.data
+            )) {
+                revert Errors.LicenseRegistry__LinkParentParamFailed();
             }
         }
-
         // Add policy to kid
         _addPolictyIdToIp(childIpId, licenseData.policyId, true);
         // Set parent
@@ -445,29 +398,21 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
                 // Verify transfer params
                 Licensing.Policy memory pol = policy(_licenses[ids[i]].policyId);
                 Licensing.Framework storage fw = _framework(pol.frameworkId);
-                for (uint256 j = 0; j < pol.paramNames.length; j++) {
-                    Licensing.Parameter memory param = fw.parameters[pol.paramNames[j]];
-                    bytes memory paramValue = pol.paramValues[j];
-                    if (
-                        ERC165Checker.supportsInterface(
-                            address(param.verifier),
-                            type(ITransferParamVerifier).interfaceId
-                        )
-                    ) {
-                        bool verificationOk = ITransferParamVerifier(address(param.verifier)).verifyTransfer(
-                            ids[i],
-                            from,
-                            to,
-                            values[i],
-                            paramValue.length == 0 ? param.defaultValue : paramValue
-                        );
 
-                        if (!verificationOk) {
-                            revert Errors.LicenseRegistry__ParamVerifierFailed(
-                                uint8(Licensing.ParamVerifierType.Transfer),
-                                address(param.verifier)
-                            );
-                        }
+                if (
+                    ERC165Checker.supportsInterface(
+                        fw.licensingFramework,
+                        type(ITransferParamVerifier).interfaceId
+                    )
+                ) {
+                    if(!ITransferParamVerifier(fw.licensingFramework).verifyTransfer(
+                        ids[i],
+                        from,
+                        to,
+                        values[i],
+                        pol.data
+                    )) {
+                        revert Errors.LicenseRegistry__TransferParamFailed();
                     }
                 }
             }
@@ -475,5 +420,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         super._update(from, to, ids, values);
     }
 
-    // TODO: tokenUri from parameters, from a metadata resolver contract
+    function uri(uint256 id) public view virtual override returns (string memory) {
+        Licensing.License memory licenseData = _licenses[id];
+        Licensing.Policy memory pol = policy(licenseData.policyId);
+        Licensing.Framework storage fw = _framework(pol.frameworkId);
+        return ILicensingFramework(fw.licensingFramework).policyToJson(pol.data);
+    }
 }

@@ -83,7 +83,7 @@ contract IPAssetRendererTest is BaseTest {
         BaseTest.setUp();
         governance = new Governance(address(this));
         // TODO: Create an IP record registry mock instead.
-        licenseRegistry = new LicenseRegistry("");
+        licenseRegistry = new LicenseRegistry();
         accessController = new AccessController(address(governance));
         moduleRegistry = new ModuleRegistry(address(governance));
         MockERC721 erc721 = new MockERC721();

@@ -4,31 +4,34 @@ pragma solidity ^0.8.23;
 // external
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC165, IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
-import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
+
 // contracts
-import { BaseParamVerifier } from "contracts/modules/licensing/parameters/BaseParamVerifier.sol";
+import { BaseLicensingFramework } from "contracts/modules/licensing/BaseLicensingFramework.sol";
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 
-contract MintPaymentVerifier is BaseParamVerifier, ERC165, IMintParamVerifier {
-    using ShortStrings for *;
+contract MintPaymentLicensingFramework is BaseLicensingFramework, IMintParamVerifier {
 
     IERC20 public token;
     uint256 public payment;
 
     constructor(
         address licenseRegistry,
+        string memory licenseUrl,
         address _token,
         uint256 _payment
-    ) BaseParamVerifier(licenseRegistry, "MintPaymentVerifier") {
+    ) BaseLicensingFramework(licenseRegistry, licenseUrl) {
         token = IERC20(_token);
         payment = _payment;
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
+    function supportsInterface(bytes4 interfaceId)
+        public view virtual
+        override(IERC165, BaseLicensingFramework)
+        returns (bool) {
         return
             interfaceId == type(IParamVerifier).interfaceId ||
             interfaceId == type(IMintParamVerifier).interfaceId ||
@@ -39,12 +42,11 @@ contract MintPaymentVerifier is BaseParamVerifier, ERC165, IMintParamVerifier {
     /// to return true, pass in abi.encode(true) as the value.
     function verifyMint(
         address caller,
-        uint256 policyId,
         bool policyAddedByLinking,
         address licensors,
         address receiver,
         uint256 mintAmount,
-        bytes memory data
+        bytes memory policyData
     ) external returns (bool) {
         // TODO: return false on approval or transfer failure
         uint256 payment_ = mintAmount * payment;
@@ -53,19 +55,8 @@ contract MintPaymentVerifier is BaseParamVerifier, ERC165, IMintParamVerifier {
         return true;
     }
 
-    function verifyTransfer(address, uint256, bytes memory) external pure returns (bool) {
-        return true;
+    function policyToJson(bytes memory policyData) public view returns (string memory) {
+        return "MintPaymentLicensingFramework";
     }
 
-    function verifyLinkParent(address, bytes memory) external pure returns (bool) {
-        return true;
-    }
-
-    function verifyActivation(address, bytes memory) external pure returns (bool) {
-        return true;
-    }
-
-    function allowsOtherPolicyOnSameIp(bytes memory data) external pure returns (bool) {
-        return true;
-    }
 }

@@ -8,30 +8,37 @@ import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVer
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
-import { BaseParamVerifier } from "contracts/modules/licensing/parameters/BaseParamVerifier.sol";
+import { BaseLicensingFramework } from "contracts/modules/licensing/BaseLicensingFramework.sol";
+import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 
-struct MockParamVerifierConfig {
+struct MockLicensingFrameworkConfig {
     address licenseRegistry;
-    string name;
+    string licenseUrl;
     bool supportVerifyLink;
     bool supportVerifyMint;
     bool supportVerifyTransfer;
 }
 
-contract MockParamVerifier is
-    ERC165,
-    BaseParamVerifier,
+struct MockPolicy {
+    bool returnVerifyLink;
+    bool returnVerifyMint;
+    bool returnVerifyTransfer;
+}
+
+contract MockLicensingFramework is
+    BaseLicensingFramework,
     ILinkParamVerifier,
     IMintParamVerifier,
     ITransferParamVerifier
 {
-    MockParamVerifierConfig internal config;
+    MockLicensingFrameworkConfig internal config;
 
-    constructor(MockParamVerifierConfig memory conf) BaseParamVerifier(conf.licenseRegistry, conf.name) {
+    constructor(MockLicensingFrameworkConfig memory conf)
+        BaseLicensingFramework(conf.licenseRegistry, conf.licenseUrl) {
         config = conf;
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, BaseLicensingFramework) returns (bool) {
         if (interfaceId == type(IParamVerifier).interfaceId) return true;
         if (interfaceId == type(ILinkParamVerifier).interfaceId) return config.supportVerifyLink;
         if (interfaceId == type(IMintParamVerifier).interfaceId) return config.supportVerifyMint;
@@ -39,24 +46,21 @@ contract MockParamVerifier is
         return super.supportsInterface(interfaceId);
     }
 
-    function allowsOtherPolicyOnSameIp(bytes memory data) external pure override returns (bool) {
-        return true;
-    }
-
     function verifyMint(
         address,
-        uint256,
         bool,
         address,
         address,
         uint256,
         bytes memory data
-    ) external pure returns (bool) {
-        return abi.decode(data, (bool));
+    ) external view returns (bool) {
+        MockPolicy memory policy = abi.decode(data, (MockPolicy));
+        return policy.returnVerifyMint;
     }
 
     function verifyLink(uint256, address, address, address, bytes calldata data) external pure override returns (bool) {
-        return abi.decode(data, (bool));
+        MockPolicy memory policy = abi.decode(data, (MockPolicy));
+        return policy.returnVerifyLink;
     }
 
     function verifyTransfer(
@@ -66,6 +70,12 @@ contract MockParamVerifier is
         uint256,
         bytes memory data
     ) external pure override returns (bool) {
-        return abi.decode(data, (bool));
+        MockPolicy memory policy = abi.decode(data, (MockPolicy));
+        return policy.returnVerifyTransfer;
     }
+
+    function policyToJson(bytes memory policyData) public pure returns (string memory) {
+        return "MockLicensingFramework";
+    }
+
 }

@@ -10,6 +10,6 @@ interface ILinkParamVerifier is IParamVerifier {
         address caller,
         address ipId,
         address parentIpId,
-        bytes calldata data
+        bytes calldata policyData
     ) external returns (bool);
 }

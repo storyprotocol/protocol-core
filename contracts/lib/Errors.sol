@@ -74,28 +74,46 @@ library Errors {
     error LicenseRegistry__PolicyAlreadySetForIpId();
     error LicenseRegistry__FrameworkNotFound();
     error LicenseRegistry__EmptyLicenseUrl();
+    error LicenseRegistry__ZeroLicensingFramework();
     error LicenseRegistry__PolicyAlreadyAdded();
     error LicenseRegistry__ParamVerifierLengthMismatch();
-    error LicenseRegistry__InvalidParamVerifierType();
     error LicenseRegistry__PolicyNotFound();
     error LicenseRegistry__NotLicensee();
     error LicenseRegistry__ParentIdEqualThanChild();
     error LicenseRegistry__LicensorDoesntHaveThisPolicy();
-    error LicenseRegistry__ParamVerifierFailed(uint8 verifierType, address verifier);
+    error LicenseRegistry__MintLicenseParamFailed();
     error LicenseRegistry__LinkParentParamFailed();
+    error LicenseRegistry__TransferParamFailed();
     error LicenseRegistry__InvalidLicensor();
     error LicenseRegistry__ParamVerifierAlreadySet();
+    error LicenseRegistry__CommercialTermInNonCommercialPolicy();
+    error LicenseRegistry__EmptyParamName();
+    error LicenseRegistry__UnregisteredFrameworkAddingPolicy();
 
     ////////////////////////////////////////////////////////////////////////////
-    //                            BaseParamVerifier                           //
+    //                        LicenseRegistryAware                            //
     ////////////////////////////////////////////////////////////////////////////
-    error BaseParamVerifier__Unauthorized();
+
+    error LicenseRegistryAware__CallerNotLicenseRegistry();
 
     ////////////////////////////////////////////////////////////////////////////
-    //                     DerivativesParamVerifier                           //
+    //                         LicensingFrameworkUML                             //
     ////////////////////////////////////////////////////////////////////////////
-    error DerivativesParamVerifier__InvalidDerivativesConfig();
-    error DerivativesParamVerifier__ZeroShare();
+
+    error LicensingFrameworkUML_CommecialDisabled_CantAddAttribution();
+    error LicensingFrameworkUML_CommecialDisabled_CantAddCommercializers();
+    error LicensingFrameworkUML_CommecialDisabled_CantAddRevShare();
+    error LicensingFrameworkUML_CommecialDisabled_CantAddDerivRevShare();
+    error LicensingFrameworkUML_DerivativesDisabled_CantAddAttribution();
+    error LicensingFrameworkUML_DerivativesDisabled_CantAddApproval();
+    error LicensingFrameworkUML_DerivativesDisabled_CantAddReciprocal();
+    error LicensingFrameworkUML_DerivativesDisabled_CantAddRevShare();
+    error LicensingFrameworkUML_FrameworkNotYetRegistered();
+    
+    ////////////////////////////////////////////////////////////////////////////
+    //                     LicensorApprovalManager                            //
+    ////////////////////////////////////////////////////////////////////////////
+    error LicensorApprovalManager__Unauthorized();
 
     ////////////////////////////////////////////////////////////////////////////
     //                            Dispute Module                              //
