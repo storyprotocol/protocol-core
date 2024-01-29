@@ -1,0 +1,1 @@
+Integration test involving all components and core modules.

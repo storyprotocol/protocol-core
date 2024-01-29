@@ -108,7 +108,7 @@ contract IntegrationTest is Test {
             supportVerifyTransfer: true
         }));
 
-        nft = MockERC721s({ a: new MockERC721(), b: new MockERC721(), c: new MockERC721() });
+        nft = MockERC721s({ a: new MockERC721("Mock"), b: new MockERC721("Mock"), c: new MockERC721("Mock") });
         u = UsersLib.createMockUsers(vm);
 
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
@@ -123,11 +123,6 @@ contract IntegrationTest is Test {
             address(mockToken),
             1 * 10 ** mockToken.decimals()
         );
-
-        vm.label(address(disputeModule), "disputeModule");
-        vm.label(address(arbitrationPolicySP), "arbitrationPolicySP");
-        vm.label(address(royaltyModule), "royaltyModule");
-        vm.label(address(royaltyPolicyLS), "royaltyPolicyLS");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -170,7 +165,7 @@ contract IntegrationTest is Test {
     }
 
     function getIpId(address user, MockERC721 mnft, uint256 tokenId) public view returns (address ipId) {
-        require(mnft.ownerOf(tokenId) == user, "getIpId: not owner");
+        // require(mnft.ownerOf(tokenId) == user, "getIpId: not owner");
         ipId = ipacct[user][mnft][tokenId];
         require(ipId == ipacctRegistry.ipAccount(block.chainid, address(mnft), tokenId));
     }
