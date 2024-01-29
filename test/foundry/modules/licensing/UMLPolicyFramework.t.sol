@@ -6,8 +6,8 @@ import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Errors } from "contracts/lib/Errors.sol";
-
-import { UMLPolicyFrameworkManager, UMLv1Policy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { IUMLPolicyFrameworkManager, UMLPolicy } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
+import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
 import "forge-std/console2.sol";
 
@@ -37,7 +37,7 @@ contract UMLPolicyFrameworkTest is Test {
         territories[1] = "test2";
         string[] memory distributionChannels = new string[](1);
         distributionChannels[0] = "test3";
-        UMLv1Policy memory umlPolicy = UMLv1Policy({
+        UMLPolicy memory umlPolicy = UMLPolicy({
             attribution: true,
             transferable: false,
             commercialUse: true,
@@ -53,7 +53,7 @@ contract UMLPolicyFrameworkTest is Test {
             distributionChannels: distributionChannels
         });
         uint256 policyId = umlFramework.addPolicy(umlPolicy);
-        UMLv1Policy memory policy = umlFramework.getPolicy(policyId);
+        UMLPolicy memory policy = umlFramework.getPolicy(policyId);
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(umlPolicy)));
     }
 
@@ -61,7 +61,7 @@ contract UMLPolicyFrameworkTest is Test {
 
     function test_UMLPolicyFrameworkManager_commercialUse_disallowed_revert_settingIncompatibleTerms() public {
         // If no commercial values allowed
-        UMLv1Policy memory umlPolicy = UMLv1Policy({
+        UMLPolicy memory umlPolicy = UMLPolicy({
             attribution: false,
             transferable: false,
             commercialUse: false,
@@ -110,7 +110,7 @@ contract UMLPolicyFrameworkTest is Test {
         string[] memory commercializers = new string[](2);
         commercializers[0] = "test1";
         commercializers[1] = "test2";
-        UMLv1Policy memory umlPolicy = UMLv1Policy({
+        UMLPolicy memory umlPolicy = UMLPolicy({
             attribution: false,
             transferable: false,
             commercialUse: true,
@@ -126,7 +126,7 @@ contract UMLPolicyFrameworkTest is Test {
             distributionChannels: emptyStringArray
         });
         uint256 policyId = umlFramework.addPolicy(umlPolicy);
-        UMLv1Policy memory policy = umlFramework.getPolicy(policyId);
+        UMLPolicy memory policy = umlFramework.getPolicy(policyId);
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(umlPolicy)));
     }
 
@@ -141,7 +141,7 @@ contract UMLPolicyFrameworkTest is Test {
 
     function test_UMLPolicyFrameworkManager_derivatives_notAllowed_revert_settingIncompatibleTerms() public {
         // If no derivative values allowed
-        UMLv1Policy memory umlPolicy = UMLv1Policy({
+        UMLPolicy memory umlPolicy = UMLPolicy({
             attribution: false,
             transferable: false,
             commercialUse: true, // So derivativesRevShare doesn't revert for this
@@ -185,7 +185,7 @@ contract UMLPolicyFrameworkTest is Test {
     }
 
     function test_UMLPolicyFrameworkManager_derivatives_valuesSetCorrectly() public {
-        UMLv1Policy memory umlPolicy = UMLv1Policy({
+        UMLPolicy memory umlPolicy = UMLPolicy({
             attribution: false,
             transferable: false,
             commercialUse: true, // If false, derivativesRevShare should revert
@@ -201,7 +201,7 @@ contract UMLPolicyFrameworkTest is Test {
             distributionChannels: emptyStringArray
         });
         uint256 policyId = umlFramework.addPolicy(umlPolicy);
-        UMLv1Policy memory policy = umlFramework.getPolicy(policyId);
+        UMLPolicy memory policy = umlFramework.getPolicy(policyId);
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(umlPolicy)));
     }
 
@@ -212,7 +212,7 @@ contract UMLPolicyFrameworkTest is Test {
     // APPROVAL TERMS
 
     function test_UMLPolicyFrameworkManager_derivativesWithApproval_revert_linkNotApproved() public {
-        uint256 policyId = umlFramework.addPolicy(UMLv1Policy({
+        uint256 policyId = umlFramework.addPolicy(UMLPolicy({
             attribution: false,
             transferable: false,
             commercialUse: false,
@@ -239,7 +239,7 @@ contract UMLPolicyFrameworkTest is Test {
     }
 
     function test_UMLPolicyFrameworkManager_derivatives_withApproval_linkApprovedIpId() public {
-        uint256 policyId = umlFramework.addPolicy(UMLv1Policy({
+        uint256 policyId = umlFramework.addPolicy(UMLPolicy({
             attribution: false,
             transferable: false,
             commercialUse: false,
@@ -272,7 +272,7 @@ contract UMLPolicyFrameworkTest is Test {
     // TRANSFER TERMS
 
     function test_UMLPolicyFrameworkManager_transferrable() public {
-        UMLv1Policy memory umlPolicy = UMLv1Policy({
+        UMLPolicy memory umlPolicy = UMLPolicy({
             attribution: false,
             transferable: true,
             commercialUse: false,
@@ -299,7 +299,7 @@ contract UMLPolicyFrameworkTest is Test {
     }
 
     function test_UMLPolicyFrameworkManager_nonTransferrable_revertIfTransferExceptFromLicensor() public {
-        UMLv1Policy memory umlPolicy = UMLv1Policy({
+        UMLPolicy memory umlPolicy = UMLPolicy({
             attribution: false,
             transferable: false,
             commercialUse: false,

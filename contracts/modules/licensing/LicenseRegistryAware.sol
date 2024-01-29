@@ -6,6 +6,8 @@ pragma solidity ^0.8.23;
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
+/// @title LicenseRegistryAware
+/// @notice Base contract to be inherited by modules that need to access the license registry.
 abstract contract LicenseRegistryAware {
 
     /// @notice Gets the protocol-wide license registry.

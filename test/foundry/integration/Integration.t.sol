@@ -17,7 +17,7 @@ import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.so
 import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
-import { UMLPolicyFrameworkManager, UMLv1Policy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";

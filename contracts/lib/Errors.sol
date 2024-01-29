@@ -22,7 +22,6 @@ library Errors {
     error IPAccount__InvalidSignature();
     error IPAccount__ExpiredSignature();
 
-
     ////////////////////////////////////////////////////////////////////////////
     //                                   Module                               //
     ////////////////////////////////////////////////////////////////////////////
@@ -70,7 +69,6 @@ library Errors {
     //                            LicenseRegistry                             //
     ////////////////////////////////////////////////////////////////////////////
 
-    /// @notice Error thrown when a policy is already set for an IP ID.
     error LicenseRegistry__PolicyAlreadySetForIpId();
     error LicenseRegistry__FrameworkNotFound();
     error LicenseRegistry__EmptyLicenseUrl();
@@ -109,7 +107,7 @@ library Errors {
     error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddReciprocal();
     error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddRevShare();
     error UMLPolicyFrameworkManager_FrameworkNotYetRegistered();
-    
+
     ////////////////////////////////////////////////////////////////////////////
     //                     LicensorApprovalManager                            //
     ////////////////////////////////////////////////////////////////////////////

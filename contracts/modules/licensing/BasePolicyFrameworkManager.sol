@@ -14,17 +14,24 @@ import { LicenseRegistryAware } from "contracts/modules/licensing/LicenseRegistr
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
+/// @title BasePolicyFrameworkManager
+/// @notice Base contract for policy framework managers.
 abstract contract BasePolicyFrameworkManager is IParamVerifier, IPolicyFrameworkManager, ERC165, LicenseRegistryAware {
     string public licenseUrl;
 
     uint256 public frameworkId;
 
-    /// @notice Initializes the base module contract.
+    /// @notice Initializes the base contract.
     /// @param registry The address of the license registry.
+    /// @param templateUrl The URL for the license template.
     constructor(address registry, string memory templateUrl) LicenseRegistryAware(registry) {
         licenseUrl = templateUrl;
     }
 
+    /// @notice Registers this policy framework manager within the license registry, to be able
+    /// to add policies into the license registry.
+    /// @dev save the frameworkId in this PolicyFrameworkManager    
+    /// @return The ID of the policy framework.
     function register() external returns (uint256) {
         Licensing.PolicyFramework memory framework = Licensing.PolicyFramework({
             policyFramework: address(this),

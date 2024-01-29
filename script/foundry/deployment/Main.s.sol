@@ -28,7 +28,8 @@ import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.so
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { Governance } from "contracts/governance/Governance.sol";
-import { UMLPolicyFrameworkManager, UMLv1Policy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { IUMLPolicyFrameworkManager, UMLPolicy } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
+import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
 // test
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
@@ -265,7 +266,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         // ////////////////////////////////////////////////////////////////*/
 
         policyIds["test_true"] = umlAllTrue.addPolicy(
-            UMLv1Policy({
+            UMLPolicy({
                 attribution: true,
                 transferable: true,
                 commercialUse: true,
@@ -283,7 +284,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         );
 
         policyIds["expensive_mint"] = umlAllTrue.addPolicy(
-            UMLv1Policy({
+            UMLPolicy({
                 attribution: true,
                 transferable: true,
                 commercialUse: true,

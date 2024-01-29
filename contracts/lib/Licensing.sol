@@ -4,32 +4,35 @@ pragma solidity ^0.8.20;
 import { IParamVerifier } from "../interfaces/licensing/IParamVerifier.sol";
 import { Errors } from "./Errors.sol";
 
+/// @title Licensing
+/// @notice Types and constants used by the licensing related contracts
 library Licensing {
-
-    /// Describes a licensing framework, which is a set of licensing terms (parameters)
+    /// @notice Describes a license policy framework, which is a set of licensing terms (parameters)
     /// that come into effect in different moments of the licensing life cycle.
     /// Must correspond to human (or at least lawyer) readable text describing them in licenseUrl.
-    /// To be valid in Story Protocol, the parameters described in the text must express default values
-    /// corresponding to those of each Parameter struct
+    /// To be valid in Story Protocol, the policy framework must be registered in the LicenseRegistry.
+    /// @param policyFramework Address of the contract implementing the policy framework encoding and logic
+    /// @param licenseUrl URL to the file containing the legal text for the license agreement
     struct PolicyFramework {
         address policyFramework;
-        /// @notice URL to the file containing the legal text for the license agreement
         string licenseUrl;
     }
 
-    /// A particular configuration of a Licensing PolicyFramework, setting (or not) values for the licensing
+    /// @notice A particular configuration (flavor) of a Policy Framework, setting values for the licensing
     /// terms (parameters) of the framework.
+    /// @param policyFrameworkId Id of the policy framework this policy is based on
+    /// @param policyData Encoded data for the policy, specific to the policy framework
     struct Policy {
-        /// Id of a Licensing PolicyFramework
         uint256 frameworkId;
         bytes data;
     }
 
-    /// Data that define a License Agreement NFT
+    /// @notice Data that define a License Agreement NFT
+    /// @param policyId Id of the policy this license is based on, which will be set in the derivative
+    /// IP when the license is burnt
+    /// @param licensorIpId Id of the IP this license is for
     struct License {
-        /// the id for the Policy this License will set to the desired derivative IP after being burned.
         uint256 policyId;
-        /// Id for the licensor of the Ip Id
         address licensorIpId;
     }
 }

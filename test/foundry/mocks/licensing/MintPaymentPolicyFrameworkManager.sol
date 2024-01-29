@@ -64,7 +64,7 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintP
     /// to return true, pass in abi.encode(true) as the value.
     function verifyMint(
         address caller,
-        bool policyAddedByLinking,
+        bool policyWasInherited,
         address licensors,
         address receiver,
         uint256 mintAmount,

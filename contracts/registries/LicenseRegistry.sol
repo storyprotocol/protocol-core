@@ -19,7 +19,6 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 
-
 // TODO: consider disabling operators/approvals on creation
 contract LicenseRegistry is ERC1155, ILicenseRegistry {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -70,9 +69,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// Must be called by protocol admin
     /// @param fwCreation framework parameters
     /// @return frameworkId identifier for framework, starting in 1
-    function addPolicyFramework(
-        Licensing.PolicyFramework calldata fwCreation
-    ) external returns (uint256 frameworkId) {
+    function addPolicyFramework(Licensing.PolicyFramework calldata fwCreation) external returns (uint256 frameworkId) {
         // TODO: check protocol auth
         if (bytes(fwCreation.licenseUrl).length == 0 || fwCreation.licenseUrl.equal("")) {
             revert Errors.LicenseRegistry__EmptyLicenseUrl();
@@ -150,7 +147,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     }
 
     /// Adds a particular configuration of license terms to the protocol.
-    /// Must be called by a PolicyFramework, which is responsible for verifying the parameters 
+    /// Must be called by a PolicyFramework, which is responsible for verifying the parameters
     /// are valid and the configuration makes sense.
     /// @param pol policy data
     /// @return policyId if policy data was in the contract, policyId is reused, if it's new, id will be new.
@@ -280,18 +277,20 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         bool inheritedPolicy = _policySetups[licensorIp][policyId].inheritedPolicy;
 
         if (ERC165Checker.supportsInterface(fw.policyFramework, type(IMintParamVerifier).interfaceId)) {
-            if(!IMintParamVerifier(fw.policyFramework).verifyMint(
-                msg.sender,
-                inheritedPolicy,
-                licensorIp,
-                receiver,
-                amount,
-                pol.data
-            )) {
+            if (
+                !IMintParamVerifier(fw.policyFramework).verifyMint(
+                    msg.sender,
+                    inheritedPolicy,
+                    licensorIp,
+                    receiver,
+                    amount,
+                    pol.data
+                )
+            ) {
                 revert Errors.LicenseRegistry__MintLicenseParamFailed();
             }
         }
-        
+
         Licensing.License memory licenseData = Licensing.License({ policyId: policyId, licensorIpId: licensorIp });
         bool isNew;
         (licenseId, isNew) = _addIdOrGetExisting(abi.encode(licenseData), _hashedLicenses, _totalLicenses);
@@ -344,13 +343,15 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         Licensing.PolicyFramework storage fw = _framework(pol.frameworkId);
 
         if (ERC165Checker.supportsInterface(fw.policyFramework, type(ILinkParamVerifier).interfaceId)) {
-            if(!ILinkParamVerifier(fw.policyFramework).verifyLink(
-                licenseId,
-                msg.sender,
-                childIpId,
-                parentIpId,
-                pol.data
-            )) {
+            if (
+                !ILinkParamVerifier(fw.policyFramework).verifyLink(
+                    licenseId,
+                    msg.sender,
+                    childIpId,
+                    parentIpId,
+                    pol.data
+                )
+            ) {
                 revert Errors.LicenseRegistry__LinkParentParamFailed();
             }
         }
@@ -392,26 +393,24 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         uint256[] memory ids,
         uint256[] memory values
     ) internal virtual override {
-        // We are interested in transfers, minting and burning are checked in mintLicense and linkIpToParent respectively.
+        // We are interested in transfers, minting and burning are checked in mintLicense and
+        // linkIpToParent respectively.
         if (from != address(0) && to != address(0)) {
             for (uint256 i = 0; i < ids.length; i++) {
                 // Verify transfer params
                 Licensing.Policy memory pol = policy(_licenses[ids[i]].policyId);
                 Licensing.PolicyFramework storage fw = _framework(pol.frameworkId);
 
-                if (
-                    ERC165Checker.supportsInterface(
-                        fw.policyFramework,
-                        type(ITransferParamVerifier).interfaceId
-                    )
-                ) {
-                    if(!ITransferParamVerifier(fw.policyFramework).verifyTransfer(
-                        ids[i],
-                        from,
-                        to,
-                        values[i],
-                        pol.data
-                    )) {
+                if (ERC165Checker.supportsInterface(fw.policyFramework, type(ITransferParamVerifier).interfaceId)) {
+                    if (
+                        !ITransferParamVerifier(fw.policyFramework).verifyTransfer(
+                            ids[i],
+                            from,
+                            to,
+                            values[i],
+                            pol.data
+                        )
+                    ) {
                         revert Errors.LicenseRegistry__TransferParamFailed();
                     }
                 }
