@@ -4,7 +4,8 @@ pragma solidity ^0.8.13;
 import { Test } from "forge-std/Test.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
-import { MockLicensingModule, MockLicensingModuleConfig } from "test/foundry/mocks/licensing/MockLicensingModule.sol";
+import { MockLicensingModule, MockLicensingModuleConfig, MockPolicy }
+    from "test/foundry/mocks/licensing/MockLicensingModule.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
@@ -18,7 +19,6 @@ contract LicenseRegistryTest is Test {
     Licensing.Framework public framework;
 
     MockLicensingModule public module1;
-    MockLicensingModule public module2;
 
     string public licenseUrl = "https://example.com/license";
     address public ipId1 = address(0x111);
@@ -30,15 +30,8 @@ contract LicenseRegistryTest is Test {
         module1 = new MockLicensingModule(MockLicensingModuleConfig({
             licenseRegistry: address(registry),
             licenseUrl: licenseUrl,
-            supportVerifyLink: false,
+            supportVerifyLink: true,
             supportVerifyMint: true,
-            supportVerifyTransfer: false
-        }));
-        module2 = new MockLicensingModule(MockLicensingModuleConfig({
-            licenseRegistry: address(registry),
-            licenseUrl: licenseUrl,
-            supportVerifyLink: false,
-            supportVerifyMint: false,
             supportVerifyTransfer: true
         }));
     }
@@ -52,7 +45,13 @@ contract LicenseRegistryTest is Test {
     function _createPolicy() internal pure returns (Licensing.Policy memory pol) {
         pol = Licensing.Policy({
             frameworkId: 1,
-            data: abi.encode("test")
+            data: abi.encode(
+                MockPolicy({
+                    returnVerifyLink: true,
+                    returnVerifyMint: true,
+                    returnVerifyTransfer: true
+                })
+            )
         });
         return pol;
     }
@@ -70,6 +69,7 @@ contract LicenseRegistryTest is Test {
     function test_LicenseRegistry_addPolicy() public {
         module1.register();
         Licensing.Policy memory policy = _createPolicy();
+        vm.prank(address(module1));
         uint256 polId = registry.addPolicy(policy);
         assertEq(polId, 1, "polId not 1");
     }
@@ -77,20 +77,24 @@ contract LicenseRegistryTest is Test {
     function test_LicenseRegistry_addPolicy_revert_policyAlreadyAdded() public {
         module1.register();
         Licensing.Policy memory policy = _createPolicy();
+        vm.startPrank(address(module1));
         registry.addPolicy(policy);
         vm.expectRevert(Errors.LicenseRegistry__PolicyAlreadyAdded.selector);
         registry.addPolicy(policy);
+        vm.stopPrank();
     }
 
     function test_LicenseRegistry_addPolicy_revert_frameworkNotFound() public {
         Licensing.Policy memory policy = _createPolicy();
         vm.expectRevert(Errors.LicenseRegistry__FrameworkNotFound.selector);
+        vm.prank(address(module1));
         registry.addPolicy(policy);
     }
 
     function test_LicenseRegistry_addPolicyToIpId() public {
         module1.register();
         Licensing.Policy memory policy = _createPolicy();
+        vm.prank(address(module1));
         uint256 policyId = registry.addPolicy(policy);
         uint256 indexOnIpId = registry.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1, "policyId not 1");
@@ -103,6 +107,7 @@ contract LicenseRegistryTest is Test {
     function test_LicenseRegistry_addSamePolicyReusesPolicyId() public {
         module1.register();
         Licensing.Policy memory policy = _createPolicy();
+        vm.prank(address(module1));
         uint256 policyId = registry.addPolicy(policy);
         uint256 indexOnIpId = registry.addPolicyToIp(ipId1, policyId);
         assertEq(indexOnIpId, 0);
@@ -122,6 +127,7 @@ contract LicenseRegistryTest is Test {
         Licensing.Policy memory policy = _createPolicy();
 
         // First time adding a policy
+        vm.prank(address(module1));
         uint256 policyId = registry.addPolicy(policy);
         uint256 indexOnIpId = registry.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1, "policyId not 1");
@@ -132,7 +138,14 @@ contract LicenseRegistryTest is Test {
         assertFalse(registry.isPolicySetByLinking(ipId1, policyId));
 
         // Adding different policy to same ipId
-        policy.data = abi.encode("test2");
+        policy.data = abi.encode(
+            MockPolicy({
+                returnVerifyLink: true,
+                returnVerifyMint: true,
+                returnVerifyTransfer: false
+            })
+        );
+        vm.prank(address(module1));
         uint256 policyId2 = registry.addPolicy(policy);
         uint256 indexOnIpId2 = registry.addPolicyToIp(ipId1, policyId2);
         assertEq(policyId2, 2, "policyId not 2");
@@ -146,6 +159,7 @@ contract LicenseRegistryTest is Test {
     function test_LicenseRegistry_mintLicense() public returns (uint256 licenseId) {
         module1.register();
         Licensing.Policy memory policy = _createPolicy();
+        vm.prank(address(module1));
         uint256 policyId = registry.addPolicy(policy);
         uint256 indexOnIpId = registry.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1);
@@ -194,6 +208,7 @@ contract LicenseRegistryTest is Test {
     function test_LicenseRegistry_singleTransfer_paramVerifyTrue() public {
         module1.register();
         Licensing.Policy memory policy = _createPolicy();
+        vm.prank(address(module1));
         uint256 policyId = registry.addPolicy(policy);
         registry.addPolicyToIp(ipId1, policyId);
 
@@ -204,12 +219,37 @@ contract LicenseRegistryTest is Test {
         assertEq(registry.balanceOf(licenseHolder, licenseId), 1, "not burnt");
     }
 
-    function test_LicenseRegistry_revert_singleTransfer_transferParamVerifyFalse() public {
+    function test_LicenseRegistry_singleTransfer_verifyOk() public {
+        module1.register();
+        Licensing.Policy memory policy = _createPolicy();
+        vm.prank(address(module1));
+        uint256 policyId = registry.addPolicy(policy);
+        registry.addPolicyToIp(ipId1, policyId);
+
+        uint256 licenseId = registry.mintLicense(policyId, ipId1, 2, licenseHolder);
+
+        address licenseHolder2 = address(0x102);
+        assertEq(registry.balanceOf(licenseHolder, licenseId), 2);
+        assertEq(registry.balanceOf(licenseHolder2, licenseId), 0);
+        vm.prank(licenseHolder);
+        registry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
+        assertEq(registry.balanceOf(licenseHolder, licenseId), 1, "not burnt");
+        assertEq(registry.balanceOf(licenseHolder2, licenseId), 1, "not minted");
+    }
+
+    function test_LicenseRegistry_singleTransfer_revert_verifyFalse() public {
         module1.register();
         Licensing.Policy memory policy = Licensing.Policy({
             frameworkId: 1,
-            data: abi.encode(false)
+            data: abi.encode(
+                MockPolicy({
+                    returnVerifyLink: true,
+                    returnVerifyMint: true,
+                    returnVerifyTransfer: false
+                })
+            )
         });
+        vm.prank(address(module1));
         uint256 policyId = registry.addPolicy(policy);
         registry.addPolicyToIp(ipId1, policyId);
 

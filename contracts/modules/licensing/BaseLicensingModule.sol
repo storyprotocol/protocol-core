@@ -35,9 +35,8 @@ abstract contract BaseLicensingModule is IParamVerifier, ILicensingModule, ERC16
         return frameworkId;
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
-        return interfaceId == type(IParamVerifier).interfaceId ||
-            interfaceId == type(ILicensingModule).interfaceId;
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, ERC165) returns (bool) {
+        return interfaceId == type(ILicensingModule).interfaceId || super.supportsInterface(interfaceId);
     }
 
     function licenseRegistry() virtual override external view returns (address) {
