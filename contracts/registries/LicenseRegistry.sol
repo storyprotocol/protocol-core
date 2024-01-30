@@ -10,7 +10,7 @@ import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC16
 
 // contracts
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
-import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
+import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";

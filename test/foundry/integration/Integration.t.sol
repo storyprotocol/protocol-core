@@ -9,7 +9,7 @@ import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.so
 
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
+import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";

@@ -12,7 +12,7 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 /// - Linking IP to its parent
 /// - Verifying transfer parameters (through the ITransferParamVerifier interface implementation by the policy framework)
 /// - Verifying linking parameters (through the ILinkParamVerifier interface implementation by the policy framework)
-/// - Verifying policy parameters (through the IParamVerifier interface implementation by the policy framework)
+/// - Verifying policy parameters (through the IPolicyVerifier interface implementation by the policy framework)
 interface ILicenseRegistry {
 
     /// @notice Emitted when a policy framework is created by registering a policy framework manager

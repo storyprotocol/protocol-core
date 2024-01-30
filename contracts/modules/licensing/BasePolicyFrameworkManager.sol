@@ -3,7 +3,7 @@
 pragma solidity ^0.8.23;
 
 // contracts
-import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
+import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
@@ -16,7 +16,7 @@ import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol
 
 /// @title BasePolicyFrameworkManager
 /// @notice Base contract for policy framework managers.
-abstract contract BasePolicyFrameworkManager is IParamVerifier, IPolicyFrameworkManager, ERC165, LicenseRegistryAware {
+abstract contract BasePolicyFrameworkManager is IPolicyVerifier, IPolicyFrameworkManager, ERC165, LicenseRegistryAware {
     string public licenseUrl;
 
     uint256 public policyFrameworkId;

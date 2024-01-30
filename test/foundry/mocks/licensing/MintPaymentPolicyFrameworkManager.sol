@@ -9,7 +9,7 @@ import { ERC165, IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
-import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
+import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
@@ -40,7 +40,7 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintP
     ) public view virtual override(IERC165, BasePolicyFrameworkManager) returns (bool) {
         // support only mint param verifier
         return
-            interfaceId == type(IParamVerifier).interfaceId ||
+            interfaceId == type(IPolicyVerifier).interfaceId ||
             interfaceId == type(IMintParamVerifier).interfaceId ||
             super.supportsInterface(interfaceId);
     }

@@ -6,7 +6,7 @@ import { ERC165, IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC
 // contracts
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
-import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
+import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
@@ -46,7 +46,7 @@ contract MockPolicyFrameworkManager is
     function supportsInterface(
         bytes4 interfaceId
     ) public view virtual override(IERC165, BasePolicyFrameworkManager) returns (bool) {
-        if (interfaceId == type(IParamVerifier).interfaceId) return true;
+        if (interfaceId == type(IPolicyVerifier).interfaceId) return true;
         if (interfaceId == type(ILinkParamVerifier).interfaceId) return config.supportVerifyLink;
         if (interfaceId == type(IMintParamVerifier).interfaceId) return config.supportVerifyMint;
         if (interfaceId == type(ITransferParamVerifier).interfaceId) return config.supportVerifyTransfer;

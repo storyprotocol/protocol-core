@@ -20,7 +20,7 @@ import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
 import { IIPRecordRegistry } from "contracts/interfaces/registries/IIPRecordRegistry.sol";
 import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
+import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.sol";
 import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy }
     from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";

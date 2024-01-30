@@ -12,7 +12,6 @@ import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.so
 import { AccessController } from "contracts/AccessController.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
