@@ -49,7 +49,6 @@ abstract contract ModuleBaseTest is BaseTest {
     function setUp() public virtual override(BaseTest) {
         BaseTest.setUp();
         governance = new Governance(address(this));
-        licenseRegistry = new LicenseRegistry();
         accessController = new AccessController(address(governance));
         moduleRegistry = new ModuleRegistry(address(governance));
         ipAccountRegistry = new IPAccountRegistry(
@@ -62,6 +61,7 @@ abstract contract ModuleBaseTest is BaseTest {
             address(moduleRegistry),
             address(ipAccountRegistry)
         );
+        licenseRegistry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
         baseModule = IModule(_deployModule());
     }
 

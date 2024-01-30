@@ -32,9 +32,11 @@ contract UMLPolicyFrameworkManager is
     ITransferParamVerifier,
     LicensorApprovalManager
 {
-    
-
-    constructor(address licRegistry, string memory licenseUrl) BasePolicyFrameworkManager(licRegistry, licenseUrl) {}
+    constructor(
+        address accessController,
+        address licRegistry,
+        string memory licenseUrl
+    ) BasePolicyFrameworkManager(licRegistry, licenseUrl) LicensorApprovalManager(accessController) {}
 
     function licenseRegistry() external view override(BasePolicyFrameworkManager, IPolicyFrameworkManager) returns (address) {
         return address(LICENSE_REGISTRY);

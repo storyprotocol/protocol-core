@@ -117,11 +117,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         moduleRegistry = new ModuleRegistry(address(governance));
         _postdeploy(contractKey, address(moduleRegistry));
 
-        contractKey = "LicenseRegistry";
-        _predeploy(contractKey);
-        licenseRegistry = new LicenseRegistry();
-        _postdeploy(contractKey, address(licenseRegistry));
-
         contractKey = "IPAccountRegistry";
         _predeploy(contractKey);
         ipAccountRegistry = new IPAccountRegistry(ERC6551_REGISTRY, address(accessController), address(implementation));
@@ -131,6 +126,11 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         _predeploy(contractKey);
         ipRecordRegistry = new IPRecordRegistry(address(moduleRegistry), address(ipAccountRegistry));
         _postdeploy(contractKey, address(ipRecordRegistry));
+
+        contractKey = "LicenseRegistry";
+        _predeploy(contractKey);
+        licenseRegistry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
+        _postdeploy(contractKey, address(licenseRegistry));
 
         contractKey = "IPResolver";
         _predeploy(contractKey);
@@ -249,10 +249,12 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         ////////////////////////////////////////////////////////////////*/
 
         UMLPolicyFrameworkManager umlAllTrue = new UMLPolicyFrameworkManager(
+            address(accessController),
             address(licenseRegistry),
             "https://very-nice-verifier-license.com/{id}.json"
         );
         UMLPolicyFrameworkManager umlMintPayment = new UMLPolicyFrameworkManager(
+            address(accessController),
             address(licenseRegistry),
             "https://expensive-minting-license.com/{id}.json"
         );

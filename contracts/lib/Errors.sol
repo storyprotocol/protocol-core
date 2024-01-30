@@ -87,6 +87,8 @@ library Errors {
     error LicenseRegistry__CommercialTermInNonCommercialPolicy();
     error LicenseRegistry__EmptyParamName();
     error LicenseRegistry__UnregisteredFrameworkAddingPolicy();
+    error LicenseRegistry__UnauthorizedAccess();
+    error LicenseRegistry__LicensorNotRegistered();
 
     ////////////////////////////////////////////////////////////////////////////
     //                        LicenseRegistryAware                            //

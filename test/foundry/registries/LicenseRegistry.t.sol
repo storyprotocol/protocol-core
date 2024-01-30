@@ -10,23 +10,39 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
+import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
+import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
+import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
+import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
+import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 
 contract LicenseRegistryTest is Test {
     using Strings for *;
     using ShortStrings for *;
+
+    MockAccessController public accessController = new MockAccessController();
+    IPAccountRegistry public ipAccountRegistry;
 
     LicenseRegistry public registry;
     Licensing.PolicyFramework public framework;
 
     MockPolicyFrameworkManager public module1;
 
+    MockERC721 nft = new MockERC721("MockERC721");
+
     string public licenseUrl = "https://example.com/license";
-    address public ipId1 = address(0x111);
-    address public ipId2 = address(0x222);
+    address public ipId1;
+    address public ipId2;
+    address public ipOwner = vm.addr(1);
     address public licenseHolder = address(0x101);
 
     function setUp() public {
-        registry = new LicenseRegistry();
+        ipAccountRegistry = new IPAccountRegistry(
+            address(new ERC6551Registry()),
+            address(accessController),
+            address(new IPAccountImpl())
+        );
+        registry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
         module1 = new MockPolicyFrameworkManager(MockPolicyFrameworkConfig({
             licenseRegistry: address(registry),
             licenseUrl: licenseUrl,
@@ -34,6 +50,19 @@ contract LicenseRegistryTest is Test {
             supportVerifyMint: true,
             supportVerifyTransfer: true
         }));
+
+        nft.mintId(ipOwner, 1);
+        nft.mintId(ipOwner, 2);
+        ipId1 = ipAccountRegistry.registerIpAccount(
+            block.chainid,
+            address(nft),
+            1
+        );
+        ipId2 = ipAccountRegistry.registerIpAccount(
+            block.chainid,
+            address(nft),
+            2
+        );
     }
 
     // TODO: add parameter config for initial framework for 100% test
@@ -96,6 +125,7 @@ contract LicenseRegistryTest is Test {
         Licensing.Policy memory policy = _createPolicy();
         vm.prank(address(module1));
         uint256 policyId = registry.addPolicy(policy);
+        vm.prank(ipOwner);
         uint256 indexOnIpId = registry.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1, "policyId not 1");
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
@@ -109,10 +139,13 @@ contract LicenseRegistryTest is Test {
         Licensing.Policy memory policy = _createPolicy();
         vm.prank(address(module1));
         uint256 policyId = registry.addPolicy(policy);
+
+        vm.prank(ipOwner);
         uint256 indexOnIpId = registry.addPolicyToIp(ipId1, policyId);
         assertEq(indexOnIpId, 0);
         assertFalse(registry.isPolicyInherited(ipId1, policyId));
 
+        vm.prank(ipOwner);
         uint256 indexOnIpId2 = registry.addPolicyToIp(ipId2, policyId);
         assertEq(indexOnIpId2, 0);
         assertFalse(registry.isPolicyInherited(ipId2, policyId));
@@ -129,6 +162,7 @@ contract LicenseRegistryTest is Test {
         // First time adding a policy
         vm.prank(address(module1));
         uint256 policyId = registry.addPolicy(policy);
+        vm.prank(ipOwner);
         uint256 indexOnIpId = registry.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1, "policyId not 1");
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
@@ -147,6 +181,7 @@ contract LicenseRegistryTest is Test {
         );
         vm.prank(address(module1));
         uint256 policyId2 = registry.addPolicy(policy);
+        vm.prank(ipOwner);
         uint256 indexOnIpId2 = registry.addPolicyToIp(ipId1, policyId2);
         assertEq(policyId2, 2, "policyId not 2");
         assertEq(indexOnIpId2, 1, "indexOnIpId not 1");
@@ -161,6 +196,7 @@ contract LicenseRegistryTest is Test {
         Licensing.Policy memory policy = _createPolicy();
         vm.prank(address(module1));
         uint256 policyId = registry.addPolicy(policy);
+        vm.prank(ipOwner);
         uint256 indexOnIpId = registry.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1);
         assertTrue(registry.isPolicyIdSetForIp(ipId1, policyId));
@@ -183,7 +219,7 @@ contract LicenseRegistryTest is Test {
 
         // TODO: something cleaner than this
         uint256 licenseId = test_LicenseRegistry_mintLicense();
-
+        vm.prank(ipOwner);
         registry.linkIpToParent(licenseId, ipId2, licenseHolder);
         assertEq(registry.balanceOf(licenseHolder, licenseId), 1, "not burnt");
         assertEq(registry.isParent(ipId1, ipId2), true, "not parent");
@@ -210,6 +246,7 @@ contract LicenseRegistryTest is Test {
         Licensing.Policy memory policy = _createPolicy();
         vm.prank(address(module1));
         uint256 policyId = registry.addPolicy(policy);
+        vm.prank(ipOwner);
         registry.addPolicyToIp(ipId1, policyId);
 
         uint256 licenseId = registry.mintLicense(policyId, ipId1, 2, licenseHolder);
@@ -224,6 +261,7 @@ contract LicenseRegistryTest is Test {
         Licensing.Policy memory policy = _createPolicy();
         vm.prank(address(module1));
         uint256 policyId = registry.addPolicy(policy);
+        vm.prank(ipOwner);
         registry.addPolicyToIp(ipId1, policyId);
 
         uint256 licenseId = registry.mintLicense(policyId, ipId1, 2, licenseHolder);
@@ -251,6 +289,7 @@ contract LicenseRegistryTest is Test {
         });
         vm.prank(address(module1));
         uint256 policyId = registry.addPolicy(policy);
+        vm.prank(ipOwner);
         registry.addPolicyToIp(ipId1, policyId);
 
         uint256 licenseId = registry.mintLicense(policyId, ipId1, 2, licenseHolder);

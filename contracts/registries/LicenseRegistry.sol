@@ -18,9 +18,13 @@ import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegist
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
+import { IAccessController } from "contracts/interfaces/IAccessController.sol";
+import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
+import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
 
 // TODO: consider disabling operators/approvals on creation
 contract LicenseRegistry is ERC1155, ILicenseRegistry {
+    using IPAccountChecker for IIPAccountRegistry;
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
     using Strings for *;
@@ -33,6 +37,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         bool active;
         bool inheritedPolicy;
     }
+    IAccessController public immutable ACCESS_CONTROLLER;
+    IIPAccountRegistry public immutable IP_ACCOUNT_REGISTRY;
 
     mapping(uint256 => Licensing.PolicyFramework) private _frameworks;
     uint256 private _totalFrameworks;
@@ -63,7 +69,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         _;
     }
 
-    constructor() ERC1155("") {}
+    constructor(address accessController, address ipAccountRegistry) ERC1155("") {
+        ACCESS_CONTROLLER = IAccessController(accessController);
+        IP_ACCOUNT_REGISTRY = IIPAccountRegistry(ipAccountRegistry);
+    }
 
     /// Adds a license framework to Story Protocol.
     /// Must be called by protocol admin
@@ -142,6 +151,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// @param polId id of the policy data
     /// @return indexOnIpId position of policy within the ipIds policy set
     function addPolicyToIp(address ipId, uint256 polId) external returns (uint256 indexOnIpId) {
+        if (!ACCESS_CONTROLLER.checkPermission(ipId, msg.sender, address(this), this.addPolicyToIp.selector)) {
+            revert Errors.LicenseRegistry__UnauthorizedAccess();
+        }
+
         if (!isPolicyDefined(polId)) {
             revert Errors.LicenseRegistry__PolicyNotFound();
         }
@@ -270,6 +283,9 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         if (licensorIp == address(0)) {
             revert Errors.LicenseRegistry__InvalidLicensor();
         }
+        if (!IP_ACCOUNT_REGISTRY.isIpAccount(licensorIp)) {
+            revert Errors.LicenseRegistry__LicensorNotRegistered();
+        }
         if (!_policiesPerIpId[licensorIp].contains(policyId)) {
             revert Errors.LicenseRegistry__LicensorDoesntHaveThisPolicy();
         }
@@ -331,6 +347,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         address childIpId,
         address holder
     ) external onlyLicensee(licenseId, holder) {
+        // check the caller is owner or authorized by the childIp
+        if (!ACCESS_CONTROLLER.checkPermission(childIpId, msg.sender, address(this), this.linkIpToParent.selector)) {
+            revert Errors.LicenseRegistry__UnauthorizedAccess();
+        }
         // TODO: check if childIpId exists and is owned by holder
         Licensing.License memory licenseData = _licenses[licenseId];
         address parentIpId = licenseData.licensorIpId;
@@ -426,5 +446,9 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         Licensing.Policy memory pol = policy(licenseData.policyId);
         Licensing.PolicyFramework storage fw = _framework(pol.policyFrameworkId);
         return IPolicyFrameworkManager(fw.policyFramework).policyToJson(pol.data);
+    }
+
+    function name() public pure returns (string memory) {
+        return "LICENSE_REGISTRY";
     }
 }

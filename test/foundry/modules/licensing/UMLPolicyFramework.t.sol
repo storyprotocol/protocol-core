@@ -9,10 +9,18 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
 import { IUMLPolicyFrameworkManager, UMLPolicy } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
+import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
+import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
+import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
+import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 
 import "forge-std/console2.sol";
 
 contract UMLPolicyFrameworkTest is Test {
+
+    MockAccessController public accessController = new MockAccessController();
+    IPAccountRegistry public ipAccountRegistry;
 
     LicenseRegistry public registry;
     Licensing.PolicyFramework public framework;
@@ -20,16 +28,37 @@ contract UMLPolicyFrameworkTest is Test {
     UMLPolicyFrameworkManager public umlFramework;
     uint256 public frameworkId;
 
+    MockERC721 nft = new MockERC721("MockERC721");
+
     string public licenseUrl = "https://example.com/license";
-    address public ipId1 = address(0x111);
-    address public ipId2 = address(0x222);
+    address public ipId1;
+    address public ipId2;
+    address public ipOwner = vm.addr(1);
     address public licenseHolder = address(0x101);
     string[] public emptyStringArray = new string[](0);
 
     function setUp() public {
-        registry = new LicenseRegistry();
-        umlFramework = new UMLPolicyFrameworkManager(address(registry), licenseUrl);
+        ipAccountRegistry = new IPAccountRegistry(
+            address(new ERC6551Registry()),
+            address(accessController),
+            address(new IPAccountImpl())
+        );
+        registry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
+        umlFramework = new UMLPolicyFrameworkManager(address(accessController), address(registry), licenseUrl);
         frameworkId = umlFramework.register();
+
+        nft.mintId(ipOwner, 1);
+        nft.mintId(ipOwner, 2);
+        ipId1 = ipAccountRegistry.registerIpAccount(
+            block.chainid,
+            address(nft),
+            1
+        );
+        ipId2 = ipAccountRegistry.registerIpAccount(
+            block.chainid,
+            address(nft),
+            2
+        );
     }
 
     function test_UMLPolicyFrameworkManager_valuesSetCorrectly() public {
@@ -229,13 +258,16 @@ contract UMLPolicyFrameworkTest is Test {
             distributionChannels: emptyStringArray
         }));
         console2.log("policyId", policyId);
+        vm.prank(ipOwner);
         registry.addPolicyToIp(ipId1, policyId);
         uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
         assertFalse(umlFramework.isDerivativeApproved(licenseId, ipId2));
+        vm.prank(ipOwner);
         umlFramework.setApproval(licenseId, ipId2, false);
         assertFalse(umlFramework.isDerivativeApproved(licenseId, ipId2));
 
         vm.expectRevert(Errors.LicenseRegistry__LinkParentParamFailed.selector);
+        vm.prank(ipOwner);
         registry.linkIpToParent(licenseId, ipId2, licenseHolder);
     }
 
@@ -255,13 +287,16 @@ contract UMLPolicyFrameworkTest is Test {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray
         }));
+        vm.prank(ipOwner);
         registry.addPolicyToIp(ipId1, policyId);
         uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
         
         assertFalse(umlFramework.isDerivativeApproved(licenseId, ipId2));
+        vm.prank(ipOwner);
         umlFramework.setApproval(licenseId, ipId2, true);
         assertTrue(umlFramework.isDerivativeApproved(licenseId, ipId2));
 
+        vm.prank(ipOwner);
         registry.linkIpToParent(licenseId, ipId2, licenseHolder);
         assertTrue(registry.isParent(ipId1, ipId2));
     }
@@ -289,6 +324,7 @@ contract UMLPolicyFrameworkTest is Test {
             distributionChannels: emptyStringArray
         });
         uint256 policyId = umlFramework.addPolicy(umlPolicy);
+        vm.prank(ipOwner);
         registry.addPolicyToIp(ipId1, policyId);
         uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
         assertEq(registry.balanceOf(licenseHolder, licenseId), 1);
@@ -316,6 +352,7 @@ contract UMLPolicyFrameworkTest is Test {
             distributionChannels: emptyStringArray
         });
         uint256 policyId = umlFramework.addPolicy(umlPolicy);
+        vm.prank(ipOwner);
         registry.addPolicyToIp(ipId1, policyId);
         uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
         assertEq(registry.balanceOf(licenseHolder, licenseId), 1);

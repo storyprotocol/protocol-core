@@ -28,6 +28,7 @@ import { IP } from "contracts/lib/IP.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
+import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 
 /// @title IP Registration Module Test Contract
 /// @notice Tests IP registration module functionality.
@@ -82,10 +83,25 @@ contract RegistrationModuleTest is ModuleBaseTest {
         );
         moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(resolver));
+        moduleRegistry.registerModule("LICENSE_REGISTRY", address(licenseRegistry));
         MockERC721 erc721 = new MockERC721("MockERC721");
         tokenAddress = address(erc721);
         tokenId = erc721.mintId(alice, 99);
         tokenId2 = erc721.mintId(bob, 100);
+
+        accessController.setGlobalPermission(
+            address(registrationModule),
+            address(licenseRegistry),
+            licenseRegistry.addPolicyToIp.selector,
+            AccessPermission.ALLOW
+        );
+
+        accessController.setGlobalPermission(
+            address(registrationModule),
+            address(licenseRegistry),
+            licenseRegistry.linkIpToParent.selector,
+            AccessPermission.ALLOW
+        );
     }
 
     /// @notice Checks that the registration initialization operates correctly.
@@ -105,7 +121,7 @@ contract RegistrationModuleTest is ModuleBaseTest {
         assertTrue(!ipRecordRegistry.isRegistered(ipId));
         assertTrue(!ipRecordRegistry.isRegistered(block.chainid, tokenAddress, tokenId));
         assertTrue(!IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
-        
+
         vm.startPrank(alice);
         registrationModule.registerRootIp(
             policyId,

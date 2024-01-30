@@ -87,7 +87,7 @@ contract IntegrationTest is Test {
             address(accessController),
             address(ipacctImpl)
         );
-        licenseRegistry = new LicenseRegistry();
+        licenseRegistry = new LicenseRegistry(address(accessController), address(ipacctRegistry));
 
         disputeModule = new DisputeModule();
         arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), USDC, ARBITRATION_PRICE);
@@ -251,10 +251,12 @@ contract IntegrationTest is Test {
         /*///////////////////////////////////////////////////////////////
                             ADD POLICIES TO IPACCOUNTS
         ////////////////////////////////////////////////////////////////*/
-
+        vm.startPrank(u.alice);
         licenseRegistry.addPolicyToIp(getIpId(u.alice, nft.a, 1), policyIds["test_true"]);
+        vm.stopPrank();
+        vm.startPrank(u.carl);
         licenseRegistry.addPolicyToIp(getIpId(u.carl, nft.c, 1), policyIds["expensive_mint"]);
-
+        vm.stopPrank();
         /*///////////////////////////////////////////////////////////////
                             MINT LICENSES ON POLICIES
         ////////////////////////////////////////////////////////////////*/
@@ -273,8 +275,9 @@ contract IntegrationTest is Test {
 
         // Carl activates above license on his NFT C IPAccount, linking as child to Alice's NFT A IPAccount
 
-        vm.prank(u.carl);
+        vm.startPrank(u.carl);
         licenseRegistry.linkIpToParent(licenseIds[u.carl][policyIds["test_true"]], getIpId(u.carl, nft.c, 1), u.carl);
+        vm.stopPrank();
         assertEq(licenseRegistry.balanceOf(u.carl, licenseIds[u.carl][policyIds["test_true"]]), 0, "not burnt");
         assertTrue(licenseRegistry.isParent(getIpId(u.alice, nft.a, 1), getIpId(u.carl, nft.c, 1)), "not parent");
         assertEq(
@@ -310,8 +313,9 @@ contract IntegrationTest is Test {
 
         // Bob activates above license on his NFT A IPAccount, linking as child to Carl's NFT C IPAccount
 
-        vm.prank(u.bob);
+        vm.startPrank(u.bob);
         licenseRegistry.linkIpToParent(licenseIds[u.bob][policyIds["expensive_mint"]], getIpId(u.bob, nft.a, 2), u.bob);
+        vm.stopPrank();
 
         assertEq(
             licenseRegistry.balanceOf(u.bob, licenseIds[u.bob][policyIds["expensive_mint"]]),
