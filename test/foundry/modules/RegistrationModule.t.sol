@@ -223,7 +223,7 @@ contract RegistrationModuleTest is ModuleBaseTest {
         policyFramework.register();
 
         Licensing.Policy memory policy = Licensing.Policy({
-            frameworkId: 1,
+            policyFrameworkId: 1,
             data: abi.encode(
                 MockPolicy({
                     returnVerifyLink: true,

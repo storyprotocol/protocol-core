@@ -19,7 +19,7 @@ import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol
 abstract contract BasePolicyFrameworkManager is IParamVerifier, IPolicyFrameworkManager, ERC165, LicenseRegistryAware {
     string public licenseUrl;
 
-    uint256 public frameworkId;
+    uint256 public policyFrameworkId;
 
     /// @notice Initializes the base contract.
     /// @param registry The address of the license registry.
@@ -30,15 +30,15 @@ abstract contract BasePolicyFrameworkManager is IParamVerifier, IPolicyFramework
 
     /// @notice Registers this policy framework manager within the license registry, to be able
     /// to add policies into the license registry.
-    /// @dev save the frameworkId in this PolicyFrameworkManager    
+    /// @dev save the policyFrameworkId in this PolicyFrameworkManager    
     /// @return The ID of the policy framework.
     function register() external returns (uint256) {
         Licensing.PolicyFramework memory framework = Licensing.PolicyFramework({
             policyFramework: address(this),
             licenseUrl: licenseUrl
         });
-        frameworkId = LICENSE_REGISTRY.addPolicyFramework(framework);
-        return frameworkId;
+        policyFrameworkId = LICENSE_REGISTRY.addPolicyFramework(framework);
+        return policyFrameworkId;
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, ERC165) returns (bool) {

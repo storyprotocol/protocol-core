@@ -46,14 +46,14 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintP
     }
 
     function addPolicy(MintPaymentPolicy calldata mmpol) external returns (uint256 policyId) {
-        if (frameworkId == 0) {
+        if (policyFrameworkId == 0) {
             revert Errors.UMLPolicyFrameworkManager_FrameworkNotYetRegistered();
         }
 
         require(mmpol.mustBeTrue, "MintPaymentPolicyFrameworkManager: mustBeTrue");
 
         Licensing.Policy memory protocolPolicy = Licensing.Policy({
-            frameworkId: frameworkId,
+            policyFrameworkId: policyFrameworkId,
             data: abi.encode(mmpol)
         });
         return LICENSE_REGISTRY.addPolicy(protocolPolicy);

@@ -54,14 +54,14 @@ contract MockPolicyFrameworkManager is
     }
 
     function addPolicy(MockPolicy calldata mockPolicy) external returns (uint256 policyId) {
-        if (frameworkId == 0) {
+        if (policyFrameworkId == 0) {
             revert Errors.UMLPolicyFrameworkManager_FrameworkNotYetRegistered();
         }
 
         // can verify mockPolicy if needed
 
         Licensing.Policy memory protocolPolicy = Licensing.Policy({
-            frameworkId: frameworkId,
+            policyFrameworkId: policyFrameworkId,
             data: abi.encode(mockPolicy)
         });
 
@@ -71,7 +71,7 @@ contract MockPolicyFrameworkManager is
 
     function policyIdToMockPolicy(uint256 policyId) public view returns (MockPolicy memory policy) {
         Licensing.Policy memory protocolPolicy = LICENSE_REGISTRY.policy(policyId);
-        if (protocolPolicy.frameworkId != frameworkId) {
+        if (protocolPolicy.policyFrameworkId != policyFrameworkId) {
             revert Errors.LicenseRegistry__FrameworkNotFound();
         }
         policy = abi.decode(protocolPolicy.data, (MockPolicy));

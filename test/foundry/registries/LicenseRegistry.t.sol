@@ -44,7 +44,7 @@ contract LicenseRegistryTest is Test {
 
     function _createPolicy() internal pure returns (Licensing.Policy memory pol) {
         pol = Licensing.Policy({
-            frameworkId: 1,
+            policyFrameworkId: 1,
             data: abi.encode(
                 MockPolicy({
                     returnVerifyLink: true,
@@ -240,7 +240,7 @@ contract LicenseRegistryTest is Test {
     function test_LicenseRegistry_singleTransfer_revert_verifyFalse() public {
         module1.register();
         Licensing.Policy memory policy = Licensing.Policy({
-            frameworkId: 1,
+            policyFrameworkId: 1,
             data: abi.encode(
                 MockPolicy({
                     returnVerifyLink: true,

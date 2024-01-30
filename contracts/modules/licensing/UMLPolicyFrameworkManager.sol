@@ -43,13 +43,13 @@ contract UMLPolicyFrameworkManager is
     /// @dev Must encode the policy into bytes to be stored in the LicenseRegistry
     /// @param umlPolicy UMLPolicy compliant licensing term values
     function addPolicy(UMLPolicy calldata umlPolicy) external returns (uint256 policyId) {
-        if (frameworkId == 0) {
+        if (policyFrameworkId == 0) {
             revert Errors.UMLPolicyFrameworkManager_FrameworkNotYetRegistered();
         }
         _verifyComercialUse(umlPolicy);
         _verifyDerivatives(umlPolicy);
         Licensing.Policy memory protocolPolicy = Licensing.Policy({
-            frameworkId: frameworkId,
+            policyFrameworkId: policyFrameworkId,
             data: abi.encode(umlPolicy)
         });
         emit UMLPolicyAdded(policyId, umlPolicy);
@@ -61,7 +61,7 @@ contract UMLPolicyFrameworkManager is
     /// @return policy The UMLPolicy struct
     function getPolicy(uint256 policyId) public view returns (UMLPolicy memory policy) {
         Licensing.Policy memory protocolPolicy = LICENSE_REGISTRY.policy(policyId);
-        if (protocolPolicy.frameworkId != frameworkId) {
+        if (protocolPolicy.policyFrameworkId != policyFrameworkId) {
             revert Errors.LicenseRegistry__FrameworkNotFound();
         }
         policy = abi.decode(protocolPolicy.data, (UMLPolicy));

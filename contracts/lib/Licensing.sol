@@ -23,7 +23,7 @@ library Licensing {
     /// @param policyFrameworkId Id of the policy framework this policy is based on
     /// @param policyData Encoded data for the policy, specific to the policy framework
     struct Policy {
-        uint256 frameworkId;
+        uint256 policyFrameworkId;
         bytes data;
     }
 
