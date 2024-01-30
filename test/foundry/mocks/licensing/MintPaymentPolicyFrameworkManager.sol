@@ -47,7 +47,7 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintP
 
     function addPolicy(MintPaymentPolicy calldata mmpol) external returns (uint256 policyId) {
         if (policyFrameworkId == 0) {
-            revert Errors.UMLPolicyFrameworkManager_FrameworkNotYetRegistered();
+            revert Errors.PolicyFramework_FrameworkNotYetRegistered();
         }
 
         require(mmpol.mustBeTrue, "MintPaymentPolicyFrameworkManager: mustBeTrue");

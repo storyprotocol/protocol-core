@@ -55,7 +55,7 @@ contract MockPolicyFrameworkManager is
 
     function addPolicy(MockPolicy calldata mockPolicy) external returns (uint256 policyId) {
         if (policyFrameworkId == 0) {
-            revert Errors.UMLPolicyFrameworkManager_FrameworkNotYetRegistered();
+            revert Errors.PolicyFramework_FrameworkNotYetRegistered();
         }
 
         // can verify mockPolicy if needed

@@ -95,18 +95,10 @@ library Errors {
     error LicenseRegistryAware__CallerNotLicenseRegistry();
 
     ////////////////////////////////////////////////////////////////////////////
-    //                         UMLPolicyFrameworkManager                             //
+    //                           PolicyFramework                              //
     ////////////////////////////////////////////////////////////////////////////
 
-    error UMLPolicyFrameworkManager_CommecialDisabled_CantAddAttribution();
-    error UMLPolicyFrameworkManager_CommecialDisabled_CantAddCommercializers();
-    error UMLPolicyFrameworkManager_CommecialDisabled_CantAddRevShare();
-    error UMLPolicyFrameworkManager_CommecialDisabled_CantAddDerivRevShare();
-    error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddAttribution();
-    error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddApproval();
-    error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddReciprocal();
-    error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddRevShare();
-    error UMLPolicyFrameworkManager_FrameworkNotYetRegistered();
+    error PolicyFramework_FrameworkNotYetRegistered();
 
     ////////////////////////////////////////////////////////////////////////////
     //                     LicensorApprovalManager                            //

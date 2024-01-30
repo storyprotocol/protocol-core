@@ -6,6 +6,7 @@ import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Errors } from "contracts/lib/Errors.sol";
+import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
 import { IUMLPolicyFrameworkManager, UMLPolicy } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
@@ -78,7 +79,7 @@ contract UMLPolicyFrameworkTest is Test {
         });
         // commercialAttribution = true should revert
         vm.expectRevert(
-            Errors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddAttribution.selector
+            UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddAttribution.selector
         );
         umlFramework.addPolicy(umlPolicy);
         // Non empty commercializers should revert
@@ -86,21 +87,21 @@ contract UMLPolicyFrameworkTest is Test {
         umlPolicy.commercializers = new string[](1);
         umlPolicy.commercializers[0] = "test";
         vm.expectRevert(
-            Errors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddCommercializers.selector
+            UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddCommercializers.selector
         );
         umlFramework.addPolicy(umlPolicy);
         // No rev share should be set; revert
         umlPolicy.commercializers = new string[](0);
         umlPolicy.commercialRevShare = 1;
         vm.expectRevert(
-            Errors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddRevShare.selector
+            UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddRevShare.selector
         );
         umlFramework.addPolicy(umlPolicy);
         // No rev share should be set for derivatives either; revert
         umlPolicy.commercialRevShare = 0;
         umlPolicy.derivativesRevShare = 1;
         vm.expectRevert(
-            Errors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddDerivRevShare.selector
+            UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddDerivRevShare.selector
         );
         umlFramework.addPolicy(umlPolicy);
 
@@ -158,28 +159,28 @@ contract UMLPolicyFrameworkTest is Test {
         });
         // derivativesAttribution = true should revert
         vm.expectRevert(
-            Errors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddAttribution.selector
+            UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddAttribution.selector
         );
         umlFramework.addPolicy(umlPolicy);
         // Requesting approval for derivatives should revert
         umlPolicy.derivativesAttribution = false;
         umlPolicy.derivativesApproval = true;
         vm.expectRevert(
-            Errors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddApproval.selector
+            UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddApproval.selector
         );
         umlFramework.addPolicy(umlPolicy);
         // Setting reciprocal license should revert
         umlPolicy.derivativesApproval = false;
         umlPolicy.derivativesReciprocal = true;
         vm.expectRevert(
-            Errors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddReciprocal.selector
+            UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddReciprocal.selector
         );
         umlFramework.addPolicy(umlPolicy);
         // No rev share should be set for derivatives either; revert
         umlPolicy.derivativesReciprocal = false;
         umlPolicy.derivativesRevShare = 1;
         vm.expectRevert(
-            Errors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddRevShare.selector
+            UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddRevShare.selector
         );
         umlFramework.addPolicy(umlPolicy);
     }

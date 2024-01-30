@@ -69,7 +69,9 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// Must be called by protocol admin
     /// @param fwCreation framework parameters
     /// @return policyFrameworkId identifier for framework, starting in 1
-    function addPolicyFramework(Licensing.PolicyFramework calldata fwCreation) external returns (uint256 policyFrameworkId) {
+    function addPolicyFramework(
+        Licensing.PolicyFramework calldata fwCreation
+    ) external returns (uint256 policyFrameworkId) {
         // TODO: check protocol auth
         if (bytes(fwCreation.licenseUrl).length == 0 || fwCreation.licenseUrl.equal("")) {
             revert Errors.LicenseRegistry__EmptyLicenseUrl();

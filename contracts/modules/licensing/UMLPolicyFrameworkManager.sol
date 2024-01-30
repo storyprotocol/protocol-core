@@ -8,6 +8,7 @@ import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { Errors } from "contracts/lib/Errors.sol";
+import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
@@ -44,7 +45,7 @@ contract UMLPolicyFrameworkManager is
     /// @param umlPolicy UMLPolicy compliant licensing term values
     function addPolicy(UMLPolicy calldata umlPolicy) external returns (uint256 policyId) {
         if (policyFrameworkId == 0) {
-            revert Errors.UMLPolicyFrameworkManager_FrameworkNotYetRegistered();
+            revert Errors.PolicyFramework_FrameworkNotYetRegistered();
         }
         _verifyComercialUse(umlPolicy);
         _verifyDerivatives(umlPolicy);
@@ -148,16 +149,16 @@ contract UMLPolicyFrameworkManager is
     function _verifyComercialUse(UMLPolicy calldata policy) internal view {
         if (!policy.commercialUse) {
             if (policy.commercialAttribution) {
-                revert Errors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddAttribution();
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddAttribution();
             }
             if (policy.commercializers.length > 0) {
-                revert Errors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddCommercializers();
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddCommercializers();
             }
             if (policy.commercialRevShare > 0) {
-                revert Errors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddRevShare();
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddRevShare();
             }
             if (policy.derivativesRevShare > 0) {
-                revert Errors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddDerivRevShare();
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddDerivRevShare();
             }
         }
     }
@@ -167,16 +168,16 @@ contract UMLPolicyFrameworkManager is
     function _verifyDerivatives(UMLPolicy calldata policy) internal pure {
         if (!policy.derivativesAllowed) {
             if (policy.derivativesAttribution) {
-                revert Errors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddAttribution();
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddAttribution();
             }
             if (policy.derivativesApproval) {
-                revert Errors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddApproval();
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddApproval();
             }
             if (policy.derivativesReciprocal) {
-                revert Errors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddReciprocal();
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddReciprocal();
             }
             if (policy.derivativesRevShare > 0) {
-                revert Errors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddRevShare();
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddRevShare();
             }
         }
     }
