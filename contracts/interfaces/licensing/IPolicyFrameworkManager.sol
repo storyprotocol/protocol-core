@@ -6,7 +6,7 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 
 /// @title IPolicyFrameworkManager
-/// @notice Interface to define a licensing framework contract, that will
+/// @notice Interface to define a policy framework contract, that will
 /// register itself into the LicenseRegistry to format policy into the LicenseRegistry
 interface IPolicyFrameworkManager is IParamVerifier {
     function licenseRegistry() external view returns (address);
