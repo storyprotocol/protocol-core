@@ -2,8 +2,11 @@
 
 pragma solidity ^0.8.23;
 
-// contracts
+// external
+import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
+// contracts
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
@@ -38,7 +41,12 @@ contract UMLPolicyFrameworkManager is
         string memory licenseUrl
     ) BasePolicyFrameworkManager(licRegistry, licenseUrl) LicensorApprovalManager(accessController) {}
 
-    function licenseRegistry() external view override(BasePolicyFrameworkManager, IPolicyFrameworkManager) returns (address) {
+    function licenseRegistry()
+        external
+        view
+        override(BasePolicyFrameworkManager, IPolicyFrameworkManager)
+        returns (address)
+    {
         return address(LICENSE_REGISTRY);
     }
 
@@ -70,8 +78,106 @@ contract UMLPolicyFrameworkManager is
         policy = abi.decode(protocolPolicy.data, (UMLPolicy));
     }
 
-    function policyToJson(bytes memory) public view returns (string memory) {
-        return "TODO";
+    function policyToJson(bytes memory policyData) public view returns (string memory) {
+        UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
+
+        /* solhint-disable */
+        // Follows the OpenSea standard for JSON metadata
+
+        // base json
+        string memory json = string(
+            '{"name": "Story Protocol License NFT", "description": "License agreement stating the terms of a Story Protocol IPAsset", "attributes": ['
+        );
+
+        // bool attribution;
+        // bool transferable;
+        // bool commercialUse;
+        // bool commercialAttribution;
+        // string[] commercializers;
+        // uint256 commercialRevShare;
+        // bool derivativesAllowed;
+        // bool derivativesAttribution;
+        // bool derivativesApproval;
+        // bool derivativesReciprocal;
+        // uint256 derivativesRevShare;
+        // string[] territories;
+        // string[] distributionChannels;
+
+        // Attributions
+        json = string(
+            abi.encodePacked(
+                json,
+                '{"trait_type": "Attribution", "value": "',
+                policy.attribution ? "true" : "false",
+                '"},',
+                '{"trait_type": "Transferable", "value": "',
+                policy.transferable ? "true" : "false",
+                '"},',
+                '{"trait_type": "Commerical Use", "value": "',
+                policy.commercialUse ? "true" : "false",
+                '"},',
+                '{"trait_type": "commercialAttribution", "value": "',
+                policy.commercialAttribution ? "true" : "false",
+                '"},',
+                '{"trait_type": "commercialRevShare", "value": ',
+                Strings.toString(policy.commercialRevShare),
+                "},"
+                '{"trait_type": "commercializers", "value": ['
+            )
+        );
+
+        uint256 commercializerCount = policy.commercializers.length;
+        for (uint256 i = 0; i < commercializerCount; ++i) {
+            json = string(abi.encodePacked(json, '"', policy.commercializers[i], '"'));
+            if (i != commercializerCount - 1) {
+                json = string(abi.encodePacked(json, ","));
+            }
+        }
+
+        json = string(
+            abi.encodePacked(
+                json,
+                ']}, {"trait_type": "derivativesAllowed", "value": "',
+                policy.derivativesAllowed ? "true" : "false",
+                '"},',
+                '{"trait_type": "derivativesAttribution", "value": "',
+                policy.derivativesAttribution ? "true" : "false",
+                '"},',
+                '{"trait_type": "derivativesApproval", "value": "',
+                policy.derivativesApproval ? "true" : "false",
+                '"},',
+                '{"trait_type": "derivativesReciprocal", "value": "',
+                policy.derivativesReciprocal ? "true" : "false",
+                '"},',
+                '{"trait_type": "derivativesRevShare", "value": ',
+                Strings.toString(policy.derivativesRevShare),
+                "},"
+                '{"trait_type": "territories", "value": ['
+            )
+        );
+
+        uint256 territoryCount = policy.territories.length;
+        for (uint256 i = 0; i < territoryCount; ++i) {
+            json = string(abi.encodePacked(json, '"', policy.territories[i], '"'));
+            if (i != territoryCount - 1) {
+                json = string(abi.encodePacked(json, ","));
+            }
+        }
+
+        json = string(abi.encodePacked(json, ']}, {"trait_type": "distributionChannels", "value": ['));
+
+        uint256 distributionChannelCount = policy.distributionChannels.length;
+        for (uint256 i = 0; i < distributionChannelCount; ++i) {
+            json = string(abi.encodePacked(json, '"', policy.distributionChannels[i], '"'));
+            if (i != distributionChannelCount - 1) {
+                json = string(abi.encodePacked(json, ","));
+            }
+        }
+
+        json = string(abi.encodePacked(json, "]}]}"));
+        /* solhint-enable */
+
+        return string(abi.encodePacked("data:application/json;base64,", Base64.encode(bytes(json))));
     }
 
     function supportsInterface(

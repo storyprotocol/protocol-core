@@ -15,6 +15,8 @@ import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
 
 contract LicenseRegistryTest is Test {
     using Strings for *;
@@ -27,6 +29,7 @@ contract LicenseRegistryTest is Test {
     Licensing.PolicyFramework public framework;
 
     MockPolicyFrameworkManager public module1;
+    UMLPolicyFrameworkManager public umlManager;
 
     MockERC721 nft = new MockERC721("MockERC721");
 
@@ -50,6 +53,11 @@ contract LicenseRegistryTest is Test {
             supportVerifyMint: true,
             supportVerifyTransfer: true
         }));
+        umlManager = new UMLPolicyFrameworkManager(
+            address(accessController),
+            address(registry),
+            licenseUrl
+        );
 
         nft.mintId(ipOwner, 1);
         nft.mintId(ipOwner, 2);
@@ -298,5 +306,118 @@ contract LicenseRegistryTest is Test {
         vm.expectRevert(Errors.LicenseRegistry__TransferParamFailed.selector);
         vm.prank(licenseHolder);
         registry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
+    }
+
+    function test_LicenseRegistry_licenseUri() public {
+        umlManager.register();
+
+        UMLPolicy memory policyData = UMLPolicy({
+            attribution: true,
+            transferable: true,
+            commercialUse: true,
+            commercialAttribution: true,
+            commercializers: new string[](2),
+            commercialRevShare: 0,
+            derivativesAllowed: true,
+            derivativesAttribution: true,
+            derivativesApproval: true,
+            derivativesReciprocal: true,
+            derivativesRevShare: 0,
+            territories: new string[](1),
+            distributionChannels: new string[](1)
+        });
+
+        policyData.commercializers[0] = "commercializer1";
+        policyData.commercializers[1] = "commercializer2";
+        policyData.territories[0] = "territory1";
+        policyData.distributionChannels[0] = "distributionChannel1";
+
+        uint256 policyId = umlManager.addPolicy(policyData);
+
+        vm.prank(ipOwner);
+        registry.addPolicyToIp(ipId1, policyId);
+
+        uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
+
+        string memory actualUri = registry.uri(licenseId);
+
+        /* solhint-disable */
+        // NOTE: In STRING version, no spacing between key and value (eg. "value":"true" instead of "value": "true")
+        // DEV : Since the raw string below produces stack too deep error, we use the encoded output of the string below.
+        //       The string below is left here for reference.
+        /*
+        string memory expectedJson = string(abi.encodePacked('{',
+            '"name":"Story Protocol License NFT",'
+            '"description":"License agreement stating the terms of a Story Protocol IPAsset",',
+            '"attributes":[',
+            '{',
+                '"trait_type":"Attribution",'
+                '"value":"true"',
+            '},',
+            '{',
+                '"trait_type":"Transferable",',
+                '"value":"true"',
+            '},',
+            '{',
+                '"trait_type":"Commerical Use",',
+                '"value":"true"',
+            '},',
+            '{',
+                '"trait_type":"commercialAttribution",',
+                '"value":"true"',
+            '},',
+            '{',
+                '"trait_type":"commercialRevShare",',
+                '"value":0',
+            '},',
+            '{',
+                '"trait_type":"commercializers",',
+                '"value":[',
+                    '"commercializer1",',
+                    '"commercializer2"',
+                ']',
+            '},',
+            '{',
+                '"trait_type":"derivativesAllowed",',
+                '"value":"true"',
+            '},',
+            '{',
+                '"trait_type":"derivativesAttribution",',
+                '"value":"true"',
+            '},',
+            '{',
+                '"trait_type":"derivativesApproval",',
+                '"value":"true"',
+            '},',
+            '{',
+                '"trait_type":"derivativesReciprocal",',
+                '"value":"true"',
+            '},',
+            '{',
+                '"trait_type":"derivativesRevShare",',
+                '"value":0',
+            '},',
+            '{',
+                '"trait_type":"territories",',
+                '"value":[',
+                    '"territory1",',
+                ']',
+            '},'
+            '{',
+                '"trait_type":"distributionChannels"',
+                '"value":[',
+                    '"distributionChannel1",',
+                ']',
+            '}',
+            ']',
+        '}'
+        ));
+        */
+        /* solhint-enable */
+        string memory expectedJson = "eyJuYW1lIjogIlN0b3J5IFByb3RvY29sIExpY2Vuc2UgTkZUIiwgImRlc2NyaXB0aW9uIjogIkxpY2Vuc2UgYWdyZWVtZW50IHN0YXRpbmcgdGhlIHRlcm1zIG9mIGEgU3RvcnkgUHJvdG9jb2wgSVBBc3NldCIsICJhdHRyaWJ1dGVzIjogW3sidHJhaXRfdHlwZSI6ICJBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIlRyYW5zZmVyYWJsZSIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkNvbW1lcmljYWwgVXNlIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbEF0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbFJldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogImNvbW1lcmNpYWxpemVycyIsICJ2YWx1ZSI6IFsiY29tbWVyY2lhbGl6ZXIxIiwiY29tbWVyY2lhbGl6ZXIyIl19LCB7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBbGxvd2VkIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzQXBwcm92YWwiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc1JlY2lwcm9jYWwiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc1JldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogInRlcnJpdG9yaWVzIiwgInZhbHVlIjogWyJ0ZXJyaXRvcnkxIl19LCB7InRyYWl0X3R5cGUiOiAiZGlzdHJpYnV0aW9uQ2hhbm5lbHMiLCAidmFsdWUiOiBbImRpc3RyaWJ1dGlvbkNoYW5uZWwxIl19XX0=";
+
+        string memory expectedUri = string(abi.encodePacked("data:application/json;base64,", expectedJson));
+
+        assertEq(actualUri, expectedUri);
     }
 }
