@@ -28,10 +28,12 @@ abstract contract BasePolicyFrameworkManager is IPolicyVerifier, IPolicyFramewor
         licenseTextUrl = licenseTextUrl_;
     }
 
+    /// @notice ERC165 interface identifier for the policy framework manager.
     function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, ERC165) returns (bool) {
         return interfaceId == type(IPolicyFrameworkManager).interfaceId || super.supportsInterface(interfaceId);
     }
 
+    /// @notice returns the address of the license registry
     function licenseRegistry() external view virtual override returns (address) {
         return address(LICENSE_REGISTRY);
     }

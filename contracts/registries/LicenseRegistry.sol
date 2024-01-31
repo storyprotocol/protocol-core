@@ -94,28 +94,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         emit PolicyFrameworkRegistered(manager, fwManager.name(), licenseUrl, _totalFrameworks);
     }
 
-
-    /// @notice Gets total number of policy frameworks in the contract
-    function totalFrameworks() external view returns (uint256) {
-        return _totalFrameworks;
-    }
-
-    /// @notice True if the framework address is registered in LicenseRegistry
-    function isFrameworkRegistered(address policyFramework) external view returns (bool) {
-        return _registeredFrameworkManagers[policyFramework];
-    }
-
-    /// @notice ERC1155 OpenSea metadata JSON representation of the LNFT parameters
-    function uri(uint256 id) public view virtual override returns (string memory) {
-        Licensing.License memory licenseData = _licenses[id];
-        Licensing.Policy memory pol = policy(licenseData.policyId);
-        return IPolicyFrameworkManager(pol.policyFramework).policyToJson(pol.data);
-    }
-
-    function name() public pure returns (string memory) {
-        return "LICENSE_REGISTRY";
-    }
-
     /// Adds a policy to an ipId, which can be used to mint licenses.
     /// Licnses are permissions for ipIds to be derivatives (children).
     /// if policyId is not defined in LicenseRegistry, reverts.
@@ -154,7 +132,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         }
         return polId;
     }
-
 
     /// Mints license NFTs representing a policy granted by a set of ipIds (licensors). This NFT needs to be burned
     /// in order to link a derivative IP with its parents.
@@ -220,7 +197,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return licenseId;
     }
 
-
     /// Relates an IP ID with its parents (licensors), by burning the License NFT the holder owns
     /// Licensing parameters related to linking IPAs must be verified in order to succeed, reverts otherwise.
     /// The child IP ID will have the policy that the license represent added to it's own, if it's compatible with
@@ -273,6 +249,20 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
         // Burn license
         _burn(holder, licenseId, 1);
+    }
+
+    /// @notice Gets total number of policy frameworks in the contract
+    function totalFrameworks() external view returns (uint256) {
+        return _totalFrameworks;
+    }
+
+    /// @notice True if the framework address is registered in LicenseRegistry
+    function isFrameworkRegistered(address policyFramework) external view returns (bool) {
+        return _registeredFrameworkManagers[policyFramework];
+    }
+
+    function name() external pure returns (string memory) {
+        return "LICENSE_REGISTRY";
     }
 
     /// Returns true if holder has positive balance for licenseId
@@ -356,10 +346,11 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return _licenses[licenseId].licensorIpId;
     }
 
-    function _verifyPolicy(Licensing.Policy memory pol) private view {
-        if (pol.policyFramework == address(0)) {
-            revert Errors.LicenseRegistry__PolicyNotFound();
-        }
+    /// @notice ERC1155 OpenSea metadata JSON representation of the LNFT parameters
+    function uri(uint256 id) public view virtual override returns (string memory) {
+        Licensing.License memory licenseData = _licenses[id];
+        Licensing.Policy memory pol = policy(licenseData.policyId);
+        return IPolicyFrameworkManager(pol.policyFramework).policyToJson(pol.data);
     }
 
     /// @dev Pre-hook for ERC1155's _update() called on transfers.
@@ -449,5 +440,11 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         id = existingIds + 1;
         _hashToIds[hash] = id;
         return (id, true);
+    }
+
+    function _verifyPolicy(Licensing.Policy memory pol) private view {
+        if (pol.policyFramework == address(0)) {
+            revert Errors.LicenseRegistry__PolicyNotFound();
+        }
     }
 }

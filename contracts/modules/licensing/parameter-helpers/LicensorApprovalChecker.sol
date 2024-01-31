@@ -6,10 +6,11 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { LicenseRegistryAware } from "contracts/modules/licensing/LicenseRegistryAware.sol";
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 
-/// @title LicensorApprovalManager
+/// @title LicensorApprovalChecker
 /// @notice Manages the approval of derivative IP accounts by the licensor. Used to verify
 /// licensing terms like "Derivatives With Approval" in UML.
-abstract contract LicensorApprovalManager is LicenseRegistryAware {
+abstract contract LicensorApprovalChecker is LicenseRegistryAware {
+
     /// Emits when a derivative IP account is approved by the licensor.
     /// @param licenseId id of the license waiting for approval
     /// @param ipId id of the derivative IP to be approved
@@ -37,12 +38,7 @@ abstract contract LicensorApprovalManager is LicenseRegistryAware {
             msg.sender != licensorIpId &&
             !ACCESS_CONTROLLER.checkPermission(licensorIpId, msg.sender, address(this), msg.sig)
         ) {
-            revert Errors.LicensorApprovalManager__Unauthorized();
-        }
-        // TODO: meta tx version?
-        bool callerIsLicensor = true; // msg.sender == IPAccountRegistry(licensorIpId).owner() or IP Account itself;
-        if (!callerIsLicensor) {
-            revert Errors.LicensorApprovalManager__Unauthorized();
+            revert Errors.LicensorApprovalChecker__Unauthorized();
         }
         _approvals[licenseId][licensorIpId][childIpId] = approved;
         emit DerivativeApproved(licenseId, licensorIpId, msg.sender, approved);

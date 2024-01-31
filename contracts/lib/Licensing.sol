@@ -7,7 +7,6 @@ import { Errors } from "./Errors.sol";
 /// @title Licensing
 /// @notice Types and constants used by the licensing related contracts
 library Licensing {
-
     /// @notice A particular configuration (flavor) of a Policy Framework, setting values for the licensing
     /// terms (parameters) of the framework.
     /// @param policyFramework address of the IPolicyFrameworkManager this policy is based on

@@ -115,9 +115,9 @@ library Errors {
     error PolicyFrameworkManager__GettingPolicyWrongFramework();
 
     ////////////////////////////////////////////////////////////////////////////
-    //                     LicensorApprovalManager                            //
+    //                     LicensorApprovalChecker                            //
     ////////////////////////////////////////////////////////////////////////////
-    error LicensorApprovalManager__Unauthorized();
+    error LicensorApprovalChecker__Unauthorized();
 
     ////////////////////////////////////////////////////////////////////////////
     //                            Dispute Module                              //

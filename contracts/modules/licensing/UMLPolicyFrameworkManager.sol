@@ -19,7 +19,7 @@ import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransfer
 import { IUMLPolicyFrameworkManager, UMLPolicy } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
-import { LicensorApprovalManager } from "contracts/modules/licensing/parameter-helpers/LicensorApprovalManager.sol";
+import { LicensorApprovalChecker } from "contracts/modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
 
 /// @title UMLPolicyFrameworkManager
 /// @notice This is the UML Policy Framework Manager, which implements the UML Policy Framework
@@ -31,14 +31,14 @@ contract UMLPolicyFrameworkManager is
     ILinkParamVerifier,
     IMintParamVerifier,
     ITransferParamVerifier,
-    LicensorApprovalManager
+    LicensorApprovalChecker
 {
     constructor(
         address accessController,
         address licRegistry,
         string memory name_,
         string memory licenseUrl_
-    ) BasePolicyFrameworkManager(licRegistry, name_, licenseUrl_) LicensorApprovalManager(accessController) {}
+    ) BasePolicyFrameworkManager(licRegistry, name_, licenseUrl_) LicensorApprovalChecker(accessController) {}
 
     function licenseRegistry()
         external
