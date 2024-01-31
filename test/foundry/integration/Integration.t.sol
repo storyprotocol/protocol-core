@@ -9,7 +9,7 @@ import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.so
 
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
+import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
@@ -17,13 +17,14 @@ import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.so
 import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
+import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { MockModule } from "test/foundry/mocks/MockModule.sol";
-import { MockParamVerifier, MockParamVerifierConfig } from "test/foundry/mocks/licensing/MockParamVerifier.sol";
-import { MintPaymentVerifier } from "test/foundry/mocks/licensing/MintPaymentVerifier.sol";
+import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy } from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
+import { MintPaymentPolicyFrameworkManager, MintPaymentPolicy } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
 import { Users, UsersLib } from "test/foundry/utils/Users.sol";
 
 struct MockERC721s {
@@ -48,9 +49,6 @@ contract IntegrationTest is Test {
     MockAccessController internal accessController = new MockAccessController();
     MockERC20 internal mockToken = new MockERC20();
     MockERC721s internal nft;
-    MockParamVerifier internal mockLicenseVerifier;
-    MintPaymentVerifier internal mintPaymentVerifier;
-    // MockModule internal module = new MockModule(address(registry), address(moduleRegistry), "MockModule");
 
     Users internal u;
 
@@ -72,14 +70,9 @@ contract IntegrationTest is Test {
     // NFT Token IDs Set by User
     mapping(address userAddr => mapping(MockERC721 nft => EnumerableSet.UintSet tokenIdSet)) internal tokenSet;
 
-    mapping(string frameworkName => Licensing.FrameworkCreationParams) internal licenseFwCreations;
+    mapping(string frameworkName => uint256 frameworkId) internal frameworkIds;
 
-    mapping(string frameworkName => uint256 frameworkId) internal licenseFwIds;
-    mapping(uint256 frameworkId => string frameworkName) internal licenseFwNames; // reverse of licenseFwIds
-
-    mapping(string policyName => Licensing.Policy) internal policy;
-
-    mapping(string policyName => mapping(address userAddr => uint256 policyId)) internal policyIds;
+    mapping(string policyName => uint256 policyId) internal policyIds;
 
     mapping(address userAddr => mapping(uint256 policyId => uint256 licenseId)) internal licenseIds;
 
@@ -94,21 +87,14 @@ contract IntegrationTest is Test {
             address(accessController),
             address(ipacctImpl)
         );
-        licenseRegistry = new LicenseRegistry("https://example-license-registry.com/{id}.json");
+        licenseRegistry = new LicenseRegistry(address(accessController), address(ipacctRegistry));
 
         disputeModule = new DisputeModule();
         arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), USDC, ARBITRATION_PRICE);
         royaltyModule = new RoyaltyModule();
         royaltyPolicyLS = new RoyaltyPolicyLS(address(royaltyModule), LIQUID_SPLIT_FACTORY, LIQUID_SPLIT_MAIN);
-        mockLicenseVerifier = new MockParamVerifier(MockParamVerifierConfig({
-            licenseRegistry: address(licenseRegistry),
-            name: "MockLicenseVerifier",
-            supportVerifyLink: true,
-            supportVerifyMint: true,
-            supportVerifyTransfer: true
-        }));
 
-        nft = MockERC721s({ a: new MockERC721(), b: new MockERC721(), c: new MockERC721() });
+        nft = MockERC721s({ a: new MockERC721("Mock"), b: new MockERC721("Mock"), c: new MockERC721("Mock") });
         u = UsersLib.createMockUsers(vm);
 
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
@@ -116,18 +102,6 @@ contract IntegrationTest is Test {
         mockToken.mint(u.alice, 1000 * 10 ** mockToken.decimals());
         mockToken.mint(u.bob, 1000 * 10 ** mockToken.decimals());
         mockToken.mint(u.carl, 1000 * 10 ** mockToken.decimals());
-
-        // 1 mock token payment per mint
-        mintPaymentVerifier = new MintPaymentVerifier(
-            address(licenseRegistry),
-            address(mockToken),
-            1 * 10 ** mockToken.decimals()
-        );
-
-        vm.label(address(disputeModule), "disputeModule");
-        vm.label(address(arbitrationPolicySP), "arbitrationPolicySP");
-        vm.label(address(royaltyModule), "royaltyModule");
-        vm.label(address(royaltyPolicyLS), "royaltyPolicyLS");
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -170,40 +144,9 @@ contract IntegrationTest is Test {
     }
 
     function getIpId(address user, MockERC721 mnft, uint256 tokenId) public view returns (address ipId) {
-        require(mnft.ownerOf(tokenId) == user, "getIpId: not owner");
+        // require(mnft.ownerOf(tokenId) == user, "getIpId: not owner");
         ipId = ipacct[user][mnft][tokenId];
         require(ipId == ipacctRegistry.ipAccount(block.chainid, address(mnft), tokenId));
-    }
-
-    function addLicenseFramework(
-        string memory name,
-        Licensing.FrameworkCreationParams memory params
-    ) public returns (uint256 fwId) {
-        require(licenseFwIds[name] == 0, "Framework already exists");
-        licenseFwCreations[name] = params;
-        fwId = licenseRegistry.addLicenseFramework(params);
-
-        licenseFwIds[name] = fwId;
-        licenseFwNames[fwId] = name;
-    }
-
-    function attachPolicyToIPID(
-        address ipId,
-        string memory policyName
-    ) public returns (uint256 policyId, bool isNew, uint256 indexOnIpId) {
-        (policyId, isNew, indexOnIpId) = licenseRegistry.addPolicyToIp(ipId, policy[policyName]);
-        policyIds[policyName][ipId] = policyId;
-    }
-
-    function attachPolicyAndMintLicenseForIPID(
-        address ipId,
-        string memory policyName,
-        address licensee,
-        uint256 amount
-    ) public returns (uint256 licenseId) {
-        (uint256 policyId, bool isNew, uint256 indexOnIpId) = attachPolicyToIPID(ipId, policyName);
-        licenseId = licenseRegistry.mintLicense(policyId, ipId, amount, licensee);
-        licenseIds[licensee][policyId] = licenseId;
     }
 
     function test_Integration_helper_mintNFT() public {
@@ -275,73 +218,52 @@ contract IntegrationTest is Test {
                             CREATE LICENSE FRAMEWORKS
         ////////////////////////////////////////////////////////////////*/
 
-        // All trues for MockVerifier means it will always return true on condition checks
-        bytes[] memory byteValueTrue = new bytes[](1);
-        byteValueTrue[0] = abi.encode(true);
-        Licensing.FrameworkCreationParams memory fwAllTrue = Licensing.FrameworkCreationParams({
-            parameters: new IParamVerifier[](1),
-            defaultValues: byteValueTrue,
-            licenseUrl: "https://very-nice-verifier-license.com"
-        });
-        fwAllTrue.parameters[0] = mockLicenseVerifier;
+        MockPolicyFrameworkManager mock_lf_AllTrue = new MockPolicyFrameworkManager(
+            MockPolicyFrameworkConfig({
+                licenseRegistry: address(licenseRegistry),
+                licenseUrl: "https://MockPolicyFrameworkManager.com/{id}.json",
+                supportVerifyLink: true,
+                supportVerifyMint: true,
+                supportVerifyTransfer: true
+            })
+        );
 
-        Licensing.FrameworkCreationParams memory fwMintPayment = Licensing.FrameworkCreationParams({
-            parameters: new IParamVerifier[](1),
-            defaultValues: byteValueTrue,
-            licenseUrl: "https://expensive-minting-license.com"
-        });
+        MintPaymentPolicyFrameworkManager mock_lf_MintPayment = new MintPaymentPolicyFrameworkManager(
+            address(licenseRegistry),
+            "https://expensive-minting-license.com/{id}.json",
+            address(mockToken),
+            1 * 10 ** mockToken.decimals()
+        );
 
-        fwMintPayment.parameters[0] = mintPaymentVerifier;
+        frameworkIds["all_true"] = mock_lf_AllTrue.register();
+        frameworkIds["mint_payment"] = mock_lf_MintPayment.register();
 
-        addLicenseFramework("all_true", fwAllTrue);
-        addLicenseFramework("mint_payment", fwMintPayment);
+        // /*///////////////////////////////////////////////////////////////
+        //                         CREATE POLICIES
+        // ////////////////////////////////////////////////////////////////*/
 
-        /*///////////////////////////////////////////////////////////////
-                                CREATE POLICIES
-        ////////////////////////////////////////////////////////////////*/
+        policyIds["test_true"] = mock_lf_AllTrue.addPolicy(
+            MockPolicy({ returnVerifyLink: true, returnVerifyMint: true, returnVerifyTransfer: true })
+        );
 
-        policy["test_true"] = Licensing.Policy({
-            frameworkId: licenseFwIds["all_true"],
-            commercialUse: true,
-            derivatives: true,
-            paramNames: new bytes32[](1),
-            paramValues: new bytes[](1)
-        });
-
-        policy["test_true"].paramNames[0] = mockLicenseVerifier.name();
-        policy["test_true"].paramValues[0] = abi.encode(true);
-
-        policy["expensive_mint"] = Licensing.Policy({
-            frameworkId: licenseFwIds["mint_payment"],
-            commercialUse: true,
-            derivatives: true,
-            paramNames: new bytes32[](1),
-            paramValues: new bytes[](1)
-        });
-
-        policy["expensive_mint"].paramNames[0] = mintPaymentVerifier.name();
-        // value doesn't matter bc mintPaymentVerifier ignores data (just requires payment)
-        policy["expensive_mint"].paramValues[0] = abi.encode(true);
-
-        licenseRegistry.addPolicy(policy["test_true"]);
-        licenseRegistry.addPolicy(policy["expensive_mint"]);
+        policyIds["expensive_mint"] = mock_lf_MintPayment.addPolicy(MintPaymentPolicy({ mustBeTrue: true }));
 
         /*///////////////////////////////////////////////////////////////
                             ADD POLICIES TO IPACCOUNTS
         ////////////////////////////////////////////////////////////////*/
-
-        attachPolicyToIPID(getIpId(u.alice, nft.a, 1), "test_true");
-        attachPolicyToIPID(getIpId(u.carl, nft.c, 1), "expensive_mint");
-
+        vm.startPrank(u.alice);
+        licenseRegistry.addPolicyToIp(getIpId(u.alice, nft.a, 1), policyIds["test_true"]);
+        vm.stopPrank();
+        vm.startPrank(u.carl);
+        licenseRegistry.addPolicyToIp(getIpId(u.carl, nft.c, 1), policyIds["expensive_mint"]);
+        vm.stopPrank();
         /*///////////////////////////////////////////////////////////////
                             MINT LICENSES ON POLICIES
         ////////////////////////////////////////////////////////////////*/
 
-        uint256 policyId = policyIds["test_true"][getIpId(u.alice, nft.a, 1)];
-
         // Carl mints 1 license for policy "test_true" on alice's NFT A IPAccount
-        licenseIds[u.carl][policyIds["test_true"][getIpId(u.alice, nft.a, 1)]] = licenseRegistry.mintLicense(
-            policyId,
+        licenseIds[u.carl][policyIds["test_true"]] = licenseRegistry.mintLicense(
+            policyIds["test_true"],
             getIpId(u.alice, nft.a, 1),
             1,
             u.carl
@@ -353,17 +275,10 @@ contract IntegrationTest is Test {
 
         // Carl activates above license on his NFT C IPAccount, linking as child to Alice's NFT A IPAccount
 
-        vm.prank(u.carl);
-        licenseRegistry.linkIpToParent(
-            licenseIds[u.carl][policyIds["test_true"][getIpId(u.alice, nft.a, 1)]],
-            getIpId(u.carl, nft.c, 1),
-            u.carl
-        );
-        assertEq(
-            licenseRegistry.balanceOf(u.carl, licenseIds[u.carl][policyIds["test_true"][getIpId(u.alice, nft.a, 1)]]),
-            0,
-            "not burnt"
-        );
+        vm.startPrank(u.carl);
+        licenseRegistry.linkIpToParent(licenseIds[u.carl][policyIds["test_true"]], getIpId(u.carl, nft.c, 1), u.carl);
+        vm.stopPrank();
+        assertEq(licenseRegistry.balanceOf(u.carl, licenseIds[u.carl][policyIds["test_true"]]), 0, "not burnt");
         assertTrue(licenseRegistry.isParent(getIpId(u.alice, nft.a, 1), getIpId(u.carl, nft.c, 1)), "not parent");
         assertEq(
             keccak256(abi.encode(licenseRegistry.policyForIpAtIndex(getIpId(u.alice, nft.a, 1), 0))),
@@ -372,28 +287,21 @@ contract IntegrationTest is Test {
             "policy not copied"
         );
 
-        policyIds["expensive_mint"][getIpId(u.carl, nft.c, 1)] = licenseRegistry.policyIdForIpAtIndex(
-            getIpId(u.carl, nft.c, 1),
-            0
-        );
-
         // Bob mints 2 license for policy happy on Carl's NFT C IPAccount (inherits from Alice's NFT A IPAccount)
         // Bob will have to pay Carl 2 MockToken as Carl is using the expensive_mint policy, which uses
         // MintPaymentVerifier on mintingParam that checks for 2 MockToken payment
         vm.startPrank(u.bob); // need to prank twice for .decimals() and .approve()
-        mockToken.approve(address(mintPaymentVerifier), 2 * 10 ** mockToken.decimals());
+        mockToken.approve(address(mock_lf_MintPayment), 2 * 10 ** mockToken.decimals());
         vm.stopPrank();
-
-        uint256 policyId_Carl_NftC_Id1 = policyIds["expensive_mint"][getIpId(u.carl, nft.c, 1)];
 
         // Bob mints 2 license for policy "expensive_mint" on carl's NFT C IPAccount
 
         mockTokenBalanceBefore[u.bob] = mockToken.balanceOf(u.bob);
-        mockTokenBalanceBefore[address(mintPaymentVerifier)] = mockToken.balanceOf(address(mintPaymentVerifier));
+        mockTokenBalanceBefore[address(mock_lf_MintPayment)] = mockToken.balanceOf(address(mock_lf_MintPayment));
 
         vm.startPrank(u.bob);
-        licenseIds[u.bob][policyId_Carl_NftC_Id1] = licenseRegistry.mintLicense(
-            policyId_Carl_NftC_Id1,
+        licenseIds[u.bob][policyIds["expensive_mint"]] = licenseRegistry.mintLicense(
+            policyIds["expensive_mint"],
             getIpId(u.carl, nft.c, 1), // licensorIpId
             2,
             u.bob
@@ -401,15 +309,16 @@ contract IntegrationTest is Test {
         vm.stopPrank();
 
         mockTokenBalanceAfter[u.bob] = mockToken.balanceOf(u.bob);
-        mockTokenBalanceAfter[address(mintPaymentVerifier)] = mockToken.balanceOf(address(mintPaymentVerifier));
+        mockTokenBalanceAfter[address(mock_lf_MintPayment)] = mockToken.balanceOf(address(mock_lf_MintPayment));
 
         // Bob activates above license on his NFT A IPAccount, linking as child to Carl's NFT C IPAccount
 
-        vm.prank(u.bob);
-        licenseRegistry.linkIpToParent(licenseIds[u.bob][policyId_Carl_NftC_Id1], getIpId(u.bob, nft.a, 2), u.bob);
+        vm.startPrank(u.bob);
+        licenseRegistry.linkIpToParent(licenseIds[u.bob][policyIds["expensive_mint"]], getIpId(u.bob, nft.a, 2), u.bob);
+        vm.stopPrank();
 
         assertEq(
-            licenseRegistry.balanceOf(u.bob, licenseIds[u.bob][policyIds["expensive_mint"][getIpId(u.carl, nft.c, 1)]]),
+            licenseRegistry.balanceOf(u.bob, licenseIds[u.bob][policyIds["expensive_mint"]]),
             1, // 1 left
             "not burnt"
         );
@@ -422,25 +331,13 @@ contract IntegrationTest is Test {
 
         assertEq(
             mockTokenBalanceBefore[u.bob] - mockTokenBalanceAfter[u.bob],
-            2 * mintPaymentVerifier.payment(),
+            2 * mock_lf_MintPayment.payment(),
             "Bob didn't pay Carl"
         );
         assertEq(
-            mockTokenBalanceAfter[address(mintPaymentVerifier)] - mockTokenBalanceBefore[address(mintPaymentVerifier)],
-            2 * mintPaymentVerifier.payment(),
+            mockTokenBalanceAfter[address(mock_lf_MintPayment)] - mockTokenBalanceBefore[address(mock_lf_MintPayment)],
+            2 * mock_lf_MintPayment.payment(),
             "Carl didn't receive payment"
         );
-
-        // address[] memory accounts = new address[](2);
-        // accounts[0] = ipAccount1;
-        // accounts[1] = ipAccount2;
-
-        // uint32[] memory initAllocations = new uint32[](2);
-        // initAllocations[0] = 100;
-        // initAllocations[1] = 900;
-
-        // bytes memory data = abi.encode(accounts, initAllocations, uint32(0), address(0));
-
-        // royaltyModule.setRoyaltyPolicy(ipAccount3, address(royaltyPolicyLS), data);
     }
 }

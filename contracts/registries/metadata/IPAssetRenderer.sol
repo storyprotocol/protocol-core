@@ -6,7 +6,7 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
+import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMetadataProvider.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
@@ -18,8 +18,8 @@ import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.so
 ///         of attributes, on-chain SVGs, and external URLs. Note that the
 ///         underlying data being rendered is strictly immutable.
 contract IPAssetRenderer {
-    /// @notice The global IP record registry.
-    IPRecordRegistry public immutable IP_RECORD_REGISTRY;
+    /// @notice The global IP asset registry.
+    IPAssetRegistry public immutable IP_ASSET_REGISTRY;
 
     /// @notice The global licensing registry.
     LicenseRegistry public immutable LICENSE_REGISTRY;
@@ -32,12 +32,12 @@ contract IPAssetRenderer {
     /// TODO: Add different customization options - e.g. font, colorways, etc.
     /// TODO: Add an external URL for generating SP-branded links for each IP.
     constructor(
-        address recordRegistry,
+        address assetRegistry,
         address licenseRegistry,
         address taggingModule,
         address royaltyModule
     ) {
-        IP_RECORD_REGISTRY = IPRecordRegistry(recordRegistry);
+        IP_ASSET_REGISTRY = IPAssetRegistry(assetRegistry);
         LICENSE_REGISTRY = LicenseRegistry(licenseRegistry);
         TAGGING_MODULE = TaggingModule(taggingModule);
         ROYALTY_MODULE = RoyaltyModule(royaltyModule);
@@ -163,9 +163,9 @@ contract IPAssetRenderer {
 
     /// TODO: Add SVG generation support for branding within token metadata.
 
-    /// @dev Internal function for fetching the metadata tied to an IP record.
+    /// @dev Internal function for fetching the metadata tied to an IP asset.
     function _metadata(address ipId) internal view returns (IP.Metadata memory metadata) {
-        IMetadataProvider provider = IMetadataProvider(IP_RECORD_REGISTRY.metadataProvider(ipId));
+        IMetadataProvider provider = IMetadataProvider(IP_ASSET_REGISTRY.metadataProvider(ipId));
         bytes memory data = provider.getMetadata(ipId);
         if (data.length != 0) {
             metadata = abi.decode(data, (IP.Metadata));

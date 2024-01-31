@@ -9,11 +9,10 @@ import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProv
 import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
-import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
+import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
-import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
-import { IIPRecordRegistry } from "contracts/interfaces/registries/IIPRecordRegistry.sol";
+import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
 import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { ModuleBaseTest } from "test/foundry/modules/ModuleBase.t.sol";
@@ -41,7 +40,7 @@ contract IPResolverTest is ResolverBaseTest {
     /// @notice Initializes the base token contract for testing.
     function setUp() public virtual override(ResolverBaseTest) {
         ResolverBaseTest.setUp();
-        MockERC721 erc721 = new MockERC721();
+        MockERC721 erc721 = new MockERC721("MockERC721");
         vm.prank(alice);
         ipResolver = IPResolver(_deployModule());
         IPMetadataProvider metadataProvider = new IPMetadataProvider(address(moduleRegistry));
@@ -49,22 +48,18 @@ contract IPResolverTest is ResolverBaseTest {
         // TODO: Mock this correctly
         registrationModule = address(new RegistrationModule(
             address(accessController),
-            address(ipRecordRegistry),
-            address(ipAccountRegistry),
-            address(licenseRegistry),
-            address(ipResolver),
-            address(metadataProvider)
+            address(ipAssetRegistry),
+            address(licenseRegistry)
         ));
         moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, registrationModule);
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));
         vm.prank(registrationModule);
-        ipId = ipRecordRegistry.register(
+        ipId = ipAssetRegistry.register(
             block.chainid,
             address(erc721),
             tokenId,
             address(ipResolver),
-            true,
-            address(metadataProvider)
+            true
         );
     }
 
@@ -96,8 +91,7 @@ contract IPResolverTest is ResolverBaseTest {
         return address(
             new IPResolver(
                 address(accessController),
-                address(ipRecordRegistry),
-                address(ipAccountRegistry),
+                address(ipAssetRegistry),
                 address(licenseRegistry)
             )
         );

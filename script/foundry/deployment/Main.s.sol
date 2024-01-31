@@ -12,12 +12,11 @@ import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.so
 import { AccessController } from "contracts/AccessController.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
+import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { IPAssetRenderer } from "contracts/registries/metadata/IPAssetRenderer.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
@@ -26,9 +25,13 @@ import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
-import { MockERC721 } from "contracts/mocks/MockERC721.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { Governance } from "contracts/governance/Governance.sol";
+import { UMLPolicy } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
+import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+
+// test
+import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 
 // script
 import { StringUtil } from "script/foundry/utils/StringUtil.sol";
@@ -47,7 +50,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     IPAssetRenderer public renderer;
     IPMetadataProvider public metadataProvider;
     IPAccountRegistry public ipAccountRegistry;
-    IPRecordRegistry public ipRecordRegistry;
+    IPAssetRegistry public ipAssetRegistry;
     LicenseRegistry public licenseRegistry;
     ModuleRegistry public moduleRegistry;
 
@@ -64,10 +67,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     IPResolver public ipResolver;
 
     mapping(uint256 => uint256) internal nftIds;
-    mapping(uint256 => uint256) internal policyIds;
-    mapping(string => uint256) internal fwIds;
-    mapping(string => Licensing.FrameworkCreationParams) internal fwCreationParams;
-    mapping(string => Licensing.Policy) internal policies;
+    mapping(string => uint256) internal policyIds;
+    mapping(string => uint256) internal frameworkIds;
 
     constructor() JsonDeploymentHandler("main") {}
 
@@ -99,7 +100,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         governance = new Governance(accessControldeployer);
         _postdeploy(contractKey, address(governance));
 
-        mockNft = new MockERC721();
+        mockNft = new MockERC721("MockERC721");
 
         contractKey = "AccessController";
         _predeploy(contractKey);
@@ -116,27 +117,27 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         moduleRegistry = new ModuleRegistry(address(governance));
         _postdeploy(contractKey, address(moduleRegistry));
 
-        contractKey = "LicenseRegistry";
-        _predeploy(contractKey);
-        licenseRegistry = new LicenseRegistry("https://example.com/{id}.json");
-        _postdeploy(contractKey, address(licenseRegistry));
-
         contractKey = "IPAccountRegistry";
         _predeploy(contractKey);
         ipAccountRegistry = new IPAccountRegistry(ERC6551_REGISTRY, address(accessController), address(implementation));
         _postdeploy(contractKey, address(ipAccountRegistry));
 
-        contractKey = "IPRecordRegistry";
+        // TODO: deployment sequence
+        contractKey = "IPAssetRegistry";
         _predeploy(contractKey);
-        ipRecordRegistry = new IPRecordRegistry(address(moduleRegistry), address(ipAccountRegistry));
-        _postdeploy(contractKey, address(ipRecordRegistry));
+        ipAssetRegistry = new IPAssetRegistry(address(accessController), ERC6551_REGISTRY, address(implementation), address(metadataProvider));
+        _postdeploy(contractKey, address(ipAssetRegistry));
+
+        contractKey = "LicenseRegistry";
+        _predeploy(contractKey);
+        licenseRegistry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
+        _postdeploy(contractKey, address(licenseRegistry));
 
         contractKey = "IPResolver";
         _predeploy(contractKey);
         ipResolver = new IPResolver(
             address(accessController),
-            address(ipRecordRegistry),
-            address(ipAccountRegistry),
+            address(ipAssetRegistry),
             address(licenseRegistry)
         );
         _postdeploy(contractKey, address(ipResolver));
@@ -150,11 +151,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         _predeploy(contractKey);
         registrationModule = new RegistrationModule(
             address(accessController),
-            address(ipRecordRegistry),
-            address(ipAccountRegistry),
-            address(licenseRegistry),
-            address(ipResolver),
-            address(metadataProvider)
+            address(ipAssetRegistry),
+            address(licenseRegistry)
         );
         _postdeploy(contractKey, address(registrationModule));
 
@@ -176,7 +174,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         contractKey = "IPAssetRenderer";
         _predeploy(contractKey);
         renderer = new IPAssetRenderer(
-            address(ipRecordRegistry),
+            address(ipAssetRegistry),
             address(licenseRegistry),
             address(taggingModule),
             address(royaltyModule)
@@ -200,7 +198,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         _configureModuleRegistry();
         _configureInteractions();
         // _configureIPAccountRegistry();
-        // _configureIPRecordRegistry();
+        // _configureIPAssetRegistry();
     }
 
     function _configureAccessController() private {
@@ -247,57 +245,78 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                             CREATE LICENSE FRAMEWORKS
         ////////////////////////////////////////////////////////////////*/
 
-        fwCreationParams["all_true"] = Licensing.FrameworkCreationParams({
-            parameters: new IParamVerifier[](0),
-            defaultValues: new bytes[](0),
-            licenseUrl: "https://very-nice-verifier-license.com"
-        });
+        UMLPolicyFrameworkManager umlAllTrue = new UMLPolicyFrameworkManager(
+            address(accessController),
+            address(licenseRegistry),
+            "https://very-nice-verifier-license.com/{id}.json"
+        );
+        UMLPolicyFrameworkManager umlMintPayment = new UMLPolicyFrameworkManager(
+            address(accessController),
+            address(licenseRegistry),
+            "https://expensive-minting-license.com/{id}.json"
+        );
 
-        fwCreationParams["mint_payment"] = Licensing.FrameworkCreationParams({
-            parameters: new IParamVerifier[](0),
-            defaultValues: new bytes[](0),
-            licenseUrl: "https://expensive-minting-license.com"
-        });
-
-        fwIds["all_true"] = licenseRegistry.addLicenseFramework(fwCreationParams["all_true"]);
-        fwIds["mint_payment"] = licenseRegistry.addLicenseFramework(fwCreationParams["mint_payment"]);
+        frameworkIds["all_true"] = umlAllTrue.register();
+        frameworkIds["mint_payment"] = umlMintPayment.register();
 
         // /*///////////////////////////////////////////////////////////////
         //                         CREATE POLICIES
         // ////////////////////////////////////////////////////////////////*/
 
-        policies["test_true"] = Licensing.Policy({
-            frameworkId: fwIds["all_true"],
-            commercialUse: true,
-            derivatives: true,
-            paramNames: new bytes32[](0),
-            paramValues: new bytes[](0)
-        });
+        policyIds["test_true"] = umlAllTrue.addPolicy(
+            UMLPolicy({
+                attribution: true,
+                transferable: true,
+                commercialUse: true,
+                commercialAttribution: true,
+                commercializers: new string[](0),
+                commercialRevShare: 0,
+                derivativesAllowed: true,
+                derivativesAttribution: true,
+                derivativesApproval: true,
+                derivativesReciprocal: true,
+                derivativesRevShare: 0,
+                territories: new string[](0),
+                distributionChannels: new string[](0)
+            })
+        );
 
-        policies["expensive_mint"] = Licensing.Policy({
-            frameworkId: fwIds["mint_payment"],
-            commercialUse: true,
-            derivatives: true,
-            paramNames: new bytes32[](0),
-            paramValues: new bytes[](0)
-        });
-
-        uint256 policyId_test_true = licenseRegistry.addPolicy(policies["test_true"]);
-        uint256 policyId_exp_mint = licenseRegistry.addPolicy(policies["expensive_mint"]);
+        policyIds["expensive_mint"] = umlAllTrue.addPolicy(
+            UMLPolicy({
+                attribution: true,
+                transferable: true,
+                commercialUse: true,
+                commercialAttribution: true,
+                commercializers: new string[](0),
+                commercialRevShare: 0,
+                derivativesAllowed: true,
+                derivativesAttribution: true,
+                derivativesApproval: true,
+                derivativesReciprocal: true,
+                derivativesRevShare: 0,
+                territories: new string[](0),
+                distributionChannels: new string[](0)
+            })
+        );
 
         // /*///////////////////////////////////////////////////////////////
         //                     ADD POLICIES TO IPACCOUNTS
         // ////////////////////////////////////////////////////////////////*/
 
-        licenseRegistry.addPolicyToIp(getIpId(mockNft, nftIds[1]), policyId_test_true);
-        licenseRegistry.addPolicyToIp(getIpId(mockNft, nftIds[2]), policyId_exp_mint);
+        licenseRegistry.addPolicyToIp(getIpId(mockNft, nftIds[1]), policyIds["test_true"]);
+        licenseRegistry.addPolicyToIp(getIpId(mockNft, nftIds[2]), policyIds["expensive_mint"]);
 
         // /*///////////////////////////////////////////////////////////////
         //                     MINT LICENSES ON POLICIES
         // ////////////////////////////////////////////////////////////////*/
 
         // Mints 1 license for policy "test_true" on NFT id 1 IPAccount
-        uint256 licenseId1 = licenseRegistry.mintLicense(policyId_test_true, getIpId(mockNft, nftIds[1]), 2, deployer);
+        uint256 licenseId1 = licenseRegistry.mintLicense(
+            policyIds["test_true"],
+            getIpId(mockNft, nftIds[1]),
+            2,
+            deployer
+        );
 
         registrationModule.registerDerivativeIp(
             licenseId1,

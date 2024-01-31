@@ -22,7 +22,6 @@ library Errors {
     error IPAccount__InvalidSignature();
     error IPAccount__ExpiredSignature();
 
-
     ////////////////////////////////////////////////////////////////////////////
     //                                   Module                               //
     ////////////////////////////////////////////////////////////////////////////
@@ -31,23 +30,34 @@ library Errors {
     error Module_Unauthorized();
 
     ////////////////////////////////////////////////////////////////////////////
-    //                               IPRecordRegistry                         //
+    //                               IPAccountRegistry                        //
+    ////////////////////////////////////////////////////////////////////////////
+    error IPAccountRegistry_InvalidIpAccountImpl();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                               IPAssetRegistry                         //
     ////////////////////////////////////////////////////////////////////////////
 
-    /// @notice The IP record has already been registered.
-    error IPRecordRegistry_AlreadyRegistered();
+    /// @notice The IP asset has already been registered.
+    error IPAssetRegistry_AlreadyRegistered();
 
     /// @notice The IP account has already been created.
-    error IPRecordRegistry_IPAccountAlreadyCreated();
+    error IPAssetRegistry_IPAccountAlreadyCreated();
 
-    /// @notice The IP record has not yet been registered.
-    error IPRecordRegistry_NotYetRegistered();
+    /// @notice The IP asset has not yet been registered.
+    error IPAssetRegistry_NotYetRegistered();
 
     /// @notice The specified IP resolver is not valid.
-    error IPRecordRegistry_ResolverInvalid();
+    error IPAssetRegistry_ResolverInvalid();
 
     /// @notice Caller not authorized to perform the IP registry function call.
-    error IPRecordRegistry_Unauthorized();
+    error IPAssetRegistry_Unauthorized();
+
+    /// @notice The deployed address of account doesn't match with IP ID.
+    error IPAssetRegistry_InvalidAccount();
+
+    /// @notice The metadata provider is not valid.
+    error IPAssetRegistry_InvalidMetadataProvider();
 
     ////////////////////////////////////////////////////////////////////////////
     //                                 IPResolver                            ///
@@ -70,32 +80,43 @@ library Errors {
     //                            LicenseRegistry                             //
     ////////////////////////////////////////////////////////////////////////////
 
-    /// @notice Error thrown when a policy is already set for an IP ID.
     error LicenseRegistry__PolicyAlreadySetForIpId();
     error LicenseRegistry__FrameworkNotFound();
     error LicenseRegistry__EmptyLicenseUrl();
+    error LicenseRegistry__ZeroPolicyFramework();
     error LicenseRegistry__PolicyAlreadyAdded();
     error LicenseRegistry__ParamVerifierLengthMismatch();
-    error LicenseRegistry__InvalidParamVerifierType();
     error LicenseRegistry__PolicyNotFound();
     error LicenseRegistry__NotLicensee();
     error LicenseRegistry__ParentIdEqualThanChild();
     error LicenseRegistry__LicensorDoesntHaveThisPolicy();
-    error LicenseRegistry__ParamVerifierFailed(uint8 verifierType, address verifier);
+    error LicenseRegistry__MintLicenseParamFailed();
     error LicenseRegistry__LinkParentParamFailed();
+    error LicenseRegistry__TransferParamFailed();
     error LicenseRegistry__InvalidLicensor();
     error LicenseRegistry__ParamVerifierAlreadySet();
+    error LicenseRegistry__CommercialTermInNonCommercialPolicy();
+    error LicenseRegistry__EmptyParamName();
+    error LicenseRegistry__UnregisteredFrameworkAddingPolicy();
+    error LicenseRegistry__UnauthorizedAccess();
+    error LicenseRegistry__LicensorNotRegistered();
 
     ////////////////////////////////////////////////////////////////////////////
-    //                            BaseParamVerifier                           //
+    //                        LicenseRegistryAware                            //
     ////////////////////////////////////////////////////////////////////////////
-    error BaseParamVerifier__Unauthorized();
+
+    error LicenseRegistryAware__CallerNotLicenseRegistry();
 
     ////////////////////////////////////////////////////////////////////////////
-    //                     DerivativesParamVerifier                           //
+    //                           PolicyFramework                              //
     ////////////////////////////////////////////////////////////////////////////
-    error DerivativesParamVerifier__InvalidDerivativesConfig();
-    error DerivativesParamVerifier__ZeroShare();
+
+    error PolicyFramework_FrameworkNotYetRegistered();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                     LicensorApprovalManager                            //
+    ////////////////////////////////////////////////////////////////////////////
+    error LicensorApprovalManager__Unauthorized();
 
     ////////////////////////////////////////////////////////////////////////////
     //                            Dispute Module                              //

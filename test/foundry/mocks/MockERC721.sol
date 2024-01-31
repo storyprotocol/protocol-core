@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 contract MockERC721 is ERC721 {
     uint256 private _counter;
 
-    constructor() ERC721("MockERC721", "M721") {
+    constructor(string memory name) ERC721(name, name) {
         _counter = 0;
     }
 

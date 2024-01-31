@@ -21,15 +21,13 @@ import { IP_RESOLVER_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 contract IPResolver is KeyValueResolver {
     /// @notice Initializes the IP metadata resolver.
     /// @param accessController The access controller used for IP authorization.
-    /// @param ipRecordRegistry The address of the IP record registry.
-    /// @param ipAccountRegistry The address of the IP account registry.
+    /// @param ipAssetRegistry The address of the IP record registry.
     /// @param licenseRegistry The address of the license registry.
     constructor(
         address accessController,
-        address ipRecordRegistry,
-        address ipAccountRegistry,
+        address ipAssetRegistry,
         address licenseRegistry
-    ) ResolverBase(accessController, ipRecordRegistry, ipAccountRegistry, licenseRegistry) {}
+    ) ResolverBase(accessController, ipAssetRegistry, licenseRegistry) {}
 
     /// @notice Checks whether the resolver interface is supported.
     /// @param id The resolver interface identifier.
