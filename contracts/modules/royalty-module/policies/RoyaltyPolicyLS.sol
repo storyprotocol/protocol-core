@@ -57,7 +57,8 @@ contract RoyaltyPolicyLS is IRoyaltyPolicy {
         (address[] memory accounts, uint32[] memory initAllocations, uint32 distributorFee, address splitOwner) = abi
             .decode(_data, (address[], uint32[], uint32, address));
 
-        // TODO: input validation: accounts & initAllocations - can we make up to 1000 parents with tx going through - if not alternative may be to create new contract to claim RNFTs
+        // TODO: input validation: accounts & initAllocations - can we make up to 1000 parents with tx
+        //       going through - if not alternative may be to create new contract to claim RNFTs
         // TODO: input validation: distributorFee
         // TODO: input validation: splitOwner
 

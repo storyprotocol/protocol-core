@@ -7,8 +7,6 @@ import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 // contracts
-import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
-import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";

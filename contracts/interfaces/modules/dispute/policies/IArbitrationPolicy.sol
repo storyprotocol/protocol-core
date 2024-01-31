@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 /// @title ArbitrationPolicy interface
 interface IArbitrationPolicy {
     /// @notice Executes custom logic on raise dispute
-    /// @param caller Address of the caller    
+    /// @param caller Address of the caller
     function onRaiseDispute(address caller, bytes calldata data) external;
 
     /// @notice Executes custom logic on dispute judgement

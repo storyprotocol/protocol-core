@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.23;
 
-import { Licensing } from "contracts/lib/Licensing.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 
 /// @notice Licensing parameters for the UML standard
@@ -37,11 +36,9 @@ struct UMLPolicy {
     string[] distributionChannels;
 }
 
-
 /// @title IUMLPolicyFrameworkManager
 /// @notice Defines the interface for a Policy Framework Manager compliant with the UML standard
 interface IUMLPolicyFrameworkManager is IPolicyFrameworkManager {
-
     /// @notice Emitted when a new policy is added to the registry
     event UMLPolicyAdded(uint256 indexed policyId, UMLPolicy policy);
 
@@ -49,6 +46,7 @@ interface IUMLPolicyFrameworkManager is IPolicyFrameworkManager {
     /// @dev Must encode the policy into bytes to be stored in the LicenseRegistry
     /// @param umlPolicy UMLPolicy compliant licensing term values
     function addPolicy(UMLPolicy calldata umlPolicy) external returns (uint256 policyId);
+
     /// @notice Fetchs a policy from the registry, decoding the raw bytes into a UMLPolicy struct
     /// @param policyId  The ID of the policy to fetch
     /// @return policy The UMLPolicy struct

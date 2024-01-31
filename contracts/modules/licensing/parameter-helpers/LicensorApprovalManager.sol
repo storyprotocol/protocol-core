@@ -10,7 +10,6 @@ import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 /// @notice Manages the approval of derivative IP accounts by the licensor. Used to verify
 /// licensing terms like "Derivatives With Approval" in UML.
 abstract contract LicensorApprovalManager is LicenseRegistryAware {
-
     /// Emits when a derivative IP account is approved by the licensor.
     /// @param licenseId id of the license waiting for approval
     /// @param ipId id of the derivative IP to be approved
@@ -51,5 +50,4 @@ abstract contract LicensorApprovalManager is LicenseRegistryAware {
         address licensorIpId = LICENSE_REGISTRY.licensorIpId(licenseId);
         return _approvals[licenseId][licensorIpId][childIpId];
     }
-
 }

@@ -10,11 +10,10 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 /// - Registering policies
 /// - Minting licenses
 /// - Linking IP to its parent
-/// - Verifying transfer parameters (through the ITransferParamVerifier interface implementation by the policy framework)
-/// - Verifying linking parameters (through the ILinkParamVerifier interface implementation by the policy framework)
-/// - Verifying policy parameters (through the IPolicyVerifier interface implementation by the policy framework)
+/// - Verifying transfer parameters (through the ITransferParamVerifier interface implementation by policy framework)
+/// - Verifying linking parameters (through the ILinkParamVerifier interface implementation by policy framework)
+/// - Verifying policy parameters (through the IPolicyVerifier interface implementation by policy framework)
 interface ILicenseRegistry {
-
     /// @notice Emitted when a policy framework is created by registering a policy framework manager
     /// @param creator The address that created the policy framework
     /// @param frameworkId The id of the policy framework
@@ -66,7 +65,7 @@ interface ILicenseRegistry {
 
     /// @notice registers a policy framework into the contract
     /// @param fw The policy framework data
-    /// @return frameworkId The id of the policy framework 
+    /// @return frameworkId The id of the policy framework
     function addPolicyFramework(Licensing.PolicyFramework calldata fw) external returns (uint256 frameworkId);
 
     /// @notice registers a policy into the contract
@@ -104,41 +103,59 @@ interface ILicenseRegistry {
 
     /// @notice gets total number of policy frameworks in the contract
     function totalFrameworks() external view returns (uint256);
+
     /// @notice gets policy framework data by id
     function framework(uint256 frameworkId) external view returns (Licensing.PolicyFramework memory);
+
     /// @notice gets policy framework license template URL by id
     function frameworkUrl(uint256 frameworkId) external view returns (string memory);
+
     /// @notice gets total number of policies (framework parameter configurations) in the contract
     function totalPolicies() external view returns (uint256);
+
     /// @notice gets policy data by id
     function policy(uint256 policyId) external view returns (Licensing.Policy memory pol);
+
     /// @notice true if policy is defined in the contract
     function isPolicyDefined(uint256 policyId) external view returns (bool);
+
     /// @notice gets the policy ids for an IP
     function policyIdsForIp(address ipId) external view returns (uint256[] memory policyIds);
+
     /// @notice gets total number of policies for an IP
     function totalPoliciesForIp(address ipId) external view returns (uint256);
+
     /// @notice true if policy is part of an IP's policy list
     function isPolicyIdSetForIp(address ipId, uint256 policyId) external view returns (bool);
+
     /// @notice gets the policy ID for an IP by index on the IP's policy list
     function policyIdForIpAtIndex(address ipId, uint256 index) external view returns (uint256 policyId);
+
     /// @notice gets the policy for an IP by index on the IP's policy list
     function policyForIpAtIndex(address ipId, uint256 index) external view returns (Licensing.Policy memory);
+
     /// @notice gets the index of a policy in an IP's policy list
     function indexOfPolicyForIp(address ipId, uint256 policyId) external view returns (uint256 index);
+
     /// @notice true if the license was added to the IP by linking (burning a license)
     function isPolicyInherited(address ipId, uint256 policyId) external view returns (bool);
+
     /// @notice true if holder is the licensee for the license (owner of the license NFT), or derivative IP owner if
     /// the license was added to the IP by linking (burning a license)
     function isLicensee(uint256 licenseId, address holder) external view returns (bool);
+
     /// @notice IP ID of the licensor for the license (parent IP)
     function licensorIpId(uint256 licenseId) external view returns (address);
+
     /// @notice license data (licensor, policy...) for the license id
     function license(uint256 licenseId) external view returns (Licensing.License memory);
+
     /// @notice true if an IP is a derivative of another IP
     function isParent(address parentIpId, address childIpId) external view returns (bool);
+
     /// @notice returns the parent IP IDs for an IP ID
     function parentIpIds(address ipId) external view returns (address[] memory);
+
     /// @notice total number of parents for an IP ID
     function totalParentsForIpId(address ipId) external view returns (uint256);
 }

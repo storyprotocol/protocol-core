@@ -18,7 +18,7 @@ interface IDisputeModule {
     /// @param arbitrationRelayer The address of the arbitration relayer
     /// @param allowed Indicates if the arbitration relayer is whitelisted
     event ArbitrationRelayerWhitelistUpdated(address arbitrationPolicy, address arbitrationRelayer, bool allowed);
-    
+
     /// @notice Event emitted when a dispute is raised
     /// @param disputeId The dispute id
     /// @param targetIpId The ipId that is the target of the dispute
@@ -99,7 +99,9 @@ interface IDisputeModule {
     function resolveDispute(uint256 disputeId) external;
 
     /// @notice Gets the dispute struct characteristics
-    function disputes(uint256 disputeId)
+    function disputes(
+        uint256 disputeId
+    )
         external
         view
         returns (

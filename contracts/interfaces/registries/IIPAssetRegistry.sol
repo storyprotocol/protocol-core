@@ -3,7 +3,6 @@
 pragma solidity ^0.8.23;
 
 import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
-import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMetadataProvider.sol";
 
 /// @title Interface for IP Account Registry
 /// @notice This interface manages the registration and tracking of IP Accounts
@@ -35,11 +34,7 @@ interface IIPAssetRegistry is IIPAccountRegistry {
     /// @param ipId The canonical identifier of the specified IP.
     /// @param metadataProvider Address of the metadata provider associated with the IP.
     /// @param metadata The canonical metadata in bytes associated with the IP.
-    event MetadataSet(
-        address indexed ipId,
-        address indexed metadataProvider,
-        bytes metadata
-    );
+    event MetadataSet(address indexed ipId, address indexed metadataProvider, bytes metadata);
 
     /// @notice Gets the canonical IP identifier associated with an IP (NFT).
     /// @dev This is the same as the address of the IP account bound to the IP.
@@ -103,5 +98,4 @@ interface IIPAssetRegistry is IIPAccountRegistry {
     /// @param id The canonical ID of the IP.
     /// @param resolverAddr The address of the resolver being set.
     function setResolver(address id, address resolverAddr) external;
-
 }

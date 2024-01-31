@@ -6,7 +6,6 @@ import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMet
 
 /// @title Metadata Provider v1 Interface
 interface IMetadataProviderV1 is IMetadataProvider {
-
     /// @notice Gets the name associated with the IP asset.
     /// @param ipId The address identifier of the IP asset.
     function name(address ipId) external view returns (string memory);

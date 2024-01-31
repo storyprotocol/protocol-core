@@ -103,7 +103,14 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
                 uri: externalURL
             })
         );
-        address ipId = IP_ASSET_REGISTRY.register(block.chainid, tokenContract, tokenId, address(resolver), true, metadata);
+        address ipId = IP_ASSET_REGISTRY.register(
+            block.chainid,
+            tokenContract,
+            tokenId,
+            address(resolver),
+            true,
+            metadata
+        );
 
         // Perform core IP derivative licensing - the license must be owned by the caller.
         // TODO: return resulting policy index

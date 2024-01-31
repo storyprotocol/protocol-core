@@ -39,8 +39,8 @@ contract DisputeModule is IDisputeModule, ReentrancyGuard {
     mapping(address arbitrationPolicy => bool allowed) public isWhitelistedArbitrationPolicy;
 
     /// @notice Indicates if an arbitration relayer is whitelisted for a given arbitration policy
-    mapping(address arbitrationPolicy => mapping(address arbitrationRelayer => bool allowed)) public
-        isWhitelistedArbitrationRelayer;
+    mapping(address arbitrationPolicy => mapping(address arbitrationRelayer => bool allowed))
+        public isWhitelistedArbitrationRelayer;
 
     /// @notice Restricts the calls to the governance address
     modifier onlyGovernance() {
@@ -74,10 +74,11 @@ contract DisputeModule is IDisputeModule, ReentrancyGuard {
     /// @param _arbitrationPolicy The address of the arbitration policy
     /// @param _arbPolicyRelayer The address of the arbitration relayer
     /// @param _allowed Indicates if the arbitration relayer is whitelisted or not
-    function whitelistArbitrationRelayer(address _arbitrationPolicy, address _arbPolicyRelayer, bool _allowed)
-        external
-        onlyGovernance
-    {
+    function whitelistArbitrationRelayer(
+        address _arbitrationPolicy,
+        address _arbPolicyRelayer,
+        bool _allowed
+    ) external onlyGovernance {
         if (_arbitrationPolicy == address(0)) revert Errors.DisputeModule__ZeroArbitrationPolicy();
         if (_arbPolicyRelayer == address(0)) revert Errors.DisputeModule__ZeroArbitrationRelayer();
 
@@ -123,7 +124,13 @@ contract DisputeModule is IDisputeModule, ReentrancyGuard {
         IArbitrationPolicy(_arbitrationPolicy).onRaiseDispute(msg.sender, _data);
 
         emit DisputeRaised(
-            disputeId_, _targetIpId, msg.sender, _arbitrationPolicy, linkToDisputeEvidence, _targetTag, _data
+            disputeId_,
+            _targetIpId,
+            msg.sender,
+            _arbitrationPolicy,
+            linkToDisputeEvidence,
+            _targetTag,
+            _data
         );
 
         return disputeId_;

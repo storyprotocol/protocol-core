@@ -2,15 +2,10 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
 import { ResolverBase } from "./ResolverBase.sol";
 import { BaseModule } from "contracts/modules/BaseModule.sol";
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
-import { IKeyValueResolver } from "contracts/interfaces/resolvers/IKeyValueResolver.sol";
-import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { KeyValueResolver } from "contracts/resolvers/KeyValueResolver.sol";
-import { Errors } from "contracts/lib/Errors.sol";
-import { IP } from "contracts/lib/IP.sol";
 import { IP_RESOLVER_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 
 /// @title IP Resolver

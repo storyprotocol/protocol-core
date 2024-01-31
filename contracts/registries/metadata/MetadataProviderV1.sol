@@ -9,7 +9,6 @@ import { Errors } from "contracts/lib/Errors.sol";
 /// @title IP Metadata Provider v1
 /// @notice Storage provider for Story Protocol canonical IP metadata (v1).
 contract MetadataProviderV1 is MetadataProviderBase {
-
     /// @notice Initializes the metadata provider contract.
     /// @param ipAssetRegistry The protocol-wide IP asset registry.
     constructor(address ipAssetRegistry) MetadataProviderBase(ipAssetRegistry) {}
@@ -64,26 +63,18 @@ contract MetadataProviderV1 is MetadataProviderBase {
             revert Errors.MetadataProvider__URIInvalid();
         }
     }
- 
+
     /// @dev Checks whether two sets of metadata are compatible with one another.
     /// TODO: Add try-catch for ABI-decoding error handling.
-    function _compatible(bytes memory m1, bytes memory m2) internal virtual override pure returns (bool) {
+    function _compatible(bytes memory m1, bytes memory m2) internal pure virtual override returns (bool) {
         IP.MetadataV1 memory m1Decoded = abi.decode(m1, (IP.MetadataV1));
         IP.MetadataV1 memory m2Decoded = abi.decode(m2, (IP.MetadataV1));
         return _hash(m1Decoded) == _hash(m2Decoded);
     }
 
     /// @dev Gets the bytes32 hash for a MetadataV1 data struct.
-    function _hash(IP.MetadataV1 memory data) internal pure returns(bytes32) {
-        return keccak256(
-            abi.encodePacked(
-                data.name,
-                data.hash,
-                data.registrationDate,
-                data.registrant,
-                data.uri
-            )
-        );
+    function _hash(IP.MetadataV1 memory data) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(data.name, data.hash, data.registrationDate, data.registrant, data.uri));
     }
 
     /// @dev Get the decoded canonical metadata belonging to an IP asset.

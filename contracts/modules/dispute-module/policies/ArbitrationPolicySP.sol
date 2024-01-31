@@ -63,7 +63,7 @@ contract ArbitrationPolicySP is IArbitrationPolicy {
     /// @param _decision The decision of the dispute
     function onDisputeJudgement(uint256 _disputeId, bool _decision, bytes calldata) external onlyDisputeModule {
         if (_decision) {
-            (, address disputeInitiator,,,,) = IDisputeModule(DISPUTE_MODULE).disputes(_disputeId);
+            (, address disputeInitiator, , , , ) = IDisputeModule(DISPUTE_MODULE).disputes(_disputeId);
             IERC20(PAYMENT_TOKEN).safeTransfer(disputeInitiator, ARBITRATION_PRICE);
         }
     }

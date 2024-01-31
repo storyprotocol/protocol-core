@@ -2,12 +2,10 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMetadataProvider.sol";
 import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
+// solhint-disable-next-line max-line-length
 import { IMetadataProviderUpgradeable } from "contracts/interfaces/registries/metadata/IMetadataProviderUpgradeable.sol";
 import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProviderV1.sol";
 import { Errors } from "contracts/lib/Errors.sol";
@@ -33,7 +31,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
     uint256 public totalSupply = 0;
 
     /// @notice Protocol governance administrator of the IP record registry.
-    address owner;
+    address public owner;
 
     /// @dev Maps an IP, identified by its IP ID, to an IP record.
     mapping(address => Record) internal _records;
@@ -42,7 +40,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
     IMetadataProviderUpgradeable internal _metadataProvider;
 
     /// @notice Ensures only protocol governance owner may call a function.
-    modifier onlyOwner {
+    modifier onlyOwner() {
         if (msg.sender != owner) {
             revert Errors.IPAssetRegistry__Unauthorized();
         }
@@ -81,11 +79,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
             revert Errors.IPAssetRegistry__AlreadyRegistered();
         }
 
-        if (
-            id.code.length == 0 && 
-            createAccount &&
-            id != registerIpAccount(chainId, tokenContract, tokenId)
-        ) {
+        if (id.code.length == 0 && createAccount && id != registerIpAccount(chainId, tokenContract, tokenId)) {
             revert Errors.IPAssetRegistry__InvalidAccount();
         }
         _setResolver(id, resolverAddr);
@@ -154,7 +148,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
     /// @param id The canonical ID of the IP.
     /// @param data Canonical metadata to associate with the IP.
     function setMetadata(address id, address provider, bytes calldata data) external {
-        // Metadata is set on registration and immutable thereafter, with new fields 
+        // Metadata is set on registration and immutable thereafter, with new fields
         // only added during a migration to new protocol-approved metadata provider.
         if (address(_records[id].metadataProvider) != msg.sender) {
             revert Errors.IPAssetRegistry__Unauthorized();
@@ -192,5 +186,4 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
         provider.setMetadata(id, data);
         emit MetadataSet(id, address(provider), data);
     }
-
 }

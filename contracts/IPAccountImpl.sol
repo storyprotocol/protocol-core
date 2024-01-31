@@ -9,7 +9,6 @@ import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { SignatureChecker } from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
-import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { MetaTx } from "contracts/lib/MetaTx.sol";
 import { Errors } from "contracts/lib/Errors.sol";

@@ -39,7 +39,7 @@ library IPAccountChecker {
         if (!ERC165Checker.supportsERC165(ipAccountAddress_)) return false;
         if (!ERC165Checker.supportsInterface(ipAccountAddress_, type(IERC6551Account).interfaceId)) return false;
         if (!ERC165Checker.supportsInterface(ipAccountAddress_, type(IIPAccount).interfaceId)) return false;
-        (uint chainId, address tokenContract, uint tokenId) = IIPAccount(payable(ipAccountAddress_)).token();
+        (uint256 chainId, address tokenContract, uint256 tokenId) = IIPAccount(payable(ipAccountAddress_)).token();
         return ipAccountAddress_ == ipAccountRegistry_.ipAccount(chainId, tokenContract, tokenId);
     }
 }

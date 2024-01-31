@@ -131,7 +131,7 @@ contract AccessController is IAccessController, Governable {
         if (IIPAccount(payable(ipAccount_)).owner() == signer_) {
             return true;
         }
-        uint functionPermission = getPermission(ipAccount_, signer_, to_, func_);
+        uint8 functionPermission = getPermission(ipAccount_, signer_, to_, func_);
         // Specific function permission overrides wildcard/general permission
         if (functionPermission == AccessPermission.ALLOW) {
             return true;

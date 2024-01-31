@@ -8,7 +8,7 @@ import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMet
 interface IMetadataProviderUpgradeable is IMetadataProvider {
     /// @notice Returns the new metadata provider IP assets may migrate to.
     /// @return Address of the new metadata provider if set, else the zero address.
-    function upgradeProvider() external returns(IMetadataProvider);
+    function upgradeProvider() external returns (IMetadataProvider);
 
     /// @notice Sets a new metadata provider that IP assets may migrate to.
     /// @param provider The address of the new metadata provider.

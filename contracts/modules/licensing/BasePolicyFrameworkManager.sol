@@ -5,9 +5,7 @@ pragma solidity ^0.8.23;
 // contracts
 import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
-import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
-import { Errors } from "contracts/lib/Errors.sol";
 import { LicenseRegistryAware } from "contracts/modules/licensing/LicenseRegistryAware.sol";
 
 // external
@@ -30,7 +28,7 @@ abstract contract BasePolicyFrameworkManager is IPolicyVerifier, IPolicyFramewor
 
     /// @notice Registers this policy framework manager within the license registry, to be able
     /// to add policies into the license registry.
-    /// @dev save the policyFrameworkId in this PolicyFrameworkManager    
+    /// @dev save the policyFrameworkId in this PolicyFrameworkManager
     /// @return The ID of the policy framework.
     function register() external returns (uint256) {
         Licensing.PolicyFramework memory framework = Licensing.PolicyFramework({

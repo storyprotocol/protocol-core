@@ -2,9 +2,9 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-import { IP } from "contracts/lib/IP.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMetadataProvider.sol";
+// solhint-disable-next-line max-line-length
 import { IMetadataProviderUpgradeable } from "contracts/interfaces/registries/metadata/IMetadataProviderUpgradeable.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
@@ -12,7 +12,6 @@ import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 /// @title IP Metadata Provider Base Contract
 /// @notice Metadata provider base contract for storing canonical IP metadata.
 abstract contract MetadataProviderBase is IMetadataProviderUpgradeable {
-
     /// @notice Gets the protocol-wide IP asset registry.
     IPAssetRegistry public immutable IP_ASSET_REGISTRY;
 
@@ -23,7 +22,7 @@ abstract contract MetadataProviderBase is IMetadataProviderUpgradeable {
     mapping(address ip => bytes metadata) internal _ipMetadata;
 
     /// @notice Restricts calls to only originate from a protocol-authorized caller.
-    modifier onlyIPAssetRegistry {
+    modifier onlyIPAssetRegistry() {
         if (msg.sender != address(IP_ASSET_REGISTRY)) {
             revert Errors.MetadataProvider__Unauthorized();
         }
@@ -84,5 +83,5 @@ abstract contract MetadataProviderBase is IMetadataProviderUpgradeable {
     /// @dev Checks whether two sets of metadata are compatible with one another.
     /// @param m1 The first set of bytes metadata being compared.
     /// @param m2 The second set of bytes metadata being compared.
-    function _compatible(bytes memory m1, bytes memory m2) internal virtual pure returns (bool);
+    function _compatible(bytes memory m1, bytes memory m2) internal pure virtual returns (bool);
 }

@@ -5,9 +5,7 @@ pragma solidity ^0.8.23;
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
-import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
-import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
 /// @title BaseModule

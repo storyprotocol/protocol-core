@@ -6,6 +6,4 @@ import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
 
 /// @title IPolicyVerifier
 /// @notice Placeholder interface for verifying policy parameters.
-interface IPolicyVerifier is IERC165 {
-
-}
+interface IPolicyVerifier is IERC165 {}

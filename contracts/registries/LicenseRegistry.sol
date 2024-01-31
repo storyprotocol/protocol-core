@@ -5,12 +5,10 @@ pragma solidity ^0.8.23;
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
+import { ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 // contracts
-import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
-import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";

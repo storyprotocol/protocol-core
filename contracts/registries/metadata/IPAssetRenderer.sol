@@ -31,12 +31,7 @@ contract IPAssetRenderer {
     /// @notice Initializes the IP asset renderer.
     /// TODO: Add different customization options - e.g. font, colorways, etc.
     /// TODO: Add an external URL for generating SP-branded links for each IP.
-    constructor(
-        address assetRegistry,
-        address licenseRegistry,
-        address taggingModule,
-        address royaltyModule
-    ) {
+    constructor(address assetRegistry, address licenseRegistry, address taggingModule, address royaltyModule) {
         IP_ASSET_REGISTRY = IPAssetRegistry(assetRegistry);
         LICENSE_REGISTRY = LicenseRegistry(licenseRegistry);
         TAGGING_MODULE = TaggingModule(taggingModule);
@@ -44,13 +39,13 @@ contract IPAssetRenderer {
     }
 
     // TODO: Add contract URI support for metadata about the entire IP registry.
-    
+
     // TODO: Add rendering functions around licensing information.
 
     // TODO: Add rendering functions around royalties information.
 
     // TODO: Add rendering functions around tagging information.
-    
+
     /// @notice Fetches the canonical name associated with the specified IP.
     /// @param ipId The canonical ID of the specified IP.
     function name(address ipId) external view returns (string memory) {
@@ -65,15 +60,16 @@ contract IPAssetRenderer {
     /// TODO: Update the description to an SP base URL if external URL not set.
     function description(address ipId) public view returns (string memory) {
         IP.MetadataV1 memory metadata = _metadata(ipId);
-        return string.concat(
-            metadata.name,
-            ", IP #",
-            Strings.toHexString(ipId),
-            ", is currently owned by",
-            Strings.toHexString(owner(ipId)),
-            ". To learn more about this IP, visit ",
-            metadata.uri
-        );
+        return
+            string.concat(
+                metadata.name,
+                ", IP #",
+                Strings.toHexString(ipId),
+                ", is currently owned by",
+                Strings.toHexString(owner(ipId)),
+                ". To learn more about this IP, visit ",
+                metadata.uri
+            );
     }
 
     /// @notice Fetches the keccak-256 content hash associated with the specified IP.
