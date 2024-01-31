@@ -14,10 +14,39 @@ contract MetadataProviderV1 is MetadataProviderBase {
     /// @param ipAssetRegistry The protocol-wide IP asset registry.
     constructor(address ipAssetRegistry) MetadataProviderBase(ipAssetRegistry) {}
 
-    /// @notice Sets the IP metadata associated with an IP asset based on its IP ID.
-    /// @param ipId The IP id of the IP asset to set metadata for.
-    /// @param data The metadata in bytes to set for the IP asset.
-    function setMetadata(address ipId, bytes calldata data) external override onlyIPAssetRegistry {
+    /// @notice Gets the name associated with the IP asset.
+    /// @param ipId The address identifier of the IP asset.
+    function name(address ipId) external view returns (string memory) {
+        return _metadataV1(ipId).name;
+    }
+
+    /// @notice Gets the hash associated with the IP asset.
+    /// @param ipId The address identifier of the IP asset.
+    function hash(address ipId) external view returns (bytes32) {
+        return _metadataV1(ipId).hash;
+    }
+
+    /// @notice Gets the date in which the IP asset was registered.
+    /// @param ipId The address identifier of the IP asset.
+    function registrationDate(address ipId) external view returns (uint64) {
+        return _metadataV1(ipId).registrationDate;
+    }
+
+    /// @notice Gets the initial registrant address of the IP asset.
+    /// @param ipId The address identifier of the IP asset.
+    function registrant(address ipId) external view returns (address) {
+        return _metadataV1(ipId).registrant;
+    }
+
+    /// @notice Gets the external URI associated with the IP asset.
+    /// @param ipId The address identifier of the IP asset.
+    function uri(address ipId) external view returns (string memory) {
+        return _metadataV1(ipId).uri;
+    }
+
+    /// @dev Checks that the data conforms to the canonical metadata standards.
+    /// @param data The canonical metadata in bytes to verify.
+    function _verifyMetadata(bytes memory data) internal virtual override {
         IP.MetadataV1 memory decodedMetadata = abi.decode(data, (IP.MetadataV1));
         if (bytes(decodedMetadata.name).length == 0) {
             revert Errors.MetadataProvider__NameInvalid();
@@ -32,13 +61,12 @@ contract MetadataProviderV1 is MetadataProviderBase {
             revert Errors.MetadataProvider__RegistrantInvalid();
         }
         if (bytes(decodedMetadata.uri).length == 0) {
-            revert Errors.MetadataProvider__RegistrantInvalid();
+            revert Errors.MetadataProvider__URIInvalid();
         }
-        _ipMetadata[ipId] = data;
-        emit MetadataSet(ipId, data);
     }
-
+ 
     /// @dev Checks whether two sets of metadata are compatible with one another.
+    /// TODO: Add try-catch for ABI-decoding error handling.
     function _compatible(bytes memory m1, bytes memory m2) internal virtual override pure returns (bool) {
         IP.MetadataV1 memory m1Decoded = abi.decode(m1, (IP.MetadataV1));
         IP.MetadataV1 memory m2Decoded = abi.decode(m2, (IP.MetadataV1));
@@ -56,5 +84,10 @@ contract MetadataProviderV1 is MetadataProviderBase {
                 data.uri
             )
         );
+    }
+
+    /// @dev Get the decoded canonical metadata belonging to an IP asset.
+    function _metadataV1(address ipId) internal view returns (IP.MetadataV1 memory) {
+        return abi.decode(_ipMetadata[ipId], (IP.MetadataV1));
     }
 }

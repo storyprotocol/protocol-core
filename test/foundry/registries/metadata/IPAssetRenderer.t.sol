@@ -60,9 +60,9 @@ contract IPAssetRendererTest is BaseTest {
     // Default IP asset attributes.
     string public constant IP_NAME = "IPAsset";
     string public constant IP_DESCRIPTION = "IPs all the way down.";
-    bytes32 public constant IP_HASH = "";
+    bytes32 public constant IP_HASH = "0x00";
     string public constant IP_EXTERNAL_URL = "https://storyprotocol.xyz";
-    uint64 public constant IP_REGISTRATION_DATE = uint64(99);
+    uint64 public IP_REGISTRATION_DATE;
 
     /// @notice The access controller address.
     AccessController public accessController;
@@ -81,7 +81,9 @@ contract IPAssetRendererTest is BaseTest {
     /// @notice Initializes the base token contract for testing.
     function setUp() public virtual override(BaseTest) {
         BaseTest.setUp();
+        IP_REGISTRATION_DATE = uint64(block.timestamp);
         governance = new Governance(address(this));
+
         // TODO: Create an IP asset registry mock instead.
         // TODO: Create an IP record registry mock instead.
         accessController = new AccessController(address(governance));
@@ -110,20 +112,12 @@ contract IPAssetRendererTest is BaseTest {
             address(licenseRegistry)
         );
 
-        // TODO: Mock out the registration module and module registry.
-        registrationModule = new RegistrationModule(
-            address(accessController),
-            address(ipAssetRegistry),
-            address(licenseRegistry),
-            address(resolver)
-        );
         renderer = new IPAssetRenderer(
             address(ipAssetRegistry),
             address(licenseRegistry),
             taggingModule,
             royaltyModule
         );
-        moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
         bytes memory metadata = abi.encode(
             IP.MetadataV1({
                 name: IP_NAME,
@@ -215,7 +209,7 @@ contract IPAssetRendererTest is BaseTest {
             '{"trait_type": "Name", "value": "IPAsset"},',
             '{"trait_type": "Owner", "value": "', ownerStr, '"},'
             '{"trait_type": "Registrant", "value": "', ownerStr, '"},',
-            '{"trait_type": "Hash", "value": "0x0000000000000000000000000000000000000000000000000000000000000000"},',
+            '{"trait_type": "Hash", "value": "0x3078303000000000000000000000000000000000000000000000000000000000"},',
             '{"trait_type": "Registration Date", "value": "', Strings.toString(IP_REGISTRATION_DATE), '"}',
             ']}'
         ));

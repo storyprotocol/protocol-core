@@ -89,7 +89,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
             revert Errors.IPAssetRegistry__InvalidAccount();
         }
         _setResolver(id, resolverAddr);
-        _setMetadata(id, data);
+        _setMetadata(id, _metadataProvider, data);
         totalSupply++;
         emit IPRegistered(id, chainId, tokenContract, tokenId, resolverAddr, address(_metadataProvider), data);
     }
@@ -149,21 +149,26 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
     }
 
     /// @notice Sets the underlying metadata for an IP asset.
+    /// @dev As metadata is immutable but additive, this will only be used when
+    ///      an IP migrates from a new provider that introduces new attributes.
     /// @param id The canonical ID of the IP.
     /// @param data Canonical metadata to associate with the IP.
-    function setMetadata(address id, bytes calldata data) external {
+    function setMetadata(address id, address provider, bytes calldata data) external {
         // Metadata is set on registration and immutable thereafter, with new fields 
         // only added during a migration to new protocol-approved metadata provider.
-        if (address(_records[id].metadataProvider.upgradeProvider()) != msg.sender) {
+        if (address(_records[id].metadataProvider) != msg.sender) {
             revert Errors.IPAssetRegistry__Unauthorized();
         }
-        _setMetadata(id, data);
+        _setMetadata(id, IMetadataProviderUpgradeable(provider), data);
     }
 
     /// @notice Sets the resolver for an IP based on its canonical ID.
     /// @param id The canonical ID of the IP.
     /// @param resolverAddr The address of the resolver being set.
     function setResolver(address id, address resolverAddr) public {
+        if (_records[id].resolver == address(0)) {
+            revert Errors.IPAssetRegistry__NotYetRegistered();
+        }
         if (msg.sender != IIPAccount(payable(id)).owner()) {
             revert Errors.IPAssetRegistry__Unauthorized();
         }
@@ -180,11 +185,12 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
 
     /// @dev Sets the for the specified IP asset.
     /// @param id The canonical identifier for the specified IP asset.
+    /// @param provider The metadata provider hosting the data.
     /// @param data The metadata to set for the IP asset.
-    function _setMetadata(address id, bytes calldata data) internal {
-        _records[id].metadataProvider = _metadataProvider;
-        _metadataProvider.setMetadata(id, data);
-        emit MetadataSet(id, address(_metadataProvider), data);
+    function _setMetadata(address id, IMetadataProviderUpgradeable provider, bytes calldata data) internal {
+        _records[id].metadataProvider = provider;
+        provider.setMetadata(id, data);
+        emit MetadataSet(id, address(provider), data);
     }
 
 }

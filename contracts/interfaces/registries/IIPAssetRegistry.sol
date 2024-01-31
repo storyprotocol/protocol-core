@@ -72,6 +72,12 @@ interface IIPAssetRegistry is IIPAccountRegistry {
     /// @return The metadata that was bound to this IP at creation time.
     function metadata(address id) external view returns (bytes memory);
 
+    /// @notice Upgrades the metadata for an IP asset, migrating to a new provider.
+    /// @param id The canonical ID of the IP.
+    /// @param metadataProvider Address of the new metadata provider hosting the data.
+    /// @param data Canonical metadata to associate with the IP.
+    function setMetadata(address id, address metadataProvider, bytes calldata data) external;
+
     /// @notice Sets the metadata provider to use for new registrations.
     /// @param metadataProvider The address of the new metadata provider to use.
     function setMetadataProvider(address metadataProvider) external;

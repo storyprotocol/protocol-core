@@ -97,6 +97,12 @@ library Errors {
     /// @notice A metadata provider upgrade is not currently available.
     error MetadataProvider__UpgradeUnavailable();
 
+    /// @notice The upgrade provider is not valid.
+    error MetadataProvider__UpgradeProviderInvalid();
+
+    /// @notice Provided metadata URI is not valid.
+    error MetadataProvider__URIInvalid();
+
     ////////////////////////////////////////////////////////////////////////////
     //                            LicenseRegistry                             //
     ////////////////////////////////////////////////////////////////////////////

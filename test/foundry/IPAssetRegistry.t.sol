@@ -26,18 +26,12 @@ contract IPAssetRegistryTest is BaseTest {
     bytes32 public constant IP_HASH = "0x0f";
     string public constant IP_EXTERNAL_URL = "https://storyprotocol.xyz";
 
-    /// @notice Placeholder for registration module.
-    address public registrationModule = vm.addr(0x1337);
-
     /// @notice Placeholder for test resolver addresses.
     address public resolver = vm.addr(0x6969);
     address public resolver2 = vm.addr(0x6978);
 
     /// @notice The IP asset registry SUT.
     IPAssetRegistry public registry;
-
-    /// @notice The module registry used for protocol module identification.
-    IModuleRegistry public moduleRegistry;
 
     /// @notice The IP account registry used for account creation.
     IPAccountRegistry public ipAccountRegistry;
@@ -62,9 +56,6 @@ contract IPAssetRegistryTest is BaseTest {
         BaseTest.setUp();
         address accessController = address(new MockAccessController());
         erc6551Registry = address(new ERC6551Registry());
-        moduleRegistry = IModuleRegistry(
-            address(new MockModuleRegistry(registrationModule))
-        );
         ipAccountImpl = address(new IPAccountImpl());
         ipAccountRegistry = new IPAccountRegistry(
             erc6551Registry,
@@ -127,7 +118,6 @@ contract IPAssetRegistryTest is BaseTest {
             address(registry.metadataProvider()),
             metadata
         );
-        vm.prank(registrationModule);
         registry.register(
             block.chainid,
             tokenAddress,
@@ -166,7 +156,6 @@ contract IPAssetRegistryTest is BaseTest {
             address(registry.metadataProvider()),
             metadata
         );
-        vm.prank(registrationModule);
         registry.register(
             block.chainid,
             tokenAddress,
@@ -191,7 +180,6 @@ contract IPAssetRegistryTest is BaseTest {
             tokenId
         );
         assertTrue(IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
-        vm.prank(registrationModule);
         bytes memory metadata = _generateMetadata();
         registry.register(
             block.chainid,
@@ -206,41 +194,23 @@ contract IPAssetRegistryTest is BaseTest {
 
     /// @notice Tests registration of IP reverts when an IP has already been registered.
     function test_IPAssetRegistry_Register_Reverts_ExistingRegistration() public {
-        vm.startPrank(registrationModule);
         bytes memory metadata = _generateMetadata();
         registry.register(block.chainid, tokenAddress, tokenId, resolver, false, metadata);
         vm.expectRevert(Errors.IPAssetRegistry__AlreadyRegistered.selector);
         registry.register(block.chainid, tokenAddress, tokenId, resolver, false, metadata);
     }
 
-    /// @notice Tests registration of IP reverts if not called by a registration module.
-    function test_IPAssetRegistry_Register_Reverts_InvalidRegistrationModule() public {
-        bytes memory metadata = _generateMetadata();
-        vm.expectRevert(Errors.IPAssetRegistry__Unauthorized.selector);
-        vm.prank(alice);
-        registry.register(block.chainid, tokenAddress, tokenId, resolver, false, metadata);
-    }
-
     /// @notice Tests IP resolver setting works.
     function test_IPAssetRegistry_SetResolver() public {
-        vm.startPrank(registrationModule);
-        registry.register(block.chainid, tokenAddress, tokenId, resolver, false, _generateMetadata());
+        registry.register(block.chainid, tokenAddress, tokenId, resolver, true, _generateMetadata());
+
         vm.expectEmit(true, true, true, true);
         emit IIPAssetRegistry.IPResolverSet(
             ipId,
             resolver2
         );
+        vm.prank(alice);
         registry.setResolver(ipId, resolver2);
-        assertEq(registry.resolver(ipId), resolver2);
-
-        // Check that resolvers can be reassigned.
-        vm.expectEmit(true, true, true, true);
-        emit IIPAssetRegistry.IPResolverSet(
-            ipId,
-            resolver
-        );
-        registry.setResolver(ipId, resolver);
-        assertEq(registry.resolver(ipId), resolver);
     }
 
     /// @notice Tests IP resolver setting reverts if an IP is not yet registered.

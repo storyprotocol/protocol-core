@@ -7,34 +7,24 @@ import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMetadataProvider.sol";
 import { IMetadataProviderUpgradeable } from "contracts/interfaces/registries/metadata/IMetadataProviderUpgradeable.sol";
 import { Errors } from "contracts/lib/Errors.sol";
+import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 
 /// @title IP Metadata Provider Base Contract
 /// @notice Metadata provider base contract for storing canonical IP metadata.
 abstract contract MetadataProviderBase is IMetadataProviderUpgradeable {
 
     /// @notice Gets the protocol-wide IP asset registry.
-    address public immutable IP_ASSET_REGISTRY;
+    IPAssetRegistry public immutable IP_ASSET_REGISTRY;
 
     /// @notice Returns the new metadata provider users may migrate to.
     IMetadataProvider public upgradeProvider;
 
-    /// @notice The owner of the metadata provider (Story Protocol gov timelock).
-    address public owner;
-
     /// @notice Maps IP assets (via their IP ID) to their canonical metadata.
     mapping(address ip => bytes metadata) internal _ipMetadata;
 
-    /// @notice Restricts calls to only come from the owner.
-    modifier onlyOwner {
-        if (msg.sender != owner) {
-            revert Errors.MetadataProvider__Unauthorized();
-        }
-        _;
-    }
-
     /// @notice Restricts calls to only originate from a protocol-authorized caller.
     modifier onlyIPAssetRegistry {
-        if (msg.sender != IP_ASSET_REGISTRY) {
+        if (msg.sender != address(IP_ASSET_REGISTRY)) {
             revert Errors.MetadataProvider__Unauthorized();
         }
         _;
@@ -43,7 +33,7 @@ abstract contract MetadataProviderBase is IMetadataProviderUpgradeable {
     /// @notice Initializes the metadata provider contract.
     /// @param ipAssetRegistry The protocol-wide IP asset registry.
     constructor(address ipAssetRegistry) {
-        IP_ASSET_REGISTRY = ipAssetRegistry;
+        IP_ASSET_REGISTRY = IPAssetRegistry(ipAssetRegistry);
     }
 
     /// @notice Gets the IP metadata associated with an IP asset based on its IP ID.
@@ -55,6 +45,9 @@ abstract contract MetadataProviderBase is IMetadataProviderUpgradeable {
     /// @notice Sets a upgrade provider for users to migrate their metadata to.
     /// @param provider The address of the new metadata provider to migrate to.
     function setUpgradeProvider(address provider) external onlyIPAssetRegistry {
+        if (provider == address(0)) {
+            revert Errors.MetadataProvider__UpgradeProviderInvalid();
+        }
         upgradeProvider = IMetadataProviderUpgradeable(provider);
     }
 
@@ -72,17 +65,24 @@ abstract contract MetadataProviderBase is IMetadataProviderUpgradeable {
         if (!_compatible(_ipMetadata[ipId], metadata)) {
             revert Errors.MetadataProvider__MetadataNotCompatible();
         }
-        upgradeProvider.setMetadata(ipId, metadata);
+        IP_ASSET_REGISTRY.setMetadata(ipId, address(upgradeProvider), metadata);
     }
 
     /// @notice Sets the IP metadata associated with an IP asset based on its IP ID.
     /// @param ipId The IP id of the IP asset to set metadata for.
     /// @param data The metadata in bytes to set for the IP asset.
     function setMetadata(address ipId, bytes memory data) external virtual onlyIPAssetRegistry {
+        _verifyMetadata(data);
         _ipMetadata[ipId] = data;
         emit MetadataSet(ipId, data);
     }
 
+    /// @dev Checks that the data conforms to the canonical metadata standards.
+    /// @param data The canonical metadata in bytes to verify.
+    function _verifyMetadata(bytes memory data) internal virtual;
+
     /// @dev Checks whether two sets of metadata are compatible with one another.
+    /// @param m1 The first set of bytes metadata being compared.
+    /// @param m2 The second set of bytes metadata being compared.
     function _compatible(bytes memory m1, bytes memory m2) internal virtual pure returns (bool);
 }
