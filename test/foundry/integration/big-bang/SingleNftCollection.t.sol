@@ -114,25 +114,17 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         licenseRegistry.addPolicyToIp(ipAcct[3], policyIds["mint_payment_normal"]);
 
         vm.startPrank(u.bob);
-        // NOTE: the below two achieve the same functionality, however the commented out method fails.
-        // First approach succeeds:
-        licenseRegistry.addPolicyToIp(ipAcct[3], policyIds["uml_noncom_deriv_reciprocal_derivative"]);
-        // Second approach's flow is:
-        // 1. IPAccount.execute calls `AcessController.checkPermission()`
-        // 1a. -> checkPermission returns true
-        // 2. IPAccount calls `LicenseRegistry.addPolicyToIp()`
-        // 2a. -> calls checkPermission with param data as (IPAccount, IPAccount, LicenseRegistry, fn selector)
-        // 2b. -> returns false, inside the if (functionPermission == AccessPermission.ABSTAIN) branch
-        // -> ERROR LicenseRegistry__UnauthorizedAccess
-        // IIPAccount(payable(ipAcct[3])).execute(
-        //     address(licenseRegistry),
-        //     0,
-        //     abi.encodeWithSignature(
-        //         "addPolicyToIp(address,uint256)",
-        //         ipAcct[3],
-        //         policyIds["uml_noncom_deriv_reciprocal_derivative"]
-        //     )
-        // );
+        // NOTE: the two calls below achieve the same functionality
+        // licenseRegistry.addPolicyToIp(ipAcct[3], policyIds["uml_noncom_deriv_reciprocal_derivative"]);
+        IIPAccount(payable(ipAcct[3])).execute(
+            address(licenseRegistry),
+            0,
+            abi.encodeWithSignature(
+                "addPolicyToIp(address,uint256)",
+                ipAcct[3],
+                policyIds["uml_noncom_deriv_reciprocal_derivative"]
+            )
+        );
 
         /*///////////////////////////////////////////////////////////////
                                 MINT & USE LICENSES
@@ -193,20 +185,6 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             uint256 tokenId = 99999999;
             nft.mintId(u.alice, tokenId);
 
-            //
-            // ERROR: this ALSO fails with `LicenseRegistry__UnauthorizedAccess`,
-            // in `LicenseRegistry.linkIpToParent()` step after `IPRecordRegistry.register()`
-            //
-            // FLOW:
-            // 1. RegistrationModule calls `IPRecordRegistry.register()`
-            // 1a. -> no checkPermission check, succeeds
-            // 2. RegistrationModule calls `IPMetadataProvider.setMetadata()`
-            // 2a. -> suceeds
-            // 3. RegistrationModule calls `LicenseRegistry.linkToParent()`
-            // 3a. -> calls checkPermission with param data as (IPAccount, IPAccount, LicenseRegistry, fn selector)
-            // 3b. -> returns false, inside the if (functionPermission == AccessPermission.ABSTAIN) branch
-            // -> ERROR LicenseRegistry__UnauthorizedAccess
-            //
             ipAcct[tokenId] = registerDerivativeIp(
                 alice_license_from_root_bob,
                 address(nft),

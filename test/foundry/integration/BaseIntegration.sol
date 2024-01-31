@@ -240,8 +240,6 @@ contract BaseIntegration is Test {
             provider: address(ipMetadataProvider) // default metadata provider by Story
         });
 
-        // TODO: fix msg.sender being different from the prank caller of this function
-        //       (since it's another contract calling into this function)
         vm.expectEmit();
         emit IRegistrationModule.RootIPRegistered({ caller: caller, ipId: expectedAddr, policyId: 0 });
 
