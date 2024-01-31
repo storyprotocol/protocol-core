@@ -1,15 +1,51 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
+// external
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
 // contract
-import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
+import { AccessController } from "contracts/AccessController.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
+import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
+import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 
-struct PolicyModifierParams {
-    string frameworkName;
-    bytes32[] paramNames;
-    bytes[] paramValues;
+// test
+import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy } from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
+import { MintPaymentPolicyFrameworkManager, MintPaymentPolicy } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
+
+enum PFMType {
+    UML,
+    MintPayment,
+    MockGeneric
+}
+
+struct PFMData {
+    PFMType pfmType;
+    uint256 pfmId;
+    address addr;
+}
+
+struct UMLPolicyGenericParams {
+    string policyName;
+    bool attribution;
+    bool transferable;
+    string[] territories;
+    string[] distributionChannels;
+}
+
+struct UMLPolicyCommercialParams {
+    bool commercialAttribution;
+    string[] commercializers;
+    uint256 commercialRevShare;
+}
+
+struct UMLPolicyDerivativeParams {
+    bool derivativesAttribution;
+    bool derivativesApproval;
+    bool derivativesReciprocal;
+    uint256 derivativesRevShare;
 }
 
 contract Integration_Shared_LicenseFramework_and_Policy {
@@ -17,58 +53,70 @@ contract Integration_Shared_LicenseFramework_and_Policy {
 
     mapping(string policyName => uint256 globalPolicyId) internal policyIds;
 
-    LicenseRegistry private licenseRegistry;
+    mapping(string policyFrameworkManagerName => PFMData) internal pfm;
 
-    function initLicenseFrameworkAndPolicy(LicenseRegistry licenseRegistry_) public {
+    LicenseRegistry private licenseRegistry; // keep private to avoid collision with `BaseIntegration`
+
+    AccessController private accessController; // keep private to avoid collision with `BaseIntegration`
+
+    function initLicenseFrameworkAndPolicy(
+        AccessController accessController_,
+        LicenseRegistry licenseRegistry_
+    ) public {
+        accessController = accessController_;
         licenseRegistry = licenseRegistry_;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                            MODIFIERS: LICENSE FRAMEWORK
+                        MODIFIERS: LICENSE FRAMEWORK (MANAGERS)
     //////////////////////////////////////////////////////////////////////////*/
 
-    modifier withLicenseFramework_Truthy(
-        string memory name,
-        address verifier
-    ) {
-        // All trues for MockVerifier means it will always return true on condition checks
-        bytes[] memory byteValueTrue = new bytes[](1);
-        byteValueTrue[0] = abi.encode(true);
-
-        Licensing.FrameworkCreationParams memory fwAllTrue = Licensing.FrameworkCreationParams({
-            parameters: new IParamVerifier[](1),
-            defaultValues: byteValueTrue,
-            licenseUrl: "https://very-nice-verifier-license.com"
-        });
-
-        fwAllTrue.parameters[0] = IParamVerifier(verifier);
-        frameworkIds[name] = licenseRegistry.addLicenseFramework(fwAllTrue);
+    modifier withLFM_UML() {
+        BasePolicyFrameworkManager _pfm = BasePolicyFrameworkManager(
+            new UMLPolicyFrameworkManager(address(accessController), address(licenseRegistry), "license Url")
+        );
+        pfm["uml"] = PFMData({ pfmType: PFMType.UML, pfmId: _pfm.register(), addr: address(_pfm) });
         _;
     }
 
-    modifier withLicenseFramework_TruthyMany(
-        string memory name,
-        address[] memory verifiers,
-        uint256 size
-    ) {
-        require(verifiers.length == size, "verifiers length != size");
+    modifier withLFM_MintPayment(ERC20 erc20, uint256 paymentWithoutDecimals) {
+        BasePolicyFrameworkManager _pfm = BasePolicyFrameworkManager(
+            new MintPaymentPolicyFrameworkManager(
+                address(licenseRegistry),
+                "license url",
+                address(erc20),
+                paymentWithoutDecimals * 10 ** erc20.decimals() // `paymentWithoutDecimals` amount per license mint
+            )
+        );
+        pfm["mint_payment"] = PFMData({ pfmType: PFMType.MintPayment, pfmId: _pfm.register(), addr: address(_pfm) });
+        _;
+    }
 
-        bytes[] memory byteValueTrue = new bytes[](size);
-        for (uint256 i = 0; i < size; ++i) {
-            byteValueTrue[i] = abi.encode(true);
-        }
+    modifier withLFM_MockOnAll() {
+        BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(true, true, true);
+        pfm["mock_on_all"] = PFMData({ pfmType: PFMType.MockGeneric, pfmId: _pfm.register(), addr: address(_pfm) });
+        _;
+    }
 
-        Licensing.FrameworkCreationParams memory fwAllTrue = Licensing.FrameworkCreationParams({
-            parameters: new IParamVerifier[](size),
-            defaultValues: byteValueTrue,
-            licenseUrl: "https://very-nice-verifier-license.com"
+    modifier withLFM_MockOnLink() {
+        BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(true, false, false);
+        pfm["mock_on_link"] = PFMData({ pfmType: PFMType.MockGeneric, pfmId: _pfm.register(), addr: address(_pfm) });
+        _;
+    }
+
+    modifier withLFM_MockOnMint() {
+        BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(false, true, false);
+        pfm["mock_on_mint"] = PFMData({ pfmType: PFMType.MockGeneric, pfmId: _pfm.register(), addr: address(_pfm) });
+        _;
+    }
+
+    modifier withLFM_MockOnTransfer() {
+        BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(false, false, true);
+        pfm["mock_on_transfer"] = PFMData({
+            pfmType: PFMType.MockGeneric,
+            pfmId: _pfm.register(),
+            addr: address(_pfm)
         });
-
-        for (uint256 i = 0; i < size; ++i) {
-            fwAllTrue.parameters[i] = IParamVerifier(verifiers[i]);
-        }
-
-        frameworkIds[name] = licenseRegistry.addLicenseFramework(fwAllTrue);
         _;
     }
 
@@ -76,33 +124,109 @@ contract Integration_Shared_LicenseFramework_and_Policy {
                                 MODIFIERS: POLICY
     //////////////////////////////////////////////////////////////////////////*/
 
-    modifier withPolicy_Commerical_Derivative(PolicyModifierParams memory params) {
-        Licensing.Policy memory pol = _composePolicy(true, true, params);
-        // pol.paramNames[0] = mockLicenseVerifier.name();
-        // pol.paramValues[0] = abi.encode(true);
-        string memory policyName = string(abi.encodePacked("com_deriv_", params.frameworkName));
-        policyIds[policyName] = licenseRegistry.addPolicy(pol);
+    modifier withUMLPolicy_Commerical_Derivative(
+        UMLPolicyGenericParams memory gparams,
+        UMLPolicyCommercialParams memory cparams,
+        UMLPolicyDerivativeParams memory dparams
+    ) {
+        UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"].addr);
+
+        string memory pName = string(abi.encodePacked("uml_com_deriv_", gparams.policyName));
+        policyIds[pName] = _pfm.addPolicy(
+            UMLPolicy({
+                attribution: gparams.attribution,
+                transferable: gparams.transferable,
+                commercialUse: true,
+                commercialAttribution: cparams.commercialAttribution,
+                commercializers: cparams.commercializers,
+                commercialRevShare: cparams.commercialRevShare,
+                derivativesAllowed: true,
+                derivativesAttribution: dparams.derivativesAttribution,
+                derivativesApproval: dparams.derivativesApproval,
+                derivativesReciprocal: dparams.derivativesReciprocal,
+                derivativesRevShare: dparams.derivativesRevShare,
+                territories: gparams.territories,
+                distributionChannels: gparams.distributionChannels
+            })
+        );
         _;
     }
 
-    modifier withPolicy_Commerical_NonDerivative(PolicyModifierParams memory params) {
-        Licensing.Policy memory pol = _composePolicy(true, false, params);
-        string memory policyName = string(abi.encodePacked("com_nonderiv_", params.frameworkName));
-        policyIds[policyName] = licenseRegistry.addPolicy(pol);
+    modifier withUMLPolicy_Commerical_NonDerivative(
+        UMLPolicyGenericParams memory gparams,
+        UMLPolicyCommercialParams memory cparams
+    ) {
+        UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"].addr);
+
+        string memory pName = string(abi.encodePacked("uml_com_nonderiv_", gparams.policyName));
+        policyIds[pName] = _pfm.addPolicy(
+            UMLPolicy({
+                attribution: gparams.attribution,
+                transferable: gparams.transferable,
+                commercialUse: true,
+                commercialAttribution: cparams.commercialAttribution,
+                commercializers: cparams.commercializers,
+                commercialRevShare: cparams.commercialRevShare,
+                derivativesAllowed: false,
+                derivativesAttribution: false,
+                derivativesApproval: false,
+                derivativesReciprocal: false,
+                derivativesRevShare: 0,
+                territories: gparams.territories,
+                distributionChannels: gparams.distributionChannels
+            })
+        );
         _;
     }
 
-    modifier withPolicy_NonCommerical_Derivative(PolicyModifierParams memory params) {
-        Licensing.Policy memory pol = _composePolicy(false, true, params);
-        string memory policyName = string(abi.encodePacked("noncom_deriv_", params.frameworkName));
-        policyIds[policyName] = licenseRegistry.addPolicy(pol);
+    modifier withUMLPolicy_NonCommercial_Derivative(
+        UMLPolicyGenericParams memory gparams,
+        UMLPolicyDerivativeParams memory dparams
+    ) {
+        UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"].addr);
+
+        string memory pName = string(abi.encodePacked("uml_noncom_deriv_", gparams.policyName));
+        policyIds[pName] = _pfm.addPolicy(
+            UMLPolicy({
+                attribution: gparams.attribution,
+                transferable: gparams.transferable,
+                commercialUse: false,
+                commercialAttribution: false,
+                commercializers: new string[](0),
+                commercialRevShare: 0,
+                derivativesAllowed: true,
+                derivativesAttribution: dparams.derivativesAttribution,
+                derivativesApproval: dparams.derivativesApproval,
+                derivativesReciprocal: dparams.derivativesReciprocal,
+                derivativesRevShare: dparams.derivativesRevShare,
+                territories: gparams.territories,
+                distributionChannels: gparams.distributionChannels
+            })
+        );
         _;
     }
 
-    modifier withPolicy_NonCommerical_NonDerivative(PolicyModifierParams memory params) {
-        Licensing.Policy memory pol = _composePolicy(false, false, params);
-        string memory policyName = string(abi.encodePacked("noncom_nonderiv_", params.frameworkName));
-        policyIds[policyName] = licenseRegistry.addPolicy(pol);
+    modifier withUMLPolicy_NonCommercial_NonDerivative(UMLPolicyGenericParams memory gparams) {
+        UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"].addr);
+
+        string memory pName = string(abi.encodePacked("uml_noncom_nonderiv_", gparams.policyName));
+        policyIds[pName] = _pfm.addPolicy(
+            UMLPolicy({
+                attribution: gparams.attribution,
+                transferable: gparams.transferable,
+                commercialUse: false,
+                commercialAttribution: false,
+                commercializers: new string[](0),
+                commercialRevShare: 0,
+                derivativesAllowed: false,
+                derivativesAttribution: false,
+                derivativesApproval: false,
+                derivativesReciprocal: false,
+                derivativesRevShare: 0,
+                territories: gparams.territories,
+                distributionChannels: gparams.distributionChannels
+            })
+        );
         _;
     }
 
@@ -110,54 +234,22 @@ contract Integration_Shared_LicenseFramework_and_Policy {
                                 HELPER FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    function _composePolicy(
-        bool commercialUse,
-        bool derivatives,
-        PolicyModifierParams memory params
-    ) private view returns (Licensing.Policy memory) {
+    function _createMockPolicyFrameworkManager(
+        bool supportVerifyLink,
+        bool supportVerifyMint,
+        bool supportVerifyTransfer
+    ) private returns (BasePolicyFrameworkManager) {
         return
-            Licensing.Policy({
-                frameworkId: frameworkIds[params.frameworkName],
-                commercialUse: commercialUse,
-                derivatives: derivatives,
-                paramNames: params.paramNames,
-                paramValues: params.paramValues
-            });
-    }
-
-    function _policyParams_Truthy(
-        string memory frameworkName,
-        address verifier
-    ) internal view returns (PolicyModifierParams memory) {
-        bytes32[] memory paramNames = new bytes32[](1);
-        bytes[] memory paramValues = new bytes[](1);
-        paramNames[0] = IParamVerifier(verifier).name();
-        paramValues[0] = abi.encode(true);
-        return
-            PolicyModifierParams({
-                frameworkName: frameworkName,
-                paramNames: paramNames,
-                paramValues: paramValues
-            });
-    }
-
-    function _policyParams_TruthyMany(
-        string memory frameworkName,
-        address[] memory verifiers,
-        uint256 size
-    ) internal view returns (PolicyModifierParams memory) {
-        require(verifiers.length == size, "verifiers length != size");
-        bytes32[] memory paramNames = new bytes32[](size);
-        bytes[] memory paramValues = new bytes[](size);
-        for (uint256 i = 0; i < size; ++i) {
-            paramNames[i] = IParamVerifier(verifiers[i]).name();
-            paramValues[i] = abi.encode(true);
-        }
-        return
-            PolicyModifierParams({
-                frameworkName: frameworkName,
-                paramNames: paramNames,
-                paramValues: paramValues
-            });
+            BasePolicyFrameworkManager(
+                new MockPolicyFrameworkManager(
+                    MockPolicyFrameworkConfig({
+                        licenseRegistry: address(licenseRegistry),
+                        licenseUrl: "license url",
+                        supportVerifyLink: supportVerifyLink,
+                        supportVerifyMint: supportVerifyMint,
+                        supportVerifyTransfer: supportVerifyTransfer
+                    })
+                )
+            );
     }
 }

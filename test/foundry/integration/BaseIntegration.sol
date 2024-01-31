@@ -14,7 +14,6 @@ import { AccessController } from "contracts/AccessController.sol";
 import { Governance } from "contracts/governance/Governance.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
 import { IRegistrationModule } from "contracts/interfaces/modules/IRegistrationModule.sol";
 import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
 import { IIPRecordRegistry } from "contracts/interfaces/registries/IIPRecordRegistry.sol";
@@ -30,9 +29,9 @@ import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
-import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
+import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
 
@@ -40,22 +39,12 @@ import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/A
 import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { MockModule } from "test/foundry/mocks/MockModule.sol";
-import { MockParamVerifier, MockParamVerifierConfig } from "test/foundry/mocks/licensing/MockParamVerifier.sol";
-import { MintPaymentVerifier } from "test/foundry/mocks/licensing/MintPaymentVerifier.sol";
 import { Users, UsersLib } from "test/foundry/utils/Users.sol";
 
 struct MockERC721s {
     MockERC721 ape;
     MockERC721 cat;
     MockERC721 dog;
-}
-
-struct MockVerifiers {
-    MockParamVerifier onLink;
-    MockParamVerifier onMint;
-    MockParamVerifier onTransfer;
-    MockParamVerifier onAll;
-    MintPaymentVerifier mintPayment;
 }
 
 contract BaseIntegration is Test {
@@ -86,7 +75,6 @@ contract BaseIntegration is Test {
     // Mocks
     MockERC20 internal erc20;
     MockERC721s internal erc721;
-    MockVerifiers internal verifier;
 
     // Helpers
     Users internal u;
@@ -107,7 +95,6 @@ contract BaseIntegration is Test {
         _configDeployedContracts();
         _deployMockAssets();
         _mintMockAssets();
-        _deployMockVerifiers();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -122,12 +109,12 @@ contract BaseIntegration is Test {
         ipAccountImpl = new IPAccountImpl();
 
         moduleRegistry = new ModuleRegistry(address(governance));
-        licenseRegistry = new LicenseRegistry("https://example.com/{id}.json");
         ipAccountRegistry = new IPAccountRegistry(
             address(erc6551Registry),
             address(accessController),
             address(ipAccountImpl)
         );
+        licenseRegistry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
         ipRecordRegistry = new IPRecordRegistry(address(moduleRegistry), address(ipAccountRegistry));
         ipResolver = new IPResolver(
             address(accessController),
@@ -164,6 +151,7 @@ contract BaseIntegration is Test {
 
         moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));
+        moduleRegistry.registerModule("LICENSE_REGISTRY", address(licenseRegistry));
 
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
         vm.stopPrank();
@@ -179,55 +167,6 @@ contract BaseIntegration is Test {
         erc20.mint(u.bob, 1000 * 10 ** erc20.decimals());
         erc20.mint(u.carl, 1000 * 10 ** erc20.decimals());
         // skip minting NFTs
-    }
-
-    function _deployMockVerifiers() internal {
-        verifier.onLink = new MockParamVerifier(
-            MockParamVerifierConfig({
-                licenseRegistry: address(licenseRegistry),
-                name: "MockParamVerifierOnLink",
-                supportVerifyLink: true,
-                supportVerifyMint: false,
-                supportVerifyTransfer: false
-            })
-        );
-
-        verifier.onMint = new MockParamVerifier(
-            MockParamVerifierConfig({
-                licenseRegistry: address(licenseRegistry),
-                name: "MockParamVerifierOnMint",
-                supportVerifyLink: false,
-                supportVerifyMint: true,
-                supportVerifyTransfer: false
-            })
-        );
-
-        verifier.onTransfer = new MockParamVerifier(
-            MockParamVerifierConfig({
-                licenseRegistry: address(licenseRegistry),
-                name: "MockParamVerifierOnTransfer",
-                supportVerifyLink: false,
-                supportVerifyMint: false,
-                supportVerifyTransfer: true
-            })
-        );
-
-        verifier.onAll = new MockParamVerifier(
-            MockParamVerifierConfig({
-                licenseRegistry: address(licenseRegistry),
-                name: "MockParamVerifierOnAll",
-                supportVerifyLink: true,
-                supportVerifyMint: true,
-                supportVerifyTransfer: true
-            })
-        );
-
-        // 1 mock token payment per mint
-        verifier.mintPayment = new MintPaymentVerifier(
-            address(licenseRegistry),
-            address(erc20),
-            1 * 10 ** erc20.decimals()
-        );
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -388,7 +327,7 @@ contract BaseIntegration is Test {
             ipId: ipId,
             policyId: policyId,
             index: newPolicyIndex,
-            setByLinking: true
+            inheritedPolicy: true
         });
 
         vm.expectEmit();
@@ -425,7 +364,7 @@ contract BaseIntegration is Test {
             ipId: ipId,
             policyId: policyId,
             index: newPolicyIndex,
-            setByLinking: true
+            inheritedPolicy: true
         });
 
         vm.expectEmit();
