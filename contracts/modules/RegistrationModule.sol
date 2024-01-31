@@ -5,7 +5,6 @@ pragma solidity ^0.8.23;
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IRegistrationModule } from "contracts/interfaces/modules/IRegistrationModule.sol";
 import { REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { Errors } from "contracts/lib/Errors.sol";
@@ -21,26 +20,15 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
     /// @notice The metadata resolver used by the registration module.
     IPResolver public resolver;
 
-    /// @notice Metadata storage provider contract.
-    IPMetadataProvider public metadataProvider;
-
     /// @notice Initializes the registration module contract.
     /// @param controller The access controller used for IP authorization.
-    /// @param recordRegistry The address of the IP record registry.
-    /// @param accountRegistry The address of the IP account registry.
+    /// @param assetRegistry The address of the IP asset registry.
     /// @param licenseRegistry The address of the license registry.
-    /// @param resolverAddr The address of the IP metadata resolver.
     constructor(
         address controller,
-        address recordRegistry,
-        address accountRegistry,
-        address licenseRegistry,
-        address resolverAddr,
-        address metadataProviderAddr
-    ) BaseModule(controller, recordRegistry, accountRegistry, licenseRegistry) {
-        metadataProvider = IPMetadataProvider(metadataProviderAddr);
-        resolver = IPResolver(resolverAddr);
-    }
+        address assetRegistry,
+        address licenseRegistry
+    ) BaseModule(controller, assetRegistry, licenseRegistry) {}
 
     /// @notice Registers a root-level IP into the protocol. Root-level IPs can
     ///         be thought of as organizational hubs for encapsulating policies
@@ -65,13 +53,12 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         }
 
         // Perform core IP registration and IP account creation.
-        address ipId = IP_RECORD_REGISTRY.register(
+        address ipId = IP_ASSET_REGISTRY.register(
             block.chainid,
             tokenContract,
             tokenId,
             address(resolver),
-            true,
-            address(metadataProvider)
+            true
         );
 
         // Perform core IP policy creation.
@@ -110,13 +97,12 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
             revert Errors.RegistrationModule__InvalidOwner();
         }
 
-        address ipId = IP_RECORD_REGISTRY.register(
+        address ipId = IP_ASSET_REGISTRY.register(
             block.chainid,
             tokenContract,
             tokenId,
             address(resolver),
-            true,
-            address(metadataProvider)
+            true
         );
         // ACCESS_CONTROLLER.setPermission(
         //     ipId,
@@ -136,7 +122,8 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
                 uri: externalURL
             })
         );
-        metadataProvider.setMetadata(ipId, metadata);
+        // TODO: handle setting matadata
+        // metadataProvider.setMetadata(ipId, metadata);
 
         // Perform core IP derivative licensing - the license must be owned by the caller.
         // TODO: return resulting policy index

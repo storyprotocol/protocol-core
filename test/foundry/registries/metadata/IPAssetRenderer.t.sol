@@ -11,14 +11,14 @@ import { AccessController } from "contracts/AccessController.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
-import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
+import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
-import { IIPRecordRegistry } from "contracts/interfaces/registries/IIPRecordRegistry.sol";
+import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
 import { IPAssetRenderer } from "contracts/registries/metadata/IPAssetRenderer.sol";
 import { BaseTest } from "test/foundry/utils/BaseTest.sol";
 import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
@@ -42,14 +42,14 @@ contract IPAssetRendererTest is BaseTest {
     /// @notice Gets the metadata provider used for IP registration.
     IPMetadataProvider metadataProvider;
 
-    /// @notice Used for registration in the IP record registry.
+    /// @notice Used for registration in the IP asset registry.
     RegistrationModule public registrationModule;
 
     /// @notice Gets the protocol-wide license registry.
     LicenseRegistry public licenseRegistry;
 
-    /// @notice Gets the protocol-wide IP record registry.
-    IPRecordRegistry public ipRecordRegistry;
+    /// @notice Gets the protocol-wide IP asset registry.
+    IPAssetRegistry public ipAssetRegistry;
 
     /// @notice Gets the protocol-wide module registry.
     ModuleRegistry public moduleRegistry;
@@ -57,8 +57,8 @@ contract IPAssetRendererTest is BaseTest {
     /// @notice Gets the protocol-wide IP account registry.
     IPAccountRegistry public ipAccountRegistry;
 
-    // Default IP record attributes.
-    string public constant IP_NAME = "IPRecord";
+    // Default IP asset attributes.
+    string public constant IP_NAME = "IPAsset";
     string public constant IP_DESCRIPTION = "IPs all the way down.";
     bytes32 public constant IP_HASH = "";
     string public constant IP_EXTERNAL_URL = "https://storyprotocol.xyz";
@@ -82,6 +82,8 @@ contract IPAssetRendererTest is BaseTest {
     function setUp() public virtual override(BaseTest) {
         BaseTest.setUp();
         governance = new Governance(address(this));
+        // TODO: Create an IP asset registry mock instead.
+        licenseRegistry = new LicenseRegistry("");
         // TODO: Create an IP record registry mock instead.
         accessController = new AccessController(address(governance));
         moduleRegistry = new ModuleRegistry(address(governance));
@@ -92,47 +94,46 @@ contract IPAssetRendererTest is BaseTest {
             address(new IPAccountImpl())
         );
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-        ipRecordRegistry = new IPRecordRegistry(
-            address(moduleRegistry),
-            address(ipAccountRegistry)
-        );
         licenseRegistry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
 
         vm.prank(alice);
         uint256 tokenId = erc721.mintId(alice, 99);
 
         metadataProvider = new IPMetadataProvider(address(moduleRegistry));
+
+        ipAssetRegistry = new IPAssetRegistry(
+            address(accessController),
+            address(new ERC6551Registry()),
+            address(new IPAccountImpl()),
+            address(metadataProvider)
+        );
+
         resolver = new IPResolver(
             address(accessController),
-            address(ipRecordRegistry),
-            address(ipAccountRegistry),
+            address(ipAssetRegistry),
             address(licenseRegistry)
         );
 
         // TODO: Mock out the registration module and module registry.
         registrationModule = new RegistrationModule(
             address(accessController),
-            address(ipRecordRegistry),
-            address(ipAccountRegistry),
-            address(licenseRegistry),
-            address(metadataProvider),
-            address(resolver)
+            address(ipAssetRegistry),
+            address(licenseRegistry)
         );
         renderer = new IPAssetRenderer(
-            address(ipRecordRegistry),
+            address(ipAssetRegistry),
             address(licenseRegistry),
             taggingModule,
             royaltyModule
         );
         moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
         vm.prank(address(registrationModule));
-        ipId = ipRecordRegistry.register(
+        ipId = ipAssetRegistry.register(
             block.chainid,
             address(erc721),
             tokenId,
             address(resolver),
-            true,
-            address(metadataProvider)
+            true
         );
 
         bytes memory metadata = abi.encode(
@@ -151,7 +152,7 @@ contract IPAssetRendererTest is BaseTest {
 
     /// @notice Tests that the constructor works as expected.
     function test_IPAssetRenderer_Constructor() public virtual {
-        assertEq(address(renderer.IP_RECORD_REGISTRY()), address(ipRecordRegistry));
+        assertEq(address(renderer.IP_ASSET_REGISTRY()), address(ipAssetRegistry));
     }
 
     /// @notice Tests that renderer can properly resolve names.
@@ -216,7 +217,7 @@ contract IPAssetRendererTest is BaseTest {
         string memory ipIdStr = Strings.toHexString(uint160(ipId));
         string memory uriEncoding = string(abi.encodePacked(
             '{"name": "IP Asset #', ipIdStr, '", "description": "', description, '", "attributes": [',
-            '{"trait_type": "Name", "value": "IPRecord"},',
+            '{"trait_type": "Name", "value": "IPAsset"},',
             '{"trait_type": "Owner", "value": "', ownerStr, '"},'
             '{"trait_type": "Registrant", "value": "', ownerStr, '"},',
             '{"trait_type": "Hash", "value": "0x0000000000000000000000000000000000000000000000000000000000000000"},',

@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
-import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
+import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
@@ -18,11 +18,8 @@ abstract contract BaseModule is IModule {
     /// @notice Gets the protocol-wide module access controller.
     IAccessController public immutable ACCESS_CONTROLLER;
 
-    /// @notice Gets the protocol-wide IP account registry.
-    IPAccountRegistry public immutable IP_ACCOUNT_REGISTRY;
-
-    /// @notice Gets the protocol-wide IP record registry.
-    IPRecordRegistry public immutable IP_RECORD_REGISTRY;
+    /// @notice Gets the protocol-wide IP asset registry.
+    IPAssetRegistry public immutable IP_ASSET_REGISTRY;
 
     /// @notice Gets the protocol-wide license registry.
     LicenseRegistry public immutable LICENSE_REGISTRY;
@@ -35,14 +32,12 @@ abstract contract BaseModule is IModule {
 
     /// @notice Initializes the base module contract.
     /// @param controller The access controller used for IP authorization.
-    /// @param recordRegistry The address of the IP record registry.
-    /// @param accountRegistry The address of the IP account registry.
+    /// @param assetRegistry The address of the IP asset registry.
     /// @param licenseRegistry The address of the license registry.
-    constructor(address controller, address recordRegistry, address accountRegistry, address licenseRegistry) {
+    constructor(address controller, address assetRegistry, address licenseRegistry) {
         // TODO: Add checks for interface support or at least zero address
         ACCESS_CONTROLLER = IAccessController(controller);
-        IP_RECORD_REGISTRY = IPRecordRegistry(recordRegistry);
-        IP_ACCOUNT_REGISTRY = IPAccountRegistry(accountRegistry);
+        IP_ASSET_REGISTRY = IPAssetRegistry(assetRegistry);
         LICENSE_REGISTRY = LicenseRegistry(licenseRegistry);
     }
 

@@ -30,23 +30,34 @@ library Errors {
     error Module_Unauthorized();
 
     ////////////////////////////////////////////////////////////////////////////
-    //                               IPRecordRegistry                         //
+    //                               IPAccountRegistry                        //
+    ////////////////////////////////////////////////////////////////////////////
+    error IPAccountRegistry_InvalidIpAccountImpl();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                               IPAssetRegistry                         //
     ////////////////////////////////////////////////////////////////////////////
 
-    /// @notice The IP record has already been registered.
-    error IPRecordRegistry_AlreadyRegistered();
+    /// @notice The IP asset has already been registered.
+    error IPAssetRegistry_AlreadyRegistered();
 
     /// @notice The IP account has already been created.
-    error IPRecordRegistry_IPAccountAlreadyCreated();
+    error IPAssetRegistry_IPAccountAlreadyCreated();
 
-    /// @notice The IP record has not yet been registered.
-    error IPRecordRegistry_NotYetRegistered();
+    /// @notice The IP asset has not yet been registered.
+    error IPAssetRegistry_NotYetRegistered();
 
     /// @notice The specified IP resolver is not valid.
-    error IPRecordRegistry_ResolverInvalid();
+    error IPAssetRegistry_ResolverInvalid();
 
     /// @notice Caller not authorized to perform the IP registry function call.
-    error IPRecordRegistry_Unauthorized();
+    error IPAssetRegistry_Unauthorized();
+
+    /// @notice The deployed address of account doesn't match with IP ID.
+    error IPAssetRegistry_InvalidAccount();
+
+    /// @notice The metadata provider is not valid.
+    error IPAssetRegistry_InvalidMetadataProvider();
 
     ////////////////////////////////////////////////////////////////////////////
     //                                 IPResolver                            ///

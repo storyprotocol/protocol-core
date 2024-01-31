@@ -17,14 +17,6 @@ contract IPMetadataProvider is IMetadataProvider {
     /// @notice Maps IPs to their metadata based on their IP IDs.
     mapping(address ip => bytes metadata) internal _ipMetadata;
 
-    /// @notice Restricts calls to only originate from a protocol-authorized caller.
-    modifier onlyRegistrationModule() {
-        if (address(MODULE_REGISTRY.getModule(REGISTRATION_MODULE_KEY)) != msg.sender) {
-            revert Errors.MetadataProvider_Unauthorized();
-        }
-        _;
-    }
-
     /// @notice Initializes the metadata provider contract.
     /// @param moduleRegistry Gets the protocol-wide module registry.
     constructor(address moduleRegistry) {
@@ -40,7 +32,8 @@ contract IPMetadataProvider is IMetadataProvider {
     /// @notice Sets the IP metadata associated with an IP asset based on its IP ID.
     /// @param ipId The IP id of the IP asset to set metadata for.
     /// @param metadata The metadata in bytes to set for the IP asset.
-    function setMetadata(address ipId, bytes memory metadata) external onlyRegistrationModule {
+    // TODO: Add access control for IP owner can set metadata.
+    function setMetadata(address ipId, bytes memory metadata) external {
         _ipMetadata[ipId] = metadata;
     }
 }
