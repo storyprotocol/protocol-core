@@ -48,7 +48,7 @@ struct UMLPolicyDerivativeParams {
     uint256 derivativesRevShare;
 }
 
-contract Integration_Shared_LicenseFramework_and_Policy {
+contract Integration_Shared_LicensingHelper {
     mapping(string frameworkName => uint256 frameworkId) internal frameworkIds;
 
     mapping(string policyName => uint256 globalPolicyId) internal policyIds;
