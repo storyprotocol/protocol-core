@@ -28,6 +28,7 @@ import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
+import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
 // script
 import { StringUtil } from "script/foundry/utils/StringUtil.sol";
@@ -191,7 +192,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         ipAccountRegistry = IPAccountRegistry(_readAddress("main.IPAccountRegistry"));
         moduleRegistry = ModuleRegistry(_readAddress("main.ModuleRegistry"));
         licenseRegistry = LicenseRegistry(_readAddress("main.LicenseRegistry"));
-        ipRecordRegistry = IPRecordRegistry(_readAddress("main.IPRecordRegistry"));
+        ipAssetRegistry = IPAssetRegistry(_readAddress("main.IPAssetRegistry"));
         ipResolver = IPResolver(_readAddress("main.IPResolver"));
         metadataProvider = IPMetadataProvider(_readAddress("main.MetadataProvider"));
         registrationModule = RegistrationModule(_readAddress("main.RegistrationModule"));
