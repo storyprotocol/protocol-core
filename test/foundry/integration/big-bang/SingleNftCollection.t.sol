@@ -94,6 +94,26 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             );
 
             linkIpToParent(alice_license_from_root_bob, ipAcct[2], u.alice);
+
+            uint256 tokenId = 99999999;
+            nft.mintId(u.alice, tokenId);
+
+            ipAcct[tokenId] = registerDerivativeIp(
+                alice_license_from_root_bob,
+                address(nft),
+                tokenId,
+                "IP NAME",
+                bytes32("hash"),
+                "external URL",
+                u.alice
+            );
+        }
+
+        // Bob tags Alice's NFT
+        {
+            vm.startPrank(u.bob);
+            taggingModule.setTag("sequel", ipAcct[99999999]);
+            assertTrue(taggingModule.isTagged("sequel", ipAcct[99999999]));
         }
     }
 }

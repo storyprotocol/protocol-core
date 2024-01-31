@@ -308,6 +308,112 @@ contract BaseIntegration is Test {
         return registerIpAccount(address(nft), tokenId);
     }
 
+    function registerDerivativeIp(
+        uint256 licenseId,
+        address nft,
+        uint256 tokenId,
+        string memory ipName,
+        bytes32 contentHash,
+        string memory externalUrl,
+        address caller
+    ) internal returns (address) {
+        address expectedAddr = ERC6551AccountLib.computeAddress(
+            address(erc6551Registry),
+            address(ipAccountImpl),
+            ipAccountRegistry.IP_ACCOUNT_SALT(),
+            block.chainid,
+            nft,
+            tokenId
+        );
+
+        vm.expectEmit();
+        emit IERC6551Registry.ERC6551AccountCreated({
+            account: expectedAddr,
+            implementation: address(ipAccountImpl),
+            salt: ipAccountRegistry.IP_ACCOUNT_SALT(),
+            chainId: block.chainid,
+            tokenContract: nft,
+            tokenId: tokenId
+        });
+
+        vm.expectEmit();
+        emit IIPAccountRegistry.IPAccountRegistered({
+            account: expectedAddr,
+            implementation: address(ipAccountImpl),
+            chainId: block.chainid,
+            tokenContract: nft,
+            tokenId: tokenId
+        });
+
+        vm.expectEmit();
+        emit IIPRecordRegistry.IPAccountSet({
+            ipId: expectedAddr,
+            chainId: block.chainid,
+            tokenContract: nft,
+            tokenId: tokenId
+        });
+
+        vm.expectEmit();
+        emit IIPRecordRegistry.IPResolverSet({
+            ipId: expectedAddr,
+            resolver: address(ipResolver) // default resolver by Story
+        });
+
+        vm.expectEmit();
+        emit IIPRecordRegistry.MetadataProviderSet({
+            ipId: expectedAddr,
+            metadataProvider: address(ipMetadataProvider) // default metadata provider by Story
+        });
+
+        vm.expectEmit();
+        emit IIPRecordRegistry.IPRegistered({
+            ipId: expectedAddr,
+            chainId: block.chainid,
+            tokenContract: nft,
+            tokenId: tokenId,
+            resolver: address(ipResolver), // default resolver by Story
+            provider: address(ipMetadataProvider) // default metadata provider by Story
+        });
+
+        address ipId = expectedAddr;
+        uint256 policyId = licenseRegistry.policyIdForLicense(licenseId);
+        address parentIpId = licenseRegistry.licensorIpId(licenseId);
+        uint256 newPolicyIndex = licenseRegistry.totalPoliciesForIp(ipId);
+
+        // Note that below events are emitted in function that's called by the registration module.
+
+        vm.expectEmit();
+        emit ILicenseRegistry.PolicyAddedToIpId({
+            caller: address(registrationModule),
+            ipId: ipId,
+            policyId: policyId,
+            index: newPolicyIndex,
+            setByLinking: true
+        });
+
+        vm.expectEmit();
+        emit ILicenseRegistry.IpIdLinkedToParent({
+            caller: address(registrationModule),
+            ipId: ipId,
+            parentIpId: parentIpId
+        });
+
+        vm.expectEmit();
+        emit IERC1155.TransferSingle({
+            operator: address(registrationModule),
+            from: caller,
+            to: address(0), // burn addr
+            id: policyId,
+            value: 1
+        });
+
+        vm.expectEmit();
+        emit IRegistrationModule.DerivativeIPRegistered({ caller: caller, ipId: ipId, licenseId: licenseId });
+
+        registrationModule.registerDerivativeIp(licenseId, nft, tokenId, ipName, contentHash, externalUrl);
+        return ipId;
+    }
+
     function linkIpToParent(uint256 licenseId, address ipId, address caller) internal {
         uint256 policyId = licenseRegistry.policyIdForLicense(licenseId);
         address parentIpId = licenseRegistry.licensorIpId(licenseId);
