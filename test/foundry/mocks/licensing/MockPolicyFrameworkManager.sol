@@ -15,6 +15,7 @@ import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 
 struct MockPolicyFrameworkConfig {
     address licenseRegistry;
+    string name;
     string licenseUrl;
     bool supportVerifyLink;
     bool supportVerifyMint;
@@ -39,7 +40,7 @@ contract MockPolicyFrameworkManager is
 
     constructor(
         MockPolicyFrameworkConfig memory conf
-    ) BasePolicyFrameworkManager(conf.licenseRegistry, conf.licenseUrl) {
+    ) BasePolicyFrameworkManager(conf.licenseRegistry, conf.name, conf.licenseUrl) {
         config = conf;
     }
 
@@ -53,28 +54,9 @@ contract MockPolicyFrameworkManager is
         return super.supportsInterface(interfaceId);
     }
 
-    function addPolicy(MockPolicy calldata mockPolicy) external returns (uint256 policyId) {
-        if (policyFrameworkId == 0) {
-            revert Errors.PolicyFramework_FrameworkNotYetRegistered();
-        }
-
-        // can verify mockPolicy if needed
-
-        Licensing.Policy memory protocolPolicy = Licensing.Policy({
-            policyFrameworkId: policyFrameworkId,
-            data: abi.encode(mockPolicy)
-        });
-
-        return LICENSE_REGISTRY.addPolicy(protocolPolicy);
+    function registerPolicy(MockPolicy calldata mockPolicy) external returns (uint256 policyId) {
+        return LICENSE_REGISTRY.registerPolicy(abi.encode(mockPolicy));
         emit MockPolicyAdded(policyId, mockPolicy);
-    }
-
-    function policyIdToMockPolicy(uint256 policyId) public view returns (MockPolicy memory policy) {
-        Licensing.Policy memory protocolPolicy = LICENSE_REGISTRY.policy(policyId);
-        if (protocolPolicy.policyFrameworkId != policyFrameworkId) {
-            revert Errors.LicenseRegistry__FrameworkNotFound();
-        }
-        policy = abi.decode(protocolPolicy.data, (MockPolicy));
     }
 
     function verifyMint(address, bool, address, address, uint256, bytes memory data) external view returns (bool) {

@@ -83,7 +83,7 @@ library Errors {
     error LicenseRegistry__PolicyAlreadySetForIpId();
     error LicenseRegistry__FrameworkNotFound();
     error LicenseRegistry__EmptyLicenseUrl();
-    error LicenseRegistry__ZeroPolicyFramework();
+    error LicenseRegistry__InvalidPolicyFramework();
     error LicenseRegistry__PolicyAlreadyAdded();
     error LicenseRegistry__ParamVerifierLengthMismatch();
     error LicenseRegistry__PolicyNotFound();
@@ -109,10 +109,10 @@ library Errors {
     error LicenseRegistryAware__CallerNotLicenseRegistry();
 
     ////////////////////////////////////////////////////////////////////////////
-    //                           PolicyFramework                              //
+    //                         PolicyFrameworkManager                         //
     ////////////////////////////////////////////////////////////////////////////
 
-    error PolicyFramework_FrameworkNotYetRegistered();
+    error PolicyFrameworkManager__GettingPolicyWrongFramework();
 
     ////////////////////////////////////////////////////////////////////////////
     //                     LicensorApprovalManager                            //

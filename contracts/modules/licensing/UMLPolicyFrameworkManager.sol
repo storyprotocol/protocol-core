@@ -5,6 +5,7 @@ pragma solidity ^0.8.23;
 // external
 import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 // contracts
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
@@ -19,9 +20,6 @@ import { IUMLPolicyFrameworkManager, UMLPolicy } from "contracts/interfaces/lice
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 import { LicensorApprovalManager } from "contracts/modules/licensing/parameter-helpers/LicensorApprovalManager.sol";
-
-// external
-import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 /// @title UMLPolicyFrameworkManager
 /// @notice This is the UML Policy Framework Manager, which implements the UML Policy Framework
@@ -38,8 +36,9 @@ contract UMLPolicyFrameworkManager is
     constructor(
         address accessController,
         address licRegistry,
-        string memory licenseUrl
-    ) BasePolicyFrameworkManager(licRegistry, licenseUrl) LicensorApprovalManager(accessController) {}
+        string memory name_,
+        string memory licenseUrl_
+    ) BasePolicyFrameworkManager(licRegistry, name_, licenseUrl_) LicensorApprovalManager(accessController) {}
 
     function licenseRegistry()
         external
@@ -50,21 +49,14 @@ contract UMLPolicyFrameworkManager is
         return address(LICENSE_REGISTRY);
     }
 
-    /// @notice Adds a new policy to the registry
+    /// @notice Re a new policy to the registry
     /// @dev Must encode the policy into bytes to be stored in the LicenseRegistry
     /// @param umlPolicy UMLPolicy compliant licensing term values
-    function addPolicy(UMLPolicy calldata umlPolicy) external returns (uint256 policyId) {
-        if (policyFrameworkId == 0) {
-            revert Errors.PolicyFramework_FrameworkNotYetRegistered();
-        }
+    function registerPolicy(UMLPolicy calldata umlPolicy) external returns (uint256 policyId) {
         _verifyComercialUse(umlPolicy);
         _verifyDerivatives(umlPolicy);
-        Licensing.Policy memory protocolPolicy = Licensing.Policy({
-            policyFrameworkId: policyFrameworkId,
-            data: abi.encode(umlPolicy)
-        });
         emit UMLPolicyAdded(policyId, umlPolicy);
-        return LICENSE_REGISTRY.addPolicy(protocolPolicy);
+        return LICENSE_REGISTRY.registerPolicy(abi.encode(umlPolicy));
     }
 
     /// @notice Fetchs a policy from the registry, decoding the raw bytes into a UMLPolicy struct
@@ -72,8 +64,9 @@ contract UMLPolicyFrameworkManager is
     /// @return policy The UMLPolicy struct
     function getPolicy(uint256 policyId) public view returns (UMLPolicy memory policy) {
         Licensing.Policy memory protocolPolicy = LICENSE_REGISTRY.policy(policyId);
-        if (protocolPolicy.policyFrameworkId != policyFrameworkId) {
-            revert Errors.LicenseRegistry__FrameworkNotFound();
+        if (protocolPolicy.policyFramework != address(this)) {
+            // This should not happen.
+            revert Errors.PolicyFrameworkManager__GettingPolicyWrongFramework();
         }
         policy = abi.decode(protocolPolicy.data, (UMLPolicy));
     }
