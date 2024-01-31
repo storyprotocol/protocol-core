@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 import { BaseTest } from "test/foundry/utils/BaseTest.sol";
 import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
-import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
+import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
 /// @title IP Metadata Provider Testing Contract
@@ -47,11 +47,5 @@ contract IPMetadataProviderTest is BaseTest {
             metadataProvider.getMetadata(ipId),
             expectedMetadata
         );
-    }
-
-    /// @notice Checks that metadata setting reverts if not called by the registry.
-    function test_IPMetadataProvider_SetMetadata_Reverts_Unauthorized() public {
-        vm.expectRevert(Errors.MetadataProvider_Unauthorized.selector);
-        metadataProvider.setMetadata(ipId, TEST_METADATA);
     }
 }

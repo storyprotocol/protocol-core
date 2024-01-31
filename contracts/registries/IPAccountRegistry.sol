@@ -4,6 +4,7 @@ pragma solidity ^0.8.23;
 
 import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
 import { IERC6551Registry } from "lib/reference/src/interfaces/IERC6551Registry.sol";
+import { Errors } from "contracts/lib/Errors.sol";
 
 /// @title IPAccountRegistry
 /// @notice This contract is responsible for managing the registration and tracking of IP Accounts.
@@ -14,14 +15,12 @@ contract IPAccountRegistry is IIPAccountRegistry {
     address public immutable ERC6551_PUBLIC_REGISTRY;
     address public immutable ACCESS_CONTROLLER;
 
-    error NonExistIpAccountImpl();
-
     /// @notice Constructor for the IPAccountRegistry contract.
     /// @param erc6551Registry_ The address of the ERC6551 registry.
     /// @param accessController_ The address of the access controller.
     /// @param ipAccountImpl_ The address of the IP account implementation.
     constructor(address erc6551Registry_, address accessController_, address ipAccountImpl_) {
-        if (ipAccountImpl_ == address(0)) revert NonExistIpAccountImpl();
+        if (ipAccountImpl_ == address(0)) revert Errors.IPAccountRegistry_InvalidIpAccountImpl();
         IP_ACCOUNT_IMPL = ipAccountImpl_;
         IP_ACCOUNT_SALT = bytes32(0);
         ERC6551_PUBLIC_REGISTRY = erc6551Registry_;
@@ -37,7 +36,7 @@ contract IPAccountRegistry is IIPAccountRegistry {
         uint256 chainId_,
         address tokenContract_,
         uint256 tokenId_
-    ) external returns (address ipAccountAddress) {
+    ) public returns (address ipAccountAddress) {
         bytes memory initData = abi.encodeWithSignature("initialize(address)", ACCESS_CONTROLLER);
         ipAccountAddress = IERC6551Registry(ERC6551_PUBLIC_REGISTRY).createAccount(
             IP_ACCOUNT_IMPL,
@@ -60,7 +59,7 @@ contract IPAccountRegistry is IIPAccountRegistry {
     /// @param tokenContract_ The address of the token contract associated with the IP Account.
     /// @param tokenId_ The ID of the token associated with the IP Account.
     /// @return The address of the IP Account associated with the given NFT token.
-    function ipAccount(uint256 chainId_, address tokenContract_, uint256 tokenId_) external view returns (address) {
+    function ipAccount(uint256 chainId_, address tokenContract_, uint256 tokenId_) public view returns (address) {
         return _get6551AccountAddress(chainId_, tokenContract_, tokenId_);
     }
 

@@ -19,7 +19,7 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
+import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { IPAssetRenderer } from "contracts/registries/metadata/IPAssetRenderer.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
@@ -49,7 +49,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     IPAssetRenderer public renderer;
     IPMetadataProvider public metadataProvider;
     IPAccountRegistry public ipAccountRegistry;
-    IPRecordRegistry public ipRecordRegistry;
+    IPAssetRegistry public ipAssetRegistry;
     LicenseRegistry public licenseRegistry;
     ModuleRegistry public moduleRegistry;
 
@@ -122,10 +122,11 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         ipAccountRegistry = new IPAccountRegistry(ERC6551_REGISTRY, address(accessController), address(implementation));
         _postdeploy(contractKey, address(ipAccountRegistry));
 
-        contractKey = "IPRecordRegistry";
+        // TODO: deployment sequence
+        contractKey = "IPAssetRegistry";
         _predeploy(contractKey);
-        ipRecordRegistry = new IPRecordRegistry(address(moduleRegistry), address(ipAccountRegistry));
-        _postdeploy(contractKey, address(ipRecordRegistry));
+        ipAssetRegistry = new IPAssetRegistry(address(accessController), ERC6551_REGISTRY, address(implementation), address(metadataProvider));
+        _postdeploy(contractKey, address(ipAssetRegistry));
 
         contractKey = "LicenseRegistry";
         _predeploy(contractKey);
@@ -136,8 +137,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         _predeploy(contractKey);
         ipResolver = new IPResolver(
             address(accessController),
-            address(ipRecordRegistry),
-            address(ipAccountRegistry),
+            address(ipAssetRegistry),
             address(licenseRegistry)
         );
         _postdeploy(contractKey, address(ipResolver));
@@ -151,11 +151,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         _predeploy(contractKey);
         registrationModule = new RegistrationModule(
             address(accessController),
-            address(ipRecordRegistry),
-            address(ipAccountRegistry),
-            address(licenseRegistry),
-            address(ipResolver),
-            address(metadataProvider)
+            address(ipAssetRegistry),
+            address(licenseRegistry)
         );
         _postdeploy(contractKey, address(registrationModule));
 
@@ -177,7 +174,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         contractKey = "IPAssetRenderer";
         _predeploy(contractKey);
         renderer = new IPAssetRenderer(
-            address(ipRecordRegistry),
+            address(ipAssetRegistry),
             address(licenseRegistry),
             address(taggingModule),
             address(royaltyModule)
