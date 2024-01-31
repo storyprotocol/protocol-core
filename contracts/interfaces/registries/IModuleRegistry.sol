@@ -8,12 +8,12 @@ interface IModuleRegistry {
     /// @notice Emitted when a new module is added to the registry.
     /// @param name The name of the module.
     /// @param module The address of the module.
-    event ModuleAdded(string indexed name, address indexed module);
+    event ModuleAdded(string name, address indexed module);
 
     /// @notice Emitted when a module is removed from the registry.
     /// @param name The name of the module.
     /// @param module The address of the module.
-    event ModuleRemoved(string indexed name, address indexed module);
+    event ModuleRemoved(string name, address indexed module);
 
     /// @notice Registers a new module in the registry.
     /// @dev This function can only be called by the owner of the registry.

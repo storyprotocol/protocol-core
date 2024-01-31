@@ -50,8 +50,6 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintP
             revert Errors.PolicyFramework_FrameworkNotYetRegistered();
         }
 
-        require(mmpol.mustBeTrue, "MintPaymentPolicyFrameworkManager: mustBeTrue");
-
         Licensing.Policy memory protocolPolicy = Licensing.Policy({
             policyFrameworkId: policyFrameworkId,
             data: abi.encode(mmpol)
@@ -64,9 +62,9 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintP
     /// to return true, pass in abi.encode(true) as the value.
     function verifyMint(
         address caller,
-        bool policyWasInherited,
-        address licensors,
-        address receiver,
+        bool, // policyWasInherited
+        address, // licensors
+        address, // receiver
         uint256 mintAmount,
         bytes memory policyData
     ) external returns (bool) {
@@ -74,7 +72,8 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintP
         uint256 payment_ = mintAmount * payment;
         require(token.allowance(caller, address(this)) >= payment_, "MintPaymentVerifier: Approval");
         require(token.transferFrom(caller, address(this), payment_), "MintPaymentVerifier: Transfer");
-        return true;
+        MintPaymentPolicy memory mmpol = abi.decode(policyData, (MintPaymentPolicy));
+        return mmpol.mustBeTrue;
     }
 
     function policyToJson(bytes memory policyData) public view returns (string memory) {

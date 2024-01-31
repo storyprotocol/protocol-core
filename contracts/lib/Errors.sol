@@ -100,6 +100,7 @@ library Errors {
     error LicenseRegistry__UnregisteredFrameworkAddingPolicy();
     error LicenseRegistry__UnauthorizedAccess();
     error LicenseRegistry__LicensorNotRegistered();
+    error LicenseRegistry__CallerNotLicensorAndPolicyNotSet();
 
     ////////////////////////////////////////////////////////////////////////////
     //                        LicenseRegistryAware                            //
