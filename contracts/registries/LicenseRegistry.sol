@@ -151,7 +151,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// @param polId id of the policy data
     /// @return indexOnIpId position of policy within the ipIds policy set
     function addPolicyToIp(address ipId, uint256 polId) external returns (uint256 indexOnIpId) {
-        if (!ACCESS_CONTROLLER.checkPermission(ipId, msg.sender, address(this), this.addPolicyToIp.selector)) {
+        if (
+            msg.sender != ipId &&
+            !ACCESS_CONTROLLER.checkPermission(ipId, msg.sender, address(this), this.addPolicyToIp.selector)
+        ) {
             revert Errors.LicenseRegistry__UnauthorizedAccess();
         }
 
@@ -283,7 +286,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         // If the IP ID doesn't have a policy (meaning, no permissionless derivatives)
         if (!_policiesPerIpId[licensorIp].contains(policyId)) {
             // We have to check if the caller is licensor or authorized to mint.
-            if (!ACCESS_CONTROLLER.checkPermission(licensorIp, msg.sender, address(this), this.mintLicense.selector)) {
+            if (
+                msg.sender != licensorIp &&
+                !ACCESS_CONTROLLER.checkPermission(licensorIp, msg.sender, address(this), this.mintLicense.selector)
+            ) {
                 revert Errors.LicenseRegistry__CallerNotLicensorAndPolicyNotSet();
             }
         }
@@ -347,7 +353,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         address holder
     ) external onlyLicensee(licenseId, holder) {
         // check the caller is owner or authorized by the childIp
-        if (!ACCESS_CONTROLLER.checkPermission(childIpId, msg.sender, address(this), this.linkIpToParent.selector)) {
+        if (
+            msg.sender != childIpId &&
+            !ACCESS_CONTROLLER.checkPermission(childIpId, msg.sender, address(this), this.linkIpToParent.selector)
+        ) {
             revert Errors.LicenseRegistry__UnauthorizedAccess();
         }
         // TODO: check if childIpId exists and is owned by holder

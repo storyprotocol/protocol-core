@@ -9,13 +9,16 @@ import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy }
     from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
-import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
+import { AccessController } from "contracts/AccessController.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { AccessPermission } from "contracts/lib/AccessPermission.sol";
+import { Governance } from "contracts/governance/Governance.sol";
+import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
+import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 
 // External
 import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
@@ -27,8 +30,12 @@ contract LicenseRegistryTest is Test {
     using Strings for *;
     using ShortStrings for *;
 
-    MockAccessController public accessController = new MockAccessController();
+    AccessController public accessController;
     IPAccountRegistry public ipAccountRegistry;
+    Governance public governance;
+    ERC6551Registry public erc6551Registry;
+    IPAccountImpl public implementation;
+    IModuleRegistry public moduleRegistry;
 
     LicenseRegistry public registry;
     Licensing.PolicyFramework public framework;
@@ -50,7 +57,21 @@ contract LicenseRegistryTest is Test {
             address(accessController),
             address(new IPAccountImpl())
         );
+
+        governance = new Governance(address(this));
+        accessController = new AccessController(address(governance));
+        erc6551Registry = new ERC6551Registry();
+        implementation = new IPAccountImpl();
+        ipAccountRegistry = new IPAccountRegistry(
+            address(erc6551Registry),
+            address(accessController),
+            address(implementation)
+        );
+        moduleRegistry = new ModuleRegistry(address(governance));
+        accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
+
         registry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
+        moduleRegistry.registerModule("LICENSE_REGISTRY", address(registry));
         module1 = new MockPolicyFrameworkManager(MockPolicyFrameworkConfig({
             licenseRegistry: address(registry),
             licenseUrl: licenseUrl,
@@ -300,7 +321,7 @@ contract LicenseRegistryTest is Test {
             )
         );
         assertEq(4, abi.decode(result, (uint256)));
-    
+
     }
 
 
