@@ -5,8 +5,9 @@ pragma solidity ^0.8.23;
 interface IRoyaltyPolicy {   
     /// @notice Initializes the royalty policy
     /// @param ipId The ipId
-    /// @param data The data to initialize the policy 
-    function initPolicy(address ipId, bytes calldata data) external;
+    /// @param parentsIpIds The parent ipIds
+    /// @param data The data to initialize the policy
+    function initPolicy(address ipId, address[] calldata parentsIpIds, bytes calldata data) external;
 
     /// @notice Allows to pay a royalty
     /// @param caller The caller

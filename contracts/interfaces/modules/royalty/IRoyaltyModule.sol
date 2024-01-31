@@ -3,23 +3,51 @@ pragma solidity ^0.8.23;
 
 /// @title RoyaltyModule interface
 interface IRoyaltyModule {
+    /// @notice Event emitted when a royalty policy is whitelisted
+    /// @param royaltyPolicy The address of the royalty policy
+    /// @param allowed Indicates if the royalty policy is whitelisted or not
+    event RoyaltyPolicyWhitelistUpdated(address royaltyPolicy, bool allowed);
+
+    /// @notice Event emitted when a royalty token is whitelisted
+    /// @param token The address of the royalty token
+    /// @param allowed Indicates if the royalty token is whitelisted or not
+    event RoyaltyTokenWhitelistUpdated(address token, bool allowed);
+
+    /// @notice Event emitted when a royalty policy is set
+    /// @param ipId The ipId
+    /// @param royaltyPolicy The address of the royalty policy
+    /// @param data The data to initialize the policy
+    event RoyaltyPolicySet(address ipId, address royaltyPolicy, bytes data);
+
+    /// @notice Event emitted when royalties are paid
+    /// @param receiverIpId The ipId that receives the royalties
+    /// @param payerIpId The ipId that pays the royalties
+    /// @param sender The address that pays the royalties on behalf of the payer ipId
+    /// @param token The token that is used to pay the royalties
+    /// @param amount The amount that is paid
+    event RoyaltyPaid(address receiverIpId, address payerIpId, address sender, address token, uint256 amount);
+
     /// @notice Whitelist a royalty policy
     /// @param royaltyPolicy The address of the royalty policy
     /// @param allowed Indicates if the royalty policy is whitelisted or not
     function whitelistRoyaltyPolicy(address royaltyPolicy, bool allowed) external;
 
+    /// @notice Whitelist a royalty token
+    /// @param token The token address
+    /// @param allowed Indicates if the token is whitelisted or not
+    function whitelistRoyaltyToken(address token, bool allowed) external;
+
     /// @notice Sets the royalty policy for an ipId
     /// @param ipId The ipId
     /// @param royaltyPolicy The address of the royalty policy
+    /// @param parentIpIds The parent ipIds
     /// @param data The data to initialize the policy
-    function setRoyaltyPolicy(address ipId, address royaltyPolicy, bytes calldata data) external;
+    function setRoyaltyPolicy(address ipId, address royaltyPolicy, address[] calldata parentIpIds, bytes calldata data) external;
 
-    /// @notice Allows an IPAccount to pay royalties
-    /// @param ipId The ipId
-    /// @param token The token to pay the royalties in
+    /// @notice Allows a sender to to pay royalties on behalf of an ipId
+    /// @param receiverIpId The ipId that receives the royalties
+    /// @param payerIpId The ipId that pays the royalties
+    /// @param token The token to use to pay the royalties
     /// @param amount The amount to pay
-    function payRoyalty(address ipId, address token, uint256 amount) external;
-
-    /// @notice Gets the royalty policy for a given ipId
-    function royaltyPolicies(address ipId) external view returns (address royaltyPolicy);
+    function payRoyaltyOnBehalf(address receiverIpId, address payerIpId, address token, uint256 amount) external;
 }

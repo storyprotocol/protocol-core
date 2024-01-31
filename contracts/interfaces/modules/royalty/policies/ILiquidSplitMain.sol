@@ -14,4 +14,13 @@ interface ILiquidSplitMain {
         uint256 withdrawETH,
         ERC20[] calldata tokens
     ) external;
+
+    /// @notice Gets the ETH balance of an account
+    /// @param account The account to get the ETH balance of
+    function getETHBalance(address account) external view returns (uint256);
+
+    /// @notice Gets the ERC20 balance of an account
+    /// @param account The account to get the ERC20 balance of
+    /// @param token The token to get the balance of
+    function getERC20Balance(address account, ERC20 token) external view returns (uint256);
 }
