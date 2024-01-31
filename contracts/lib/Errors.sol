@@ -69,32 +69,43 @@ library Errors {
     //                            LicenseRegistry                             //
     ////////////////////////////////////////////////////////////////////////////
 
-    /// @notice Error thrown when a policy is already set for an IP ID.
     error LicenseRegistry__PolicyAlreadySetForIpId();
     error LicenseRegistry__FrameworkNotFound();
     error LicenseRegistry__EmptyLicenseUrl();
+    error LicenseRegistry__ZeroPolicyFramework();
     error LicenseRegistry__PolicyAlreadyAdded();
     error LicenseRegistry__ParamVerifierLengthMismatch();
-    error LicenseRegistry__InvalidParamVerifierType();
     error LicenseRegistry__PolicyNotFound();
     error LicenseRegistry__NotLicensee();
     error LicenseRegistry__ParentIdEqualThanChild();
     error LicenseRegistry__LicensorDoesntHaveThisPolicy();
-    error LicenseRegistry__ParamVerifierFailed(uint8 verifierType, address verifier);
+    error LicenseRegistry__MintLicenseParamFailed();
     error LicenseRegistry__LinkParentParamFailed();
+    error LicenseRegistry__TransferParamFailed();
     error LicenseRegistry__InvalidLicensor();
     error LicenseRegistry__ParamVerifierAlreadySet();
+    error LicenseRegistry__CommercialTermInNonCommercialPolicy();
+    error LicenseRegistry__EmptyParamName();
+    error LicenseRegistry__UnregisteredFrameworkAddingPolicy();
+    error LicenseRegistry__UnauthorizedAccess();
+    error LicenseRegistry__LicensorNotRegistered();
 
     ////////////////////////////////////////////////////////////////////////////
-    //                            BaseParamVerifier                           //
+    //                        LicenseRegistryAware                            //
     ////////////////////////////////////////////////////////////////////////////
-    error BaseParamVerifier__Unauthorized();
+
+    error LicenseRegistryAware__CallerNotLicenseRegistry();
 
     ////////////////////////////////////////////////////////////////////////////
-    //                     DerivativesParamVerifier                           //
+    //                           PolicyFramework                              //
     ////////////////////////////////////////////////////////////////////////////
-    error DerivativesParamVerifier__InvalidDerivativesConfig();
-    error DerivativesParamVerifier__ZeroShare();
+
+    error PolicyFramework_FrameworkNotYetRegistered();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                     LicensorApprovalManager                            //
+    ////////////////////////////////////////////////////////////////////////////
+    error LicensorApprovalManager__Unauthorized();
 
     ////////////////////////////////////////////////////////////////////////////
     //                            Dispute Module                              //

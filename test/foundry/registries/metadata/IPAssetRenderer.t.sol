@@ -83,10 +83,9 @@ contract IPAssetRendererTest is BaseTest {
         BaseTest.setUp();
         governance = new Governance(address(this));
         // TODO: Create an IP record registry mock instead.
-        licenseRegistry = new LicenseRegistry("");
         accessController = new AccessController(address(governance));
         moduleRegistry = new ModuleRegistry(address(governance));
-        MockERC721 erc721 = new MockERC721();
+        MockERC721 erc721 = new MockERC721("MockERC721");
         ipAccountRegistry = new IPAccountRegistry(
             address(new ERC6551Registry()),
             address(accessController),
@@ -97,6 +96,7 @@ contract IPAssetRendererTest is BaseTest {
             address(moduleRegistry),
             address(ipAccountRegistry)
         );
+        licenseRegistry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
 
         vm.prank(alice);
         uint256 tokenId = erc721.mintId(alice, 99);

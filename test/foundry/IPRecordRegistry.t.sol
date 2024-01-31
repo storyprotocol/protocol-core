@@ -69,7 +69,7 @@ contract IPRecordRegistryTest is BaseTest {
             address(moduleRegistry),
             address(ipAccountRegistry)
         );
-        MockERC721 erc721 = new MockERC721();
+        MockERC721 erc721 = new MockERC721("MockERC721");
         tokenAddress = address(erc721);
         tokenId = erc721.mintId(alice, 99);
 

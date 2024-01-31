@@ -41,4 +41,8 @@ library ShortStringOps {
     function stringToBytes32(string memory s) internal pure returns (bytes32) {
         return ShortString.unwrap(s.toShortString());
     }
+
+    function bytes32ToString(bytes32 b) internal pure returns (string memory) {
+        return ShortString.wrap(b).toString();
+    }
 }
