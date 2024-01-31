@@ -56,8 +56,7 @@ abstract contract ModuleBaseTest is BaseTest {
         ipAssetRegistry = new IPAssetRegistry(
             address(accessController),
             address(new ERC6551Registry()),
-            address(new IPAccountImpl()),
-            address(metadataProvider)
+            address(new IPAccountImpl())
         );
         accessController.initialize(address(ipAssetRegistry), address(moduleRegistry));
         licenseRegistry = new LicenseRegistry(address(accessController), address(ipAssetRegistry));

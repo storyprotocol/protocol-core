@@ -14,7 +14,6 @@ import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
-import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { IPAssetRenderer } from "contracts/registries/metadata/IPAssetRenderer.sol";
@@ -48,7 +47,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     AccessController public accessController;
 
     IPAssetRenderer public renderer;
-    IPMetadataProvider public metadataProvider;
     IPAccountRegistry public ipAccountRegistry;
     IPAssetRegistry public ipAssetRegistry;
     LicenseRegistry public licenseRegistry;
@@ -125,7 +123,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         // TODO: deployment sequence
         contractKey = "IPAssetRegistry";
         _predeploy(contractKey);
-        ipAssetRegistry = new IPAssetRegistry(address(accessController), ERC6551_REGISTRY, address(implementation), address(metadataProvider));
+        ipAssetRegistry = new IPAssetRegistry(address(accessController), ERC6551_REGISTRY, address(implementation));
         _postdeploy(contractKey, address(ipAssetRegistry));
 
         contractKey = "LicenseRegistry";
@@ -142,17 +140,13 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         );
         _postdeploy(contractKey, address(ipResolver));
 
-        contractKey = "MetadataProvider";
-        _predeploy(contractKey);
-        metadataProvider = new IPMetadataProvider(address(moduleRegistry));
-        _postdeploy(contractKey, address(metadataProvider));
-
         contractKey = "RegistrationModule";
         _predeploy(contractKey);
         registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry)
+            address(licenseRegistry),
+            address(ipResolver)
         );
         _postdeploy(contractKey, address(registrationModule));
 

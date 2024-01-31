@@ -27,8 +27,11 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
     constructor(
         address controller,
         address assetRegistry,
-        address licenseRegistry
-    ) BaseModule(controller, assetRegistry, licenseRegistry) {}
+        address licenseRegistry,
+        address resolverAddr
+    ) BaseModule(controller, assetRegistry, licenseRegistry) {
+        resolver = IPResolver(resolverAddr);
+    }
 
     /// @notice Registers a root-level IP into the protocol. Root-level IPs can
     ///         be thought of as organizational hubs for encapsulating policies
@@ -53,7 +56,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         }
 
         // Perform core IP registration and IP account creation.
-        address ipId = IP_ASSET_REGISTRY.register(block.chainid, tokenContract, tokenId, address(resolver), true);
+        address ipId = IP_ASSET_REGISTRY.register(block.chainid, tokenContract, tokenId, address(resolver), true, "");
 
         // Perform core IP policy creation.
         if (policyId != 0) {
@@ -91,19 +94,8 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
             revert Errors.RegistrationModule__InvalidOwner();
         }
 
-        address ipId = IP_ASSET_REGISTRY.register(block.chainid, tokenContract, tokenId, address(resolver), true);
-        // ACCESS_CONTROLLER.setPermission(
-        //     ipId,
-        //     address(this),
-        //     address(resolver),
-        //     IPResolver.setMetadata.selector,
-        //     1
-        // );
-
-        //   Perform core IP registration and IP account creation.
-        // solhint-disable-next-line no-unused-vars
         bytes memory metadata = abi.encode(
-            IP.Metadata({
+            IP.MetadataV1({
                 name: ipName,
                 hash: contentHash,
                 registrationDate: uint64(block.timestamp),
@@ -111,8 +103,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
                 uri: externalURL
             })
         );
-        // TODO: handle setting matadata
-        // metadataProvider.setMetadata(ipId, metadata);
+        address ipId = IP_ASSET_REGISTRY.register(block.chainid, tokenContract, tokenId, address(resolver), true, metadata);
 
         // Perform core IP derivative licensing - the license must be owned by the caller.
         // TODO: return resulting policy index

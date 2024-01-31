@@ -16,7 +16,7 @@ import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
-import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
+import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProviderV1.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
 import { IPAssetRenderer } from "contracts/registries/metadata/IPAssetRenderer.sol";
@@ -40,7 +40,7 @@ contract IPAssetRendererTest is BaseTest {
     address royaltyModule = vm.addr(0x2222);
 
     /// @notice Gets the metadata provider used for IP registration.
-    IPMetadataProvider metadataProvider;
+    MetadataProviderV1 metadataProvider;
 
     /// @notice Used for registration in the IP asset registry.
     RegistrationModule public registrationModule;
@@ -98,13 +98,10 @@ contract IPAssetRendererTest is BaseTest {
         vm.prank(alice);
         uint256 tokenId = erc721.mintId(alice, 99);
 
-        metadataProvider = new IPMetadataProvider(address(moduleRegistry));
-
         ipAssetRegistry = new IPAssetRegistry(
             address(accessController),
             address(new ERC6551Registry()),
-            address(new IPAccountImpl()),
-            address(metadataProvider)
+            address(new IPAccountImpl())
         );
 
         resolver = new IPResolver(
@@ -117,7 +114,8 @@ contract IPAssetRendererTest is BaseTest {
         registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry)
+            address(licenseRegistry),
+            address(resolver)
         );
         renderer = new IPAssetRenderer(
             address(ipAssetRegistry),
@@ -126,17 +124,8 @@ contract IPAssetRendererTest is BaseTest {
             royaltyModule
         );
         moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
-        vm.prank(address(registrationModule));
-        ipId = ipAssetRegistry.register(
-            block.chainid,
-            address(erc721),
-            tokenId,
-            address(resolver),
-            true
-        );
-
         bytes memory metadata = abi.encode(
-            IP.Metadata({
+            IP.MetadataV1({
                 name: IP_NAME,
                 hash: IP_HASH,
                 registrationDate: IP_REGISTRATION_DATE,
@@ -146,7 +135,14 @@ contract IPAssetRendererTest is BaseTest {
             })
         );
         vm.prank(address(registrationModule));
-        metadataProvider.setMetadata(ipId, metadata);
+        ipId = ipAssetRegistry.register(
+            block.chainid,
+            address(erc721),
+            tokenId,
+            address(resolver),
+            true,
+            metadata
+        );
     }
 
     /// @notice Tests that the constructor works as expected.

@@ -5,7 +5,6 @@ import { ResolverBaseTest } from "test/foundry/resolvers/ResolverBase.t.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { KeyValueResolver } from "contracts/resolvers/KeyValueResolver.sol";
 import { IKeyValueResolver } from "contracts/interfaces/resolvers/IKeyValueResolver.sol";
-import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
@@ -43,13 +42,13 @@ contract IPResolverTest is ResolverBaseTest {
         MockERC721 erc721 = new MockERC721("MockERC721");
         vm.prank(alice);
         ipResolver = IPResolver(_deployModule());
-        IPMetadataProvider metadataProvider = new IPMetadataProvider(address(moduleRegistry));
         uint256 tokenId = erc721.mintId(alice, 99);
         // TODO: Mock this correctly
         registrationModule = address(new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry)
+            address(licenseRegistry),
+            address(ipResolver)
         ));
         moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, registrationModule);
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));
@@ -59,7 +58,8 @@ contract IPResolverTest is ResolverBaseTest {
             address(erc721),
             tokenId,
             address(ipResolver),
-            true
+            true,
+            ""
         );
     }
 

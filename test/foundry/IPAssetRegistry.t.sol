@@ -5,7 +5,8 @@ import { BaseTest } from "./utils/BaseTest.sol";
 import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
 import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
-import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
+import { IP } from "contracts/lib/IP.sol";
+import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProviderV1.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
@@ -18,6 +19,12 @@ import { Errors } from "contracts/lib/Errors.sol";
 /// @title IP Asset Registry Testing Contract
 /// @notice Contract for testing core IP registration.
 contract IPAssetRegistryTest is BaseTest {
+
+    // Default IP record attributes.
+    string public constant IP_NAME = "IPAsset";
+    string public constant IP_DESCRIPTION = "IPs all the way down.";
+    bytes32 public constant IP_HASH = "0x0f";
+    string public constant IP_EXTERNAL_URL = "https://storyprotocol.xyz";
 
     /// @notice Placeholder for registration module.
     address public registrationModule = vm.addr(0x1337);
@@ -35,9 +42,6 @@ contract IPAssetRegistryTest is BaseTest {
     /// @notice The IP account registry used for account creation.
     IPAccountRegistry public ipAccountRegistry;
 
-    /// @notice The IP metadata provider associated with an IP.
-    IPMetadataProvider public metadataProvider;
-
     /// @notice Mock NFT address for IP registration testing.
     address public tokenAddress;
 
@@ -50,6 +54,9 @@ contract IPAssetRegistryTest is BaseTest {
     /// @notice Mock IP account implementation address.
     address public ipAccountImpl;
 
+    /// @notice The expected IP account or IP identifier.
+    address public ipId;
+
     /// @notice Initializes the IP asset registry testing contract.
     function setUp() public virtual override {
         BaseTest.setUp();
@@ -58,7 +65,6 @@ contract IPAssetRegistryTest is BaseTest {
         moduleRegistry = IModuleRegistry(
             address(new MockModuleRegistry(registrationModule))
         );
-        metadataProvider = new IPMetadataProvider(address(moduleRegistry));
         ipAccountImpl = address(new IPAccountImpl());
         ipAccountRegistry = new IPAccountRegistry(
             erc6551Registry,
@@ -68,15 +74,20 @@ contract IPAssetRegistryTest is BaseTest {
         registry = new IPAssetRegistry(
             accessController,
             erc6551Registry,
-            ipAccountImpl,
-            address(metadataProvider)
-
+            ipAccountImpl
         );
         MockERC721 erc721 = new MockERC721("MockERC721");
         tokenAddress = address(erc721);
         tokenId = erc721.mintId(alice, 99);
 
         assertEq(ipAccountRegistry.getIPAccountImpl(), ipAccountImpl);
+        ipId = _getAccount(
+            ipAccountImpl,
+            block.chainid,
+            tokenAddress,
+            tokenId,
+            ipAccountRegistry.IP_ACCOUNT_SALT()
+        );
     }
 
     /// @notice Tests retrieval of IP canonical IDs.
@@ -96,19 +107,12 @@ contract IPAssetRegistryTest is BaseTest {
     /// @notice Tests registration of IP assets.
     function test_IPAssetRegistry_Register() public {
         uint256 totalSupply = registry.totalSupply();
-        address ipId = _getAccount(
-            ipAccountImpl,
-            block.chainid,
-            tokenAddress,
-            tokenId,
-            ipAccountRegistry.IP_ACCOUNT_SALT()
-        );
 
         // Ensure unregistered IP preconditions are satisfied.
         assertEq(registry.resolver(ipId), address(0));
         assertTrue(!registry.isRegistered(ipId));
-        assertTrue(!registry.isRegistered(block.chainid, tokenAddress, tokenId));
         assertTrue(!IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
+        bytes memory metadata = _generateMetadata();
 
         // Ensure all expected events are emitted.
         vm.expectEmit(true, true, true, true);
@@ -120,7 +124,8 @@ contract IPAssetRegistryTest is BaseTest {
             tokenAddress,
             tokenId,
             resolver,
-            address(metadataProvider)
+            address(registry.metadataProvider()),
+            metadata
         );
         vm.prank(registrationModule);
         registry.register(
@@ -128,33 +133,26 @@ contract IPAssetRegistryTest is BaseTest {
             tokenAddress,
             tokenId,
             resolver,
-            true
+            true,
+            metadata
         );
 
         /// Ensures IP asset post-registration conditions are met.
         assertEq(registry.resolver(ipId), resolver);
         assertEq(totalSupply + 1, registry.totalSupply());
         assertTrue(registry.isRegistered(ipId));
-        assertTrue(registry.isRegistered(block.chainid, tokenAddress, tokenId));
         assertTrue(IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
     }
 
     /// @notice Tests registration of IP assets with lazy account creation.
     function test_IPAssetRegistry_RegisterWithoutAccount() public {
         uint256 totalSupply = registry.totalSupply();
-        address ipId = _getAccount(
-            ipAccountImpl,
-            block.chainid,
-            tokenAddress,
-            tokenId,
-            ipAccountRegistry.IP_ACCOUNT_SALT()
-        );
-
         // Ensure unregistered IP preconditions are satisfied.
         assertEq(registry.resolver(ipId), address(0));
         assertTrue(!registry.isRegistered(ipId));
         assertTrue(!IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
 
+        bytes memory metadata = _generateMetadata();
         // Ensure all expected events are emitted.
         vm.expectEmit(true, true, true, true);
         emit IIPAssetRegistry.IPResolverSet(ipId, resolver);
@@ -165,7 +163,8 @@ contract IPAssetRegistryTest is BaseTest {
             tokenAddress,
             tokenId,
             resolver,
-            address(metadataProvider)
+            address(registry.metadataProvider()),
+            metadata
         );
         vm.prank(registrationModule);
         registry.register(
@@ -173,7 +172,8 @@ contract IPAssetRegistryTest is BaseTest {
             tokenAddress,
             tokenId,
             resolver,
-            false
+            false,
+            metadata
         );
 
         /// Ensures IP asset post-registration conditions are met.
@@ -192,12 +192,14 @@ contract IPAssetRegistryTest is BaseTest {
         );
         assertTrue(IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
         vm.prank(registrationModule);
+        bytes memory metadata = _generateMetadata();
         registry.register(
             block.chainid,
             tokenAddress,
             tokenId,
             resolver,
-            true
+            true,
+            metadata
         );
 
     }
@@ -205,36 +207,31 @@ contract IPAssetRegistryTest is BaseTest {
     /// @notice Tests registration of IP reverts when an IP has already been registered.
     function test_IPAssetRegistry_Register_Reverts_ExistingRegistration() public {
         vm.startPrank(registrationModule);
-        registry.register(block.chainid, tokenAddress, tokenId, resolver, false);
-        vm.expectRevert(Errors.IPAssetRegistry_AlreadyRegistered.selector);
-        registry.register(block.chainid, tokenAddress, tokenId, resolver, false );
+        bytes memory metadata = _generateMetadata();
+        registry.register(block.chainid, tokenAddress, tokenId, resolver, false, metadata);
+        vm.expectRevert(Errors.IPAssetRegistry__AlreadyRegistered.selector);
+        registry.register(block.chainid, tokenAddress, tokenId, resolver, false, metadata);
     }
 
     /// @notice Tests registration of IP reverts if not called by a registration module.
-    function test_IPAssetRegistry_Register_notOwner() public {
-        vm.prank(vm.addr(3));
-        registry.register(block.chainid, tokenAddress, tokenId, resolver, false);
+    function test_IPAssetRegistry_Register_Reverts_InvalidRegistrationModule() public {
+        bytes memory metadata = _generateMetadata();
+        vm.expectRevert(Errors.IPAssetRegistry__Unauthorized.selector);
+        vm.prank(alice);
+        registry.register(block.chainid, tokenAddress, tokenId, resolver, false, metadata);
     }
 
     /// @notice Tests IP resolver setting works.
     function test_IPAssetRegistry_SetResolver() public {
-        address ipId = _getAccount(
-            ipAccountImpl,
-            block.chainid,
-            tokenAddress,
-            tokenId,
-            ipAccountRegistry.IP_ACCOUNT_SALT()
-        );
-        vm.startPrank(alice);
-        registry.register(block.chainid, tokenAddress, tokenId, resolver, false);
-
+        vm.startPrank(registrationModule);
+        registry.register(block.chainid, tokenAddress, tokenId, resolver, false, _generateMetadata());
         vm.expectEmit(true, true, true, true);
         emit IIPAssetRegistry.IPResolverSet(
             ipId,
             resolver2
         );
-        registry.setResolver(block.chainid, tokenAddress, tokenId, resolver2);
-        assertEq(registry.resolver(block.chainid, tokenAddress, tokenId), resolver2);
+        registry.setResolver(ipId, resolver2);
+        assertEq(registry.resolver(ipId), resolver2);
 
         // Check that resolvers can be reassigned.
         vm.expectEmit(true, true, true, true);
@@ -242,29 +239,15 @@ contract IPAssetRegistryTest is BaseTest {
             ipId,
             resolver
         );
-        registry.setResolver(block.chainid, tokenAddress, tokenId, resolver);
+        registry.setResolver(ipId, resolver);
         assertEq(registry.resolver(ipId), resolver);
     }
 
     /// @notice Tests IP resolver setting reverts if an IP is not yet registered.
     function test_IPAssetRegistry_SetResolver_Reverts_NotYetRegistered() public {
         vm.startPrank(alice);
-        vm.expectRevert(Errors.IPAssetRegistry_NotYetRegistered.selector);
-        registry.setResolver(block.chainid, tokenAddress, tokenId, resolver);
-    }
-
-    /// @notice Tests IP resolver setting reverts if the resolver is invalid.
-    function test_IPAssetRegistry_SetResolver_Reverts_ResolverInvalid() public {
-        registry.register(
-            block.chainid,
-            tokenAddress,
-            tokenId,
-            resolver,
-            true
-        );
-        vm.startPrank(alice);
-        vm.expectRevert(Errors.IPAssetRegistry_ResolverInvalid.selector);
-        registry.setResolver(block.chainid, tokenAddress, tokenId, address(0));
+        vm.expectRevert(Errors.IPAssetRegistry__NotYetRegistered.selector);
+        registry.setResolver(ipId, resolver);
     }
 
     /// @notice Helper function for generating an account address.
@@ -281,6 +264,19 @@ contract IPAssetRegistryTest is BaseTest {
             chainId,
             contractAddress,
             contractId
+        );
+    }
+
+    function _generateMetadata() internal view returns (bytes memory) {
+        return abi.encode(
+            IP.MetadataV1({
+                name: IP_NAME,
+                hash: IP_HASH,
+                registrationDate: uint64(block.timestamp),
+                registrant: alice,
+                uri: IP_EXTERNAL_URL
+
+            })
         );
     }
 
