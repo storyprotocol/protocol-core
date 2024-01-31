@@ -5,11 +5,10 @@ artifacts/
 forge-cache/
 
 # Ignores development broadcast logs
-!/broadcast
-# ignore 1 for now, it's tenderly fork
-/broadcast/*/1/
-/broadcast/*/31337/
-/broadcast/**/dry-run/
+# !/broadcast
+deployments
+broadcast
+!/broadcast/*/1/
 
 # Docs
 docs/
@@ -31,9 +30,6 @@ coverage
 abi
 typechain
 !./script/out
-
-# hardhat-tenderly plugin
-deployments
 
 # converage
 lcov.info
