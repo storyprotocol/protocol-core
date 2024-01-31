@@ -37,8 +37,7 @@ contract TestLSClaimer is TestHelper {
     function setUp() public override {
         TestHelper.setUp();
         _setUMLPolicyFrameworkManager();
-        _setLsClaimer();
-
+        nft = new MockERC721("mock");
         _addUMLPolicy(
             true,
             true,
@@ -61,10 +60,20 @@ contract TestLSClaimer is TestHelper {
                 derivativesRevShare: 10
             })
         );
+
+        _setLsClaimer();
     }
 
     function _setLsClaimer() internal {
         vm.startPrank(deployer);
+        for (uint256 i = 1; i < 101; i++) {
+            nft.mintId(deployer, i);
+            nftIds.push(i);
+        }
+    
+        registrationModule.registerRootIp(policyIds["uml_cheap_flexible"],address(nft), nftIds[1]);
+        vm.stopPrank();
+
         for (uint256 i = 1; i < 100; i++) {
             uint256 licenseId = licenseRegistry.mintLicense(
                 policyIds["uml_cheap_flexible"],
@@ -73,10 +82,11 @@ contract TestLSClaimer is TestHelper {
                 deployer
             );
 
+            vm.startPrank(_getIpId(nft, nftIds[i]));
             registrationModule.registerDerivativeIp(licenseId, address(nft), nftIds[i + 1], "", bytes32(""), "");
+            vm.stopPrank();
         }
-        vm.stopPrank();
-
+        
         // /*///////////////////////////////////////////////////////////////
         //                     SET UP LSCLAIMER
         // ////////////////////////////////////////////////////////////////*/
@@ -142,15 +152,6 @@ contract TestLSClaimer is TestHelper {
         assertEq(address(testLsClaimer.ILICENSE_REGISTRY()), address(licenseRegistry));
         assertEq(address(testLsClaimer.IROYALTY_POLICY_LS()), address(royaltyPolicyLS));
     }
-
-    /*     function test_LSClaimer_setRNFT() public {
-        LSClaimer testClaimer = new LSClaimer(address(licenseRegistry), address(royaltyPolicyLS), address(1));
-
-        vm.startPrank(address(1));
-        testClaimer.setRNFT(address(2));
-
-        assertEq(testClaimer.RNFT(), address(2));
-    } */
 
     function test_LSClaimer_claim_revert_AlreadyClaimed() public {
         address claimerIpId = _getIpId(nft, nftIds[1]);
