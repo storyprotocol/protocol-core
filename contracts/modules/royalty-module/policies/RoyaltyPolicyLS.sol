@@ -21,6 +21,13 @@ import { Errors } from "contracts/lib/Errors.sol";
 contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     using SafeERC20 for IERC20;
 
+    struct LSRoyaltyData {
+        address splitClone; // Indicates the address of the LiquidSplitClone contract for a given ipId
+        address claimer; // Indicates the address of the claimer contract for a given ipId
+        uint32 royaltyStack; // Indicates the royalty stack for a given ipId
+        uint32 minRoyalty; // Indicates the minimum royalty for a given ipId
+    }
+
     /// @notice Percentage scale - 1000 rnfts represents 100%
     uint32 public constant TOTAL_RNFT_SUPPLY = 1000;
 
@@ -35,13 +42,6 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
 
     /// @notice LiquidSplitMain address
     address public immutable LIQUID_SPLIT_MAIN;
-
-    struct LSRoyaltyData {
-        address splitClone; // Indicates the address of the LiquidSplitClone contract for a given ipId
-        address claimer; // Indicates the address of the claimer contract for a given ipId
-        uint32 royaltyStack; // Indicates the royalty stack for a given ipId
-        uint32 minRoyalty; // Indicates the minimum royalty for a given ipId
-    }
 
     /// @notice Links the ipId to its royalty data
     mapping(address ipId => LSRoyaltyData) public royaltyData;
@@ -138,6 +138,9 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
         ILiquidSplitMain(LIQUID_SPLIT_MAIN).withdraw(_account, _withdrawETH, _tokens);
     }
 
+    /// @notice Checks if the royalty stack is valid
+    /// @param _parentIpIds The parent ipIds
+    /// @param _minRoyalty The minimum royalty
     function _checkRoyaltyStackIsValid(address[] memory _parentIpIds, uint32 _minRoyalty) internal view returns (uint32, uint32) {
         // the loop below is limited to a length of 100 
         // given the minimum royalty step of 1% and a cap of 100%

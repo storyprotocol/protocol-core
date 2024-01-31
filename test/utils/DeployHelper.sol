@@ -16,7 +16,6 @@ contract DeployHelper is Test {
     ArbitrationPolicySP public arbitrationPolicySP;
     RoyaltyModule public royaltyModule;
     RoyaltyPolicyLS public royaltyPolicyLS;
-    LSClaimer public lsClaimer;
 
     uint256 public constant ARBITRATION_PRICE = 1000 * 10 ** 6; // 1000 USDC
 
@@ -35,17 +34,17 @@ contract DeployHelper is Test {
         disputeModule = new DisputeModule();
         arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), USDC, ARBITRATION_PRICE);
         royaltyModule = new RoyaltyModule();
-        royaltyPolicyLS = new RoyaltyPolicyLS(address(royaltyModule), LIQUID_SPLIT_FACTORY, LIQUID_SPLIT_MAIN);
+        royaltyPolicyLS = new RoyaltyPolicyLS(address(royaltyModule), address(1), LIQUID_SPLIT_FACTORY, LIQUID_SPLIT_MAIN);
 
         // if code at USDC is zero, then deploy ERC20 to that address
         // and also deploy other RoyaltyModule dependencies
-        if (USDC.code.length == 0) {
+        /*         if (USDC.code.length == 0) {
             bytes memory code = vm.getDeployedCode("MockUSDC.sol:MockUSDC");
             vm.etch(USDC, code);
             vm.label(USDC, "USDC");
             // assertEq(USDC.code, code);
             MockUSDC(USDC).mint(USDC_RICH, 100_000_000 ether);
-        }
+        } */
 
         vm.label(address(disputeModule), "disputeModule");
         vm.label(address(arbitrationPolicySP), "arbitrationPolicySP");
