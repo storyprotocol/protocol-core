@@ -82,13 +82,13 @@ library Errors {
     error LicenseRegistry__MintLicenseParamFailed();
     error LicenseRegistry__LinkParentParamFailed();
     error LicenseRegistry__TransferParamFailed();
-    error LicenseRegistry__InvalidLicensor();
     error LicenseRegistry__ParamVerifierAlreadySet();
     error LicenseRegistry__CommercialTermInNonCommercialPolicy();
     error LicenseRegistry__EmptyParamName();
     error LicenseRegistry__UnregisteredFrameworkAddingPolicy();
     error LicenseRegistry__UnauthorizedAccess();
     error LicenseRegistry__LicensorNotRegistered();
+    error LicenseRegistry__CallerNotLicensorAndPolicyNotSet();
 
     ////////////////////////////////////////////////////////////////////////////
     //                        LicenseRegistryAware                            //

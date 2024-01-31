@@ -276,19 +276,18 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         uint256 amount, // mint amount
         address receiver
     ) external returns (uint256 licenseId) {
-        // TODO: check if licensor are valid IP Ids
         // TODO: check if licensor has been tagged by disputer
-        // TODO: check if licensor allowed sender to mint in their behalf
-        // TODO: licensor == msg.sender, expect if derivatives && withReciprocal
-        if (licensorIp == address(0)) {
-            revert Errors.LicenseRegistry__InvalidLicensor();
-        }
         if (!IP_ACCOUNT_REGISTRY.isIpAccount(licensorIp)) {
             revert Errors.LicenseRegistry__LicensorNotRegistered();
         }
+        // If the IP ID doesn't have a policy (meaning, no permissionless derivatives)
         if (!_policiesPerIpId[licensorIp].contains(policyId)) {
-            revert Errors.LicenseRegistry__LicensorDoesntHaveThisPolicy();
+            // We have to check if the caller is licensor or authorized to mint.
+            if (!ACCESS_CONTROLLER.checkPermission(licensorIp, msg.sender, address(this), this.mintLicense.selector)) {
+                revert Errors.LicenseRegistry__CallerNotLicensorAndPolicyNotSet();
+            }
         }
+        // If a policy is set, then is only up to the policy params.
         // Verify minting param
         Licensing.Policy memory pol = policy(policyId);
         Licensing.PolicyFramework storage fw = _framework(pol.policyFrameworkId);

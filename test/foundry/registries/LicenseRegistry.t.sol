@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
+// contracts
 import { Test } from "forge-std/Test.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy }
     from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
-import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Errors } from "contracts/lib/Errors.sol";
-import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
@@ -16,7 +15,13 @@ import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { AccessPermission } from "contracts/lib/AccessPermission.sol";
+
+// External
 import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
+import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+
 
 contract LicenseRegistryTest is Test {
     using Strings for *;
@@ -223,9 +228,88 @@ contract LicenseRegistryTest is Test {
         return licenseId;
     }
 
-    function test_LicenseRegistry_linkIpToParent() public {
+    function test_LicenseRegistry_mintLicense_revert_licensorNotRegistered() public {
+        module1.register();
+        Licensing.Policy memory policy = _createPolicy();
+        vm.prank(address(module1));
+        uint256 policyId = registry.addPolicy(policy);
+        vm.prank(ipOwner);
+        registry.addPolicyToIp(ipId1, policyId);
 
-        // TODO: something cleaner than this
+        vm.expectRevert(Errors.LicenseRegistry__LicensorNotRegistered.selector);
+        registry.mintLicense(policyId, address(0), 2, licenseHolder);
+    }
+
+    function test_LicenseRegistry_mintLicense_revert_callerNotLicensorAndIpIdHasNoPolicy() public {
+        module1.register();   
+        Licensing.Policy memory policy = _createPolicy();
+        vm.prank(address(module1));
+        uint256 policyId = registry.addPolicy(policy);     
+        vm.expectRevert(Errors.LicenseRegistry__CallerNotLicensorAndPolicyNotSet.selector);
+        registry.mintLicense(policyId, ipId1, 2, licenseHolder);
+    }
+
+    function test_LicenseRegistry_mintLicense_ipIdHasNoPolicyButCallerIsLicensor() public {
+        module1.register();
+        Licensing.Policy memory policy = _createPolicy();
+        IPAccountImpl ipAccount = IPAccountImpl(payable(ipId1));
+        vm.prank(address(module1));
+        uint256 policyId = registry.addPolicy(policy);
+        address owner = ipAccount.owner();
+        // Call with owner
+        vm.prank(owner);
+        uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
+        assertEq(licenseId, 1);
+
+        // Call with permission
+        /*
+        address signer = address(0x999);
+        bytes4 selector = bytes4(
+            keccak256(
+                bytes("mintLicense(uint256,address,uint256,address)")
+            )
+        );
+        vm.prank(owner);
+        ipAccount.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setPermission(address,address,address,bytes4,uint8)",
+                address(ipAccount),
+                signer,
+                address(registry),
+                selector,
+                AccessPermission.ALLOW
+            )
+        );
+        vm.prank(signer);
+        licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
+        assertEq(licenseId, 2);
+
+        // Call from IP Account
+        vm.prank(ipId1);
+        licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
+        assertEq(licenseId, 3);
+        // Call from IP Account from execute
+        vm.prank(owner);
+        bytes memory result = ipAccount.execute(
+            address(registry),
+            0,
+            abi.encodeWithSignature(
+                "mintLicense(uint256,address,uint256,address)",
+                policyId,
+                ipId1,
+                1,
+                licenseHolder
+            )
+        );
+        assertEq(4, abi.decode(result, (uint256)));
+        */
+    }
+
+
+
+    function test_LicenseRegistry_linkIpToParent() public {
         uint256 licenseId = test_LicenseRegistry_mintLicense();
         vm.prank(ipOwner);
         registry.linkIpToParent(licenseId, ipId2, licenseHolder);
