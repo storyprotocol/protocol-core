@@ -262,13 +262,9 @@ contract LicenseRegistryTest is Test {
         assertEq(licenseId, 1);
 
         // Call with permission
-        /*
+        
         address signer = address(0x999);
-        bytes4 selector = bytes4(
-            keccak256(
-                bytes("mintLicense(uint256,address,uint256,address)")
-            )
-        );
+        bytes4 selector = registry.mintLicense.selector;
         vm.prank(owner);
         ipAccount.execute(
             address(accessController),
@@ -304,7 +300,7 @@ contract LicenseRegistryTest is Test {
             )
         );
         assertEq(4, abi.decode(result, (uint256)));
-        */
+    
     }
 
 
