@@ -78,7 +78,7 @@ contract LSClaimer is IClaimerLS, ERC1155Holder, ReentrancyGuard {
 
     /// @notice Checks if a claiming path is valid
     /// @param _path The path between the IP_ID and the parent or grandparent ipId
-    function _checkIfPathIsValid(address[] memory _path) internal view {
+    function _checkIfPathIsValid(address[] calldata _path) internal view {
         // the loop below is limited to less than 100 iterations/parents 
         // given the minimum royalty step of 1% only allows max 100 nodes in a tree
         for (uint256 i = 0; i < _path.length - 1; i++) {
@@ -128,53 +128,4 @@ contract LSClaimer is IClaimerLS, ERC1155Holder, ReentrancyGuard {
 
         if (!callStatus) revert Errors.RoyaltyPolicyLS__TransferFailed();
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    /*     function withdraw(
-        address account,
-        uint256 withdrawETH,
-        ERC20[] calldata tokens
-    ) external override {
-        uint256[] memory tokenAmounts = new uint256[](tokens.length);
-        uint256 ethAmount;
-        if (withdrawETH != 0) {
-        ethAmount = _withdraw(account);
-        }
-        unchecked {
-        // overflow should be impossible in for-loop index
-        for (uint256 i = 0; i < tokens.length; ++i) {
-            // overflow should be impossible in array length math
-            tokenAmounts[i] = _withdrawERC20(account, tokens[i]);
-        }
-        emit Withdrawal(account, ethAmount, tokens, tokenAmounts);
-        }
-    } */
 }

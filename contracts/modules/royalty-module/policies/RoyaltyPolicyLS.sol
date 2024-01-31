@@ -24,8 +24,8 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     struct LSRoyaltyData {
         address splitClone; // Indicates the address of the LiquidSplitClone contract for a given ipId
         address claimer; // Indicates the address of the claimer contract for a given ipId
-        uint32 royaltyStack; // Indicates the royalty stack for a given ipId
-        uint32 minRoyalty; // Indicates the minimum royalty for a given ipId
+        uint32 royaltyStack; // Indicates the royalty stack for a given ipId (number between 0 and 1000)
+        uint32 minRoyalty; // Indicates the minimum royalty for a given ipId (number between 0 and 1000)
     }
 
     /// @notice Percentage scale - 1000 rnfts represents 100%
@@ -75,7 +75,7 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     /// @param _ipId The ipId
     /// @param _parentIpIds The parent ipIds
     /// @param _data The data to initialize the policy
-    function initPolicy(address _ipId, address[] memory _parentIpIds, bytes calldata _data) external onlyRoyaltyModule {
+    function initPolicy(address _ipId, address[] calldata _parentIpIds, bytes calldata _data) external onlyRoyaltyModule {
         (uint32 minRoyalty) = abi.decode(_data, (uint32));
         // root you can choose 0% but children have to choose at least 1%
         if (minRoyalty == 0 && _parentIpIds.length > 0) revert Errors.RoyaltyPolicyLS__ZeroMinRoyalty();
@@ -141,7 +141,9 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     /// @notice Checks if the royalty stack is valid
     /// @param _parentIpIds The parent ipIds
     /// @param _minRoyalty The minimum royalty
-    function _checkRoyaltyStackIsValid(address[] memory _parentIpIds, uint32 _minRoyalty) internal view returns (uint32, uint32) {
+    /// @return royaltyStack The royalty stack
+    ///         newRoyaltyStack The new royalty stack
+    function _checkRoyaltyStackIsValid(address[] calldata _parentIpIds, uint32 _minRoyalty) internal view returns (uint32, uint32) {
         // the loop below is limited to a length of 100 
         // given the minimum royalty step of 1% and a cap of 100%
         uint32 royaltyStack;
