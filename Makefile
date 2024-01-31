@@ -41,11 +41,14 @@ format:
 	npx prettier --write contracts/**/**/**/*.sol
 	npx prettier --write contracts/**/**/**/**/*.sol
 
+# generate forge coverage on pinned mainnet fork
+# process lcov file, ignore test, script, and contracts/mocks folders
+# generate html report from lcov.info (ignore "line ... has branchcov but no linecov data" error)
 coverage:
 	mkdir -p coverage
 	forge coverage --report lcov --fork-url https://rpc.ankr.com/eth --fork-block-number 19042069
-	lcov --remove lcov.info -o lcov.info 'test/*' 'script/*' 'contracts/mocks/*'
-	genhtml lcov.info --output-dir coverage
+	lcov --remove lcov.info -o coverage/lcov.info 'test/*' 'script/*' 'contracts/mocks/*' --rc branch_coverage=1
+	genhtml coverage/lcov.info -o coverage --rc branch_coverage=1 --ignore-errors category
 
 abi:
 	mkdir -p abi

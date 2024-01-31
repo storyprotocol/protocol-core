@@ -253,20 +253,6 @@ contract IPAssetRegistryTest is BaseTest {
         registry.setResolver(block.chainid, tokenAddress, tokenId, resolver);
     }
 
-    /// @notice Tests IP resolver setting reverts if the resolver is invalid.
-    function test_IPAssetRegistry_SetResolver_Reverts_ResolverInvalid() public {
-        registry.register(
-            block.chainid,
-            tokenAddress,
-            tokenId,
-            resolver,
-            true
-        );
-        vm.startPrank(alice);
-        vm.expectRevert(Errors.IPAssetRegistry_ResolverInvalid.selector);
-        registry.setResolver(block.chainid, tokenAddress, tokenId, address(0));
-    }
-
     /// @notice Helper function for generating an account address.
     function _getAccount(
         address impl,

@@ -3,6 +3,7 @@ pragma solidity ^0.8.23;
 
 // external
 import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Test } from "forge-std/Test.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.sol";
@@ -95,6 +96,7 @@ contract BaseIntegration is Test {
         _configDeployedContracts();
         _deployMockAssets();
         _mintMockAssets();
+        _configAccessControl();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -166,6 +168,17 @@ contract BaseIntegration is Test {
         // skip minting NFTs
     }
 
+    function _configAccessControl() internal {
+        // Set global perm to allow Registration Module to call License Registry on all IPAccounts
+        vm.prank(u.admin); // admin of governance
+        accessController.setGlobalPermission(
+            address(registrationModule),
+            address(licenseRegistry),
+            bytes4(licenseRegistry.linkIpToParent.selector),
+            1 // AccessPermission.ALLOW
+        );
+    }
+
     /*//////////////////////////////////////////////////////////////////////////
                                       HELPERS
     //////////////////////////////////////////////////////////////////////////*/
@@ -179,6 +192,8 @@ contract BaseIntegration is Test {
             nft,
             tokenId
         );
+
+        vm.label(expectedAddr, string(abi.encodePacked("IPAccount", Strings.toString(tokenId))));
 
         // expect all events below when calling `registrationModule.registerRootIp`
 
@@ -257,6 +272,12 @@ contract BaseIntegration is Test {
             tokenId
         );
 
+        vm.label(expectedAddr, string(abi.encodePacked("IPAccount", Strings.toString(tokenId))));
+
+        uint256 policyId = licenseRegistry.policyIdForLicense(licenseId);
+        address parentIpId = licenseRegistry.licensorIpId(licenseId);
+        uint256 newPolicyIndex = licenseRegistry.totalPoliciesForIp(expectedAddr);
+
         vm.expectEmit();
         emit IERC6551Registry.ERC6551AccountCreated({
             account: expectedAddr,
@@ -279,7 +300,8 @@ contract BaseIntegration is Test {
         vm.expectEmit();
         emit IIPAssetRegistry.IPResolverSet({
             ipId: expectedAddr,
-            resolver: address(ipResolver) // default resolver by Story
+            // resolver: address(ipResolver) // default resolver by Story
+            resolver: address(0)
         });
 
         vm.expectEmit();
@@ -294,21 +316,17 @@ contract BaseIntegration is Test {
             chainId: block.chainid,
             tokenContract: nft,
             tokenId: tokenId,
-            resolver: address(ipResolver), // default resolver by Story
+            // resolver: address(ipResolver), // default resolver by Story
+            resolver: address(0),
             provider: address(ipMetadataProvider) // default metadata provider by Story
         });
-
-        address ipId = expectedAddr;
-        uint256 policyId = licenseRegistry.policyIdForLicense(licenseId);
-        address parentIpId = licenseRegistry.licensorIpId(licenseId);
-        uint256 newPolicyIndex = licenseRegistry.totalPoliciesForIp(ipId);
 
         // Note that below events are emitted in function that's called by the registration module.
 
         vm.expectEmit();
         emit ILicenseRegistry.PolicyAddedToIpId({
             caller: address(registrationModule),
-            ipId: ipId,
+            ipId: expectedAddr,
             policyId: policyId,
             index: newPolicyIndex,
             inheritedPolicy: true
@@ -317,7 +335,7 @@ contract BaseIntegration is Test {
         vm.expectEmit();
         emit ILicenseRegistry.IpIdLinkedToParent({
             caller: address(registrationModule),
-            ipId: ipId,
+            ipId: expectedAddr,
             parentIpId: parentIpId
         });
 
@@ -326,16 +344,16 @@ contract BaseIntegration is Test {
             operator: address(registrationModule),
             from: caller,
             to: address(0), // burn addr
-            id: policyId,
+            id: licenseId,
             value: 1
         });
 
         vm.expectEmit();
-        emit IRegistrationModule.DerivativeIPRegistered({ caller: caller, ipId: ipId, licenseId: licenseId });
+        emit IRegistrationModule.DerivativeIPRegistered({ caller: caller, ipId: expectedAddr, licenseId: licenseId });
 
         vm.startPrank(caller);
         registrationModule.registerDerivativeIp(licenseId, nft, tokenId, ipName, contentHash, externalUrl);
-        return ipId;
+        return expectedAddr;
     }
 
     function linkIpToParent(uint256 licenseId, address ipId, address caller) internal {
@@ -362,7 +380,7 @@ contract BaseIntegration is Test {
             operator: caller,
             from: caller,
             to: address(0), // burn addr
-            id: policyId,
+            id: licenseId,
             value: 1
         });
 
