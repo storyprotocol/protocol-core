@@ -62,9 +62,7 @@ contract UMLPolicyFrameworkManager is
     /// Called by licenseRegistry to verify policy parameters for linking an IP
     /// with the licensor's IP ID
     /// @param licenseId the ID of the license
-    /// @param null not needed
     /// @param ipId the IP ID of the IP being linked
-    /// @param null parent not neeeded
     /// @param policyData the licensing policy to verify
     function verifyLink(
         uint256 licenseId,
@@ -94,11 +92,7 @@ contract UMLPolicyFrameworkManager is
     }
 
     /// Called by licenseRegistry to verify policy parameters for minting a license
-    /// @param null caller not needed
     /// @param policyWasInherited check if IP is subjected to it's parent's policy
-    /// @param null licensor not needeed
-    /// @param null receiver not needed
-    /// @param null mintAmount not needed
     /// @param policyData the licensing policy to verify
     function verifyMint(
         address,
@@ -120,8 +114,6 @@ contract UMLPolicyFrameworkManager is
     /// Called by licenseRegistry to verify policy parameters for transferring a license
     /// @param licenseId the ID of the license being transferred
     /// @param from address of the sender
-    /// @param null destination not needed
-    /// @param null amount not needed
     /// @param policyData the licensing policy to verify
     function verifyTransfer(
         uint256 licenseId,
