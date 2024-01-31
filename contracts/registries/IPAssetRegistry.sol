@@ -165,10 +165,6 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
     /// @param id The canonical ID of the IP.
     /// @param resolverAddr The address of the resolver being set.
     function _setResolver(address id, address resolverAddr) internal {
-        if (resolverAddr == address(0)) {
-            revert Errors.IPAssetRegistry_ResolverInvalid();
-        }
-
         ERC165Checker.supportsInterface(resolverAddr, type(IResolver).interfaceId);
         _records[id].resolver = resolverAddr;
         emit IPResolverSet(id, resolverAddr);

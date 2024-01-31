@@ -31,7 +31,7 @@ contract JsonDeploymentHandler is Script {
 
     function _readDeployment() internal {
         string memory root = vm.projectRoot();
-        string memory filePath = string.concat("./deploy-out/deployment-", (block.chainid).toString(), ".json");
+        string memory filePath = string.concat("/deploy-out/deployment-", (block.chainid).toString(), ".json");
         string memory path = string.concat(root, filePath);
         readJson = vm.readFile(path);
     }
