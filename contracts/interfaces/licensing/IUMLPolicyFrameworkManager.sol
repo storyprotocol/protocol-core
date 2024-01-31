@@ -41,10 +41,6 @@ struct UMLPolicy {
 /// @title IUMLPolicyFrameworkManager
 /// @notice Defines the interface for a Policy Framework Manager compliant with the UML standard
 interface IUMLPolicyFrameworkManager is IPolicyFrameworkManager {
-
-    /// @notice Emitted when a new policy is added to the registry
-    event UMLPolicyAdded(uint256 indexed policyId, UMLPolicy policy);
-
     /// @notice Registers a new policy to the registry
     /// @dev Must encode the policy into bytes to be stored in the LicenseRegistry
     /// @param umlPolicy UMLPolicy compliant licensing term values

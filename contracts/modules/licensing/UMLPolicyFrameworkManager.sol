@@ -55,8 +55,89 @@ contract UMLPolicyFrameworkManager is
     function registerPolicy(UMLPolicy calldata umlPolicy) external returns (uint256 policyId) {
         _verifyComercialUse(umlPolicy);
         _verifyDerivatives(umlPolicy);
-        emit UMLPolicyAdded(policyId, umlPolicy);
+        // No need to emit here, as the LicenseRegistry will emit the event
         return LICENSE_REGISTRY.registerPolicy(abi.encode(umlPolicy));
+    }
+
+    /// Called by licenseRegistry to verify policy parameters for linking an IP
+    /// with the licensor's IP ID
+    /// @param licenseId the ID of the license
+    /// @param null not needed
+    /// @param ipId the IP ID of the IP being linked
+    /// @param null parent not neeeded
+    /// @param policyData the licensing policy to verify
+    function verifyLink(
+        uint256 licenseId,
+        address,
+        address ipId,
+        address,
+        bytes calldata policyData
+    ) external override onlyLicenseRegistry returns (bool) {
+        UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
+        bool linkingOK = true;
+        // If the policy defines commercial revenue sharing, call the royalty module
+        // to set it for the licensor
+        if (policy.commercialRevShare > 0) {
+            // RoyaltyModule.setRevShare()
+        }
+        // If the policy defines derivative revenue sharing, call the royalty module
+        // to set it for the licensor in future derivatives
+        if (policy.derivativesRevShare > 0) {
+            // RoyaltyModule.setRevShareForDerivatives()
+        }
+        // If the policy defines the licensor must approve derivatives, check if the
+        // derivative is approved by the licensor
+        if (policy.derivativesApproval) {
+            linkingOK = linkingOK && isDerivativeApproved(licenseId, ipId);
+        }
+        return linkingOK;
+    }
+
+    /// Called by licenseRegistry to verify policy parameters for minting a license
+    /// @param null caller not needed
+    /// @param policyWasInherited check if IP is subjected to it's parent's policy
+    /// @param null licensor not needeed
+    /// @param null receiver not needed
+    /// @param null mintAmount not needed
+    /// @param policyData the licensing policy to verify
+    function verifyMint(
+        address,
+        bool policyWasInherited,
+        address,
+        address,
+        uint256,
+        bytes memory policyData
+    ) external onlyLicenseRegistry returns (bool) {
+        UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
+        // If the policy defines no derivative is allowed, and policy was inherited,
+        // we don't allow minting
+        if (!policy.derivativesAllowed && policyWasInherited) {
+            return false;
+        }
+        return true;
+    }
+
+    /// Called by licenseRegistry to verify policy parameters for transferring a license
+    /// @param licenseId the ID of the license being transferred
+    /// @param from address of the sender
+    /// @param null destination not needed
+    /// @param null amount not needed
+    /// @param policyData the licensing policy to verify
+    function verifyTransfer(
+        uint256 licenseId,
+        address from,
+        address,
+        uint256,
+        bytes memory policyData
+    ) external onlyLicenseRegistry returns (bool) {
+        UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
+        // If license is non-transferable, only the licensor can transfer out a license
+        // (or be directly minted to someone else)
+        if (!policy.transferable) {
+            // True if from == licensor
+            return from == LICENSE_REGISTRY.licensorIpId(licenseId);
+        }
+        return true;
     }
 
     /// @notice Fetchs a policy from the registry, decoding the raw bytes into a UMLPolicy struct
@@ -181,68 +262,6 @@ contract UMLPolicyFrameworkManager is
             interfaceId == type(ILinkParamVerifier).interfaceId ||
             interfaceId == type(IMintParamVerifier).interfaceId ||
             interfaceId == type(ITransferParamVerifier).interfaceId;
-    }
-
-    function verifyLink(
-        uint256 licenseId,
-        address,
-        address ipId,
-        address,
-        bytes calldata policyData
-    ) external override onlyLicenseRegistry returns (bool) {
-        UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
-        bool linkingOK = true;
-        // If the policy defines commercial revenue sharing, call the royalty module
-        // to set it for the licensor
-        if (policy.commercialRevShare > 0) {
-            // RoyaltyModule.setRevShare()
-        }
-        // If the policy defines derivative revenue sharing, call the royalty module
-        // to set it for the licensor in future derivatives
-        if (policy.derivativesRevShare > 0) {
-            // RoyaltyModule.setRevShareForDerivatives()
-        }
-        // If the policy defines the licensor must approve derivatives, check if the
-        // derivative is approved by the licensor
-        if (policy.derivativesApproval) {
-            linkingOK = linkingOK && isDerivativeApproved(licenseId, ipId);
-        }
-        return linkingOK;
-    }
-
-    function verifyMint(
-        address,
-        bool policyWasInherited,
-        address,
-        address,
-        uint256,
-        bytes memory policyData
-    ) external onlyLicenseRegistry returns (bool) {
-        UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
-        // TODO:
-        // If the policy defines no derivative is allowed, and policy was inherited,
-        // we don't allow minting
-        if (!policy.derivativesAllowed && policyWasInherited) {
-            return false;
-        }
-        return true;
-    }
-
-    function verifyTransfer(
-        uint256 licenseId,
-        address from,
-        address,
-        uint256,
-        bytes memory policyData
-    ) external onlyLicenseRegistry returns (bool) {
-        UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
-        // If license is non-transferable, only the licensor can transfer out a license
-        // (or be directly minted to someone else)
-        if (!policy.transferable) {
-            // True if from == licensor
-            return from == LICENSE_REGISTRY.licensorIpId(licenseId);
-        }
-        return true;
     }
 
     /// Checks the configuration of commercial use and throws if the policy is not compliant
