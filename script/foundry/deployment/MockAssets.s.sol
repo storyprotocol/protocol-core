@@ -6,6 +6,9 @@ pragma solidity ^0.8.23;
 import { console2 } from "forge-std/console2.sol";
 import { Script } from "forge-std/Script.sol";
 import { stdJson } from "forge-std/StdJson.sol";
+// test
+import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
+import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 // script
 import { BroadcastManager } from "script/foundry/utils/BroadcastManager.s.sol";
 import { JsonDeploymentHandler } from "script/foundry/utils/JsonDeploymentHandler.s.sol";
@@ -36,7 +39,7 @@ contract MockAssets is Script, BroadcastManager, JsonDeploymentHandler {
         _postdeploy("MockERC20", address(mockERC20));
 
         _predeploy("MockERC721");
-        MockERC721 mockERC721 = new MockERC721("Mock");
+        MockERC721 mockERC721 = new MockERC721("MockERC721");
         _postdeploy("MockERC721", address(mockERC721));
     }
 

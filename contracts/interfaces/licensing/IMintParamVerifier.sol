@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 
 pragma solidity ^0.8.23;
-import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
+import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.sol";
 
-interface IMintParamVerifier is IParamVerifier {
+/// @title IMintParamVerifier
+/// @notice LicenseRegistry will call this to verify the minting parameters are compliant
+/// with the policy associated with the license to mint.
+interface IMintParamVerifier is IPolicyVerifier {
     function verifyMint(
         address caller,
-        uint256 policyId,
-        bool policyAddedByLinking,
+        bool policyWasInherited,
         address licensor,
         address receiver,
         uint256 mintAmount,
-        bytes memory data
+        bytes memory policyData
     ) external returns (bool);
 }
-

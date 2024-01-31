@@ -41,7 +41,7 @@ contract IPResolverTest is ResolverBaseTest {
     /// @notice Initializes the base token contract for testing.
     function setUp() public virtual override(ResolverBaseTest) {
         ResolverBaseTest.setUp();
-        MockERC721 erc721 = new MockERC721("Mock");
+        MockERC721 erc721 = new MockERC721("MockERC721");
         vm.prank(alice);
         ipResolver = IPResolver(_deployModule());
         IPMetadataProvider metadataProvider = new IPMetadataProvider(address(moduleRegistry));
