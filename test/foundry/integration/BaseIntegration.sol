@@ -208,7 +208,8 @@ contract BaseIntegration is Test {
         vm.expectEmit();
         emit IIPAssetRegistry.IPResolverSet({
             ipId: expectedAddr,
-            resolver: address(ipResolver) // default resolver by Story
+            // resolver: address(ipResolver) // default resolver by Story
+            resolver: address(0)
         });
 
         vm.expectEmit();
@@ -223,14 +224,15 @@ contract BaseIntegration is Test {
             chainId: block.chainid,
             tokenContract: nft,
             tokenId: tokenId,
-            resolver: address(ipResolver), // default resolver by Story
+            // resolver: address(ipResolver), // default resolver by Story
+            resolver: address(0),
             provider: address(ipMetadataProvider) // default metadata provider by Story
         });
 
         // TODO: fix msg.sender being different from the prank caller of this function
         //       (since it's another contract calling into this function)
         vm.expectEmit();
-        emit IRegistrationModule.RootIPRegistered({ caller: address(msg.sender), ipId: expectedAddr, policyId: 0 });
+        emit IRegistrationModule.RootIPRegistered({ caller: caller, ipId: expectedAddr, policyId: 0 });
 
         // policyId = 0 means no policy attached directly on creation
         vm.startPrank(caller);
