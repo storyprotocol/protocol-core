@@ -93,13 +93,13 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         // owner is the vm.pranker
 
         vm.startPrank(u.alice);
-        ipAcct[1] = registerIpAccount(nft, 1);
+        ipAcct[1] = registerIpAccount(nft, 1, u.alice);
 
         vm.startPrank(u.bob);
-        ipAcct[3] = registerIpAccount(nft, 3);
+        ipAcct[3] = registerIpAccount(nft, 3, u.bob);
 
         vm.startPrank(u.carl);
-        ipAcct[5] = registerIpAccount(nft, 5);
+        ipAcct[5] = registerIpAccount(nft, 5, u.carl);
 
         /*///////////////////////////////////////////////////////////////
                             ADD POLICIES TO IP ACCOUNTS
@@ -145,7 +145,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                 u.carl
             );
 
-            ipAcct[6] = registerIpAccount(nft, 6);
+            ipAcct[6] = registerIpAccount(nft, 6, u.carl);
             linkIpToParent(carl_license_from_root_alice, ipAcct[6], u.carl);
         }
 
@@ -170,7 +170,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                 u.alice
             );
 
-            ipAcct[2] = registerIpAccount(nft, 2);
+            ipAcct[2] = registerIpAccount(nft, 2, u.alice);
             linkIpToParent(alice_license_from_root_bob, ipAcct[2], u.alice);
 
             uint256 tokenId = 99999999;
@@ -197,7 +197,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                 "IP NAME",
                 bytes32("hash"),
                 "external URL",
-                u.alice
+                u.alice // caller
             );
         }
 

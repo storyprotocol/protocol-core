@@ -16,14 +16,14 @@ import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { IRegistrationModule } from "contracts/interfaces/modules/IRegistrationModule.sol";
 import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
-import { IIPRecordRegistry } from "contracts/interfaces/registries/IIPRecordRegistry.sol";
+import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
 import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
+import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { IPAssetRenderer } from "contracts/registries/metadata/IPAssetRenderer.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
@@ -54,7 +54,7 @@ contract BaseIntegration is Test {
     // Registry
     IPAccountRegistry internal ipAccountRegistry;
     IPMetadataProvider public ipMetadataProvider;
-    IPRecordRegistry internal ipRecordRegistry;
+    IPAssetRegistry internal ipAssetRegistry;
     LicenseRegistry internal licenseRegistry;
     ModuleRegistry internal moduleRegistry;
 
@@ -115,27 +115,28 @@ contract BaseIntegration is Test {
             address(ipAccountImpl)
         );
         licenseRegistry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
-        ipRecordRegistry = new IPRecordRegistry(address(moduleRegistry), address(ipAccountRegistry));
+        ipMetadataProvider = new IPMetadataProvider(address(moduleRegistry));
+        ipAssetRegistry = new IPAssetRegistry(
+            address(accessController),
+            address(erc6551Registry),
+            address(ipAccountImpl),
+            address(ipMetadataProvider)
+        );
         ipResolver = new IPResolver(
             address(accessController),
-            address(ipRecordRegistry),
-            address(ipAccountRegistry),
+            address(ipAssetRegistry),
             address(licenseRegistry)
         );
-        ipMetadataProvider = new IPMetadataProvider(address(moduleRegistry));
         registrationModule = new RegistrationModule(
             address(accessController),
-            address(ipRecordRegistry),
-            address(ipAccountRegistry),
-            address(licenseRegistry),
-            address(ipResolver),
-            address(ipMetadataProvider)
+            address(ipAssetRegistry),
+            address(licenseRegistry)
         );
         taggingModule = new TaggingModule();
         royaltyModule = new RoyaltyModule();
         disputeModule = new DisputeModule();
         ipAssetRenderer = new IPAssetRenderer(
-            address(ipRecordRegistry),
+            address(ipAssetRegistry),
             address(licenseRegistry),
             address(taggingModule),
             address(royaltyModule)
@@ -173,7 +174,7 @@ contract BaseIntegration is Test {
                                       HELPERS
     //////////////////////////////////////////////////////////////////////////*/
 
-    function registerIpAccount(address nft, uint256 tokenId) internal returns (address) {
+    function registerIpAccount(address nft, uint256 tokenId, address caller) internal returns (address) {
         address expectedAddr = ERC6551AccountLib.computeAddress(
             address(erc6551Registry),
             address(ipAccountImpl),
@@ -205,27 +206,19 @@ contract BaseIntegration is Test {
         });
 
         vm.expectEmit();
-        emit IIPRecordRegistry.IPAccountSet({
-            ipId: expectedAddr,
-            chainId: block.chainid,
-            tokenContract: nft,
-            tokenId: tokenId
-        });
-
-        vm.expectEmit();
-        emit IIPRecordRegistry.IPResolverSet({
+        emit IIPAssetRegistry.IPResolverSet({
             ipId: expectedAddr,
             resolver: address(ipResolver) // default resolver by Story
         });
 
         vm.expectEmit();
-        emit IIPRecordRegistry.MetadataProviderSet({
+        emit IIPAssetRegistry.MetadataProviderSet({
             ipId: expectedAddr,
             metadataProvider: address(ipMetadataProvider) // default metadata provider by Story
         });
 
         vm.expectEmit();
-        emit IIPRecordRegistry.IPRegistered({
+        emit IIPAssetRegistry.IPRegistered({
             ipId: expectedAddr,
             chainId: block.chainid,
             tokenContract: nft,
@@ -236,15 +229,16 @@ contract BaseIntegration is Test {
 
         // TODO: fix msg.sender being different from the prank caller of this function
         //       (since it's another contract calling into this function)
-        // vm.expectEmit();
-        // emit IRegistrationModule.RootIPRegistered({ caller: address(msg.sender), ipId: expectedAddr, policyId: 0 });
+        vm.expectEmit();
+        emit IRegistrationModule.RootIPRegistered({ caller: address(msg.sender), ipId: expectedAddr, policyId: 0 });
 
         // policyId = 0 means no policy attached directly on creation
+        vm.startPrank(caller);
         return registrationModule.registerRootIp(0, nft, tokenId);
     }
 
-    function registerIpAccount(MockERC721 nft, uint256 tokenId) internal returns (address) {
-        return registerIpAccount(address(nft), tokenId);
+    function registerIpAccount(MockERC721 nft, uint256 tokenId, address caller) internal returns (address) {
+        return registerIpAccount(address(nft), tokenId, caller);
     }
 
     function registerDerivativeIp(
@@ -285,27 +279,19 @@ contract BaseIntegration is Test {
         });
 
         vm.expectEmit();
-        emit IIPRecordRegistry.IPAccountSet({
-            ipId: expectedAddr,
-            chainId: block.chainid,
-            tokenContract: nft,
-            tokenId: tokenId
-        });
-
-        vm.expectEmit();
-        emit IIPRecordRegistry.IPResolverSet({
+        emit IIPAssetRegistry.IPResolverSet({
             ipId: expectedAddr,
             resolver: address(ipResolver) // default resolver by Story
         });
 
         vm.expectEmit();
-        emit IIPRecordRegistry.MetadataProviderSet({
+        emit IIPAssetRegistry.MetadataProviderSet({
             ipId: expectedAddr,
             metadataProvider: address(ipMetadataProvider) // default metadata provider by Story
         });
 
         vm.expectEmit();
-        emit IIPRecordRegistry.IPRegistered({
+        emit IIPAssetRegistry.IPRegistered({
             ipId: expectedAddr,
             chainId: block.chainid,
             tokenContract: nft,
@@ -349,6 +335,7 @@ contract BaseIntegration is Test {
         vm.expectEmit();
         emit IRegistrationModule.DerivativeIPRegistered({ caller: caller, ipId: ipId, licenseId: licenseId });
 
+        vm.startPrank(caller);
         registrationModule.registerDerivativeIp(licenseId, nft, tokenId, ipName, contentHash, externalUrl);
         return ipId;
     }
@@ -379,6 +366,7 @@ contract BaseIntegration is Test {
             value: 1
         });
 
+        vm.startPrank(caller);
         licenseRegistry.linkIpToParent(licenseId, ipId, caller);
     }
 }

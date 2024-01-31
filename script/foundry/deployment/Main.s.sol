@@ -32,6 +32,7 @@ import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicy
 
 // test
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
 // script
 import { StringUtil } from "script/foundry/utils/StringUtil.sol";
@@ -184,7 +185,26 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         // mockModule = new MockModule(address(ipAccountRegistry), address(moduleRegistry), "MockModule");
     }
 
-    function _predeploy(string memory contractKey) private {
+    function _configureDeployedProtocolContracts() private {
+        _readDeployment();
+
+        accessController = AccessController(_readAddress("main.AccessController"));
+        ipAccountRegistry = IPAccountRegistry(_readAddress("main.IPAccountRegistry"));
+        moduleRegistry = ModuleRegistry(_readAddress("main.ModuleRegistry"));
+        licenseRegistry = LicenseRegistry(_readAddress("main.LicenseRegistry"));
+        ipAssetRegistry = IPAssetRegistry(_readAddress("main.IPAssetRegistry"));
+        ipResolver = IPResolver(_readAddress("main.IPResolver"));
+        metadataProvider = IPMetadataProvider(_readAddress("main.MetadataProvider"));
+        registrationModule = RegistrationModule(_readAddress("main.RegistrationModule"));
+        taggingModule = TaggingModule(_readAddress("main.TaggingModule"));
+        royaltyModule = RoyaltyModule(_readAddress("main.RoyaltyModule"));
+        disputeModule = DisputeModule(_readAddress("main.DisputeModule"));
+        renderer = IPAssetRenderer(_readAddress("main.IPAssetRenderer"));
+
+        _configureInteractions();
+    }
+
+    function _predeploy(string memory contractKey) private view {
         console2.log(string.concat("Deploying ", contractKey, "..."));
     }
 
