@@ -122,11 +122,7 @@ contract BaseIntegration is Test {
             address(ipAccountImpl),
             address(ipMetadataProvider)
         );
-        ipResolver = new IPResolver(
-            address(accessController),
-            address(ipAssetRegistry),
-            address(licenseRegistry)
-        );
+        ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry), address(licenseRegistry));
         registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
@@ -347,6 +343,8 @@ contract BaseIntegration is Test {
         address parentIpId = licenseRegistry.licensorIpId(licenseId);
         uint256 newPolicyIndex = licenseRegistry.totalPoliciesForIp(ipId);
 
+        uint256 prevLicenseAmount = licenseRegistry.balanceOf(caller, licenseId);
+
         vm.expectEmit();
         emit ILicenseRegistry.PolicyAddedToIpId({
             caller: caller,
@@ -370,5 +368,20 @@ contract BaseIntegration is Test {
 
         vm.startPrank(caller);
         licenseRegistry.linkIpToParent(licenseId, ipId, caller);
+
+        assertEq(licenseRegistry.balanceOf(caller, licenseId), prevLicenseAmount - 1, "license not burnt on linking");
+        assertTrue(licenseRegistry.isParent(parentIpId, ipId), "parent IP account is not parent");
+        assertEq(
+            keccak256(
+                abi.encode(
+                    licenseRegistry.policyForIpAtIndex(
+                        parentIpId,
+                        licenseRegistry.indexOfPolicyForIp(parentIpId, policyId)
+                    )
+                )
+            ),
+            keccak256(abi.encode(licenseRegistry.policyForIpAtIndex(ipId, newPolicyIndex))),
+            "policy not the same in parent to child"
+        );
     }
 }

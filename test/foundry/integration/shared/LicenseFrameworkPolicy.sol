@@ -230,6 +230,16 @@ contract Integration_Shared_LicenseFramework_and_Policy {
         _;
     }
 
+    modifier withMintPaymentPolicy(string memory policyName, bool mustBeTrue) {
+        // NOTE: If `mustBeTrue` = true, then the policy will return `true` on successful payment.
+        //       Ttherwise (false), the policy will return `false` even on successful payment.
+        MintPaymentPolicyFrameworkManager _pfm = MintPaymentPolicyFrameworkManager(pfm["mint_payment"].addr);
+
+        string memory pName = string(abi.encodePacked("mint_payment_", policyName));
+        policyIds[pName] = _pfm.addPolicy(MintPaymentPolicy({ mustBeTrue: mustBeTrue }));
+        _;
+    }
+
     /*//////////////////////////////////////////////////////////////////////////
                                 HELPER FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
