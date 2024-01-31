@@ -84,6 +84,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                 distributionChannels: new string[](0)
             })
         )
+        withMintPaymentPolicy("normal", true) // => mint_payment_normal
+        withMintPaymentPolicy("fail", false) // => mint_payment_fail (always returns false even if payment is made)
     {
         /*///////////////////////////////////////////////////////////////
                                 REGISTER IP ACCOUNTS
@@ -107,6 +109,9 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
 
         vm.startPrank(u.alice);
         licenseRegistry.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_cheap_flexible"]);
+
+        vm.startPrank(u.bob);
+        licenseRegistry.addPolicyToIp(ipAcct[3], policyIds["mint_payment_normal"]);
 
         vm.startPrank(u.bob);
         // NOTE: the below two achieve the same functionality, however the commented out method fails.
@@ -157,17 +162,29 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         {
             vm.startPrank(u.alice);
             uint256 mintAmount = 2;
+            uint256 paymentPerMint = MintPaymentPolicyFrameworkManager(pfm["mint_payment"].addr).payment();
 
-            erc20.approve(
-                pfm["mint_payment"].addr,
-                mintAmount * MintPaymentPolicyFrameworkManager(pfm["mint_payment"].addr).payment()
-            );
+            erc20.approve(pfm["mint_payment"].addr, mintAmount * paymentPerMint);
+
+            uint256 aliceTokenBalance = erc20.balanceOf(u.alice);
+            uint256 pfmTokenBalance = erc20.balanceOf(pfm["mint_payment"].addr);
 
             uint256 alice_license_from_root_bob = licenseRegistry.mintLicense(
-                policyIds["uml_noncom_deriv_reciprocal_derivative"],
+                policyIds["mint_payment_normal"],
                 ipAcct[3],
-                2,
+                mintAmount,
                 u.alice
+            );
+
+            assertEq(
+                aliceTokenBalance - erc20.balanceOf(u.alice),
+                mintAmount * paymentPerMint,
+                "Alice didn't pay to PolicyFrameworkManager"
+            );
+            assertEq(
+                erc20.balanceOf(pfm["mint_payment"].addr) - pfmTokenBalance,
+                mintAmount * paymentPerMint,
+                "MintPaymentPolicyFrameworkManager didn't receive payment"
             );
 
             ipAcct[2] = registerIpAccount(nft, 2, u.alice);
