@@ -59,8 +59,8 @@ abstract contract ModuleBaseTest is BaseTest {
             address(new IPAccountImpl()),
             address(metadataProvider)
         );
-        accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-        licenseRegistry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
+        accessController.initialize(address(ipAssetRegistry), address(moduleRegistry));
+        licenseRegistry = new LicenseRegistry(address(accessController), address(ipAssetRegistry));
         baseModule = IModule(_deployModule());
     }
 

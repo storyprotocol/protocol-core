@@ -53,13 +53,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         }
 
         // Perform core IP registration and IP account creation.
-        address ipId = IP_ASSET_REGISTRY.register(
-            block.chainid,
-            tokenContract,
-            tokenId,
-            address(resolver),
-            true
-        );
+        address ipId = IP_ASSET_REGISTRY.register(block.chainid, tokenContract, tokenId, address(resolver), true);
 
         // Perform core IP policy creation.
         if (policyId != 0) {
@@ -97,13 +91,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
             revert Errors.RegistrationModule__InvalidOwner();
         }
 
-        address ipId = IP_ASSET_REGISTRY.register(
-            block.chainid,
-            tokenContract,
-            tokenId,
-            address(resolver),
-            true
-        );
+        address ipId = IP_ASSET_REGISTRY.register(block.chainid, tokenContract, tokenId, address(resolver), true);
         // ACCESS_CONTROLLER.setPermission(
         //     ipId,
         //     address(this),
@@ -112,7 +100,8 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         //     1
         // );
 
-        // Perform core IP registration and IP account creation.
+        //   Perform core IP registration and IP account creation.
+        // solhint-disable-next-line no-unused-vars
         bytes memory metadata = abi.encode(
             IP.Metadata({
                 name: ipName,

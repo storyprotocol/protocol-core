@@ -83,7 +83,6 @@ contract IPAssetRendererTest is BaseTest {
         BaseTest.setUp();
         governance = new Governance(address(this));
         // TODO: Create an IP asset registry mock instead.
-        licenseRegistry = new LicenseRegistry("");
         // TODO: Create an IP record registry mock instead.
         accessController = new AccessController(address(governance));
         moduleRegistry = new ModuleRegistry(address(governance));
