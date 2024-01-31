@@ -4,10 +4,12 @@ pragma solidity ^0.8.23;
 
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMetadataProvider.sol";
 import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
+import { IMetadataProviderMigratable } from "contracts/interfaces/registries/metadata/IMetadataProviderMigratable.sol";
+import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProviderV1.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
 /// @title IP Asset Registry
@@ -23,35 +25,42 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
     /// @notice Attributes for the IP asset type.
     struct Record {
         // Metadata provider for Story Protocol canonicalized metadata.
-        address metadataProvider;
-        // IP translator for custom IP asset types.
+        IMetadataProviderMigratable metadataProvider;
         address resolver;
     }
-
-    address public immutable DEFAULT_METADATA_PROVIDER;
 
     /// @notice Tracks the total number of IP assets in existence.
     uint256 public totalSupply = 0;
 
-    /// @dev Maps an IP, identified by its IP ID, to an IP asset.
+    /// @notice Protocol governance administrator of the IP record registry.
+    address owner;
+
+    /// @dev Maps an IP, identified by its IP ID, to an IP record.
     mapping(address => Record) internal _records;
+
+    /// @notice Tracks the current metadata provider used for IP registrations.
+    IMetadataProviderMigratable internal _metadataProvider;
+
+    /// @notice Ensures only protocol governance owner may call a function.
+    modifier onlyOwner {
+        if (msg.sender != owner) {
+            revert Errors.IPAssetRegistry__Unauthorized();
+        }
+        _;
+    }
 
     /// @notice Initializes the IP Asset Registry.
     /// @param erc6551Registry The address of the ERC6551 registry.
     /// @param accessController The address of the access controller.
     /// @param ipAccountImpl The address of the IP account implementation.
-    /// @param metadataProvider The address of the default metadata provider.
     constructor(
         address accessController,
         address erc6551Registry,
-        address ipAccountImpl,
-        address metadataProvider
+        address ipAccountImpl
     ) IPAccountRegistry(erc6551Registry, accessController, ipAccountImpl) {
-        if (metadataProvider == address(0)) {
-            revert Errors.IPAssetRegistry_InvalidMetadataProvider();
-        }
-
-        DEFAULT_METADATA_PROVIDER = metadataProvider;
+        // TODO: Migrate this to a parameterized governance owner address.
+        owner = msg.sender;
+        _metadataProvider = IMetadataProviderMigratable(new MetadataProviderV1(address(this)));
     }
 
     /// @notice Registers an NFT as an IP, creating a corresponding IP asset.
@@ -64,48 +73,25 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
         address tokenContract,
         uint256 tokenId,
         address resolverAddr,
-        bool createAccount
-    ) external returns (address account) {
-        address id = ipId(chainId, tokenContract, tokenId);
+        bool createAccount,
+        bytes calldata data
+    ) external returns (address id) {
+        id = ipId(chainId, tokenContract, tokenId);
         if (_records[id].resolver != address(0)) {
-            revert Errors.IPAssetRegistry_AlreadyRegistered();
+            revert Errors.IPAssetRegistry__AlreadyRegistered();
         }
 
-        // This is to emphasize the semantic differences between utilizing the
-        // IP account as an identifier versus as an account used for auth.
-        account = id;
-
-        if (account.code.length == 0 && createAccount) {
-            account = registerIpAccount(chainId, tokenContract, tokenId);
-            if (account != id) {
-                revert Errors.IPAssetRegistry_InvalidAccount();
-            }
+        if (
+            id.code.length == 0 && 
+            createAccount &&
+            id != registerIpAccount(chainId, tokenContract, tokenId)
+        ) {
+            revert Errors.IPAssetRegistry__InvalidAccount();
         }
         _setResolver(id, resolverAddr);
-        _setMetadataProvider(id, DEFAULT_METADATA_PROVIDER);
+        _setMetadata(id, _metadataProvider, data);
         totalSupply++;
-        emit IPRegistered(id, chainId, tokenContract, tokenId, resolverAddr, DEFAULT_METADATA_PROVIDER);
-    }
-
-    /// @notice Sets the resolver for an IP based on its NFT attributes.
-    /// @param chainId The chain identifier of where the NFT resides.
-    /// @param tokenContract The address of the NFT.
-    /// @param tokenId The token identifier of the NFT.
-    /// @param resolverAddr The address of the resolver being set.
-    function setResolver(uint256 chainId, address tokenContract, uint256 tokenId, address resolverAddr) external {
-        // only IP owner can set resolver
-        if (msg.sender != _getOwner(chainId, tokenContract, tokenId)) {
-            revert Errors.IPAssetRegistry_Unauthorized();
-        }
-
-        address id = ipId(chainId, tokenContract, tokenId);
-
-        // Resolvers may not be set unless the IP was registered into the protocol.
-        if (_records[id].resolver == address(0)) {
-            revert Errors.IPAssetRegistry_NotYetRegistered();
-        }
-
-        _setResolver(id, resolverAddr);
+        emit IPRegistered(id, chainId, tokenContract, tokenId, resolverAddr, address(_metadataProvider), data);
     }
 
     /// @notice Gets the canonical IP identifier associated with an IP NFT.
@@ -125,17 +111,6 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
         return _records[id].resolver != address(0);
     }
 
-    /// @notice Checks whether an IP was registered based on its NFT attributes.
-    /// @param chainId The chain identifier of where the NFT resides.
-    /// @param tokenContract The address of the NFT.
-    /// @param tokenId The token identifier of the NFT.
-    /// @return Whether the NFT was registered into the protocol as IP.
-    /// TODO: Deprecate this in favor of solely using IP IDs for registration identification.
-    function isRegistered(uint256 chainId, address tokenContract, uint256 tokenId) external view returns (bool) {
-        address id = ipId(chainId, tokenContract, tokenId);
-        return _records[id].resolver != address(0);
-    }
-
     /// @notice Gets the resolver bound to an IP based on its ID.
     /// @param id The canonical identifier for the IP.
     /// @return The IP resolver address if registered, else the zero address.
@@ -143,22 +118,62 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
         return _records[id].resolver;
     }
 
-    /// @notice Gets the metadata linked to an IP based on its ID.
-    /// @param id The canonical identifier for the IP.
-    /// @return The metadata that was bound to this IP at creation time.
-    function metadataProvider(address id) external view returns (address) {
-        return _records[id].metadataProvider;
+    /// @notice Gets the metadata provider used for new metadata registrations.
+    /// @return The address of the metadata provider used for new IP registrations.
+    function metadataProvider() external view returns (address) {
+        return address(_metadataProvider);
     }
 
-    /// @notice Gets the resolver bound to an IP based on its NFT attributes.
-    /// @param chainId The chain identifier of where the NFT resides.
-    /// @param tokenContract The address of the NFT.
-    /// @param tokenId The token identifier of the NFT.
-    /// @return The IP resolver address if registered, else the zero address.
-    /// TODO: Deprecate this in favor of solely using IP IDs for resolver identification.
-    function resolver(uint256 chainId, address tokenContract, uint256 tokenId) external view returns (address) {
-        address id = ipId(chainId, tokenContract, tokenId);
-        return _records[id].resolver;
+    /// @notice Gets the metadata provider linked to an IP based on its ID.
+    /// @param id The canonical identifier for the IP.
+    /// @return The metadata provider that was bound to this IP at creation time.
+    function metadataProvider(address id) external view returns (address) {
+        return address(_records[id].metadataProvider);
+    }
+
+    /// @notice Gets the underlying canonical metadata linked to an IP asset.
+    /// @param id The canonical ID of the IP asset.
+    function metadata(address id) external view returns (bytes memory) {
+        if (address(_records[id].metadataProvider) == address(0)) {
+            revert Errors.IPAssetRegistry__NotYetRegistered();
+        }
+        return _records[id].metadataProvider.getMetadata(id);
+    }
+
+    /// @notice Sets the provider for storage of new IP metadata, while enabling
+    ///         existing IP assets to migrate their metadata to the new provider.
+    /// @param newMetadataProvider Address of the new metadata provider contract.
+    function setMetadataProvider(address newMetadataProvider) external onlyOwner {
+        _metadataProvider.setUpgradeProvider(newMetadataProvider);
+        _metadataProvider = IMetadataProviderMigratable(newMetadataProvider);
+    }
+
+    /// @notice Sets the underlying metadata for an IP asset.
+    /// @dev As metadata is immutable but additive, this will only be used when
+    ///      an IP migrates from a new provider that introduces new attributes.
+    /// @param id The canonical ID of the IP.
+    /// @param data Canonical metadata to associate with the IP.
+    function setMetadata(address id, address provider, bytes calldata data) external {
+        // Metadata is set on registration and immutable thereafter, with new fields 
+        // only added during a migration to new protocol-approved metadata provider.
+        if (address(_records[id].metadataProvider) != msg.sender) {
+            revert Errors.IPAssetRegistry__Unauthorized();
+        }
+        _setMetadata(id, IMetadataProviderMigratable(provider), data);
+    }
+
+    /// @notice Sets the resolver for an IP based on its canonical ID.
+    /// @param id The canonical ID of the IP.
+    /// @param resolverAddr The address of the resolver being set.
+    function setResolver(address id, address resolverAddr) public {
+        if (_records[id].resolver == address(0)) {
+            revert Errors.IPAssetRegistry__NotYetRegistered();
+        }
+        // TODO: Update authorization logic to use the access controller.
+        if (msg.sender != IIPAccount(payable(id)).owner()) {
+            revert Errors.IPAssetRegistry__Unauthorized();
+        }
+        _setResolver(id, resolverAddr);
     }
 
     /// @dev Sets the resolver for the specified IP.
@@ -170,18 +185,14 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
         emit IPResolverSet(id, resolverAddr);
     }
 
-    /// @dev Sets the metadata for the specified IP.
-    /// @param id The canonical identifier for the specified IP.
-    /// @param provider The metadata provider to associated with the IP.
-    function _setMetadataProvider(address id, address provider) internal {
+    /// @dev Sets the for the specified IP asset.
+    /// @param id The canonical identifier for the specified IP asset.
+    /// @param provider The metadata provider hosting the data.
+    /// @param data The metadata to set for the IP asset.
+    function _setMetadata(address id, IMetadataProviderMigratable provider, bytes calldata data) internal {
         _records[id].metadataProvider = provider;
-        emit MetadataProviderSet(id, provider);
+        provider.setMetadata(id, data);
+        emit MetadataSet(id, address(provider), data);
     }
 
-    /// @notice Returns the owner of the of token.
-    /// @return The address of the owner.
-    function _getOwner(uint256 chainId, address tokenContract, uint256 tokenId) internal view returns (address) {
-        if (chainId != block.chainid) return address(0);
-        return IERC721(tokenContract).ownerOf(tokenId);
-    }
 }

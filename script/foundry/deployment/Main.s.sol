@@ -47,7 +47,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     AccessController public accessController;
 
     IPAssetRenderer public renderer;
-    IPMetadataProvider public metadataProvider;
     IPAccountRegistry public ipAccountRegistry;
     IPAssetRegistry public ipAssetRegistry;
     LicenseRegistry public licenseRegistry;
@@ -143,17 +142,13 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry), address(licenseRegistry));
         _postdeploy(contractKey, address(ipResolver));
 
-        contractKey = "MetadataProvider";
-        _predeploy(contractKey);
-        metadataProvider = new IPMetadataProvider(address(moduleRegistry));
-        _postdeploy(contractKey, address(metadataProvider));
-
         contractKey = "RegistrationModule";
         _predeploy(contractKey);
         registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry)
+            address(licenseRegistry),
+            address(ipResolver)
         );
         _postdeploy(contractKey, address(registrationModule));
 
