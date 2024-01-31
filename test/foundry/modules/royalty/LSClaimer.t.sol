@@ -2,244 +2,227 @@
 pragma solidity ^0.8.23;
 
 import { console2 } from "forge-std/console2.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { TestHelper } from "../../../utils/TestHelper.sol";
 import { ILiquidSplitFactory } from "../../../../contracts/interfaces/modules/royalty/policies/ILiquidSplitFactory.sol";
 import { LSClaimer } from "../../../../contracts/modules/royalty-module/policies/LSClaimer.sol";
+import { RoyaltyPolicyLS } from "../../../../contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
+import { ILiquidSplitClone } from "../../../../contracts/interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
+import { ILiquidSplitMain } from "../../../../contracts/interfaces/modules/royalty/policies/ILiquidSplitMain.sol";
+// test
+import { BaseIntegration } from "test/foundry/integration/BaseIntegration.sol";
+import { MintPaymentPolicyFrameworkManager } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
+import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { Integration_Shared_LicensingHelper, UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseFrameworkPolicy.sol";
 
-// setup imports
-import { AccessController } from "contracts/AccessController.sol";
-import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
-import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { IParamVerifier } from "contracts/interfaces/licensing/IParamVerifier.sol";
-import { Errors } from "contracts/lib/Errors.sol";
-import { Licensing } from "contracts/lib/Licensing.sol";
-import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
-import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { IPRecordRegistry } from "contracts/registries/IPRecordRegistry.sol";
-import { IPAssetRenderer } from "contracts/registries/metadata/IPAssetRenderer.sol";
-import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
-import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
-import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
-import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
-import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
-import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
-import { MockERC721 } from "contracts/mocks/MockERC721.sol";
-import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-
-contract TestLSClaimer is TestHelper {
-    address[] public LONGEST_CHAIN = new address[](0);
+contract TestLSClaimer is TestHelper, BaseIntegration, Integration_Shared_LicensingHelper {
+    address[] public LONG_CHAIN = new address[](100);
     address[] public accounts = new address[](2);
     uint32[] public initAllocations = new uint32[](2);
-
-    address public constant ERC6551_REGISTRY = address(0x000000006551c19487814612e58FE06813775758);
-    AccessController public accessController;
-
-    IPAssetRenderer public renderer;
-    IPMetadataProvider public metadataProvider;
-    IPAccountRegistry public ipAccountRegistry;
-    IPRecordRegistry public ipRecordRegistry;
-    LicenseRegistry public licenseRegistry;
-    ModuleRegistry public moduleRegistry;
-
-    IPAccountImpl public implementation;
-    MockERC721 public mockNft;
-
-    IIPAccount public ipAccount;
-
-    RegistrationModule public registrationModule;
-    TaggingModule public taggingModule;
-    IPResolver public ipResolver;
-
-    mapping(uint256 => uint256) internal nftIds;
-    mapping(uint256 => uint256) internal policyIds;
-    mapping(string => uint256) internal fwIds;
-    mapping(string => Licensing.FrameworkCreationParams) internal fwCreationParams;
-    mapping(string => Licensing.Policy) internal policies;
+    address public splitClone100;
+    LSClaimer public lsClaimer100;
+    uint32 public royaltyStack100;
+    uint32 public minRoyalty100;
+    ERC20[] public tokens = new ERC20[](1);
+    uint256 public ethRoyaltyAmount = 1 ether;
+    uint256 public usdcRoyaltyAmount = 1000 * 10 ** 6;
 
     function setUp() public override {
-        super.setUp();
-
-        /*///////////////////////////////////////////////////////////////
-                            DEPLOY PROTOCOL CONTRACTS
-        ////////////////////////////////////////////////////////////////*/
-
-        mockNft = new MockERC721();
-        accessController = new AccessController();
-        implementation = new IPAccountImpl();
-        moduleRegistry = new ModuleRegistry();
-        licenseRegistry = new LicenseRegistry("https://example.com/{id}.json");
-        ipAccountRegistry = new IPAccountRegistry(ERC6551_REGISTRY, address(accessController), address(implementation));
-        ipRecordRegistry = new IPRecordRegistry(address(moduleRegistry), address(ipAccountRegistry));
-        ipResolver = new IPResolver(
-            address(accessController),
-            address(ipRecordRegistry),
-            address(ipAccountRegistry),
-            address(licenseRegistry)
-        );
-        metadataProvider = new IPMetadataProvider(address(moduleRegistry));
-        registrationModule = new RegistrationModule(
-            address(accessController),
-            address(ipRecordRegistry),
-            address(ipAccountRegistry),
-            address(licenseRegistry),
-            address(ipResolver),
-            address(metadataProvider)
-        );
-        taggingModule = new TaggingModule();
-        renderer = new IPAssetRenderer(
-            address(ipRecordRegistry),
-            address(licenseRegistry),
-            address(taggingModule),
-            address(royaltyModule)
-        );
-
-        // configure
-        accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-        moduleRegistry.registerModule("REGISTRATION_MODULE", address(registrationModule));
-        moduleRegistry.registerModule("IP_RESOLVER_MODULE", address(ipResolver));
-
-        /*///////////////////////////////////////////////////////////////
-                            MINT NFTS AND REGISTER ROOT
-        ////////////////////////////////////////////////////////////////*/
-
-        // mint 1000 nfts
-        for (uint256 i = 1; i < 1002; i++) {
-            nftIds[i] = mockNft.mint(deployer);
-        }
-
-        // register one root ip
-        vm.startPrank(deployer);
-        registrationModule.registerRootIp(0, address(mockNft), nftIds[1]);
-        vm.stopPrank();
-
-        // set permissions
-        accessController.setGlobalPermission(
-            address(registrationModule),
-            address(licenseRegistry),
-            bytes4(0), // wildcard
-            1 // AccessPermission.ALLOW
-        );
-
-        // wildcard allow
-        vm.startPrank(deployer);
-        IIPAccount(payable(getIpId(deployer, mockNft, nftIds[1]))).execute(
-            address(accessController),
-            0,
-            abi.encodeWithSignature(
-                "setPermission(address,address,address,bytes4,uint8)",
-                getIpId(deployer, mockNft, 1),
-                deployer,
-                address(0),
-                bytes4(0),
-                1 // AccessPermission.ALLOW
-            )
-        );
-        vm.stopPrank();
-
-        /*///////////////////////////////////////////////////////////////
-                            CREATE LICENSE FRAMEWORKS
-        ////////////////////////////////////////////////////////////////*/
-
-        fwCreationParams["all_true"] = Licensing.FrameworkCreationParams({
-            parameters: new IParamVerifier[](0),
-            defaultValues: new bytes[](0),
-            licenseUrl: "https://very-nice-verifier-license.com"
-        });
-
-        fwIds["all_true"] = licenseRegistry.addLicenseFramework(fwCreationParams["all_true"]);
-
-        // /*///////////////////////////////////////////////////////////////
-        //                         CREATE POLICIES
-        // ////////////////////////////////////////////////////////////////*/
-
-        policies["test_true"] = Licensing.Policy({
-            frameworkId: fwIds["all_true"],
-            commercialUse: true,
-            derivatives: true,
-            paramNames: new bytes32[](0),
-            paramValues: new bytes[](0)
-        });
-
-        uint256 policyId_test_true = licenseRegistry.addPolicy(policies["test_true"]);
-
-        // /*///////////////////////////////////////////////////////////////
-        //                     MINT LICENSES ON POLICIES
-        // ////////////////////////////////////////////////////////////////*/
+        BaseIntegration.setUp();
+        Integration_Shared_LicensingHelper.initLicenseFrameworkAndPolicy(accessController, licenseRegistry);
 
         // Mints 1 license for policy "test_true" on NFT id 1 IPAccount
         vm.startPrank(deployer);
-        licenseRegistry.addPolicyToIp(getIpId(mockNft, nftIds[1]), policyId_test_true);
-        for (uint256 i = 1; i < 1001; i++) {
-            uint256 licenseId = licenseRegistry.mintLicense(policyId_test_true, getIpId(mockNft, nftIds[i]), 2, deployer);
+        for (uint256 i = 1; i < 100; i++) {
+            uint256 licenseId = licenseRegistry.mintLicense(policyIds["test_true"], getIpId(mockNft, nftIds[i]), 2, deployer);
 
             registrationModule.registerDerivativeIp(
                 licenseId,
                 address(mockNft),
                 nftIds[i+1],
                 "",
-                bytes32("0"),
+                bytes32(""),
                 ""
-            );  
+            );
         }
-        vm.stopPrank();
+        vm.stopPrank();        
 
         // /*///////////////////////////////////////////////////////////////
         //                     SET UP LSCLAIMER
         // ////////////////////////////////////////////////////////////////*/
 
-        lsClaimer = new LSClaimer(address(1), address(1), address(licenseRegistry));
-        
-        accounts[0] = ipAccount3;
-        accounts[1] = address(lsClaimer);
+        RoyaltyPolicyLS testRoyaltyPolicyLS;
+        testRoyaltyPolicyLS = new RoyaltyPolicyLS(address(1), address(licenseRegistry), LIQUID_SPLIT_FACTORY, LIQUID_SPLIT_MAIN);
 
-        initAllocations[0] = 100;
-        initAllocations[1] = 900;
+        vm.startPrank(address(1));
+        // set up root royalty policy
+        address[] memory parentsIds1 = new address[](1);
+        testRoyaltyPolicyLS.initPolicy(getIpId(mockNft, nftIds[1]), parentsIds1, abi.encode(10));
 
-        address splitClone = ILiquidSplitFactory(LIQUID_SPLIT_FACTORY).createLiquidSplitClone(
-            accounts,
-            initAllocations,
-            0, // distributorFee
-            address(0) // splitOwner
-        );
+        // set up derivative royalty policy
+        for (uint256 i = 1; i < 100 ; i++) {
+            address[] memory parentsIds = new address[](1);
+            parentsIds[0] = getIpId(mockNft, nftIds[i]);
+            testRoyaltyPolicyLS.initPolicy(getIpId(mockNft, nftIds[i+1]), parentsIds, abi.encode(10));
+        } 
+        vm.stopPrank();
 
-        lsClaimer.setRNFT(splitClone);
+        (address split, address claimer, uint32 rStack, uint32 mRoyalty) = testRoyaltyPolicyLS.royaltyData(getIpId(mockNft, nftIds[100]));
+        lsClaimer100 = LSClaimer(claimer);
+        splitClone100 = split;
+        royaltyStack100 = rStack;
+        minRoyalty100 = mRoyalty;
 
-        // set up longest chain possible of 1000 elements
-        for (uint256 i = 0; i < 999; i++) {
-            LONGEST_CHAIN.push(getIpId(mockNft, nftIds[i+1]));
+        // set up longest chain possible of 100 elements
+        for (uint256 i = 0; i < 100 ; i++) {
+            LONG_CHAIN[i] = getIpId(mockNft, nftIds[i+1]);
         }
-        assertEq(LONGEST_CHAIN.length, 999);
+        assertEq(LONG_CHAIN[0], getIpId(mockNft, nftIds[1]));
+        assertEq(LONG_CHAIN[99], getIpId(mockNft, nftIds[100]));
+        assertEq(LONG_CHAIN.length, 100);
+        assertEq(royaltyStack100, 1000);
     }
 
-    // TODO: can delete transfer benchmark
-    function test_transferBenchmark() public {
+    function test_LSClaimer_constructor_revert_ZeroIpId() public {
+        vm.expectRevert(Errors.LSClaimer__ZeroIpId.selector);
+        new LSClaimer(address(0), address(licenseRegistry), address(royaltyPolicyLS));
+    }
+
+    function test_LSClaimer_constructor_revert_ZeroLicenseRegistry() public {
+        vm.expectRevert(Errors.LSClaimer__ZeroLicenseRegistry.selector);
+        new LSClaimer(address(1), address(0), address(royaltyPolicyLS));
+    }
+
+    function test_LSClaimer_constructor_revert_ZeroRoyaltyPolicyLS() public {
+        vm.expectRevert(Errors.LSClaimer__ZeroRoyaltyPolicyLS.selector);
+        new LSClaimer(address(1), address(licenseRegistry), address(0));
+    }
+
+    function test_LSClaimer_constructor() public {
+        LSClaimer testLsClaimer = new LSClaimer(address(1), address(licenseRegistry), address(royaltyPolicyLS));
+
+        assertEq(address(testLsClaimer.IP_ID()), address(1));
+        assertEq(address(testLsClaimer.ILICENSE_REGISTRY()), address(licenseRegistry));
+        assertEq(address(testLsClaimer.IROYALTY_POLICY_LS()), address(royaltyPolicyLS));
+    }
+
+/*     function test_LSClaimer_setRNFT() public {
+        LSClaimer testClaimer = new LSClaimer(address(licenseRegistry), address(royaltyPolicyLS), address(1));
+
+        vm.startPrank(address(1));
+        testClaimer.setRNFT(address(2));
+
+        assertEq(testClaimer.RNFT(), address(2));
+    } */
+
+    function test_LSClaimer_claim_revert_AlreadyClaimed() public {
+        address claimerIpId = getIpId(mockNft, nftIds[1]);
+        tokens[0] = ERC20(USDC);
+
+        lsClaimer100.claim(LONG_CHAIN, claimerIpId, true, tokens);
+
+        vm.expectRevert(Errors.LSClaimer__AlreadyClaimed.selector);
+        lsClaimer100.claim(LONG_CHAIN, claimerIpId, true, tokens);
+    }
+
+    function test_LSClaimer_claim_revert_InvalidPathFirstPosition() public {
+        tokens[0] = ERC20(USDC);
+
+        vm.expectRevert(Errors.LSClaimer__InvalidPathFirstPosition.selector);
+        lsClaimer100.claim(LONG_CHAIN, address(0), true, tokens);
+    }
+
+    function test_LSClaimer_claim_revert_InvalidPathLastPosition() public {
+        address claimerIpId = getIpId(mockNft, nftIds[1]);
+        tokens[0] = ERC20(USDC);
+
+        LONG_CHAIN.push(address(1));
+
+        vm.expectRevert(Errors.LSClaimer__InvalidPathLastPosition.selector);
+        lsClaimer100.claim(LONG_CHAIN, claimerIpId, true, tokens);
+    }
+
+    function test_LSClaimer_claim_revert_InvalidPath() public {
+        address claimerIpId = getIpId(mockNft, nftIds[1]);
+        tokens[0] = ERC20(USDC);
+
+        LONG_CHAIN[5] = address(1);
+
+        vm.expectRevert(Errors.LSClaimer__InvalidPath.selector);
+        lsClaimer100.claim(LONG_CHAIN, claimerIpId, true, tokens);
+    }
+
+    function test_LSClaimer_claim_revert_ERC20BalanceNotZero() public {
         vm.startPrank(USDC_RICH);
-        IERC20(USDC).transfer(address(1), 1000);
+        IERC20(USDC).transfer(address(splitClone100), usdcRoyaltyAmount);
+        vm.stopPrank();
+        
+        accounts[0] = getIpId(mockNft, nftIds[100]);
+        accounts[1] = address(lsClaimer100);
+
+        ILiquidSplitClone(splitClone100).distributeFunds(USDC, accounts, address(0));
+
+        ERC20 token_ = ERC20(USDC);
+        assertGt(ILiquidSplitMain(royaltyPolicyLS.LIQUID_SPLIT_MAIN()).getERC20Balance(address(lsClaimer100), token_), 0);
+
+        address claimerIpId = getIpId(mockNft, nftIds[1]);
+        tokens[0] = ERC20(USDC);
+
+        vm.expectRevert(Errors.LSClaimer__ERC20BalanceNotZero.selector);
+        lsClaimer100.claim(LONG_CHAIN, claimerIpId, true, tokens);    
     }
+
+    function test_LSClaimer_claim_revert_ETHBalanceNotZero() public {
+        vm.deal(address(splitClone100), ethRoyaltyAmount);
+        
+        accounts[0] = getIpId(mockNft, nftIds[100]);
+        accounts[1] = address(lsClaimer100);
+
+        ILiquidSplitClone(splitClone100).distributeFunds(address(0), accounts, address(0));
+
+        assertGt(ILiquidSplitMain(royaltyPolicyLS.LIQUID_SPLIT_MAIN()).getETHBalance(address(lsClaimer100)), 0);
+
+        address claimerIpId = getIpId(mockNft, nftIds[1]);
+        tokens[0] = ERC20(USDC);
+
+        vm.expectRevert(Errors.LSClaimer__ETHBalanceNotZero.selector);
+        lsClaimer100.claim(LONG_CHAIN, claimerIpId, true, tokens);    
+    }
+
     function test_LSClaimer_claim() public {
+        // claimer contract receives royalties
+        vm.deal(address(lsClaimer100), ethRoyaltyAmount);
+        vm.startPrank(USDC_RICH);
+        IERC20(USDC).transfer(address(lsClaimer100), usdcRoyaltyAmount);
+        vm.stopPrank();
 
+        address claimerIpId = getIpId(mockNft, nftIds[1]);
+        tokens[0] = ERC20(USDC);
 
-        lsClaimer.claim(LONGEST_CHAIN, getIpId(mockNft, nftIds[1]));
+        uint256 lsClaimerUSDCBalBefore = IERC20(USDC).balanceOf(address(lsClaimer100));
+        uint256 lsClaimerETHBalBefore = address(lsClaimer100).balance;
+        uint256 lsClaimerRNFTBalBefore = ILiquidSplitClone(splitClone100).balanceOf(address(lsClaimer100), 0);
+        uint256 claimerUSDCBalBefore = IERC20(USDC).balanceOf(claimerIpId);
+        uint256 claimerETHBalBefore = address(claimerIpId).balance;
+        uint256 claimerRNFTBalBefore = ILiquidSplitClone(splitClone100).balanceOf(claimerIpId, 0);
 
-        console2.log("isParent1",licenseRegistry.isParent(getIpId(mockNft, nftIds[1000]), getIpId(mockNft, nftIds[1001])));
-        console2.log("isParent2",licenseRegistry.isParent(getIpId(mockNft, nftIds[999]), getIpId(mockNft, nftIds[1000])));
-    }
+        lsClaimer100.claim(LONG_CHAIN, claimerIpId, true, tokens);
 
-    // Helper functions
-    function getIpId(MockERC721 mnft, uint256 tokenId) public view returns (address ipId) {
-        return ipAccountRegistry.ipAccount(block.chainid, address(mnft), tokenId);
-    }
-    function getIpId(address user, MockERC721 mnft, uint256 tokenId) public view returns (address ipId) {
-        require(mnft.ownerOf(tokenId) == user, "getIpId: not owner");
-        return ipAccountRegistry.ipAccount(block.chainid, address(mnft), tokenId);
-    }
+        uint256 lsClaimerUSDCBalAfter = IERC20(USDC).balanceOf(address(lsClaimer100));
+        uint256 lsClaimerETHBalAfter = address(lsClaimer100).balance;
+        uint256 lsClaimerRNFTBalAfter = ILiquidSplitClone(splitClone100).balanceOf(address(lsClaimer100), 0);
+        uint256 claimerUSDCBalAfter = IERC20(USDC).balanceOf(claimerIpId);
+        uint256 claimerETHBalAfter = address(claimerIpId).balance;
+        uint256 claimerRNFTBalAfter = ILiquidSplitClone(splitClone100).balanceOf(claimerIpId, 0);
 
-    function _deployProtocolContracts(address accessControldeployer) private {
-
-
-        // mockModule = new MockModule(address(ipAccountRegistry), address(moduleRegistry), "MockModule");
+        assertEq(lsClaimer100.claimedPaths(keccak256(abi.encodePacked(LONG_CHAIN))), true);
+        assertEq(lsClaimerUSDCBalBefore - lsClaimerUSDCBalAfter, usdcRoyaltyAmount * minRoyalty100 / (royaltyStack100 - minRoyalty100)); // calculation not aggregated in a variable due to stack too deep error
+        assertEq(lsClaimerETHBalBefore - lsClaimerETHBalAfter, ethRoyaltyAmount * minRoyalty100 / (royaltyStack100 - minRoyalty100));
+        assertEq(lsClaimerRNFTBalBefore - lsClaimerRNFTBalAfter, minRoyalty100);
+        assertEq(claimerUSDCBalAfter - claimerUSDCBalBefore, usdcRoyaltyAmount * minRoyalty100 / (royaltyStack100 - minRoyalty100));
+        assertEq(claimerETHBalAfter - claimerETHBalBefore, ethRoyaltyAmount * minRoyalty100 / (royaltyStack100 - minRoyalty100));
+        assertEq(claimerRNFTBalAfter - claimerRNFTBalBefore, minRoyalty100);
     }
 }
