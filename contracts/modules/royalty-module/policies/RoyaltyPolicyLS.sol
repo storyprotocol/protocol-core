@@ -5,21 +5,30 @@ pragma solidity ^0.8.23;
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ERC1155Holder } from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 // contracts
+import { LSClaimer } from "contracts/modules/royalty-module/policies/LSClaimer.sol";
 import { ILiquidSplitClone } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
 import { ILiquidSplitFactory } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitFactory.sol";
 import { ILiquidSplitMain } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitMain.sol";
-import { IRoyaltyPolicy } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
+import { IRoyaltyPolicyLS } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLS.sol";
+import { IClaimerLS } from "contracts/interfaces/modules/royalty/policies/IClaimerLS.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
 /// @title Liquid Split Royalty Policy
 /// @notice The LiquidSplit royalty policy splits royalties in accordance with
 ///         the percentage of royalty NFTs owned by each account.
-contract RoyaltyPolicyLS is IRoyaltyPolicy {
+contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     using SafeERC20 for IERC20;
+
+    /// @notice Percentage scale - 1000 rnfts represents 100%
+    uint32 public constant TOTAL_RNFT_SUPPLY = 1000;
 
     /// @notice RoyaltyModule address
     address public immutable ROYALTY_MODULE;
+
+    /// @notice License registry address
+    address public immutable LICENSE_REGISTRY;
 
     /// @notice LiquidSplitFactory address
     address public immutable LIQUID_SPLIT_FACTORY;
@@ -45,57 +54,66 @@ contract RoyaltyPolicyLS is IRoyaltyPolicy {
 
     /// @notice Constructor
     /// @param _royaltyModule Address of the RoyaltyModule contract
+    /// @param _licenseRegistry Address of the LicenseRegistry contract
     /// @param _liquidSplitFactory Address of the LiquidSplitFactory contract
     /// @param _liquidSplitMain Address of the LiquidSplitMain contract
-    constructor(address _royaltyModule, address _liquidSplitFactory, address _liquidSplitMain) {
+    constructor(address _royaltyModule, address _licenseRegistry, address _liquidSplitFactory, address _liquidSplitMain) {
         if (_royaltyModule == address(0)) revert Errors.RoyaltyPolicyLS__ZeroRoyaltyModule();
+        if (_licenseRegistry == address(0)) revert Errors.RoyaltyPolicyLS__ZeroLicenseRegistry();
         if (_liquidSplitFactory == address(0)) revert Errors.RoyaltyPolicyLS__ZeroLiquidSplitFactory();
         if (_liquidSplitMain == address(0)) revert Errors.RoyaltyPolicyLS__ZeroLiquidSplitMain();
 
         ROYALTY_MODULE = _royaltyModule;
+        LICENSE_REGISTRY = _licenseRegistry;
         LIQUID_SPLIT_FACTORY = _liquidSplitFactory;
         LIQUID_SPLIT_MAIN = _liquidSplitMain;
     }
 
+    // TODO: Ensure that parentsIds should be correctly passed in through the licensing contract, otherwise we must call parents() on licenseRegistry directly
+    // TODO: setApprovalForAll for splitClone to this contract to allow it to transfer RNFTs? Useful for the corner case where someone holds all rnfts
     /// @notice Initializes the royalty policy
     /// @param _ipId The ipId
+    /// @param _parentIpIds The parent ipIds
     /// @param _data The data to initialize the policy
-    function initPolicy(address _ipId, bytes calldata _data) external onlyRoyaltyModule {
-        (address[] memory accounts, uint32[] memory initAllocations, uint256 minRoyalty) = abi.decode(
-            _data,
-            (address[], uint32[], uint256)
-        );
+    function initPolicy(address _ipId, address[] memory _parentIpIds, bytes calldata _data) external onlyRoyaltyModule {
+        (uint32 minRoyalty) = abi.decode(_data, (uint32));
+        // root you can choose 0% but children have to choose at least 1%
+        if (minRoyalty == 0 && _parentIpIds.length > 0) revert Errors.RoyaltyPolicyLS__ZeroMinRoyalty();
+        // minRoyalty has to be a multiple of 1% to contain the max tree size
+        // given that there are 1000 royalty nfts then minRoyalty has to be a multiple of 10 (1%)
+        if (minRoyalty % 10 != 0) revert Errors.RoyaltyPolicyLS__InvalidMinRoyalty();
 
-        // TODO: input validation: accounts - parentsIds should be correctly passed in through the licensing contract so that we do not need to check them here
-        // TODO: input validation: initAllocations
+        // calculates the new royalty stack and checks if it is valid
+        (uint32 royaltyStack, uint32 newRoyaltyStack) = _checkRoyaltyStackIsValid(_parentIpIds, minRoyalty);
 
-        // deploy claimer
-        address claimer;
-        // address[] memory accounts = new address[](2);
-        // accounts[0] = _ipId;
-        // accounts[1] = claimer;
-        // uint32[] memory allocations = new uint32[](2);
-        // allocations[0] = uint32(1000) - currentRoyaltyStack;
-        // allocations[1] = currentRoyaltyStack;
+        // deploy claimer if not root ip
+        address claimer = address(this); // 0xSplit requires two addresses to allow a split so for root ip which does not have a claimer to save gase we use this contract address as the second address
+        if (_parentIpIds.length > 0) claimer = address(new LSClaimer(_ipId, LICENSE_REGISTRY, address(this)));
 
-        address splitClone = ILiquidSplitFactory(LIQUID_SPLIT_FACTORY).createLiquidSplitClone(
-            accounts,
-            initAllocations,
-            0, // distributorFee
-            address(0) // splitOwner
-        );
+        // deploy split clone
+        address splitClone = _deploySplitClone(_ipId, claimer, royaltyStack);
 
-        // verify final state - _verifyInitPolicyFinalState()
-        // The loop below is bounded to 1000 max iterations otherwise
-        // it will revert on the split clone creation
-        /*         uint32 currentRoyaltyStack;
-        for (uint32 i = 0; i < accounts.length; i++) {
-            currentRoyaltyStack = royaltyData[accounts[i]].royaltyStack;
-        } */
-        // RNFT balance of ipId should be 1000 - royalty stack
-        // RNFT balance of claimer should be royalty stack
+        royaltyData[_ipId] = LSRoyaltyData({
+            splitClone: splitClone,
+            claimer: claimer,
+            royaltyStack: newRoyaltyStack,
+            minRoyalty: minRoyalty
+        });
+    }
 
-        //splitClones[_ipId] = splitClone;
+    /// @notice Allows to pay a royalty
+    /// @param _caller The caller
+    /// @param _ipId The ipId
+    /// @param _token The token to pay
+    /// @param _amount The amount to pay
+    function onRoyaltyPayment(
+        address _caller,
+        address _ipId,
+        address _token,
+        uint256 _amount
+    ) external onlyRoyaltyModule {
+        address destination = royaltyData[_ipId].splitClone;
+        IERC20(_token).safeTransferFrom(_caller, destination, _amount);
     }
 
     /// @notice Distributes funds to the accounts in the LiquidSplitClone contract
@@ -120,18 +138,41 @@ contract RoyaltyPolicyLS is IRoyaltyPolicy {
         ILiquidSplitMain(LIQUID_SPLIT_MAIN).withdraw(_account, _withdrawETH, _tokens);
     }
 
-    /// @notice Allows to pay a royalty
-    /// @param _caller The caller
+    function _checkRoyaltyStackIsValid(address[] memory _parentIpIds, uint32 _minRoyalty) internal view returns (uint32, uint32) {
+        // the loop below is limited to a length of 100 
+        // given the minimum royalty step of 1% and a cap of 100%
+        uint32 royaltyStack;
+        for (uint32 i = 0; i < _parentIpIds.length; i++) {
+            royaltyStack += royaltyData[_parentIpIds[i]].royaltyStack;
+        }
+
+        uint32 newRoyaltyStack = royaltyStack + _minRoyalty;
+        if (newRoyaltyStack > TOTAL_RNFT_SUPPLY) revert Errors.RoyaltyPolicyLS__InvalidRoyaltyStack();
+
+        return (royaltyStack, newRoyaltyStack);
+    }
+
+    /// @notice Deploys a liquid split clone contract
     /// @param _ipId The ipId
-    /// @param _token The token to pay
-    /// @param _amount The amount to pay
-    function onRoyaltyPayment(
-        address _caller,
-        address _ipId,
-        address _token,
-        uint256 _amount
-    ) external onlyRoyaltyModule {
-        address destination = royaltyData[_ipId].splitClone;
-        IERC20(_token).safeTransferFrom(_caller, destination, _amount);
+    /// @param _claimer The claimer address
+    /// @param royaltyStack The number of rnfts that the ipId has to give to its parents and/or grandparents
+    /// @return The address of the deployed liquid split clone contract
+    function _deploySplitClone(address _ipId, address _claimer, uint32 royaltyStack) internal returns (address) {
+        address[] memory accounts = new address[](2);
+        accounts[0] = _ipId;
+        accounts[1] = _claimer;
+        
+        uint32[] memory initAllocations = new uint32[](2);
+        initAllocations[0] = TOTAL_RNFT_SUPPLY - royaltyStack;
+        initAllocations[1] = royaltyStack;
+
+        address splitClone = ILiquidSplitFactory(LIQUID_SPLIT_FACTORY).createLiquidSplitClone(
+            accounts,
+            initAllocations,
+            0, // distributorFee
+            address(0) // splitOwner
+        );
+
+        return splitClone;
     }
 }
