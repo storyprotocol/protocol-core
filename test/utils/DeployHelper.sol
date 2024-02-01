@@ -200,7 +200,7 @@ contract DeployHelper is Test {
         accessController.setGlobalPermission(
             address(registrationModule),
             address(licenseRegistry),
-            bytes4(licenseRegistry.linkIpToParent.selector),
+            bytes4(licenseRegistry.linkIpToParents.selector),
             1 // AccessPermission.ALLOW
         );
 

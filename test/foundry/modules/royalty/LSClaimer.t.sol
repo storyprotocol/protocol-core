@@ -101,8 +101,9 @@ contract TestLSClaimer is TestHelper {
         );
         vm.label(ipAddr, string(abi.encodePacked("IPAccount", Strings.toString(nftIds[0]))));
 
+        uint256[] memory licenseId = new uint256[](1);
         for (uint256 i = 0; i < 99; i++) {
-            uint256 licenseId = licenseRegistry.mintLicense(
+            licenseId[0] = licenseRegistry.mintLicense(
                 policyIds["uml_cheap_flexible"],
                 _getIpId(nft, nftIds[i]),
                 2,

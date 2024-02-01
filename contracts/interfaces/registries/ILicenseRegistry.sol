@@ -63,8 +63,8 @@ interface ILicenseRegistry {
     /// @notice Emitted when an IP is linked to its parent by burning a license
     /// @param caller The address that called the function
     /// @param ipId The id of the IP
-    /// @param parentIpId The id of the parent IP
-    event IpIdLinkedToParent(address indexed caller, address indexed ipId, address indexed parentIpId);
+    /// @param parentIpIds The ids of the parent IP
+    event IpIdLinkedToParents(address indexed caller, address indexed ipId, address[] indexed parentIpIds);
 
     /// @notice Registers a policy framework manager into the contract, so it can add policy data for
     /// licenses.
@@ -95,11 +95,12 @@ interface ILicenseRegistry {
         address receiver
     ) external returns (uint256 licenseId);
 
-    /// @notice Links an IP to its parent IP, burning the license NFT and the policy allows it
-    /// @param licenseId The id of the license to burn
-    /// @param childIpId The id of the child IP
+    /// @notice Links an IP to the licensors (parent IP IDs) listed in the License NFTs, if their policies allow it,
+    /// burning the NFTs in the proccess. The caller must be the owner of the NFTs and the IP owner.
+    /// @param licenseIds The id of the licenses to burn
+    /// @param childIpId The id of the child IP to be linked
     /// @param holder The address that holds the license
-    function linkIpToParent(uint256 licenseId, address childIpId, address holder) external;
+    function linkIpToParents(uint256[] calldata licenseIds, address childIpId, address holder) external;
 
     ///
     /// Getters
