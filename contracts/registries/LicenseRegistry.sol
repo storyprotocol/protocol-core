@@ -188,11 +188,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// @param licenseIds The id of the licenses to burn
     /// @param childIpId The id of the child IP to be linked
     /// @param holder The address that holds the license
-    function linkIpToParents(
-        uint256[] calldata licenseIds,
-        address childIpId,
-        address holder
-    ) external {
+    function linkIpToParents(uint256[] calldata licenseIds, address childIpId, address holder) external {
         // check the caller is owner or authorized by the childIp
         if (
             msg.sender != childIpId &&
