@@ -16,7 +16,7 @@ import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
-import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
+import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProviderV1.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
 import { IPAssetRenderer } from "contracts/registries/metadata/IPAssetRenderer.sol";
@@ -40,7 +40,7 @@ contract IPAssetRendererTest is BaseTest {
     address royaltyModule = vm.addr(0x2222);
 
     /// @notice Gets the metadata provider used for IP registration.
-    IPMetadataProvider metadataProvider;
+    MetadataProviderV1 metadataProvider;
 
     /// @notice Used for registration in the IP asset registry.
     RegistrationModule public registrationModule;
@@ -60,9 +60,9 @@ contract IPAssetRendererTest is BaseTest {
     // Default IP asset attributes.
     string public constant IP_NAME = "IPAsset";
     string public constant IP_DESCRIPTION = "IPs all the way down.";
-    bytes32 public constant IP_HASH = "";
+    bytes32 public constant IP_HASH = "0x00";
     string public constant IP_EXTERNAL_URL = "https://storyprotocol.xyz";
-    uint64 public constant IP_REGISTRATION_DATE = uint64(99);
+    uint64 public IP_REGISTRATION_DATE;
 
     /// @notice The access controller address.
     AccessController public accessController;
@@ -81,7 +81,9 @@ contract IPAssetRendererTest is BaseTest {
     /// @notice Initializes the base token contract for testing.
     function setUp() public virtual override(BaseTest) {
         BaseTest.setUp();
+        IP_REGISTRATION_DATE = uint64(block.timestamp);
         governance = new Governance(address(this));
+
         // TODO: Create an IP asset registry mock instead.
         // TODO: Create an IP record registry mock instead.
         accessController = new AccessController(address(governance));
@@ -98,13 +100,10 @@ contract IPAssetRendererTest is BaseTest {
         vm.prank(alice);
         uint256 tokenId = erc721.mintId(alice, 99);
 
-        metadataProvider = new IPMetadataProvider(address(moduleRegistry));
-
         ipAssetRegistry = new IPAssetRegistry(
             address(accessController),
             address(new ERC6551Registry()),
-            address(new IPAccountImpl()),
-            address(metadataProvider)
+            address(new IPAccountImpl())
         );
 
         resolver = new IPResolver(
@@ -113,30 +112,14 @@ contract IPAssetRendererTest is BaseTest {
             address(licenseRegistry)
         );
 
-        // TODO: Mock out the registration module and module registry.
-        registrationModule = new RegistrationModule(
-            address(accessController),
-            address(ipAssetRegistry),
-            address(licenseRegistry)
-        );
         renderer = new IPAssetRenderer(
             address(ipAssetRegistry),
             address(licenseRegistry),
             taggingModule,
             royaltyModule
         );
-        moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
-        vm.prank(address(registrationModule));
-        ipId = ipAssetRegistry.register(
-            block.chainid,
-            address(erc721),
-            tokenId,
-            address(resolver),
-            true
-        );
-
         bytes memory metadata = abi.encode(
-            IP.Metadata({
+            IP.MetadataV1({
                 name: IP_NAME,
                 hash: IP_HASH,
                 registrationDate: IP_REGISTRATION_DATE,
@@ -146,7 +129,14 @@ contract IPAssetRendererTest is BaseTest {
             })
         );
         vm.prank(address(registrationModule));
-        metadataProvider.setMetadata(ipId, metadata);
+        ipId = ipAssetRegistry.register(
+            block.chainid,
+            address(erc721),
+            tokenId,
+            address(resolver),
+            true,
+            metadata
+        );
     }
 
     /// @notice Tests that the constructor works as expected.
@@ -219,7 +209,7 @@ contract IPAssetRendererTest is BaseTest {
             '{"trait_type": "Name", "value": "IPAsset"},',
             '{"trait_type": "Owner", "value": "', ownerStr, '"},'
             '{"trait_type": "Registrant", "value": "', ownerStr, '"},',
-            '{"trait_type": "Hash", "value": "0x0000000000000000000000000000000000000000000000000000000000000000"},',
+            '{"trait_type": "Hash", "value": "0x3078303000000000000000000000000000000000000000000000000000000000"},',
             '{"trait_type": "Registration Date", "value": "', Strings.toString(IP_REGISTRATION_DATE), '"}',
             ']}'
         ));

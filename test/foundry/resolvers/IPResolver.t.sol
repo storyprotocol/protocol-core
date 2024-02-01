@@ -5,7 +5,6 @@ import { ResolverBaseTest } from "test/foundry/resolvers/ResolverBase.t.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { KeyValueResolver } from "contracts/resolvers/KeyValueResolver.sol";
 import { IKeyValueResolver } from "contracts/interfaces/resolvers/IKeyValueResolver.sol";
-import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
@@ -18,7 +17,7 @@ import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { ModuleBaseTest } from "test/foundry/modules/ModuleBase.t.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { Errors } from "contracts/lib/Errors.sol";
-import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
+import { IP_RESOLVER_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 
 /// @title IP Resolver Test Contract
 /// @notice Tests IP metadata resolver functionality.
@@ -28,38 +27,39 @@ contract IPResolverTest is ResolverBaseTest {
     string public constant TEST_KEY = "Key";
     string public constant TEST_VALUE = "Value";
 
-    /// @notice The registration module.
-    address public registrationModule;
-
     /// @notice The token contract SUT.
     IPResolver public ipResolver;
 
     /// @notice Mock IP identifier for resolver testing.
     address public ipId;
 
+    /// @notice Initial metadata to set for testing.
+    bytes public metadata;
+
     /// @notice Initializes the base token contract for testing.
     function setUp() public virtual override(ResolverBaseTest) {
         ResolverBaseTest.setUp();
         MockERC721 erc721 = new MockERC721("MockERC721");
-        vm.prank(alice);
         ipResolver = IPResolver(_deployModule());
-        IPMetadataProvider metadataProvider = new IPMetadataProvider(address(moduleRegistry));
         uint256 tokenId = erc721.mintId(alice, 99);
-        // TODO: Mock this correctly
-        registrationModule = address(new RegistrationModule(
-            address(accessController),
-            address(ipAssetRegistry),
-            address(licenseRegistry)
-        ));
-        moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, registrationModule);
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));
-        vm.prank(registrationModule);
+        metadata = abi.encode(
+            IP.MetadataV1({
+                name: "IP_NAME",
+                hash: "0x99",
+                registrationDate: uint64(block.timestamp),
+                registrant: alice,
+                uri: "https://storyprotocol.xyz"
+
+            })
+        );
         ipId = ipAssetRegistry.register(
             block.chainid,
             address(erc721),
             tokenId,
             address(ipResolver),
-            true
+            true,
+            metadata
         );
     }
 

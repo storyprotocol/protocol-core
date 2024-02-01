@@ -6,7 +6,7 @@ pragma solidity ^0.8.23;
 /// @notice Library for constants, structs, and helper functions used for IP.
 library IP {
     /// @notice Core metadata to associate with each IP.
-    struct Metadata {
+    struct MetadataV1 {
         // The name associated with the IP.
         string name;
         // A keccak-256 hash of the IP content.

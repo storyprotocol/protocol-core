@@ -39,25 +39,25 @@ library Errors {
     ////////////////////////////////////////////////////////////////////////////
 
     /// @notice The IP asset has already been registered.
-    error IPAssetRegistry_AlreadyRegistered();
+    error IPAssetRegistry__AlreadyRegistered();
 
     /// @notice The IP account has already been created.
-    error IPAssetRegistry_IPAccountAlreadyCreated();
+    error IPAssetRegistry__IPAccountAlreadyCreated();
 
     /// @notice The IP asset has not yet been registered.
-    error IPAssetRegistry_NotYetRegistered();
+    error IPAssetRegistry__NotYetRegistered();
 
     /// @notice The specified IP resolver is not valid.
-    error IPAssetRegistry_ResolverInvalid();
+    error IPAssetRegistry__ResolverInvalid();
 
     /// @notice Caller not authorized to perform the IP registry function call.
-    error IPAssetRegistry_Unauthorized();
+    error IPAssetRegistry__Unauthorized();
 
     /// @notice The deployed address of account doesn't match with IP ID.
-    error IPAssetRegistry_InvalidAccount();
+    error IPAssetRegistry__InvalidAccount();
 
     /// @notice The metadata provider is not valid.
-    error IPAssetRegistry_InvalidMetadataProvider();
+    error IPAssetRegistry__InvalidMetadataProvider();
 
     ////////////////////////////////////////////////////////////////////////////
     //                                 IPResolver                            ///
@@ -73,8 +73,35 @@ library Errors {
     //                          Metadata Provider                            ///
     ////////////////////////////////////////////////////////////////////////////
 
+    /// @notice Provided hash metadata is not valid.
+    error MetadataProvider__HashInvalid();
+
+    /// @notice The caller is not the authorized IP asset owner.
+    error MetadataProvider__IPAssetOwnerInvalid();
+
+    /// @notice Provided hash metadata is not valid.
+    error MetadataProvider__NameInvalid();
+
+    /// @notice The new metadata provider is not compatible with the old provider.
+    error MetadataProvider__MetadataNotCompatible();
+
+    /// @notice Provided registrant metadata is not valid.
+    error MetadataProvider__RegistrantInvalid();
+
+    /// @notice Provided registration date is not valid.
+    error MetadataProvider__RegistrationDateInvalid();
+
     /// @notice Caller does not access to set metadata storage for the provider.
-    error MetadataProvider_Unauthorized();
+    error MetadataProvider__Unauthorized();
+
+    /// @notice A metadata provider upgrade is not currently available.
+    error MetadataProvider__UpgradeUnavailable();
+
+    /// @notice The upgrade provider is not valid.
+    error MetadataProvider__UpgradeProviderInvalid();
+
+    /// @notice Provided metadata URI is not valid.
+    error MetadataProvider__URIInvalid();
 
     ////////////////////////////////////////////////////////////////////////////
     //                            LicenseRegistry                             //

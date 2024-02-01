@@ -6,6 +6,7 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 
 // contract
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
+import { IP } from "contracts/lib/IP.sol";
 
 // test
 import { BaseIntegration } from "test/foundry/integration/BaseIntegration.sol";
@@ -189,9 +190,13 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                 alice_license_from_root_bob,
                 address(nft),
                 tokenId,
-                "IP NAME",
-                bytes32("hash"),
-                "external URL",
+                IP.MetadataV1({
+                    name: "IP NAME",
+                    hash: bytes32("hash"),
+                    registrationDate: uint64(block.timestamp),
+                    registrant: u.alice, // caller
+                    uri: "external URL"
+                }),
                 u.alice // caller
             );
         }

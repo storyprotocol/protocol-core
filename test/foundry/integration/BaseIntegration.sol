@@ -20,6 +20,7 @@ import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRe
 import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
 import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
 import { Errors } from "contracts/lib/Errors.sol";
+import { IP } from "contracts/lib/IP.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
@@ -121,14 +122,14 @@ contract BaseIntegration is Test {
         ipAssetRegistry = new IPAssetRegistry(
             address(accessController),
             address(erc6551Registry),
-            address(ipAccountImpl),
-            address(ipMetadataProvider)
+            address(ipAccountImpl)
         );
         ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry), address(licenseRegistry));
         registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry)
+            address(licenseRegistry),
+            address(ipResolver)
         );
         taggingModule = new TaggingModule();
         royaltyModule = new RoyaltyModule();
@@ -141,7 +142,12 @@ contract BaseIntegration is Test {
         );
 
         arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), USDC, ARBITRATION_PRICE);
-        royaltyPolicyLS = new RoyaltyPolicyLS(address(royaltyModule), address(licenseRegistry), LIQUID_SPLIT_FACTORY, LIQUID_SPLIT_MAIN);
+        royaltyPolicyLS = new RoyaltyPolicyLS(
+            address(royaltyModule),
+            address(licenseRegistry),
+            LIQUID_SPLIT_FACTORY,
+            LIQUID_SPLIT_MAIN
+        );
     }
 
     function _configDeployedContracts() internal {
@@ -195,6 +201,16 @@ contract BaseIntegration is Test {
 
         vm.label(expectedAddr, string(abi.encodePacked("IPAccount", Strings.toString(tokenId))));
 
+        bytes memory metadata = abi.encode(
+            IP.MetadataV1({
+                name: string(abi.encodePacked("IPAccount", Strings.toString(tokenId))),
+                hash: bytes32("ip account hash"),
+                registrationDate: uint64(block.timestamp),
+                registrant: caller,
+                uri: "external URL"
+            })
+        );
+
         // expect all events below when calling `registrationModule.registerRootIp`
 
         vm.expectEmit();
@@ -219,14 +235,14 @@ contract BaseIntegration is Test {
         vm.expectEmit();
         emit IIPAssetRegistry.IPResolverSet({
             ipId: expectedAddr,
-            // resolver: address(ipResolver) // default resolver by Story
-            resolver: address(0)
+            resolver: address(ipResolver) // default resolver for new IP registrations
         });
 
         vm.expectEmit();
-        emit IIPAssetRegistry.MetadataProviderSet({
+        emit IIPAssetRegistry.MetadataSet({
             ipId: expectedAddr,
-            metadataProvider: address(ipMetadataProvider) // default metadata provider by Story
+            metadataProvider: ipAssetRegistry.metadataProvider(), // default metadata provider for new IP registrations
+            metadata: metadata
         });
 
         vm.expectEmit();
@@ -235,9 +251,9 @@ contract BaseIntegration is Test {
             chainId: block.chainid,
             tokenContract: nft,
             tokenId: tokenId,
-            // resolver: address(ipResolver), // default resolver by Story
-            resolver: address(0),
-            provider: address(ipMetadataProvider) // default metadata provider by Story
+            resolver: address(ipResolver), // default resolver for new IP registrations
+            provider: ipAssetRegistry.metadataProvider(), // default metadata provider for new IP registrations
+            metadata: metadata
         });
 
         vm.expectEmit();
@@ -245,7 +261,7 @@ contract BaseIntegration is Test {
 
         // policyId = 0 means no policy attached directly on creation
         vm.startPrank(caller);
-        return registrationModule.registerRootIp(0, nft, tokenId);
+        return registrationModule.registerRootIp(0, nft, tokenId, metadata);
     }
 
     function registerIpAccount(MockERC721 nft, uint256 tokenId, address caller) internal returns (address) {
@@ -256,9 +272,7 @@ contract BaseIntegration is Test {
         uint256 licenseId,
         address nft,
         uint256 tokenId,
-        string memory ipName,
-        bytes32 contentHash,
-        string memory externalUrl,
+        IP.MetadataV1 memory metadata,
         address caller
     ) internal returns (address) {
         address expectedAddr = ERC6551AccountLib.computeAddress(
@@ -298,14 +312,14 @@ contract BaseIntegration is Test {
         vm.expectEmit();
         emit IIPAssetRegistry.IPResolverSet({
             ipId: expectedAddr,
-            // resolver: address(ipResolver) // default resolver by Story
-            resolver: address(0)
+            resolver: address(ipResolver) // default resolver for new IP registrations
         });
 
         vm.expectEmit();
-        emit IIPAssetRegistry.MetadataProviderSet({
+        emit IIPAssetRegistry.MetadataSet({
             ipId: expectedAddr,
-            metadataProvider: address(ipMetadataProvider) // default metadata provider by Story
+            metadataProvider: ipAssetRegistry.metadataProvider(), // default metadata provider for new IP registrations
+            metadata: abi.encode(metadata)
         });
 
         vm.expectEmit();
@@ -314,9 +328,9 @@ contract BaseIntegration is Test {
             chainId: block.chainid,
             tokenContract: nft,
             tokenId: tokenId,
-            // resolver: address(ipResolver), // default resolver by Story
-            resolver: address(0),
-            provider: address(ipMetadataProvider) // default metadata provider by Story
+            resolver: address(ipResolver), // default resolver for new IP registrations
+            provider: ipAssetRegistry.metadataProvider(), // default metadata provider for new IP registrations
+            metadata: abi.encode(metadata)
         });
 
         // Note that below events are emitted in function that's called by the registration module.
@@ -350,7 +364,7 @@ contract BaseIntegration is Test {
         emit IRegistrationModule.DerivativeIPRegistered({ caller: caller, ipId: expectedAddr, licenseId: licenseId });
 
         vm.startPrank(caller);
-        registrationModule.registerDerivativeIp(licenseId, nft, tokenId, ipName, contentHash, externalUrl);
+        registrationModule.registerDerivativeIp(licenseId, nft, tokenId, metadata.name, metadata.hash, metadata.uri);
         return expectedAddr;
     }
 

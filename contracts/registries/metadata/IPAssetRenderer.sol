@@ -54,7 +54,7 @@ contract IPAssetRenderer {
     /// @notice Fetches the canonical name associated with the specified IP.
     /// @param ipId The canonical ID of the specified IP.
     function name(address ipId) external view returns (string memory) {
-        IP.Metadata memory metadata = _metadata(ipId);
+        IP.MetadataV1 memory metadata = _metadata(ipId);
         return metadata.name;
     }
 
@@ -64,7 +64,7 @@ contract IPAssetRenderer {
     /// TODO: Add more information related to licensing or royalties.
     /// TODO: Update the description to an SP base URL if external URL not set.
     function description(address ipId) public view returns (string memory) {
-        IP.Metadata memory metadata = _metadata(ipId);
+        IP.MetadataV1 memory metadata = _metadata(ipId);
         return string.concat(
             metadata.name,
             ", IP #",
@@ -80,28 +80,28 @@ contract IPAssetRenderer {
     /// @param ipId The canonical ID of the specified IP.
     /// @return The bytes32 content hash of the IP.
     function hash(address ipId) external view returns (bytes32) {
-        IP.Metadata memory metadata = _metadata(ipId);
+        IP.MetadataV1 memory metadata = _metadata(ipId);
         return metadata.hash;
     }
 
     /// @notice Fetches the date of registration of the IP.
     /// @param ipId The canonical ID of the specified IP.
     function registrationDate(address ipId) external view returns (uint64) {
-        IP.Metadata memory metadata = _metadata(ipId);
+        IP.MetadataV1 memory metadata = _metadata(ipId);
         return metadata.registrationDate;
     }
 
     /// @notice Fetches the initial registrant of the IP.
     /// @param ipId The canonical ID of the specified IP.
     function registrant(address ipId) external view returns (address) {
-        IP.Metadata memory metadata = _metadata(ipId);
+        IP.MetadataV1 memory metadata = _metadata(ipId);
         return metadata.registrant;
     }
 
     /// @notice Fetches the external URL associated with the IP.
     /// @param ipId The canonical ID of the specified IP.
     function uri(address ipId) external view returns (string memory) {
-        IP.Metadata memory metadata = _metadata(ipId);
+        IP.MetadataV1 memory metadata = _metadata(ipId);
         return metadata.uri;
     }
 
@@ -117,7 +117,7 @@ contract IPAssetRenderer {
     /// TODO: Add SVG support.
     /// TODO: Add licensing, royalties, and tagging information support.
     function tokenURI(address ipId) external view returns (string memory) {
-        IP.Metadata memory metadata = _metadata(ipId);
+        IP.MetadataV1 memory metadata = _metadata(ipId);
         string memory baseJson = string(
             /* solhint-disable */
             abi.encodePacked(
@@ -163,12 +163,12 @@ contract IPAssetRenderer {
 
     /// TODO: Add SVG generation support for branding within token metadata.
 
-    /// @dev Internal function for fetching the metadata tied to an IP asset.
-    function _metadata(address ipId) internal view returns (IP.Metadata memory metadata) {
+    /// @dev Internal function for fetching the metadata tied to an IP record.
+    function _metadata(address ipId) internal view returns (IP.MetadataV1 memory metadata) {
         IMetadataProvider provider = IMetadataProvider(IP_ASSET_REGISTRY.metadataProvider(ipId));
         bytes memory data = provider.getMetadata(ipId);
         if (data.length != 0) {
-            metadata = abi.decode(data, (IP.Metadata));
+            metadata = abi.decode(data, (IP.MetadataV1));
         }
     }
 }
