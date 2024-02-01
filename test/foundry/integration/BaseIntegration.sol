@@ -413,6 +413,18 @@ contract BaseIntegration is Test {
         return expectedAddr;
     }
 
+    function registerDerivativeIp(
+        uint256 licenseId,
+        address nft,
+        uint256 tokenId,
+        IP.MetadataV1 memory metadata,
+        address caller
+    ) internal returns (address) {
+        uint256[] memory licenseIds = new uint256[](1);
+        licenseIds[0] = licenseId;
+        return registerDerivativeIps(licenseIds, nft, tokenId, metadata, caller);
+    }
+
     function linkIpToParents(uint256[] memory licenseIds, address ipId, address caller) internal {
         uint256[] memory policyIds = new uint256[](licenseIds.length);
         address[] memory parentIpIds = new address[](licenseIds.length);
@@ -482,5 +494,11 @@ contract BaseIntegration is Test {
                 "policy not the same in parent to child"
             );
         }
+    }
+
+    function linkIpToParent(uint256 licenseId, address ipId, address caller) internal {
+        uint256[] memory licenseIds = new uint256[](1);
+        licenseIds[0] = licenseId;
+        linkIpToParents(licenseIds, ipId, caller);
     }
 }

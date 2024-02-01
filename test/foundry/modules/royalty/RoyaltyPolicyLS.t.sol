@@ -158,13 +158,13 @@ contract TestLSClaimer is TestHelper {
         accounts[0] = ipAccount2;
         accounts[1] = claimer2;
 
-        uint256 splitClone2USDCBalBefore = IERC20(WETH).balanceOf(splitClone2);
-        uint256 splitMainUSDCBalBefore = IERC20(WETH).balanceOf(royaltyPolicyLS.LIQUID_SPLIT_MAIN());
+        uint256 splitClone2USDCBalBefore = USDC.balanceOf(splitClone2);
+        uint256 splitMainUSDCBalBefore = USDC.balanceOf(royaltyPolicyLS.LIQUID_SPLIT_MAIN());
 
         royaltyPolicyLS.distributeFunds(ipAccount2, address(USDC), accounts, address(0));
 
-        uint256 splitClone2USDCBalAfter = IERC20(WETH).balanceOf(splitClone2);
-        uint256 splitMainUSDCBalAfter = IERC20(WETH).balanceOf(royaltyPolicyLS.LIQUID_SPLIT_MAIN());
+        uint256 splitClone2USDCBalAfter = USDC.balanceOf(splitClone2);
+        uint256 splitMainUSDCBalAfter = USDC.balanceOf(royaltyPolicyLS.LIQUID_SPLIT_MAIN());
 
         assertApproxEqRel(splitClone2USDCBalBefore - splitClone2USDCBalAfter, royaltyAmount, 0.0001e18);
         assertApproxEqRel(splitMainUSDCBalAfter - splitMainUSDCBalBefore, royaltyAmount, 0.0001e18);
@@ -194,7 +194,7 @@ contract TestLSClaimer is TestHelper {
         accounts[1] = claimer2;
 
         ERC20[] memory tokens = new ERC20[](1);
-        tokens[0] = ERC20(WETH);
+        tokens[0] = USDC;
 
         royaltyPolicyLS.distributeFunds(ipAccount2, address(USDC), accounts, address(0));
 

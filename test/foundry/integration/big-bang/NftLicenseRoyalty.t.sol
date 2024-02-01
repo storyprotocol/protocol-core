@@ -240,6 +240,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
 
             address ipAcct_Alice = ipAcct[1];
             address ipAcct_Dan = ipAcct[4];
+            (address aliceSplitClone, , , ) = royaltyPolicyLS.royaltyData(ipAcct_Alice);
             (address danSplitClone, address danClaimer, , ) = royaltyPolicyLS.royaltyData(ipAcct_Dan);
 
             address[] memory chain_alice_to_dan = new address[](4);
@@ -254,7 +255,8 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
             // Alice calls on behalf of Dan's claimer to send money from the Split Main to Dan's claimer,
             // since the revenue payment was made to Dan's Split Wallet, which got distributed to the claimer.
 
-            // paying 65% of 1000 USDC royalty to parents
+            // Dan is paying 65% of 1000 USDC royalty to parents (stored in Dan's Claimer).
+            // The other 35% of 1000 USDC royalty goes directly to Dan's IPAccount.
             vm.expectEmit(address(USDC));
             emit IERC20.Transfer(LIQUID_SPLIT_MAIN, address(danClaimer), 649999998);
             royaltyPolicyLS.claimRoyalties({ _account: danClaimer, _withdrawETH: 0, _tokens: tokens });
@@ -266,13 +268,13 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
             emit IERC1155.TransferSingle({ // rNFTs
                 operator: address(danClaimer),
                 from: address(danClaimer),
-                to: ipAcct_Alice,
+                to: aliceSplitClone,
                 id: 0,
                 value: minRevShareIpAcct1
             });
 
             vm.expectEmit(address(USDC));
-            emit IERC20.Transfer(address(danClaimer), ipAcct_Alice, 649999998);
+            emit IERC20.Transfer(address(danClaimer), aliceSplitClone, 149999999); // alice should get 15% of 1000 USDC
 
             vm.expectEmit(address(danClaimer));
             emit ILSClaimer.Claimed({
