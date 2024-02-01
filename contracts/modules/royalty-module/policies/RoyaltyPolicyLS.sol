@@ -12,7 +12,6 @@ import { ILiquidSplitClone } from "contracts/interfaces/modules/royalty/policies
 import { ILiquidSplitFactory } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitFactory.sol";
 import { ILiquidSplitMain } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitMain.sol";
 import { IRoyaltyPolicyLS } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLS.sol";
-import { IClaimerLS } from "contracts/interfaces/modules/royalty/policies/IClaimerLS.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
 /// @title Liquid Split Royalty Policy
@@ -22,10 +21,10 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     using SafeERC20 for IERC20;
 
     struct LSRoyaltyData {
-        address splitClone; // Indicates the address of the LiquidSplitClone contract for a given ipId
-        address claimer; // Indicates the address of the claimer contract for a given ipId
-        uint32 royaltyStack; // Indicates the royalty stack for a given ipId (number between 0 and 1000)
-        uint32 minRoyalty; // Indicates the minimum royalty for a given ipId (number between 0 and 1000)
+        address splitClone; // address of the liquid split clone contract for a given ipId
+        address claimer; // address of the claimer contract for a given ipId
+        uint32 royaltyStack; // royalty stack for a given ipId is the sum of the minRoyalty of all its parents (number between 0 and 1000)
+        uint32 minRoyalty; // minimum royalty the ipId will receive from its children and grandchildren (number between 0 and 1000)
     }
 
     /// @notice Percentage scale - 1000 rnfts represents 100%
@@ -79,15 +78,15 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
         (uint32 minRoyalty) = abi.decode(_data, (uint32));
         // root you can choose 0% but children have to choose at least 1%
         if (minRoyalty == 0 && _parentIpIds.length > 0) revert Errors.RoyaltyPolicyLS__ZeroMinRoyalty();
-        // minRoyalty has to be a multiple of 1% to contain the max tree size
-        // given that there are 1000 royalty nfts then minRoyalty has to be a multiple of 10 (1%)
+        // minRoyalty has to be a multiple of 1% and given that there are 1000 royalty nfts
+        // then minRoyalty has to be a multiple of 10
         if (minRoyalty % 10 != 0) revert Errors.RoyaltyPolicyLS__InvalidMinRoyalty();
 
         // calculates the new royalty stack and checks if it is valid
         (uint32 royaltyStack, uint32 newRoyaltyStack) = _checkRoyaltyStackIsValid(_parentIpIds, minRoyalty);
 
         // deploy claimer if not root ip
-        address claimer = address(this); // 0xSplit requires two addresses to allow a split so for root ip which does not have a claimer to save gase we use this contract address as the second address
+        address claimer = address(this); // 0xSplit requires two addresses to allow a split so for root ip address(this) as the second address
         if (_parentIpIds.length > 0) claimer = address(new LSClaimer(_ipId, LICENSE_REGISTRY, address(this)));
 
         // deploy split clone
@@ -144,7 +143,7 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     /// @return royaltyStack The royalty stack
     ///         newRoyaltyStack The new royalty stack
     function _checkRoyaltyStackIsValid(address[] calldata _parentIpIds, uint32 _minRoyalty) internal view returns (uint32, uint32) {
-        // the loop below is limited to a length of 100 
+        // the loop below is limited to a length of 100 parents
         // given the minimum royalty step of 1% and a cap of 100%
         uint32 royaltyStack;
         for (uint32 i = 0; i < _parentIpIds.length; i++) {

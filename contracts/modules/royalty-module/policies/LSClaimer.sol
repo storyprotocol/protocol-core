@@ -79,8 +79,8 @@ contract LSClaimer is IClaimerLS, ERC1155Holder, ReentrancyGuard {
     /// @notice Checks if a claiming path is valid
     /// @param _path The path between the IP_ID and the parent or grandparent ipId
     function _checkIfPathIsValid(address[] calldata _path) internal view {
-        // the loop below is limited to less than 100 iterations/parents 
-        // given the minimum royalty step of 1% only allows max 100 nodes in a tree
+        // the loop below is limited to no more than 100 parents 
+        // given the minimum royalty step of 1% and there is a cap of 100%
         for (uint256 i = 0; i < _path.length - 1; i++) {
            if(!ILICENSE_REGISTRY.isParent(_path[i], _path[i+1])) revert Errors.LSClaimer__InvalidPath();
         }
