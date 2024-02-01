@@ -107,7 +107,7 @@ contract TestLSClaimer is TestHelper {
                 deployer
             );
 
-            address expectedAddr = ERC6551AccountLib.computeAddress(
+            expectedAddr = ERC6551AccountLib.computeAddress(
                 address(erc6551Registry),
                 address(ipAccountImpl),
                 ipAccountRegistry.IP_ACCOUNT_SALT(),
@@ -115,9 +115,17 @@ contract TestLSClaimer is TestHelper {
                 address(nft),
                 nftIds[i + 1]
             );
-            vm.label(expectedAddr, string(abi.encodePacked("IPAccount", Strings.toString(nftIds[i + 1]))));
+            string memory ipAcctName = string(abi.encodePacked("IPAccount", Strings.toString(nftIds[i + 1])));
+            vm.label(expectedAddr, ipAcctName);
 
-            registrationModule.registerDerivativeIp(licenseId, address(nft), nftIds[i + 1], "", bytes32(""), "");
+            registrationModule.registerDerivativeIp(
+                licenseId,
+                address(nft),
+                nftIds[i + 1],
+                ipAcctName,
+                bytes32("ipAccount hash"),
+                "ipAccount External URL"
+            );
         }
 
         // /*///////////////////////////////////////////////////////////////
