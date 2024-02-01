@@ -11,7 +11,7 @@ import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { BaseIntegration } from "test/foundry/integration/BaseIntegration.sol";
 import { MintPaymentPolicyFrameworkManager } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { Integration_Shared_LicensingHelper, UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseFrameworkPolicy.sol";
+import { Integration_Shared_LicensingHelper, UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicensingHelper.sol";
 
 contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration_Shared_LicensingHelper {
     using EnumerableSet for EnumerableSet.UintSet;

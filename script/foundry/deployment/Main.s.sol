@@ -67,7 +67,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
     mapping(uint256 => uint256) internal nftIds;
     mapping(string => uint256) internal policyIds;
-    mapping(string => uint256) internal frameworkIds;
+    mapping(string => address) internal frameworkIds;
 
     constructor() JsonDeploymentHandler("main") {}
 
@@ -268,22 +268,25 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         UMLPolicyFrameworkManager umlAllTrue = new UMLPolicyFrameworkManager(
             address(accessController),
             address(licenseRegistry),
+            "UML_ALL_TRUE",
             "https://very-nice-verifier-license.com/{id}.json"
         );
+        licenseRegistry.registerPolicyFrameworkManager(address(umlAllTrue));
         UMLPolicyFrameworkManager umlMintPayment = new UMLPolicyFrameworkManager(
             address(accessController),
             address(licenseRegistry),
+            "UML_MINT_PAYMENT",
             "https://expensive-minting-license.com/{id}.json"
         );
-
-        frameworkIds["all_true"] = umlAllTrue.register();
-        frameworkIds["mint_payment"] = umlMintPayment.register();
+        licenseRegistry.registerPolicyFrameworkManager(address(umlMintPayment));
+        frameworkIds["all_true"] = address(umlAllTrue);
+        frameworkIds["mint_payment"] = address(umlMintPayment);
 
         /*///////////////////////////////////////////////////////////////
                                 CREATE POLICIES
         ////////////////////////////////////////////////////////////////*/
 
-        policyIds["test_true"] = umlAllTrue.addPolicy(
+        policyIds["test_true"] = umlAllTrue.registerPolicy(
             UMLPolicy({
                 attribution: true,
                 transferable: true,
@@ -301,7 +304,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             })
         );
 
-        policyIds["expensive_mint"] = umlAllTrue.addPolicy(
+        policyIds["expensive_mint"] = umlAllTrue.registerPolicy(
             UMLPolicy({
                 attribution: true,
                 transferable: true,

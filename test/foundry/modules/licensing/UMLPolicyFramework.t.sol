@@ -11,22 +11,19 @@ import { IUMLPolicyFrameworkManager, UMLPolicy } from "contracts/interfaces/lice
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
-import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
+import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 
 import "forge-std/console2.sol";
 
 contract UMLPolicyFrameworkTest is Test {
-
     MockAccessController public accessController = new MockAccessController();
     IPAccountRegistry public ipAccountRegistry;
 
     LicenseRegistry public registry;
-    Licensing.PolicyFramework public framework;
 
     UMLPolicyFrameworkManager public umlFramework;
-    uint256 public frameworkId;
 
     MockERC721 nft = new MockERC721("MockERC721");
 
@@ -44,21 +41,18 @@ contract UMLPolicyFrameworkTest is Test {
             address(new IPAccountImpl())
         );
         registry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
-        umlFramework = new UMLPolicyFrameworkManager(address(accessController), address(registry), licenseUrl);
-        frameworkId = umlFramework.register();
+        umlFramework = new UMLPolicyFrameworkManager(
+            address(accessController),
+            address(registry),
+            "UMLPolicyFrameworkManager",
+            licenseUrl
+        );
+        registry.registerPolicyFrameworkManager(address(umlFramework));
 
         nft.mintId(ipOwner, 1);
         nft.mintId(ipOwner, 2);
-        ipId1 = ipAccountRegistry.registerIpAccount(
-            block.chainid,
-            address(nft),
-            1
-        );
-        ipId2 = ipAccountRegistry.registerIpAccount(
-            block.chainid,
-            address(nft),
-            2
-        );
+        ipId1 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 1);
+        ipId2 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 2);
     }
 
     function test_UMLPolicyFrameworkManager_valuesSetCorrectly() public {
@@ -82,7 +76,7 @@ contract UMLPolicyFrameworkTest is Test {
             territories: territories,
             distributionChannels: distributionChannels
         });
-        uint256 policyId = umlFramework.addPolicy(umlPolicy);
+        uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         UMLPolicy memory policy = umlFramework.getPolicy(policyId);
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(umlPolicy)));
     }
@@ -107,33 +101,24 @@ contract UMLPolicyFrameworkTest is Test {
             distributionChannels: emptyStringArray
         });
         // commercialAttribution = true should revert
-        vm.expectRevert(
-            UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddAttribution.selector
-        );
-        umlFramework.addPolicy(umlPolicy);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddAttribution.selector);
+        umlFramework.registerPolicy(umlPolicy);
         // Non empty commercializers should revert
         umlPolicy.commercialAttribution = false;
         umlPolicy.commercializers = new string[](1);
         umlPolicy.commercializers[0] = "test";
-        vm.expectRevert(
-            UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddCommercializers.selector
-        );
-        umlFramework.addPolicy(umlPolicy);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddCommercializers.selector);
+        umlFramework.registerPolicy(umlPolicy);
         // No rev share should be set; revert
         umlPolicy.commercializers = new string[](0);
         umlPolicy.commercialRevShare = 1;
-        vm.expectRevert(
-            UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddRevShare.selector
-        );
-        umlFramework.addPolicy(umlPolicy);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddRevShare.selector);
+        umlFramework.registerPolicy(umlPolicy);
         // No rev share should be set for derivatives either; revert
         umlPolicy.commercialRevShare = 0;
         umlPolicy.derivativesRevShare = 1;
-        vm.expectRevert(
-            UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddDerivRevShare.selector
-        );
-        umlFramework.addPolicy(umlPolicy);
-
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddDerivRevShare.selector);
+        umlFramework.registerPolicy(umlPolicy);
     }
 
     function test_UMLPolicyFrameworkManager_commercialUse_valuesSetCorrectly() public {
@@ -155,7 +140,7 @@ contract UMLPolicyFrameworkTest is Test {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray
         });
-        uint256 policyId = umlFramework.addPolicy(umlPolicy);
+        uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         UMLPolicy memory policy = umlFramework.getPolicy(policyId);
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(umlPolicy)));
     }
@@ -165,9 +150,7 @@ contract UMLPolicyFrameworkTest is Test {
     }
 
     // DERIVATIVE TERMS
-    function test_UMLPolicyFrameworkManager_derivatives_notAllowed_revert_creating2ndDerivative() public {
-        
-    }
+    function test_UMLPolicyFrameworkManager_derivatives_notAllowed_revert_creating2ndDerivative() public {}
 
     function test_UMLPolicyFrameworkManager_derivatives_notAllowed_revert_settingIncompatibleTerms() public {
         // If no derivative values allowed
@@ -187,31 +170,23 @@ contract UMLPolicyFrameworkTest is Test {
             distributionChannels: emptyStringArray
         });
         // derivativesAttribution = true should revert
-        vm.expectRevert(
-            UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddAttribution.selector
-        );
-        umlFramework.addPolicy(umlPolicy);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddAttribution.selector);
+        umlFramework.registerPolicy(umlPolicy);
         // Requesting approval for derivatives should revert
         umlPolicy.derivativesAttribution = false;
         umlPolicy.derivativesApproval = true;
-        vm.expectRevert(
-            UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddApproval.selector
-        );
-        umlFramework.addPolicy(umlPolicy);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddApproval.selector);
+        umlFramework.registerPolicy(umlPolicy);
         // Setting reciprocal license should revert
         umlPolicy.derivativesApproval = false;
         umlPolicy.derivativesReciprocal = true;
-        vm.expectRevert(
-            UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddReciprocal.selector
-        );
-        umlFramework.addPolicy(umlPolicy);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddReciprocal.selector);
+        umlFramework.registerPolicy(umlPolicy);
         // No rev share should be set for derivatives either; revert
         umlPolicy.derivativesReciprocal = false;
         umlPolicy.derivativesRevShare = 1;
-        vm.expectRevert(
-            UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddRevShare.selector
-        );
-        umlFramework.addPolicy(umlPolicy);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddRevShare.selector);
+        umlFramework.registerPolicy(umlPolicy);
     }
 
     function test_UMLPolicyFrameworkManager_derivatives_valuesSetCorrectly() public {
@@ -230,7 +205,7 @@ contract UMLPolicyFrameworkTest is Test {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray
         });
-        uint256 policyId = umlFramework.addPolicy(umlPolicy);
+        uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         UMLPolicy memory policy = umlFramework.getPolicy(policyId);
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(umlPolicy)));
     }
@@ -242,21 +217,23 @@ contract UMLPolicyFrameworkTest is Test {
     // APPROVAL TERMS
 
     function test_UMLPolicyFrameworkManager_derivativesWithApproval_revert_linkNotApproved() public {
-        uint256 policyId = umlFramework.addPolicy(UMLPolicy({
-            attribution: false,
-            transferable: false,
-            commercialUse: false,
-            commercialAttribution: false,
-            commercializers: emptyStringArray,
-            commercialRevShare: 0,
-            derivativesAllowed: true,
-            derivativesAttribution: false,
-            derivativesApproval: true,
-            derivativesReciprocal: false,
-            derivativesRevShare: 0,
-            territories: emptyStringArray,
-            distributionChannels: emptyStringArray
-        }));
+        uint256 policyId = umlFramework.registerPolicy(
+            UMLPolicy({
+                attribution: false,
+                transferable: false,
+                commercialUse: false,
+                commercialAttribution: false,
+                commercializers: emptyStringArray,
+                commercialRevShare: 0,
+                derivativesAllowed: true,
+                derivativesAttribution: false,
+                derivativesApproval: true,
+                derivativesReciprocal: false,
+                derivativesRevShare: 0,
+                territories: emptyStringArray,
+                distributionChannels: emptyStringArray
+            })
+        );
         console2.log("policyId", policyId);
         vm.prank(ipOwner);
         registry.addPolicyToIp(ipId1, policyId);
@@ -272,25 +249,27 @@ contract UMLPolicyFrameworkTest is Test {
     }
 
     function test_UMLPolicyFrameworkManager_derivatives_withApproval_linkApprovedIpId() public {
-        uint256 policyId = umlFramework.addPolicy(UMLPolicy({
-            attribution: false,
-            transferable: false,
-            commercialUse: false,
-            commercialAttribution: false,
-            commercializers: emptyStringArray,
-            commercialRevShare: 0,
-            derivativesAllowed: true,
-            derivativesAttribution: false,
-            derivativesApproval: true,
-            derivativesReciprocal: false,
-            derivativesRevShare: 0,
-            territories: emptyStringArray,
-            distributionChannels: emptyStringArray
-        }));
+        uint256 policyId = umlFramework.registerPolicy(
+            UMLPolicy({
+                attribution: false,
+                transferable: false,
+                commercialUse: false,
+                commercialAttribution: false,
+                commercializers: emptyStringArray,
+                commercialRevShare: 0,
+                derivativesAllowed: true,
+                derivativesAttribution: false,
+                derivativesApproval: true,
+                derivativesReciprocal: false,
+                derivativesRevShare: 0,
+                territories: emptyStringArray,
+                distributionChannels: emptyStringArray
+            })
+        );
         vm.prank(ipOwner);
         registry.addPolicyToIp(ipId1, policyId);
         uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
-        
+
         assertFalse(umlFramework.isDerivativeApproved(licenseId, ipId2));
         vm.prank(ipOwner);
         umlFramework.setApproval(licenseId, ipId2, true);
@@ -323,7 +302,7 @@ contract UMLPolicyFrameworkTest is Test {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray
         });
-        uint256 policyId = umlFramework.addPolicy(umlPolicy);
+        uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         vm.prank(ipOwner);
         registry.addPolicyToIp(ipId1, policyId);
         uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
@@ -351,7 +330,7 @@ contract UMLPolicyFrameworkTest is Test {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray
         });
-        uint256 policyId = umlFramework.addPolicy(umlPolicy);
+        uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         vm.prank(ipOwner);
         registry.addPolicyToIp(ipId1, policyId);
         uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
@@ -370,6 +349,4 @@ contract UMLPolicyFrameworkTest is Test {
     function test_tokenUri() public {
         // TODO
     }
-
-
 }
