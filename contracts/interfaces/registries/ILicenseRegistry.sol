@@ -17,12 +17,10 @@ interface ILicenseRegistry {
     /// @notice Emitted when a policy framework is created by registering a policy framework manager
     /// @param framework The address of the IPolicyFrameworkManager
     /// @param framework The policy framework data
-    /// @param totalFrameworks The number of registered policy frameworks
     event PolicyFrameworkRegistered(
         address indexed framework,
         string name,
-        string licenseTextUrl,
-        uint256 totalFrameworks
+        string licenseTextUrl
     );
     /// @notice Emitted when a policy is added to the contract
     /// @param policyFrameworkManager The address that created the policy
@@ -106,9 +104,6 @@ interface ILicenseRegistry {
     ///
     /// Getters
     ///
-
-    /// @notice Gets total number of policy frameworks in the contract
-    function totalFrameworks() external view returns (uint256);
 
     /// @notice True if the framework address is registered in LicenseRegistry
     function isFrameworkRegistered(address framework) external view returns (bool);

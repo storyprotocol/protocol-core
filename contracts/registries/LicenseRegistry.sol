@@ -40,23 +40,20 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     IAccessController public immutable ACCESS_CONTROLLER;
     IIPAccountRegistry public immutable IP_ACCOUNT_REGISTRY;
 
-    mapping(address => bool) private _registeredFrameworkManagers;
-    uint256 private _totalFrameworks;
-
-    mapping(bytes32 => uint256) private _hashedPolicies;
-    mapping(uint256 => Licensing.Policy) private _policies;
+    mapping(address framework => bool registered) private _registeredFrameworkManagers;
+    mapping(bytes32 policyHash => uint256 policyId) private _hashedPolicies;
+    mapping(uint256 policyId => Licensing.Policy policyData) private _policies;
     uint256 private _totalPolicies;
     /// @notice internal mapping to track if a policy was set by linking or minting, and the
     /// index of the policy in the ipId policy set
     /// Policies can't be removed, but they can be deactivated by setting active to false
-    /// @dev ipId => policyId => PolicySetup
-    mapping(address => mapping(uint256 => PolicySetup)) private _policySetups;
-    mapping(address => EnumerableSet.UintSet) private _policiesPerIpId;
+    mapping(address ipId => mapping(uint256 policyId => PolicySetup setup)) private _policySetups;
+    mapping(address ipId => EnumerableSet.UintSet policyIds) private _policiesPerIpId;
 
-    mapping(address => EnumerableSet.AddressSet) private _ipIdParents;
+    mapping(address ipId => EnumerableSet.AddressSet parentIpIds) private _ipIdParents;
 
-    mapping(bytes32 => uint256) private _hashedLicenses;
-    mapping(uint256 => Licensing.License) private _licenses;
+    mapping(bytes32 licenseHash => uint256 ids) private _hashedLicenses;
+    mapping(uint256 licenseIds => Licensing.License licenseData) private _licenses;
 
     /// This tracks the number of licenses registered in the protocol, it will not decrease when a license is burnt.
     uint256 private _totalLicenses;
@@ -86,12 +83,9 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         if (bytes(licenseUrl).length == 0 || licenseUrl.equal("")) {
             revert Errors.LicenseRegistry__EmptyLicenseUrl();
         }
-
-        ++_totalFrameworks;
-        // TODO: de registration should be possible by governance
         _registeredFrameworkManagers[manager] = true;
 
-        emit PolicyFrameworkRegistered(manager, fwManager.name(), licenseUrl, _totalFrameworks);
+        emit PolicyFrameworkRegistered(manager, fwManager.name(), licenseUrl);
     }
 
     /// Adds a policy to an ipId, which can be used to mint licenses.
@@ -249,11 +243,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
         // Burn license
         _burn(holder, licenseId, 1);
-    }
-
-    /// @notice Gets total number of policy frameworks in the contract
-    function totalFrameworks() external view returns (uint256) {
-        return _totalFrameworks;
     }
 
     /// @notice True if the framework address is registered in LicenseRegistry

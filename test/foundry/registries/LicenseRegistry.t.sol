@@ -87,7 +87,6 @@ contract LicenseRegistryTest is Test {
     function test_LicenseRegistry_registerLicenseFramework() public {
         registry.registerPolicyFrameworkManager(address(module1));
         assertTrue(registry.isFrameworkRegistered(address(module1)), "framework not registered");
-        assertEq(registry.totalFrameworks(), 1, "totalFrameworks not incremented");
     }
 
     function test_LicenseRegistry_registerPolicy() public {
