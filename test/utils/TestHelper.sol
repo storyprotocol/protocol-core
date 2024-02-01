@@ -63,9 +63,10 @@ contract TestHelper is Test, DeployHelper {
         UMLPolicyFrameworkManager umlPfm = new UMLPolicyFrameworkManager(
             address(accessController),
             address(licenseRegistry),
+            "UML_MINT_PAYMENT",
             "license Url"
         );
-        umlPfm.register();
+        licenseRegistry.registerPolicyFrameworkManager(address(umlPfm));
 
         pfms["uml"] = PolicyFrameworkManagerData({ name: "uml", addr: address(umlPfm) });
     }
@@ -78,7 +79,7 @@ contract TestHelper is Test, DeployHelper {
         UMLPolicyDerivativeParams memory dparams
     ) internal {
         string memory pName = string(abi.encodePacked("uml_", gparams.policyName));
-        policyIds[pName] = UMLPolicyFrameworkManager(pfms["uml"].addr).addPolicy(
+        policyIds[pName] = UMLPolicyFrameworkManager(pfms["uml"].addr).registerPolicy(
             UMLPolicy({
                 attribution: gparams.attribution,
                 transferable: gparams.transferable,
