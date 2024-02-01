@@ -10,6 +10,8 @@ import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.
 /// register itself into the LicenseRegistry to format policy into the LicenseRegistry
 interface IPolicyFrameworkManager is IPolicyVerifier {
 
+    // TODO: move here the interfaces for verification and sunset IPolicyVerifier
+
     /// @notice Name to be show in LNFT metadata
     function name() external view returns(string memory);
     /// @notice URL to the off chain legal agreement template text
