@@ -65,11 +65,11 @@ contract LSClaimer is IClaimerLS, ERC1155Holder, ReentrancyGuard {
         (address rnftAddr,,,) = IROYALTY_POLICY_LS.royaltyData(IP_ID);
         ILiquidSplitClone rnft = ILiquidSplitClone(rnftAddr);
         uint256 totalUnclaimedRnfts = rnft.balanceOf(address(this), 0);
-        (,,,uint32 rnftClaimAmount) = IROYALTY_POLICY_LS.royaltyData(_claimerIpId);
-        rnft.safeTransferFrom(address(this), _claimerIpId, 0, rnftClaimAmount, ""); 
+        (address claimerSplitClone,,,uint32 rnftClaimAmount) = IROYALTY_POLICY_LS.royaltyData(_claimerIpId);
+        rnft.safeTransferFrom(address(this), claimerSplitClone, 0, rnftClaimAmount, ""); 
 
         // claim accrued tokens (if any)
-        _claimAccruedTokens(rnftClaimAmount, totalUnclaimedRnfts, _claimerIpId, _withdrawETH, _tokens);
+        _claimAccruedTokens(rnftClaimAmount, totalUnclaimedRnfts, claimerSplitClone, _withdrawETH, _tokens);
 
         claimedPaths[pathHash] = true;
 
@@ -89,10 +89,10 @@ contract LSClaimer is IClaimerLS, ERC1155Holder, ReentrancyGuard {
     /// @notice Claims the accrued tokens (if any)
     /// @param _rnftClaimAmount The amount of rnfts to claim
     /// @param _totalUnclaimedRnfts The total unclaimed rnfts
-    /// @param _claimerIpId The ipId of the claimer
+    /// @param _claimerSplitClone The claimer's split clone
     /// @param _withdrawETH Indicates if the claimer wants to withdraw ETH
     /// @param _tokens The ERC20 tokens to withdraw
-    function _claimAccruedTokens(uint256 _rnftClaimAmount, uint256 _totalUnclaimedRnfts, address _claimerIpId, bool _withdrawETH, ERC20[] calldata _tokens) internal {
+    function _claimAccruedTokens(uint256 _rnftClaimAmount, uint256 _totalUnclaimedRnfts, address _claimerSplitClone, bool _withdrawETH, ERC20[] calldata _tokens) internal {
         ILiquidSplitMain splitMain = ILiquidSplitMain(IROYALTY_POLICY_LS.LIQUID_SPLIT_MAIN());        
 
         if (_withdrawETH) {
@@ -101,7 +101,7 @@ contract LSClaimer is IClaimerLS, ERC1155Holder, ReentrancyGuard {
             uint256 ethBalance = address(this).balance;
             uint256 ethClaimAmount = ethBalance * _rnftClaimAmount / _totalUnclaimedRnfts;
 
-            _safeTransferETH(_claimerIpId, ethClaimAmount);
+            _safeTransferETH(_claimerSplitClone, ethClaimAmount);
         }
 
         for (uint256 i = 0; i < _tokens.length; ++i) {
@@ -111,7 +111,7 @@ contract LSClaimer is IClaimerLS, ERC1155Holder, ReentrancyGuard {
             uint256 tokenBalance = IToken.balanceOf(address(this));
             uint256 tokenClaimAmount = tokenBalance * _rnftClaimAmount / _totalUnclaimedRnfts;
 
-            IToken.safeTransfer(_claimerIpId, tokenClaimAmount);
+            IToken.safeTransfer(_claimerSplitClone, tokenClaimAmount);
         }
     }
 
