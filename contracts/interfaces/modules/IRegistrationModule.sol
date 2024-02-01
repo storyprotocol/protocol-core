@@ -6,7 +6,12 @@ interface IRegistrationModule {
 
     event DerivativeIPRegistered(address indexed caller, address indexed ipId, uint256 licenseId);
 
-    function registerRootIp(uint256 policyId, address tokenContract, uint256 tokenId) external returns (address);
+    function registerRootIp(
+        uint256 policyId,
+        address tokenContract,
+        uint256 tokenId,
+        bytes calldata metadata
+    ) external returns (address);
 
     function registerDerivativeIp(
         uint256 licenseId,

@@ -11,6 +11,7 @@ import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { IMetadataProviderMigratable } from "contracts/interfaces/registries/metadata/IMetadataProviderMigratable.sol";
 import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProviderV1.sol";
 import { Errors } from "contracts/lib/Errors.sol";
+import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
 
 /// @title IP Asset Registry
 /// @notice This contract acts as the source of truth for all IP registered in

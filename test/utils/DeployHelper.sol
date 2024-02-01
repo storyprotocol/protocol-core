@@ -136,14 +136,14 @@ contract DeployHelper is Test {
         ipAssetRegistry = new IPAssetRegistry(
             address(accessController),
             address(erc6551Registry),
-            address(ipAccountImpl),
-            address(ipMetadataProvider)
+            address(ipAccountImpl)
         );
         ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry), address(licenseRegistry));
         registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry)
+            address(licenseRegistry),
+            address(ipResolver)
         );
         taggingModule = new TaggingModule();
         royaltyModule = new RoyaltyModule();

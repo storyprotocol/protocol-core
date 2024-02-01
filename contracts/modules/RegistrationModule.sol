@@ -46,7 +46,12 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
     /// @param policyId The policy that identifies the licensing terms of the IP.
     /// @param tokenContract The address of the NFT bound to the root-level IP.
     /// @param tokenId The token id of the NFT bound to the root-level IP.
-    function registerRootIp(uint256 policyId, address tokenContract, uint256 tokenId) external returns (address) {
+    function registerRootIp(
+        uint256 policyId,
+        address tokenContract,
+        uint256 tokenId,
+        bytes calldata metadata
+    ) external returns (address) {
         // Perform registrant authorization.
         // Check that the caller is authorized to perform the registration.
         // TODO: Perform additional registration authorization logic, allowing
@@ -56,7 +61,14 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         }
 
         // Perform core IP registration and IP account creation.
-        address ipId = IP_ASSET_REGISTRY.register(block.chainid, tokenContract, tokenId, address(resolver), true, "");
+        address ipId = IP_ASSET_REGISTRY.register(
+            block.chainid,
+            tokenContract,
+            tokenId,
+            address(resolver),
+            true,
+            metadata
+        );
 
         // Perform core IP policy creation.
         if (policyId != 0) {
@@ -103,7 +115,14 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
                 uri: externalURL
             })
         );
-        address ipId = IP_ASSET_REGISTRY.register(block.chainid, tokenContract, tokenId, address(resolver), true, metadata);
+        address ipId = IP_ASSET_REGISTRY.register(
+            block.chainid,
+            tokenContract,
+            tokenId,
+            address(resolver),
+            true,
+            metadata
+        );
 
         // Perform core IP derivative licensing - the license must be owned by the caller.
         // TODO: return resulting policy index

@@ -14,6 +14,7 @@ import { Governance } from "contracts/governance/Governance.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { Errors } from "contracts/lib/Errors.sol";
+import { IP } from "contracts/lib/IP.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
@@ -124,12 +125,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         // TODO: deployment sequence
         contractKey = "IPAssetRegistry";
         _predeploy(contractKey);
-        ipAssetRegistry = new IPAssetRegistry(
-            address(accessController),
-            ERC6551_REGISTRY,
-            address(implementation),
-            address(metadataProvider)
-        );
+        ipAssetRegistry = new IPAssetRegistry(address(accessController), ERC6551_REGISTRY, address(implementation));
         _postdeploy(contractKey, address(ipAssetRegistry));
 
         contractKey = "LicenseRegistry";
@@ -189,7 +185,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         licenseRegistry = LicenseRegistry(_readAddress("main.LicenseRegistry"));
         ipAssetRegistry = IPAssetRegistry(_readAddress("main.IPAssetRegistry"));
         ipResolver = IPResolver(_readAddress("main.IPResolver"));
-        metadataProvider = IPMetadataProvider(_readAddress("main.MetadataProvider"));
         registrationModule = RegistrationModule(_readAddress("main.RegistrationModule"));
         taggingModule = TaggingModule(_readAddress("main.TaggingModule"));
         royaltyModule = RoyaltyModule(_readAddress("main.RoyaltyModule"));
@@ -231,9 +226,34 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         nftIds[3] = mockNft.mint(deployer);
         nftIds[4] = mockNft.mint(deployer);
 
-        // registerIPAccount(deployer, mockNft, token[deployer][mockNft][0]);
-        registrationModule.registerRootIp(0, address(mockNft), nftIds[1]);
-        registrationModule.registerRootIp(0, address(mockNft), nftIds[2]);
+        registrationModule.registerRootIp(
+            0,
+            address(mockNft),
+            nftIds[1],
+            abi.encode(
+                IP.MetadataV1({
+                    name: "IPAccount1",
+                    hash: bytes32("some of the best description"),
+                    registrationDate: uint64(block.timestamp),
+                    registrant: deployer,
+                    uri: "https://example.com/test-ip"
+                })
+            )
+        );
+        registrationModule.registerRootIp(
+            0,
+            address(mockNft),
+            nftIds[2],
+            abi.encode(
+                IP.MetadataV1({
+                    name: "IPAccount2",
+                    hash: bytes32("some of the best description"),
+                    registrationDate: uint64(block.timestamp),
+                    registrant: deployer,
+                    uri: "https://example.com/test-ip"
+                })
+            )
+        );
 
         accessController.setGlobalPermission(
             address(registrationModule),

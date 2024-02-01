@@ -216,8 +216,8 @@ contract IPAssetRegistryTest is BaseTest {
     /// @notice Tests IP resolver setting reverts if an IP is not yet registered.
     function test_IPAssetRegistry_SetResolver_Reverts_NotYetRegistered() public {
         vm.startPrank(alice);
-        vm.expectRevert(Errors.IPAssetRegistry_NotYetRegistered.selector);
-        registry.setResolver(block.chainid, tokenAddress, tokenId, resolver);
+        vm.expectRevert(Errors.IPAssetRegistry__NotYetRegistered.selector);
+        registry.setResolver(ipId, resolver);
     }
 
     /// @notice Helper function for generating an account address.

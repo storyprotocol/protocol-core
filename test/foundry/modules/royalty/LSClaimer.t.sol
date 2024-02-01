@@ -10,6 +10,7 @@ import { ERC6551AccountLib } from "lib/reference/src/lib/ERC6551AccountLib.sol";
 // contracts
 import { ILiquidSplitFactory } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitFactory.sol";
 import { Errors } from "contracts/lib/Errors.sol";
+import { IP } from "contracts/lib/IP.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { ILiquidSplitClone } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
@@ -82,7 +83,20 @@ contract TestLSClaimer is TestHelper {
         );
         vm.label(expectedAddr, string(abi.encodePacked("IPAccount", Strings.toString(nftIds[0]))));
 
-        address ipAddr = registrationModule.registerRootIp(policyIds["uml_cheap_flexible"], address(nft), nftIds[0]);
+        address ipAddr = registrationModule.registerRootIp(
+            policyIds["uml_cheap_flexible"],
+            address(nft),
+            nftIds[0],
+            abi.encode(
+                IP.MetadataV1({
+                    name: "IPAccount1",
+                    hash: bytes32("some of the best description"),
+                    registrationDate: uint64(block.timestamp),
+                    registrant: deployer,
+                    uri: "https://example.com/test-ip"
+                })
+            )
+        );
         vm.label(ipAddr, string(abi.encodePacked("IPAccount", Strings.toString(nftIds[0]))));
 
         for (uint256 i = 0; i < 99; i++) {
