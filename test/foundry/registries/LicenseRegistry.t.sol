@@ -1,36 +1,41 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import { Test } from "forge-std/Test.sol";
-import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
-import { Licensing } from "contracts/lib/Licensing.sol";
-import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy }
-    from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
-import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import { Errors } from "contracts/lib/Errors.sol";
-import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
-import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
-import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
-import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
-import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
-import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+// external
 import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
+import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { Test } from "forge-std/Test.sol";
+import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
+
+// contracts
+import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
+import { AccessPermission } from "contracts/lib/AccessPermission.sol";
+import { Errors } from "contracts/lib/Errors.sol";
+import { Licensing } from "contracts/lib/Licensing.sol";
+import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
+import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
+import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
+
+// test
+import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy } from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
+import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
+import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 
 contract LicenseRegistryTest is Test {
     using Strings for *;
     using ShortStrings for *;
 
-    MockAccessController public accessController = new MockAccessController();
-    IPAccountRegistry public ipAccountRegistry;
+    MockAccessController internal accessController = new MockAccessController();
+    IPAccountRegistry internal ipAccountRegistry;
 
-    LicenseRegistry public registry;
+    LicenseRegistry internal registry;
 
-    MockPolicyFrameworkManager public module1;
-    UMLPolicyFrameworkManager public umlManager;
+    MockPolicyFrameworkManager internal module1;
+    UMLPolicyFrameworkManager internal umlManager;
 
-    MockERC721 nft = new MockERC721("MockERC721");
+    MockERC721 internal nft = new MockERC721("MockERC721");
 
     string public licenseUrl = "https://example.com/license";
     address public ipId1;
@@ -39,20 +44,25 @@ contract LicenseRegistryTest is Test {
     address public licenseHolder = address(0x101);
 
     function setUp() public {
+        // Registry
         ipAccountRegistry = new IPAccountRegistry(
             address(new ERC6551Registry()),
             address(accessController),
             address(new IPAccountImpl())
         );
         registry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
-        module1 = new MockPolicyFrameworkManager(MockPolicyFrameworkConfig({
-            licenseRegistry: address(registry),
-            name: "MockPolicyFrameworkManager",
-            licenseUrl: licenseUrl,
-            supportVerifyLink: true,
-            supportVerifyMint: true,
-            supportVerifyTransfer: true
-        }));
+
+        // Setup Framework Managers (don't register PFM here, do in each test case)
+        module1 = new MockPolicyFrameworkManager(
+            MockPolicyFrameworkConfig({
+                licenseRegistry: address(registry),
+                name: "MockPolicyFrameworkManager",
+                licenseUrl: licenseUrl,
+                supportVerifyLink: true,
+                supportVerifyMint: true,
+                supportVerifyTransfer: true
+            })
+        );
         umlManager = new UMLPolicyFrameworkManager(
             address(accessController),
             address(registry),
@@ -60,28 +70,18 @@ contract LicenseRegistryTest is Test {
             licenseUrl
         );
 
+        // Create IPAccounts
         nft.mintId(ipOwner, 1);
         nft.mintId(ipOwner, 2);
-        ipId1 = ipAccountRegistry.registerIpAccount(
-            block.chainid,
-            address(nft),
-            1
-        );
-        ipId2 = ipAccountRegistry.registerIpAccount(
-            block.chainid,
-            address(nft),
-            2
-        );
+        ipId1 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 1);
+        ipId2 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 2);
+
+        vm.label(ipId1, "IPAccount1");
+        vm.label(ipId2, "IPAccount2");
     }
 
     function _createPolicy() internal pure returns (bytes memory) {
-        return abi.encode(
-            MockPolicy({
-                returnVerifyLink: true,
-                returnVerifyMint: true,
-                returnVerifyTransfer: true
-            })
-        );
+        return abi.encode(MockPolicy({ returnVerifyLink: true, returnVerifyMint: true, returnVerifyTransfer: true }));
     }
 
     function test_LicenseRegistry_registerLicenseFramework() public {
@@ -166,11 +166,7 @@ contract LicenseRegistryTest is Test {
 
         // Adding different policy to same ipId
         policy = abi.encode(
-            MockPolicy({
-                returnVerifyLink: true,
-                returnVerifyMint: true,
-                returnVerifyTransfer: false
-            })
+            MockPolicy({ returnVerifyLink: true, returnVerifyMint: true, returnVerifyTransfer: false })
         );
         vm.prank(address(module1));
         uint256 policyId2 = registry.registerPolicy(policy);
@@ -206,6 +202,92 @@ contract LicenseRegistryTest is Test {
         assertEq(license.policyId, policyId);
         assertEq(license.licensorIpId, ipId1);
         return licenseId;
+    }
+
+    function test_LicenseRegistry_mintLicense_revert_licensorNotRegistered() public {
+        registry.registerPolicyFrameworkManager(address(module1));
+
+        bytes memory policy = _createPolicy();
+
+        vm.prank(address(module1));
+        uint256 policyId = registry.registerPolicy(policy);
+
+        vm.prank(ipOwner);
+        registry.addPolicyToIp(ipId1, policyId);
+
+        vm.expectRevert(Errors.LicenseRegistry__LicensorNotRegistered.selector);
+        registry.mintLicense(policyId, address(0), 2, licenseHolder);
+    }
+
+    function test_LicenseRegistry_mintLicense_revert_callerNotLicensorAndIpIdHasNoPolicy() public {
+        registry.registerPolicyFrameworkManager(address(module1));
+
+        bytes memory policy = _createPolicy();
+        IPAccountImpl ipAccount1 = IPAccountImpl(payable(ipId1));
+
+        vm.prank(address(module1));
+        uint256 policyId = registry.registerPolicy(policy);
+
+        // Anyone (this contract, in this case) calls
+        vm.expectRevert(Errors.LicenseRegistry__CallerNotLicensorAndPolicyNotSet.selector);
+        registry.mintLicense(policyId, ipId1, 2, licenseHolder);
+
+        // Anyone, but call with permission (still fails)
+        address signer = address(0x999);
+
+        vm.prank(ipAccount1.owner());
+        ipAccount1.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setPermission(address,address,address,bytes4,uint8)",
+                address(ipAccount1),
+                signer,
+                address(registry),
+                registry.mintLicense.selector,
+                AccessPermission.ALLOW
+            )
+        );
+
+        vm.expectRevert(Errors.LicenseRegistry__CallerNotLicensorAndPolicyNotSet.selector);
+        vm.prank(signer);
+        registry.mintLicense(policyId, ipId1, 1, licenseHolder);
+    }
+
+    function test_LicenseRegistry_mintLicense_ipIdHasNoPolicyButCallerIsLicensor() public {
+        registry.registerPolicyFrameworkManager(address(module1));
+
+        bytes memory policy = _createPolicy();
+        bytes memory policy2 = abi.encode(
+            MockPolicy({ returnVerifyLink: true, returnVerifyMint: true, returnVerifyTransfer: false })
+        );
+        IPAccountImpl ipAccount1 = IPAccountImpl(payable(ipId1));
+
+        vm.startPrank(address(module1));
+        uint256 policyId1 = registry.registerPolicy(policy);
+        uint256 policyId2 = registry.registerPolicy(policy2);
+        vm.stopPrank();
+
+        // Licensor (IP Account owner) calls directly
+        vm.prank(ipAccount1.owner());
+        uint256 licenseId = registry.mintLicense(policyId1, ipId1, 1, licenseHolder);
+        assertEq(licenseId, 1);
+
+        // Licensor (IP Account owner) calls via IP Account execute
+        // The returned license ID (from decoding `result`) should be the same as above, as we're not creating a new
+        // license, but rather minting an existing one (existing ID, minted above).
+        vm.prank(ipAccount1.owner());
+        bytes memory result = ipAccount1.execute(
+            address(registry),
+            0,
+            abi.encodeWithSignature("mintLicense(uint256,address,uint256,address)", policyId1, ipId1, 1, licenseHolder)
+        );
+        assertEq(1, abi.decode(result, (uint256)));
+
+        // IP Account calls directly
+        vm.prank(ipId1);
+        licenseId = registry.mintLicense(policyId2, ipId1, 1, licenseHolder);
+        assertEq(licenseId, 2); // new license ID as this is the first mint on a different policy
     }
 
     function test_LicenseRegistry_linkIpToParents_single_parent() public {
@@ -271,11 +353,7 @@ contract LicenseRegistryTest is Test {
     function test_LicenseRegistry_singleTransfer_revert_verifyFalse() public {
         registry.registerPolicyFrameworkManager(address(module1));
         bytes memory policy = abi.encode(
-            MockPolicy({
-                returnVerifyLink: true,
-                returnVerifyMint: true,
-                returnVerifyTransfer: false
-            })
+            MockPolicy({ returnVerifyLink: true, returnVerifyMint: true, returnVerifyTransfer: false })
         );
         vm.prank(address(module1));
         uint256 policyId = registry.registerPolicy(policy);
@@ -396,7 +474,8 @@ contract LicenseRegistryTest is Test {
         ));
         */
         /* solhint-enable */
-        string memory expectedJson = "eyJuYW1lIjogIlN0b3J5IFByb3RvY29sIExpY2Vuc2UgTkZUIiwgImRlc2NyaXB0aW9uIjogIkxpY2Vuc2UgYWdyZWVtZW50IHN0YXRpbmcgdGhlIHRlcm1zIG9mIGEgU3RvcnkgUHJvdG9jb2wgSVBBc3NldCIsICJhdHRyaWJ1dGVzIjogW3sidHJhaXRfdHlwZSI6ICJBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIlRyYW5zZmVyYWJsZSIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkNvbW1lcmljYWwgVXNlIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbEF0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbFJldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogImNvbW1lcmNpYWxpemVycyIsICJ2YWx1ZSI6IFsiY29tbWVyY2lhbGl6ZXIxIiwiY29tbWVyY2lhbGl6ZXIyIl19LCB7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBbGxvd2VkIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzQXBwcm92YWwiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc1JlY2lwcm9jYWwiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc1JldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogInRlcnJpdG9yaWVzIiwgInZhbHVlIjogWyJ0ZXJyaXRvcnkxIl19LCB7InRyYWl0X3R5cGUiOiAiZGlzdHJpYnV0aW9uQ2hhbm5lbHMiLCAidmFsdWUiOiBbImRpc3RyaWJ1dGlvbkNoYW5uZWwxIl19XX0=";
+        string
+            memory expectedJson = "eyJuYW1lIjogIlN0b3J5IFByb3RvY29sIExpY2Vuc2UgTkZUIiwgImRlc2NyaXB0aW9uIjogIkxpY2Vuc2UgYWdyZWVtZW50IHN0YXRpbmcgdGhlIHRlcm1zIG9mIGEgU3RvcnkgUHJvdG9jb2wgSVBBc3NldCIsICJhdHRyaWJ1dGVzIjogW3sidHJhaXRfdHlwZSI6ICJBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIlRyYW5zZmVyYWJsZSIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkNvbW1lcmljYWwgVXNlIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbEF0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbFJldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogImNvbW1lcmNpYWxpemVycyIsICJ2YWx1ZSI6IFsiY29tbWVyY2lhbGl6ZXIxIiwiY29tbWVyY2lhbGl6ZXIyIl19LCB7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBbGxvd2VkIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzQXBwcm92YWwiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc1JlY2lwcm9jYWwiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc1JldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogInRlcnJpdG9yaWVzIiwgInZhbHVlIjogWyJ0ZXJyaXRvcnkxIl19LCB7InRyYWl0X3R5cGUiOiAiZGlzdHJpYnV0aW9uQ2hhbm5lbHMiLCAidmFsdWUiOiBbImRpc3RyaWJ1dGlvbkNoYW5uZWwxIl19XX0=";
 
         string memory expectedUri = string(abi.encodePacked("data:application/json;base64,", expectedJson));
 
