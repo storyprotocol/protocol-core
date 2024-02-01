@@ -136,7 +136,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         // Carl activates the license on his NFT 6 IPAccount, linking as child to Alice's NFT 1 IPAccount
         {
             vm.startPrank(u.carl);
-            uint256 carl_license_from_root_alice = licenseRegistry.mintLicense(
+            uint256[] memory carl_license_from_root_alice = new uint256[](1);
+            carl_license_from_root_alice[0] = licenseRegistry.mintLicense(
                 policyIds["uml_com_deriv_cheap_flexible"],
                 ipAcct[1],
                 1,
@@ -144,7 +145,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             );
 
             ipAcct[6] = registerIpAccount(nft, 6, u.carl);
-            linkIpToParent(carl_license_from_root_alice, ipAcct[6], u.carl);
+            linkIpToParents(carl_license_from_root_alice, ipAcct[6], u.carl);
         }
 
         // Alice mints 2 license for policy "noncom_deriv_mint_payment" on Bob's NFT 3 IPAccount
@@ -162,7 +163,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             uint256 aliceTokenBalance = erc20.balanceOf(u.alice);
             uint256 pfmTokenBalance = erc20.balanceOf(pfm["mint_payment"].addr);
 
-            uint256 alice_license_from_root_bob = licenseRegistry.mintLicense(
+            uint256[] memory alice_license_from_root_bob = new uint256[](1);
+            alice_license_from_root_bob[0] = licenseRegistry.mintLicense(
                 policyIds["mint_payment_normal"],
                 ipAcct[3],
                 mintAmount,
@@ -181,12 +183,12 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             );
 
             ipAcct[2] = registerIpAccount(nft, 2, u.alice);
-            linkIpToParent(alice_license_from_root_bob, ipAcct[2], u.alice);
+            linkIpToParents(alice_license_from_root_bob, ipAcct[2], u.alice);
 
             uint256 tokenId = 99999999;
             nft.mintId(u.alice, tokenId);
 
-            ipAcct[tokenId] = registerDerivativeIp(
+            ipAcct[tokenId] = registerDerivativeIps(
                 alice_license_from_root_bob,
                 address(nft),
                 tokenId,
@@ -206,6 +208,48 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             vm.startPrank(u.bob);
             taggingModule.setTag("sequel", ipAcct[99999999]);
             assertTrue(taggingModule.isTagged("sequel", ipAcct[99999999]));
+        }
+
+        // Carl mints licenses and linkts to multiple parents
+        // Carl creates NFT 6 IPAccount
+        // Carl activates the license on his NFT 6 IPAccount, linking as child to Alice's NFT 1 IPAccount
+        {
+            vm.startPrank(u.carl);
+
+            uint256 paymentPerMint = MintPaymentPolicyFrameworkManager(pfm["mint_payment"].addr).payment();
+
+            uint256 tokenId = 7;
+            nft.mintId(u.carl, tokenId);
+
+            erc20.approve(pfm["mint_payment"].addr, 1 * paymentPerMint);
+
+            uint256[] memory carl_licenses = new uint256[](2);
+            carl_licenses[0] = licenseRegistry.mintLicense(
+                policyIds["uml_com_deriv_cheap_flexible"], // ipAcct[1] has this policy attached
+                ipAcct[1],
+                1,
+                u.carl
+            );
+            carl_licenses[1] = licenseRegistry.mintLicense(
+                policyIds["mint_payment_normal"], // ipAcct[3] has this policy attached
+                ipAcct[3],
+                1,
+                u.carl
+            );
+
+            registerDerivativeIps(
+                carl_licenses,
+                address(nft),
+                tokenId,
+                IP.MetadataV1({
+                    name: "IP NAME",
+                    hash: bytes32("hash"),
+                    registrationDate: uint64(block.timestamp),
+                    registrant: u.carl, // caller
+                    uri: "external URL"
+                }),
+                u.carl // caller
+            );
         }
     }
 }

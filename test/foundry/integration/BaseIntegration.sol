@@ -180,7 +180,7 @@ contract BaseIntegration is Test {
         accessController.setGlobalPermission(
             address(registrationModule),
             address(licenseRegistry),
-            bytes4(licenseRegistry.linkIpToParent.selector),
+            bytes4(licenseRegistry.linkIpToParents.selector),
             1 // AccessPermission.ALLOW
         );
     }
@@ -268,8 +268,8 @@ contract BaseIntegration is Test {
         return registerIpAccount(address(nft), tokenId, caller);
     }
 
-    function registerDerivativeIp(
-        uint256 licenseId,
+    function registerDerivativeIps(
+        uint256[] memory licenseIds,
         address nft,
         uint256 tokenId,
         IP.MetadataV1 memory metadata,
@@ -286,9 +286,14 @@ contract BaseIntegration is Test {
 
         vm.label(expectedAddr, string(abi.encodePacked("IPAccount", Strings.toString(tokenId))));
 
-        uint256 policyId = licenseRegistry.policyIdForLicense(licenseId);
-        address parentIpId = licenseRegistry.licensorIpId(licenseId);
-        uint256 newPolicyIndex = licenseRegistry.totalPoliciesForIp(expectedAddr);
+        uint256[] memory policyIds = new uint256[](licenseIds.length);
+        address[] memory parentIpIds = new address[](licenseIds.length);
+        uint256[] memory newPolicyIndexes = new uint256[](licenseIds.length);
+        for (uint256 i = 0; i < licenseIds.length; i++) {
+            policyIds[i] = licenseRegistry.policyIdForLicense(licenseIds[i]);
+            parentIpIds[i] = licenseRegistry.licensorIpId(licenseIds[i]);
+            newPolicyIndexes[i] = licenseRegistry.totalPoliciesForIp(expectedAddr) + i;
+        }
 
         vm.expectEmit();
         emit IERC6551Registry.ERC6551AccountCreated({
@@ -334,84 +339,125 @@ contract BaseIntegration is Test {
         });
 
         // Note that below events are emitted in function that's called by the registration module.
+        for (uint256 i = 0; i < licenseIds.length; i++) {
+            vm.expectEmit();
+            emit ILicenseRegistry.PolicyAddedToIpId({
+                caller: address(registrationModule),
+                ipId: expectedAddr,
+                policyId: policyIds[i],
+                index: newPolicyIndexes[i],
+                inheritedPolicy: true
+            });
+        }
 
         vm.expectEmit();
-        emit ILicenseRegistry.PolicyAddedToIpId({
+        emit ILicenseRegistry.IpIdLinkedToParents({
             caller: address(registrationModule),
             ipId: expectedAddr,
-            policyId: policyId,
-            index: newPolicyIndex,
-            inheritedPolicy: true
+            parentIpIds: parentIpIds
         });
 
-        vm.expectEmit();
-        emit ILicenseRegistry.IpIdLinkedToParent({
-            caller: address(registrationModule),
-            ipId: expectedAddr,
-            parentIpId: parentIpId
-        });
+        if (licenseIds.length == 1) {
+            vm.expectEmit();
+            emit IERC1155.TransferSingle({
+                operator: address(registrationModule),
+                from: caller,
+                to: address(0), // burn addr
+                id: licenseIds[0],
+                value: 1
+            });
+        } else {
+            uint256[] memory values = new uint256[](licenseIds.length);
+            for (uint256 i = 0; i < licenseIds.length; ++i) {
+                values[i] = 1;
+            }
+
+            vm.expectEmit();
+            emit IERC1155.TransferBatch({
+                operator: address(registrationModule),
+                from: caller,
+                to: address(0), // burn addr
+                ids: licenseIds,
+                values: values
+            });
+        }
 
         vm.expectEmit();
-        emit IERC1155.TransferSingle({
-            operator: address(registrationModule),
-            from: caller,
-            to: address(0), // burn addr
-            id: licenseId,
-            value: 1
-        });
-
-        vm.expectEmit();
-        emit IRegistrationModule.DerivativeIPRegistered({ caller: caller, ipId: expectedAddr, licenseId: licenseId });
+        emit IRegistrationModule.DerivativeIPRegistered({ caller: caller, ipId: expectedAddr, licenseIds: licenseIds });
 
         vm.startPrank(caller);
-        registrationModule.registerDerivativeIp(licenseId, nft, tokenId, metadata.name, metadata.hash, metadata.uri);
+        registrationModule.registerDerivativeIp(licenseIds, nft, tokenId, metadata.name, metadata.hash, metadata.uri);
         return expectedAddr;
     }
 
-    function linkIpToParent(uint256 licenseId, address ipId, address caller) internal {
-        uint256 policyId = licenseRegistry.policyIdForLicense(licenseId);
-        address parentIpId = licenseRegistry.licensorIpId(licenseId);
-        uint256 newPolicyIndex = licenseRegistry.totalPoliciesForIp(ipId);
+    function linkIpToParents(uint256[] memory licenseIds, address ipId, address caller) internal {
+        uint256[] memory policyIds = new uint256[](licenseIds.length);
+        address[] memory parentIpIds = new address[](licenseIds.length);
+        uint256[] memory newPolicyIndexes = new uint256[](licenseIds.length);
+        uint256[] memory prevLicenseAmounts = new uint256[](licenseIds.length);
+        uint256[] memory values = new uint256[](licenseIds.length);
 
-        uint256 prevLicenseAmount = licenseRegistry.balanceOf(caller, licenseId);
+        for (uint256 i = 0; i < licenseIds.length; i++) {
+            policyIds[i] = licenseRegistry.policyIdForLicense(licenseIds[i]);
+            parentIpIds[i] = licenseRegistry.licensorIpId(licenseIds[i]);
+            newPolicyIndexes[i] = licenseRegistry.totalPoliciesForIp(ipId);
+            prevLicenseAmounts[i] = licenseRegistry.balanceOf(caller, licenseIds[i]);
+            values[i] = 1;
+            vm.expectEmit();
+            emit ILicenseRegistry.PolicyAddedToIpId({
+                caller: caller,
+                ipId: ipId,
+                policyId: policyIds[i],
+                index: newPolicyIndexes[i],
+                inheritedPolicy: true
+            });
+        }
 
         vm.expectEmit();
-        emit ILicenseRegistry.PolicyAddedToIpId({
-            caller: caller,
-            ipId: ipId,
-            policyId: policyId,
-            index: newPolicyIndex,
-            inheritedPolicy: true
-        });
+        emit ILicenseRegistry.IpIdLinkedToParents({ caller: caller, ipId: ipId, parentIpIds: parentIpIds });
 
-        vm.expectEmit();
-        emit ILicenseRegistry.IpIdLinkedToParent({ caller: caller, ipId: ipId, parentIpId: parentIpId });
-
-        vm.expectEmit();
-        emit IERC1155.TransferSingle({
-            operator: caller,
-            from: caller,
-            to: address(0), // burn addr
-            id: licenseId,
-            value: 1
-        });
+        if (licenseIds.length == 1) {
+            vm.expectEmit();
+            emit IERC1155.TransferSingle({
+                operator: caller,
+                from: caller,
+                to: address(0), // burn addr
+                id: licenseIds[0],
+                value: 1
+            });
+        } else {
+            vm.expectEmit();
+            emit IERC1155.TransferBatch({
+                operator: caller,
+                from: caller,
+                to: address(0), // burn addr
+                ids: licenseIds,
+                values: values
+            });
+        }
 
         vm.startPrank(caller);
-        licenseRegistry.linkIpToParent(licenseId, ipId, caller);
+        licenseRegistry.linkIpToParents(licenseIds, ipId, caller);
 
-        assertEq(licenseRegistry.balanceOf(caller, licenseId), prevLicenseAmount - 1, "license not burnt on linking");
-        assertTrue(licenseRegistry.isParent(parentIpId, ipId), "parent IP account is not parent");
-        assertEq(
-            keccak256(
-                abi.encode(
-                    licenseRegistry.policyForIpAtIndex(
-                        parentIpId,
-                        licenseRegistry.indexOfPolicyForIp(parentIpId, policyId)
+        for (uint256 i = 0; i < licenseIds.length; i++) {
+            assertEq(
+                licenseRegistry.balanceOf(caller, licenseIds[i]),
+                prevLicenseAmounts[i] - 1,
+                "license not burnt on linking"
+            );
+            assertTrue(licenseRegistry.isParent(parentIpIds[i], ipId), "parent IP account is not parent");
+            assertEq(
+                keccak256(
+                    abi.encode(
+                        licenseRegistry.policyForIpAtIndex(
+                            parentIpIds[i],
+                            licenseRegistry.indexOfPolicyForIp(parentIpIds[i], policyIds[i])
+                        )
                     )
-                )
-            ),
-            keccak256(abi.encode(licenseRegistry.policyForIpAtIndex(ipId, newPolicyIndex))),
-            "policy not the same in parent to child"
-        );
+                ),
+                keccak256(abi.encode(licenseRegistry.policyForIpAtIndex(ipId, newPolicyIndexes[i]))),
+                "policy not the same in parent to child"
+            );
+        }
     }
 }
