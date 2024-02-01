@@ -18,7 +18,7 @@ import { LSClaimer } from "contracts/modules/royalty-module/policies/LSClaimer.s
 import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
 
 // test
-import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseFrameworkPolicy.sol";
+import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
 import { MintPaymentPolicyFrameworkManager } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { TestHelper } from "test/utils/TestHelper.sol";

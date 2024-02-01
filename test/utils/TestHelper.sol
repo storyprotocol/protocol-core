@@ -9,7 +9,7 @@ import { Test } from "forge-std/Test.sol";
 import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
 // test
-import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseFrameworkPolicy.sol";
+import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { DeployHelper } from "test/utils/DeployHelper.sol";
 
