@@ -292,18 +292,32 @@ contract GovernanceTest is Test {
     function test_Governance_revert_checkPermissionUnPausedThenPauseThenUnPause() public {
         MockModule mockModule2 = new MockModule(address(ipAccountRegistry), address(moduleRegistry), "MockModule2");
         moduleRegistry.registerModule("MockModule2", address(mockModule2));
-        assertFalse(
-            accessController.checkPermission(address(ipAccount), address(mockModule), address(mockModule2), bytes4(0))
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
+                address(ipAccount),
+                address(mockModule),
+                address(mockModule2),
+                bytes4(0)
+            )
         );
+        accessController.checkPermission(address(ipAccount), address(mockModule), address(mockModule2), bytes4(0));
 
         governance.setState(GovernanceLib.ProtocolState.Paused);
         vm.expectRevert(abi.encodeWithSelector(Errors.Governance__ProtocolPaused.selector));
         accessController.checkPermission(address(ipAccount), address(mockModule), address(mockModule2), bytes4(0));
 
         governance.setState(GovernanceLib.ProtocolState.Unpaused);
-        assertFalse(
-            accessController.checkPermission(address(ipAccount), address(mockModule), address(mockModule2), bytes4(0))
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
+                address(ipAccount),
+                address(mockModule),
+                address(mockModule2),
+                bytes4(0)
+            )
         );
+        accessController.checkPermission(address(ipAccount), address(mockModule), address(mockModule2), bytes4(0));
     }
 
     function test_Governance_revert_setStateWithNonAdmin() public {

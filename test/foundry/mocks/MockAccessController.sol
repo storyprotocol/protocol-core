@@ -2,6 +2,7 @@
 pragma solidity ^0.8.23;
 import "contracts/interfaces/IAccessController.sol";
 import "contracts/interfaces/IIPAccount.sol";
+import "contracts/lib/Errors.sol";
 
 contract MockAccessController is IAccessController {
 
@@ -22,7 +23,9 @@ contract MockAccessController is IAccessController {
         return 1;
     }
 
-    function checkPermission(address ipAccount, address signer, address, bytes4) external view returns(bool) {
-        return IIPAccount(payable(ipAccount)).owner() == signer && isAllowed;
+    function checkPermission(address ipAccount, address signer, address to, bytes4 func) external view {
+        if (IIPAccount(payable(ipAccount)).owner() != signer || !isAllowed) {
+            revert Errors.AccessController__PermissionDenied(ipAccount, signer, to, func);
+        }
     }
 }

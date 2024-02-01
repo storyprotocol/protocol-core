@@ -21,6 +21,7 @@ library Errors {
     error IPAccount__InvalidSigner();
     error IPAccount__InvalidSignature();
     error IPAccount__ExpiredSignature();
+    error IPAccount__InvalidCalldata();
 
     ////////////////////////////////////////////////////////////////////////////
     //                                   Module                               //
@@ -224,10 +225,12 @@ library Errors {
     ////////////////////////////////////////////////////////////////////////////
 
     error AccessController__IPAccountIsZeroAddress();
-    error AccessController__IPAccountIsNotValid();
+    error AccessController__IPAccountIsNotValid(address ipAccount);
     error AccessController__SignerIsZeroAddress();
     error AccessController__CallerIsNotIPAccount();
     error AccessController__PermissionIsNotValid();
+    error AccessController__RecipientIsNotRegisteredModule(address to);
+    error AccessController__PermissionDenied(address ipAccount, address signer, address to, bytes4 func);
 
     ////////////////////////////////////////////////////////////////////////////
     //                             TaggingModule                              //

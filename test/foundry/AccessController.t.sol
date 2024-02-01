@@ -87,14 +87,11 @@ contract AccessControllerTest is Test {
             ),
             AccessPermission.ALLOW
         );
-        assertEq(
-            accessController.checkPermission(
-                address(ipAccount),
-                signer,
-                address(mockModule),
-                mockModule.executeSuccessfully.selector
-            ),
-            true
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
         );
     }
 
@@ -103,7 +100,15 @@ contract AccessControllerTest is Test {
         address signer = vm.addr(2);
         address nonOwner = vm.addr(3);
         vm.prank(nonOwner);
-        vm.expectRevert("Invalid signer");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
+                address(ipAccount),
+                nonOwner,
+                address(accessController),
+                accessController.setPermission.selector
+            )
+        );
         ipAccount.execute(
             address(accessController),
             0,
@@ -143,7 +148,10 @@ contract AccessControllerTest is Test {
         );
 
         vm.prank(address(ipAccount));
-        vm.expectRevert(Errors.AccessController__IPAccountIsNotValid.selector);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.AccessController__IPAccountIsNotValid.selector, address(0xbeefbeef))
+        );
         accessController.setPermission(
             address(0xbeefbeef),
             signer,
@@ -189,22 +197,22 @@ contract AccessControllerTest is Test {
                 AccessPermission.ALLOW
             )
         );
-
-        assertFalse(
-            accessController.checkPermission(
-                address(ipAccount),
-                signer,
-                address(0xbeef), // instead of address(mockModule)
-                mockModule.executeSuccessfully.selector
-            )
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.AccessController__RecipientIsNotRegisteredModule.selector, address(0xbeef))
         );
-        assertFalse(
-            accessController.checkPermission(
-                address(0xbeef), // invalid IPAccount
-                signer,
-                address(mockModule),
-                mockModule.executeSuccessfully.selector
-            )
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(0xbeef), // instead of address(mockModule)
+            mockModule.executeSuccessfully.selector
+        );
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessController__IPAccountIsNotValid.selector, address(0xbeef)));
+        accessController.checkPermission(
+            address(0xbeef), // invalid IPAccount
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
         );
     }
 
@@ -237,14 +245,12 @@ contract AccessControllerTest is Test {
             ),
             AccessPermission.ABSTAIN
         );
-        assertEq(
-            accessController.checkPermission(
-                address(ipAccount),
-                signer,
-                address(mockModule),
-                mockModule.executeSuccessfully.selector
-            ),
-            true
+
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
         );
     }
 
@@ -277,14 +283,20 @@ contract AccessControllerTest is Test {
             ),
             AccessPermission.ABSTAIN
         );
-        assertEq(
-            accessController.checkPermission(
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
                 address(ipAccount),
                 signer,
                 address(mockModule),
                 mockModule.executeSuccessfully.selector
-            ),
-            false
+            )
+        );
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
         );
     }
 
@@ -317,14 +329,11 @@ contract AccessControllerTest is Test {
             ),
             AccessPermission.ABSTAIN
         );
-        assertEq(
-            accessController.checkPermission(
-                address(ipAccount),
-                signer,
-                address(mockModule),
-                mockModule.executeSuccessfully.selector
-            ),
-            true
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
         );
     }
 
@@ -357,14 +366,20 @@ contract AccessControllerTest is Test {
             ),
             AccessPermission.ABSTAIN
         );
-        assertEq(
-            accessController.checkPermission(
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
                 address(ipAccount),
                 signer,
                 address(mockModule),
                 mockModule.executeSuccessfully.selector
-            ),
-            false
+            )
+        );
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
         );
     }
 
@@ -412,14 +427,11 @@ contract AccessControllerTest is Test {
             AccessPermission.ALLOW
         );
 
-        assertEq(
-            accessController.checkPermission(
-                address(ipAccount),
-                signer,
-                address(mockModule),
-                mockModule.executeSuccessfully.selector
-            ),
-            true
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
         );
     }
 
@@ -466,15 +478,20 @@ contract AccessControllerTest is Test {
             ),
             AccessPermission.DENY
         );
-
-        assertEq(
-            accessController.checkPermission(
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
                 address(ipAccount),
                 signer,
                 address(mockModule),
                 mockModule.executeSuccessfully.selector
-            ),
-            false
+            )
+        );
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
         );
     }
 
@@ -522,14 +539,11 @@ contract AccessControllerTest is Test {
             AccessPermission.ALLOW
         );
 
-        assertEq(
-            accessController.checkPermission(
-                address(ipAccount),
-                signer,
-                address(mockModule),
-                mockModule.executeSuccessfully.selector
-            ),
-            true
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
         );
     }
 
@@ -576,15 +590,20 @@ contract AccessControllerTest is Test {
             ),
             AccessPermission.DENY
         );
-
-        assertEq(
-            accessController.checkPermission(
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
                 address(ipAccount),
                 signer,
                 address(mockModule),
                 mockModule.executeSuccessfully.selector
-            ),
-            false
+            )
+        );
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
         );
     }
 
@@ -637,14 +656,11 @@ contract AccessControllerTest is Test {
             AccessPermission.ABSTAIN
         );
 
-        assertEq(
-            accessController.checkPermission(
-                address(ipAccount),
-                signer,
-                address(mockModule),
-                mockModule.executeSuccessfully.selector
-            ),
-            true
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
         );
     }
 
@@ -696,15 +712,20 @@ contract AccessControllerTest is Test {
             ),
             AccessPermission.ABSTAIN
         );
-
-        assertEq(
-            accessController.checkPermission(
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
                 address(ipAccount),
                 signer,
                 address(mockModule),
                 mockModule.executeSuccessfully.selector
-            ),
-            false
+            )
+        );
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
         );
     }
 
@@ -858,7 +879,15 @@ contract AccessControllerTest is Test {
         );
 
         vm.prank(owner);
-        vm.expectRevert("Invalid signer");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
+                address(ipAccount),
+                address(mockOrchestratorModule),
+                address(module3WithoutPermission),
+                module3WithoutPermission.executeNoReturn.selector
+            )
+        );
         mockOrchestratorModule.workflowFailure(payable(address(ipAccount)));
     }
 

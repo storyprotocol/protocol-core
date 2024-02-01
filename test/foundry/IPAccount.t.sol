@@ -87,7 +87,16 @@ contract IPAccountTest is Test {
         assertEq(chainId_, block.chainid);
         assertEq(tokenAddress_, address(nft));
         assertEq(tokenId_, tokenId);
-        assertEq(ipAccount.isValidSigner(vm.addr(2), ""), bytes4(0));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
+                address(ipAccount),
+                vm.addr(2),
+                address(0),
+                bytes4(0)
+            )
+        );
+        ipAccount.isValidSigner(vm.addr(2), "");
         assertEq(ipAccount.isValidSigner(owner, ""), IERC6551Account.isValidSigner.selector);
 
         // Transfer token to new owner and make sure account owner changes
@@ -143,7 +152,15 @@ contract IPAccountTest is Test {
         IIPAccount ipAccount = IIPAccount(payable(account));
 
         vm.prank(vm.addr(3));
-        vm.expectRevert("Invalid signer");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
+                address(ipAccount),
+                vm.addr(3),
+                address(module),
+                module.executeSuccessfully.selector
+            )
+        );
         ipAccount.execute(address(module), 0, abi.encodeWithSignature("executeSuccessfully(string)", "test"));
         assertEq(ipAccount.state(), 0);
     }
