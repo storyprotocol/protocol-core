@@ -12,13 +12,13 @@ import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegist
 import { ILiquidSplitClone } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
 import { IRoyaltyPolicyLS } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLS.sol";
 import { ILiquidSplitMain } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitMain.sol";
-import { IClaimerLS } from "contracts/interfaces/modules/royalty/policies/IClaimerLS.sol";
+import { ILSClaimer } from "contracts/interfaces/modules/royalty/policies/ILSClaimer.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
 /// @title Liquid Split Claimer
 /// @notice The liquid split claimer allows parents and grandparents to claim their share
 ///         the rnfts of their children and grandchildren along with any accrued royalties.
-contract LSClaimer is IClaimerLS, ERC1155Holder, ReentrancyGuard {
+contract LSClaimer is ILSClaimer, ERC1155Holder, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /// @notice The license registry interface

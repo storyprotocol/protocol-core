@@ -93,16 +93,21 @@ contract DeployHelper is Test {
 
     uint256 internal constant ARBITRATION_PRICE = 1000 * 10 ** 6; // 1000 USDC
 
-    // USDC
-    string internal constant USDC_NAME = "USD Coin";
-    string internal constant USDC_SYMBOL = "USDC";
-    uint8 internal constant USDC_DECIMALS = 6;
-    address internal constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address internal constant USDC_RICH = 0xcEe284F754E854890e311e3280b767F80797180d;
+    // USDC (ETH Mainnet)
+    // address internal constant USDC = 0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9;
+    // address internal constant USDC_RICH = 0x546e37DAA15cdb82fd1a717E5dEEa4AF08D4349A;
+
+    // WETH (Sepolia)
+    address internal constant WETH = 0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9;
+    address internal constant WETH_RICH = 0x546e37DAA15cdb82fd1a717E5dEEa4AF08D4349A;
 
     // Liquid Split (ETH Mainnet)
-    address internal constant LIQUID_SPLIT_FACTORY = 0xdEcd8B99b7F763e16141450DAa5EA414B7994831;
-    address internal constant LIQUID_SPLIT_MAIN = 0x2ed6c4B5dA6378c7897AC67Ba9e43102Feb694EE;
+    // address internal constant LIQUID_SPLIT_FACTORY = 0xdEcd8B99b7F763e16141450DAa5EA414B7994831;
+    // address internal constant LIQUID_SPLIT_MAIN = 0x2ed6c4B5dA6378c7897AC67Ba9e43102Feb694EE;
+
+    // Liquid Split (Sepolia)
+    address internal constant LIQUID_SPLIT_FACTORY = 0xF678Bae6091Ab6933425FE26Afc20Ee5F324c4aE;
+    address internal constant LIQUID_SPLIT_MAIN = 0x57CBFA83f000a38C5b5881743E298819c503A559;
 
     function deploy() public virtual {
         u = UsersLib.createMockUsers(vm);
@@ -155,7 +160,7 @@ contract DeployHelper is Test {
             address(royaltyModule)
         );
 
-        arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), USDC, ARBITRATION_PRICE);
+        arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), WETH, ARBITRATION_PRICE);
         royaltyPolicyLS = new RoyaltyPolicyLS(
             address(royaltyModule),
             address(licenseRegistry),
