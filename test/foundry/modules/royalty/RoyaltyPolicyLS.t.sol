@@ -102,7 +102,7 @@ contract TestLSClaimer is TestHelper {
 
     function test_RoyaltyPolicyLS_initPolicy_rootIPA() public {
         address[] memory parentIpIds = new address[](0);
-        uint32 minRoyaltyIpAccount1 = 100; 
+        uint32 minRoyaltyIpAccount1 = 0; 
         bytes memory data = abi.encode(minRoyaltyIpAccount1);
 
         royaltyModule.setRoyaltyPolicy(ipAccount1, address(royaltyPolicyLS), parentIpIds, data);

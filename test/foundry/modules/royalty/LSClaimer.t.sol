@@ -85,7 +85,7 @@ contract TestLSClaimer is TestHelper {
         address ipAddr = registrationModule.registerRootIp(policyIds["uml_cheap_flexible"], address(nft), nftIds[0]);
         vm.label(ipAddr, string(abi.encodePacked("IPAccount", Strings.toString(nftIds[0]))));
 
-        for (uint256 i = 0; i < 100; i++) {
+        for (uint256 i = 0; i < 99; i++) {
             uint256 licenseId = licenseRegistry.mintLicense(
                 policyIds["uml_cheap_flexible"],
                 _getIpId(nft, nftIds[i]),
@@ -124,7 +124,7 @@ contract TestLSClaimer is TestHelper {
         testRoyaltyPolicyLS.initPolicy(_getIpId(nft, nftIds[0]), parentsIds1, abi.encode(10));
 
         // set up derivative royalty policy
-        for (uint256 i = 0; i < 100; i++) {
+        for (uint256 i = 0; i < 99; i++) {
             address[] memory parentsIds = new address[](1);
             parentsIds[0] = _getIpId(nft, nftIds[i]);
             testRoyaltyPolicyLS.initPolicy(_getIpId(nft, nftIds[i + 1]), parentsIds, abi.encode(10));
@@ -132,7 +132,7 @@ contract TestLSClaimer is TestHelper {
         vm.stopPrank();
 
         (address split, address claimer, uint32 rStack, uint32 mRoyalty) = testRoyaltyPolicyLS.royaltyData(
-            _getIpId(nft, nftIds[100])
+            _getIpId(nft, nftIds[99])
         );
         lsClaimer100 = LSClaimer(claimer);
         splitClone100 = split;
@@ -141,10 +141,10 @@ contract TestLSClaimer is TestHelper {
 
         // set up longest chain possible of 100 elements
         for (uint256 i = 0; i < 100; i++) {
-            LONG_CHAIN[i] = _getIpId(nft, nftIds[i + 1]);
+            LONG_CHAIN[i] = _getIpId(nft, nftIds[i]);
         }
         assertEq(LONG_CHAIN[0], _getIpId(nft, nftIds[0]));
-        assertEq(LONG_CHAIN[99], _getIpId(nft, nftIds[100]));
+        assertEq(LONG_CHAIN[99], _getIpId(nft, nftIds[99]));
         assertEq(LONG_CHAIN.length, 100);
         assertEq(royaltyStack100, 1000);
     }
@@ -214,7 +214,7 @@ contract TestLSClaimer is TestHelper {
         IERC20(USDC).transfer(address(splitClone100), usdcRoyaltyAmount);
         vm.stopPrank();
 
-        accounts[0] = _getIpId(nft, nftIds[100]);
+        accounts[0] = _getIpId(nft, nftIds[99]);
         accounts[1] = address(lsClaimer100);
 
         ILiquidSplitClone(splitClone100).distributeFunds(USDC, accounts, address(0));
@@ -235,7 +235,7 @@ contract TestLSClaimer is TestHelper {
     function test_LSClaimer_claim_revert_ETHBalanceNotZero() public {
         vm.deal(address(splitClone100), ethRoyaltyAmount);
 
-        accounts[0] = _getIpId(nft, nftIds[100]);
+        accounts[0] = _getIpId(nft, nftIds[99]);
         accounts[1] = address(lsClaimer100);
 
         ILiquidSplitClone(splitClone100).distributeFunds(address(0), accounts, address(0));
