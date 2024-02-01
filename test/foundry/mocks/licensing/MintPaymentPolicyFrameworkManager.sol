@@ -27,10 +27,11 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintP
 
     constructor(
         address licenseRegistry,
+        string memory name,
         string memory licenseUrl,
         address _token,
         uint256 _payment
-    ) BasePolicyFrameworkManager(licenseRegistry, licenseUrl) {
+    ) BasePolicyFrameworkManager(licenseRegistry, name, licenseUrl) {
         token = IERC20(_token);
         payment = _payment;
     }
@@ -45,17 +46,9 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintP
             super.supportsInterface(interfaceId);
     }
 
-    function addPolicy(MintPaymentPolicy calldata mmpol) external returns (uint256 policyId) {
-        if (policyFrameworkId == 0) {
-            revert Errors.PolicyFramework_FrameworkNotYetRegistered();
-        }
-
-        Licensing.Policy memory protocolPolicy = Licensing.Policy({
-            policyFrameworkId: policyFrameworkId,
-            data: abi.encode(mmpol)
-        });
-        return LICENSE_REGISTRY.addPolicy(protocolPolicy);
+    function registerPolicy(MintPaymentPolicy calldata mmpol) external returns (uint256 policyId) {
         emit MintPaymentPolicyAdded(policyId, mmpol);
+        return LICENSE_REGISTRY.registerPolicy(abi.encode(mmpol));
     }
 
     /// @dev Mock verifies the param by decoding it as a bool. If you want the verifier

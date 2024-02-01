@@ -23,7 +23,6 @@ enum PFMType {
 
 struct PFMData {
     PFMType pfmType;
-    uint256 pfmId;
     address addr;
 }
 
@@ -73,9 +72,10 @@ contract Integration_Shared_LicensingHelper {
 
     modifier withLFM_UML() {
         BasePolicyFrameworkManager _pfm = BasePolicyFrameworkManager(
-            new UMLPolicyFrameworkManager(address(accessController), address(licenseRegistry), "license Url")
+            new UMLPolicyFrameworkManager(address(accessController), address(licenseRegistry), "uml", "license Url")
         );
-        pfm["uml"] = PFMData({ pfmType: PFMType.UML, pfmId: _pfm.register(), addr: address(_pfm) });
+        licenseRegistry.registerPolicyFrameworkManager(address(_pfm));
+        pfm["uml"] = PFMData({ pfmType: PFMType.UML, addr: address(_pfm) });
         _;
     }
 
@@ -83,38 +83,43 @@ contract Integration_Shared_LicensingHelper {
         BasePolicyFrameworkManager _pfm = BasePolicyFrameworkManager(
             new MintPaymentPolicyFrameworkManager(
                 address(licenseRegistry),
+                "mint_payment",
                 "license url",
                 address(erc20),
                 paymentWithoutDecimals * 10 ** erc20.decimals() // `paymentWithoutDecimals` amount per license mint
             )
         );
-        pfm["mint_payment"] = PFMData({ pfmType: PFMType.MintPayment, pfmId: _pfm.register(), addr: address(_pfm) });
+        licenseRegistry.registerPolicyFrameworkManager(address(_pfm));
+        pfm["mint_payment"] = PFMData({ pfmType: PFMType.MintPayment, addr: address(_pfm) });
         _;
     }
 
     modifier withLFM_MockOnAll() {
         BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(true, true, true);
-        pfm["mock_on_all"] = PFMData({ pfmType: PFMType.MockGeneric, pfmId: _pfm.register(), addr: address(_pfm) });
+        licenseRegistry.registerPolicyFrameworkManager(address(_pfm));
+        pfm["mock_on_all"] = PFMData({ pfmType: PFMType.MockGeneric, addr: address(_pfm) });
         _;
     }
 
     modifier withLFM_MockOnLink() {
         BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(true, false, false);
-        pfm["mock_on_link"] = PFMData({ pfmType: PFMType.MockGeneric, pfmId: _pfm.register(), addr: address(_pfm) });
+        licenseRegistry.registerPolicyFrameworkManager(address(_pfm));
+        pfm["mock_on_link"] = PFMData({ pfmType: PFMType.MockGeneric, addr: address(_pfm) });
         _;
     }
 
     modifier withLFM_MockOnMint() {
         BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(false, true, false);
-        pfm["mock_on_mint"] = PFMData({ pfmType: PFMType.MockGeneric, pfmId: _pfm.register(), addr: address(_pfm) });
+        licenseRegistry.registerPolicyFrameworkManager(address(_pfm));
+        pfm["mock_on_mint"] = PFMData({ pfmType: PFMType.MockGeneric, addr: address(_pfm) });
         _;
     }
 
     modifier withLFM_MockOnTransfer() {
         BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(false, false, true);
+        licenseRegistry.registerPolicyFrameworkManager(address(_pfm));
         pfm["mock_on_transfer"] = PFMData({
             pfmType: PFMType.MockGeneric,
-            pfmId: _pfm.register(),
             addr: address(_pfm)
         });
         _;
@@ -132,7 +137,7 @@ contract Integration_Shared_LicensingHelper {
         UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"].addr);
 
         string memory pName = string(abi.encodePacked("uml_com_deriv_", gparams.policyName));
-        policyIds[pName] = _pfm.addPolicy(
+        policyIds[pName] = _pfm.registerPolicy(
             UMLPolicy({
                 attribution: gparams.attribution,
                 transferable: gparams.transferable,
@@ -159,7 +164,7 @@ contract Integration_Shared_LicensingHelper {
         UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"].addr);
 
         string memory pName = string(abi.encodePacked("uml_com_nonderiv_", gparams.policyName));
-        policyIds[pName] = _pfm.addPolicy(
+        policyIds[pName] = _pfm.registerPolicy(
             UMLPolicy({
                 attribution: gparams.attribution,
                 transferable: gparams.transferable,
@@ -186,7 +191,7 @@ contract Integration_Shared_LicensingHelper {
         UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"].addr);
 
         string memory pName = string(abi.encodePacked("uml_noncom_deriv_", gparams.policyName));
-        policyIds[pName] = _pfm.addPolicy(
+        policyIds[pName] = _pfm.registerPolicy(
             UMLPolicy({
                 attribution: gparams.attribution,
                 transferable: gparams.transferable,
@@ -210,7 +215,7 @@ contract Integration_Shared_LicensingHelper {
         UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"].addr);
 
         string memory pName = string(abi.encodePacked("uml_noncom_nonderiv_", gparams.policyName));
-        policyIds[pName] = _pfm.addPolicy(
+        policyIds[pName] = _pfm.registerPolicy(
             UMLPolicy({
                 attribution: gparams.attribution,
                 transferable: gparams.transferable,
@@ -236,7 +241,7 @@ contract Integration_Shared_LicensingHelper {
         MintPaymentPolicyFrameworkManager _pfm = MintPaymentPolicyFrameworkManager(pfm["mint_payment"].addr);
 
         string memory pName = string(abi.encodePacked("mint_payment_", policyName));
-        policyIds[pName] = _pfm.addPolicy(MintPaymentPolicy({ mustBeTrue: mustBeTrue }));
+        policyIds[pName] = _pfm.registerPolicy(MintPaymentPolicy({ mustBeTrue: mustBeTrue }));
         _;
     }
 
@@ -254,6 +259,7 @@ contract Integration_Shared_LicensingHelper {
                 new MockPolicyFrameworkManager(
                     MockPolicyFrameworkConfig({
                         licenseRegistry: address(licenseRegistry),
+                        name: "mock",
                         licenseUrl: "license url",
                         supportVerifyLink: supportVerifyLink,
                         supportVerifyMint: supportVerifyMint,
