@@ -47,7 +47,6 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintP
     }
 
     function registerPolicy(MintPaymentPolicy calldata mmpol) external returns (uint256 policyId) {
-        require(mmpol.mustBeTrue, "MintPaymentPolicyFrameworkManager: mustBeTrue");
         emit MintPaymentPolicyAdded(policyId, mmpol);
         return LICENSE_REGISTRY.registerPolicy(abi.encode(mmpol));
     }
