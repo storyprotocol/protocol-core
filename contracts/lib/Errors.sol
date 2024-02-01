@@ -145,12 +145,33 @@ library Errors {
     error RoyaltyModule__ZeroRoyaltyPolicy();
     error RoyaltyModule__NotWhitelistedRoyaltyPolicy();
     error RoyaltyModule__AlreadySetRoyaltyPolicy();
+    error RoyaltyModule__ZeroRoyaltyToken();
+    error RoyaltyModule__NotWhitelistedRoyaltyToken();
+    error RoyaltyModule__NoRoyaltyPolicySet();
+    error RoyaltyModule__IncompatibleRoyaltyPolicy();
 
     error RoyaltyPolicyLS__ZeroRoyaltyModule();
     error RoyaltyPolicyLS__ZeroLiquidSplitFactory();
     error RoyaltyPolicyLS__ZeroLiquidSplitMain();
     error RoyaltyPolicyLS__NotRoyaltyModule();
     error RoyaltyPolicyLS__TransferFailed();
+    error RoyaltyPolicyLS__InvalidMinRoyalty();
+    error RoyaltyPolicyLS__InvalidRoyaltyStack();
+    error RoyaltyPolicyLS__ZeroMinRoyalty();
+    error RoyaltyPolicyLS__ZeroLicenseRegistry();
+
+    error LSClaimer__InvalidPath();
+    error LSClaimer__InvalidPathFirstPosition();
+    error LSClaimer__InvalidPathLastPosition();
+    error LSClaimer__AlreadyClaimed();
+    error LSClaimer__ZeroRNFT();
+    error LSClaimer__RNFTAlreadySet();
+    error LSClaimer__ETHBalanceNotZero();
+    error LSClaimer__ERC20BalanceNotZero();
+    error LSClaimer__ZeroIpId();
+    error LSClaimer__ZeroLicenseRegistry();
+    error LSClaimer__ZeroRoyaltyPolicyLS();
+    error LSClaimer__NotRoyaltyPolicyLS();
 
     ////////////////////////////////////////////////////////////////////////////
     //                             ModuleRegistry                             //

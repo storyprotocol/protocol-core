@@ -15,6 +15,9 @@ contract RoyaltyModule is IRoyaltyModule, ReentrancyGuard {
     /// @notice Indicates if a royalty policy is whitelisted
     mapping(address royaltyPolicy => bool allowed) public isWhitelistedRoyaltyPolicy;
 
+    /// @notice Indicates if a royalty token is whitelisted
+    mapping(address token => bool) public isWhitelistedRoyaltyToken;
+
     /// @notice Indicates the royalty policy for a given ipId
     mapping(address ipId => address royaltyPolicy) public royaltyPolicies;
 
@@ -25,14 +28,8 @@ contract RoyaltyModule is IRoyaltyModule, ReentrancyGuard {
     }
 
     /// @notice Restricts the calls to the license module
-    modifier onlyLicenseModule() {
+    modifier onlyLicensingModule() {
         // TODO: where is license module address defined?
-        _;
-    }
-
-    /// @notice Restricts the calls to a IPAccount
-    modifier onlyIPAccount() {
-        // TODO: where to find if an address is a valid IPAccount or an approved operator?
         _;
     }
 
@@ -44,37 +41,63 @@ contract RoyaltyModule is IRoyaltyModule, ReentrancyGuard {
 
         isWhitelistedRoyaltyPolicy[_royaltyPolicy] = _allowed;
 
-        // TODO: emit event
+        emit RoyaltyPolicyWhitelistUpdated(_royaltyPolicy, _allowed);
     }
 
+    /// @notice Whitelist a royalty token
+    /// @param _token The token address
+    /// @param _allowed Indicates if the token is whitelisted or not
+    function whitelistRoyaltyToken(address _token, bool _allowed) external onlyGovernance {
+        if (_token == address(0)) revert Errors.RoyaltyModule__ZeroRoyaltyToken();
+
+        isWhitelistedRoyaltyToken[_token] = _allowed;
+
+        emit RoyaltyTokenWhitelistUpdated(_token, _allowed);
+    }
+
+    // TODO: Ensure this function is called on ipId registration: root and derivatives registrations
+    // TODO: Ensure that the ipId that is passed in from license cannot be manipulated - given ipId addresses are deterministic
     /// @notice Sets the royalty policy for an ipId
     /// @param _ipId The ipId
     /// @param _royaltyPolicy The address of the royalty policy
+    /// @param _parentIpIds The parent ipIds
     /// @param _data The data to initialize the policy
     function setRoyaltyPolicy(
-        address _ipId,
+        address _ipId, 
         address _royaltyPolicy,
+        address[] calldata _parentIpIds,
         bytes calldata _data
-    ) external onlyLicenseModule nonReentrant {
-        // TODO: make call to ensure ipId exists/has been registered
-        if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
+    ) external onlyLicensingModule nonReentrant {
         if (royaltyPolicies[_ipId] != address(0)) revert Errors.RoyaltyModule__AlreadySetRoyaltyPolicy();
-        // TODO: check if royalty policy is compatible with parents royalty policy
+        if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
+
+        for (uint32 i = 0; i < _parentIpIds.length; i++) {
+            if (royaltyPolicies[_parentIpIds[i]] != _royaltyPolicy) revert Errors.RoyaltyModule__IncompatibleRoyaltyPolicy();
+        }
 
         royaltyPolicies[_ipId] = _royaltyPolicy;
 
-        IRoyaltyPolicy(_royaltyPolicy).initPolicy(_ipId, _data);
+        IRoyaltyPolicy(_royaltyPolicy).initPolicy(_ipId, _parentIpIds, _data);
 
-        // TODO: emit event
+        emit RoyaltyPolicySet(_ipId, _royaltyPolicy, _data);
     }
 
-    /// @notice Allows an IPAccount to pay royalties
-    /// @param _ipId The ipId
-    /// @param _token The token to pay the royalties in
+    /// @notice Allows a sender to to pay royalties on behalf of an ipId
+    /// @param _receiverIpId The ipId that receives the royalties
+    /// @param _payerIpId The ipId that pays the royalties
+    /// @param _token The token to use to pay the royalties
     /// @param _amount The amount to pay
-    function payRoyalty(address _ipId, address _token, uint256 _amount) external onlyIPAccount nonReentrant {
-        IRoyaltyPolicy(royaltyPolicies[_ipId]).onRoyaltyPayment(msg.sender, _ipId, _token, _amount);
+    function payRoyaltyOnBehalf(address _receiverIpId, address _payerIpId, address _token, uint256 _amount) external nonReentrant {
+        address royaltyPolicy = royaltyPolicies[_receiverIpId];
+        if (royaltyPolicy == address(0)) revert Errors.RoyaltyModule__NoRoyaltyPolicySet();
+        if (!isWhitelistedRoyaltyToken[_token]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyToken();
+        
+        // TODO: check how to handle the below with replacement
+        if (!isWhitelistedRoyaltyPolicy[royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
 
-        // TODO: emit event
+        IRoyaltyPolicy(royaltyPolicy).onRoyaltyPayment(msg.sender, _receiverIpId, _token, _amount);
+
+        // TODO: review event vs variable for royalty tracking
+        emit RoyaltyPaid(_receiverIpId, _payerIpId, msg.sender, _token, _amount);
     }
 }

@@ -141,7 +141,7 @@ contract BaseIntegration is Test {
         );
 
         arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), USDC, ARBITRATION_PRICE);
-        royaltyPolicyLS = new RoyaltyPolicyLS(address(royaltyModule), LIQUID_SPLIT_FACTORY, LIQUID_SPLIT_MAIN);
+        royaltyPolicyLS = new RoyaltyPolicyLS(address(royaltyModule), address(licenseRegistry), LIQUID_SPLIT_FACTORY, LIQUID_SPLIT_MAIN);
     }
 
     function _configDeployedContracts() internal {
