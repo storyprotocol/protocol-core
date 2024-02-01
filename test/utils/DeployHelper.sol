@@ -190,12 +190,22 @@ contract DeployHelper is Test {
 
     function _configAccessControl() internal {
         // Set global perm to allow Registration Module to call License Registry on all IPAccounts
-        vm.prank(u.admin); // admin of governance
+        vm.startPrank(u.admin); // admin of governance
+
         accessController.setGlobalPermission(
             address(registrationModule),
             address(licenseRegistry),
             bytes4(licenseRegistry.linkIpToParent.selector),
             1 // AccessPermission.ALLOW
         );
+
+        accessController.setGlobalPermission(
+            address(registrationModule),
+            address(licenseRegistry),
+            bytes4(licenseRegistry.addPolicyToIp.selector),
+            1 // AccessPermission.ALLOW
+        );
+
+        vm.stopPrank();
     }
 }

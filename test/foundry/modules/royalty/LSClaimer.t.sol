@@ -3,8 +3,9 @@ pragma solidity ^0.8.23;
 
 // external
 import { console2 } from "forge-std/console2.sol";
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { ERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { ERC6551AccountLib } from "lib/reference/src/lib/ERC6551AccountLib.sol";
 
 // contracts
 import { ILiquidSplitFactory } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitFactory.sol";
@@ -66,15 +67,25 @@ contract TestLSClaimer is TestHelper {
 
     function _setLsClaimer() internal {
         vm.startPrank(deployer);
-        for (uint256 i = 1; i < 101; i++) {
+        for (uint256 i = 0; i < 101; i++) {
             nft.mintId(deployer, i);
             nftIds.push(i);
         }
-    
-        registrationModule.registerRootIp(policyIds["uml_cheap_flexible"],address(nft), nftIds[1]);
-        vm.stopPrank();
 
-        for (uint256 i = 1; i < 100; i++) {
+        address expectedAddr = ERC6551AccountLib.computeAddress(
+            address(erc6551Registry),
+            address(ipAccountImpl),
+            ipAccountRegistry.IP_ACCOUNT_SALT(),
+            block.chainid,
+            address(nft),
+            nftIds[0]
+        );
+        vm.label(expectedAddr, string(abi.encodePacked("IPAccount", Strings.toString(nftIds[0]))));
+
+        address ipAddr = registrationModule.registerRootIp(policyIds["uml_cheap_flexible"], address(nft), nftIds[0]);
+        vm.label(ipAddr, string(abi.encodePacked("IPAccount", Strings.toString(nftIds[0]))));
+
+        for (uint256 i = 0; i < 100; i++) {
             uint256 licenseId = licenseRegistry.mintLicense(
                 policyIds["uml_cheap_flexible"],
                 _getIpId(nft, nftIds[i]),
@@ -82,11 +93,19 @@ contract TestLSClaimer is TestHelper {
                 deployer
             );
 
-            vm.startPrank(_getIpId(nft, nftIds[i]));
+            address expectedAddr = ERC6551AccountLib.computeAddress(
+                address(erc6551Registry),
+                address(ipAccountImpl),
+                ipAccountRegistry.IP_ACCOUNT_SALT(),
+                block.chainid,
+                address(nft),
+                nftIds[i + 1]
+            );
+            vm.label(expectedAddr, string(abi.encodePacked("IPAccount", Strings.toString(nftIds[i + 1]))));
+
             registrationModule.registerDerivativeIp(licenseId, address(nft), nftIds[i + 1], "", bytes32(""), "");
-            vm.stopPrank();
         }
-        
+
         // /*///////////////////////////////////////////////////////////////
         //                     SET UP LSCLAIMER
         // ////////////////////////////////////////////////////////////////*/
@@ -102,10 +121,10 @@ contract TestLSClaimer is TestHelper {
         vm.startPrank(address(1));
         // set up root royalty policy
         address[] memory parentsIds1 = new address[](1);
-        testRoyaltyPolicyLS.initPolicy(_getIpId(nft, nftIds[1]), parentsIds1, abi.encode(10));
+        testRoyaltyPolicyLS.initPolicy(_getIpId(nft, nftIds[0]), parentsIds1, abi.encode(10));
 
         // set up derivative royalty policy
-        for (uint256 i = 1; i < 100; i++) {
+        for (uint256 i = 0; i < 100; i++) {
             address[] memory parentsIds = new address[](1);
             parentsIds[0] = _getIpId(nft, nftIds[i]);
             testRoyaltyPolicyLS.initPolicy(_getIpId(nft, nftIds[i + 1]), parentsIds, abi.encode(10));
@@ -124,7 +143,7 @@ contract TestLSClaimer is TestHelper {
         for (uint256 i = 0; i < 100; i++) {
             LONG_CHAIN[i] = _getIpId(nft, nftIds[i + 1]);
         }
-        assertEq(LONG_CHAIN[0], _getIpId(nft, nftIds[1]));
+        assertEq(LONG_CHAIN[0], _getIpId(nft, nftIds[0]));
         assertEq(LONG_CHAIN[99], _getIpId(nft, nftIds[100]));
         assertEq(LONG_CHAIN.length, 100);
         assertEq(royaltyStack100, 1000);
@@ -154,7 +173,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_LSClaimer_claim_revert_AlreadyClaimed() public {
-        address claimerIpId = _getIpId(nft, nftIds[1]);
+        address claimerIpId = _getIpId(nft, nftIds[0]);
         tokens[0] = ERC20(USDC);
 
         lsClaimer100.claim(LONG_CHAIN, claimerIpId, true, tokens);
@@ -171,7 +190,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_LSClaimer_claim_revert_InvalidPathLastPosition() public {
-        address claimerIpId = _getIpId(nft, nftIds[1]);
+        address claimerIpId = _getIpId(nft, nftIds[0]);
         tokens[0] = ERC20(USDC);
 
         LONG_CHAIN.push(address(1));
@@ -181,7 +200,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_LSClaimer_claim_revert_InvalidPath() public {
-        address claimerIpId = _getIpId(nft, nftIds[1]);
+        address claimerIpId = _getIpId(nft, nftIds[0]);
         tokens[0] = ERC20(USDC);
 
         LONG_CHAIN[5] = address(1);
@@ -206,7 +225,7 @@ contract TestLSClaimer is TestHelper {
             0
         );
 
-        address claimerIpId = _getIpId(nft, nftIds[1]);
+        address claimerIpId = _getIpId(nft, nftIds[0]);
         tokens[0] = ERC20(USDC);
 
         vm.expectRevert(Errors.LSClaimer__ERC20BalanceNotZero.selector);
@@ -223,7 +242,7 @@ contract TestLSClaimer is TestHelper {
 
         assertGt(ILiquidSplitMain(royaltyPolicyLS.LIQUID_SPLIT_MAIN()).getETHBalance(address(lsClaimer100)), 0);
 
-        address claimerIpId = _getIpId(nft, nftIds[1]);
+        address claimerIpId = _getIpId(nft, nftIds[0]);
         tokens[0] = ERC20(USDC);
 
         vm.expectRevert(Errors.LSClaimer__ETHBalanceNotZero.selector);
@@ -237,7 +256,7 @@ contract TestLSClaimer is TestHelper {
         IERC20(USDC).transfer(address(lsClaimer100), usdcRoyaltyAmount);
         vm.stopPrank();
 
-        address claimerIpId = _getIpId(nft, nftIds[1]);
+        address claimerIpId = _getIpId(nft, nftIds[0]);
         tokens[0] = ERC20(USDC);
 
         uint256 lsClaimerUSDCBalBefore = IERC20(USDC).balanceOf(address(lsClaimer100));
