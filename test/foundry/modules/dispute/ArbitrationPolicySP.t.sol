@@ -11,7 +11,7 @@ contract TestArbitrationPolicySP is TestHelper {
     function setUp() public override {
         super.setUp();
 
-        USDC.mint(ipAccount1, 1000 * 10 ** 6);
+        USDC.mint(ipAccount1, 10000 * 10 ** 6);
 
         // whitelist dispute tag
         disputeModule.whitelistDisputeTags("PLAGIARISM", true);
@@ -63,6 +63,8 @@ contract TestArbitrationPolicySP is TestHelper {
         vm.startPrank(caller);
         IERC20(USDC).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
         vm.stopPrank();
+
+        USDC.mint(caller, 10000 * 10 ** 6);
 
         vm.startPrank(address(disputeModule));
 

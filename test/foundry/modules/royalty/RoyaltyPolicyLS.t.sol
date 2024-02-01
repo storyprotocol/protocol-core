@@ -158,8 +158,8 @@ contract TestLSClaimer is TestHelper {
         USDC.mint(splitClone2, royaltyAmount);
 
         address[] memory accounts = new address[](2);
-        accounts[1] = ipAccount2;
-        accounts[0] = claimer2;
+        accounts[0] = ipAccount2;
+        accounts[1] = claimer2;
 
         uint256 splitClone2USDCBalBefore = IERC20(USDC).balanceOf(splitClone2);
         uint256 splitMainUSDCBalBefore = IERC20(USDC).balanceOf(royaltyPolicyLS.LIQUID_SPLIT_MAIN());

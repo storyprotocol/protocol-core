@@ -10,7 +10,6 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
-import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 
 // test
@@ -40,6 +39,7 @@ struct UMLPolicyCommercialParams {
     bool commercialAttribution;
     string[] commercializers;
     uint32 commercialRevShare;
+    address royaltyPolicy;
 }
 
 struct UMLPolicyDerivativeParams {
@@ -62,18 +62,14 @@ contract Integration_Shared_LicensingHelper {
 
     RoyaltyModule private royaltyModule; // keep private to avoid collision with `BaseIntegration`
 
-    RoyaltyPolicyLS private royaltyPolicyLS; // keep private to avoid collision with `BaseIntegration`
-
     function initLicenseFrameworkAndPolicy(
         AccessController accessController_,
         LicenseRegistry licenseRegistry_,
-        RoyaltyModule royaltyModule_,
-        RoyaltyPolicyLS royaltyPolicyLS_
+        RoyaltyModule royaltyModule_
     ) public {
         accessController = accessController_;
         licenseRegistry = licenseRegistry_;
         royaltyModule = royaltyModule_;
-        royaltyPolicyLS = royaltyPolicyLS_;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -86,7 +82,6 @@ contract Integration_Shared_LicensingHelper {
                 address(accessController),
                 address(licenseRegistry),
                 address(royaltyModule),
-                address(royaltyPolicyLS),
                 "uml",
                 "license Url"
             )
@@ -165,7 +160,8 @@ contract Integration_Shared_LicensingHelper {
                 derivativesReciprocal: dparams.derivativesReciprocal,
                 derivativesRevShare: dparams.derivativesRevShare,
                 territories: gparams.territories,
-                distributionChannels: gparams.distributionChannels
+                distributionChannels: gparams.distributionChannels,
+                royaltyPolicy: cparams.royaltyPolicy
             })
         );
         _;
@@ -192,7 +188,8 @@ contract Integration_Shared_LicensingHelper {
                 derivativesReciprocal: false,
                 derivativesRevShare: 0,
                 territories: gparams.territories,
-                distributionChannels: gparams.distributionChannels
+                distributionChannels: gparams.distributionChannels,
+                royaltyPolicy: cparams.royaltyPolicy
             })
         );
         _;
@@ -219,7 +216,8 @@ contract Integration_Shared_LicensingHelper {
                 derivativesReciprocal: dparams.derivativesReciprocal,
                 derivativesRevShare: dparams.derivativesRevShare,
                 territories: gparams.territories,
-                distributionChannels: gparams.distributionChannels
+                distributionChannels: gparams.distributionChannels,
+                royaltyPolicy: address(0)
             })
         );
         _;
@@ -243,7 +241,8 @@ contract Integration_Shared_LicensingHelper {
                 derivativesReciprocal: false,
                 derivativesRevShare: 0,
                 territories: gparams.territories,
-                distributionChannels: gparams.distributionChannels
+                distributionChannels: gparams.distributionChannels,
+                royaltyPolicy: address(0)
             })
         );
         _;

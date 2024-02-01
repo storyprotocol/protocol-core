@@ -28,8 +28,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         Integration_Shared_LicensingHelper.initLicenseFrameworkAndPolicy(
             accessController,
             licenseRegistry,
-            royaltyModule,
-            royaltyPolicyLS
+            royaltyModule
         );
 
         nft = erc721.cat;
@@ -57,7 +56,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             UMLPolicyCommercialParams({
                 commercialAttribution: true,
                 commercializers: new string[](0),
-                commercialRevShare: 10
+                commercialRevShare: 10,
+                royaltyPolicy: address(royaltyPolicyLS)
             }),
             UMLPolicyDerivativeParams({
                 derivativesAttribution: true,
@@ -115,6 +115,15 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
 
         vm.startPrank(u.alice);
         licenseRegistry.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_cheap_flexible"]);
+
+        // Alice sets royalty policy for her IPAccount (so other IPAccounts can use her policies that 
+        // inits royalty policy on linking)
+        royaltyModule.setRoyaltyPolicy(
+            ipAcct[1],
+            address(royaltyPolicyLS),
+            new address[](0), // no parent
+            abi.encode(50)
+        );
 
         vm.startPrank(u.bob);
         licenseRegistry.addPolicyToIp(ipAcct[3], policyIds["mint_payment_normal"]);

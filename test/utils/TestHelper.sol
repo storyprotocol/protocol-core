@@ -64,7 +64,6 @@ contract TestHelper is Test, DeployHelper {
             address(accessController),
             address(licenseRegistry),
             address(royaltyModule),
-            address(royaltyPolicyLS),
             "UML_MINT_PAYMENT",
             "license Url"
         );
@@ -95,7 +94,8 @@ contract TestHelper is Test, DeployHelper {
                 derivativesReciprocal: dparams.derivativesReciprocal,
                 derivativesRevShare: dparams.derivativesRevShare,
                 territories: gparams.territories,
-                distributionChannels: gparams.distributionChannels
+                distributionChannels: gparams.distributionChannels,
+                royaltyPolicy: cparams.royaltyPolicy
             })
         );
     }

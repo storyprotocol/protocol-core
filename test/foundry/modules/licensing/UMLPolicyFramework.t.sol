@@ -45,7 +45,6 @@ contract UMLPolicyFrameworkTest is Test {
             address(accessController),
             address(registry),
             address(0), // TODO: mock royaltyModule
-            address(0), // TODO: mock royaltyPolicyLS
             "UMLPolicyFrameworkManager",
             licenseUrl
         );
@@ -76,7 +75,8 @@ contract UMLPolicyFrameworkTest is Test {
             derivativesReciprocal: false,
             derivativesRevShare: 0,
             territories: territories,
-            distributionChannels: distributionChannels
+            distributionChannels: distributionChannels,
+            royaltyPolicy: address(0xbeef)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         UMLPolicy memory policy = umlFramework.getPolicy(policyId);
@@ -100,7 +100,8 @@ contract UMLPolicyFrameworkTest is Test {
             derivativesReciprocal: false,
             derivativesRevShare: 0,
             territories: emptyStringArray,
-            distributionChannels: emptyStringArray
+            distributionChannels: emptyStringArray,
+            royaltyPolicy: address(0)
         });
         // commercialAttribution = true should revert
         vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddAttribution.selector);
@@ -140,7 +141,8 @@ contract UMLPolicyFrameworkTest is Test {
             derivativesReciprocal: false,
             derivativesRevShare: 1,
             territories: emptyStringArray,
-            distributionChannels: emptyStringArray
+            distributionChannels: emptyStringArray,
+            royaltyPolicy: address(0xbeef)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         UMLPolicy memory policy = umlFramework.getPolicy(policyId);
@@ -169,7 +171,8 @@ contract UMLPolicyFrameworkTest is Test {
             derivativesReciprocal: false,
             derivativesRevShare: 0,
             territories: emptyStringArray,
-            distributionChannels: emptyStringArray
+            distributionChannels: emptyStringArray,
+            royaltyPolicy: address(0xbeef)
         });
         // derivativesAttribution = true should revert
         vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddAttribution.selector);
@@ -205,7 +208,8 @@ contract UMLPolicyFrameworkTest is Test {
             derivativesReciprocal: true,
             derivativesRevShare: 123,
             territories: emptyStringArray,
-            distributionChannels: emptyStringArray
+            distributionChannels: emptyStringArray,
+            royaltyPolicy: address(0xbeef)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         UMLPolicy memory policy = umlFramework.getPolicy(policyId);
@@ -233,7 +237,8 @@ contract UMLPolicyFrameworkTest is Test {
                 derivativesReciprocal: false,
                 derivativesRevShare: 0,
                 territories: emptyStringArray,
-                distributionChannels: emptyStringArray
+                distributionChannels: emptyStringArray,
+                royaltyPolicy: address(0)
             })
         );
         console2.log("policyId", policyId);
@@ -265,7 +270,8 @@ contract UMLPolicyFrameworkTest is Test {
                 derivativesReciprocal: false,
                 derivativesRevShare: 0,
                 territories: emptyStringArray,
-                distributionChannels: emptyStringArray
+                distributionChannels: emptyStringArray,
+                royaltyPolicy: address(0)
             })
         );
         vm.prank(ipOwner);
@@ -302,7 +308,8 @@ contract UMLPolicyFrameworkTest is Test {
             derivativesReciprocal: false,
             derivativesRevShare: 0,
             territories: emptyStringArray,
-            distributionChannels: emptyStringArray
+            distributionChannels: emptyStringArray,
+            royaltyPolicy: address(0)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         vm.prank(ipOwner);
@@ -330,7 +337,8 @@ contract UMLPolicyFrameworkTest is Test {
             derivativesReciprocal: false,
             derivativesRevShare: 0,
             territories: emptyStringArray,
-            distributionChannels: emptyStringArray
+            distributionChannels: emptyStringArray,
+            royaltyPolicy: address(0)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         vm.prank(ipOwner);

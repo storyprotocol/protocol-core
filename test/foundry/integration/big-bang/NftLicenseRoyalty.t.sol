@@ -24,6 +24,9 @@ import { Integration_Shared_LicensingHelper, UMLPolicyGenericParams, UMLPolicyCo
 contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_Shared_LicensingHelper {
     using EnumerableSet for EnumerableSet.UintSet;
 
+    // TODO: import from ILiquidSplitMain in 0xSplits
+    event DistributeERC20(address split, address token, uint256 amount, address distributorAddress);
+
     MockERC721 internal nft;
 
     mapping(uint256 tokenId => address ipAccount) internal ipAcct;
@@ -37,8 +40,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
         Integration_Shared_LicensingHelper.initLicenseFrameworkAndPolicy(
             accessController,
             licenseRegistry,
-            royaltyModule,
-            royaltyPolicyLS
+            royaltyModule
         );
 
         nft = erc721.cat;
@@ -63,7 +65,8 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
             UMLPolicyCommercialParams({
                 commercialAttribution: true,
                 commercializers: new string[](0),
-                commercialRevShare: minRevShare
+                commercialRevShare: minRevShare,
+                royaltyPolicy: address(royaltyPolicyLS)
             }),
             UMLPolicyDerivativeParams({
                 derivativesAttribution: true,
@@ -251,6 +254,14 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
             // Alice calls on behalf of Dan's claimer to send money from the Split Main to Dan's claimer,
             // since the revenue payment was made to Dan's Split Wallet, which got distributed to the claimer.
 
+            // paying 65% of 1000 USDC royalty to parents
+            vm.expectEmit(address(USDC));
+            emit IERC20.Transfer(LIQUID_SPLIT_MAIN, address(danClaimer), 649999998);
+            royaltyPolicyLS.claimRoyalties({ _account: danClaimer, _withdrawETH: 0, _tokens: tokens });
+
+            // Alice calls the claim her portion of rNFTs and tokens. She can only call `claim` once.
+            // Afterwards, she will automatically receive money on revenue distribution.
+
             vm.expectEmit(address(danSplitClone));
             emit IERC1155.TransferSingle({ // rNFTs
                 operator: address(danClaimer),
@@ -259,11 +270,6 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
                 id: 0,
                 value: minRevShareIpAcct1
             });
-
-            royaltyPolicyLS.claimRoyalties({ _account: danClaimer, _withdrawETH: 0, _tokens: tokens });
-
-            // Alice calls the claim her portion of rNFTs and tokens. She can only call `claim` once.
-            // Afterwards, she will automatically receive money on revenue distribution.
 
             vm.expectEmit(address(USDC));
             emit IERC20.Transfer(address(danClaimer), ipAcct_Alice, 649999998);

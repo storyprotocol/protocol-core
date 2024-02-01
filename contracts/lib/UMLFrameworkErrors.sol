@@ -13,6 +13,8 @@ library UMLFrameworkErrors {
     error UMLPolicyFrameworkManager_CommecialDisabled_CantAddCommercializers();
     error UMLPolicyFrameworkManager_CommecialDisabled_CantAddRevShare();
     error UMLPolicyFrameworkManager_CommecialDisabled_CantAddDerivRevShare();
+    error UMLPolicyFrameworkManager_CommecialDisabled_CantAddRoyaltyPolicy();
+    error UMLPolicyFrameworkManager_CommecialEnabled_RoyaltyPolicyRequired();
     error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddAttribution();
     error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddApproval();
     error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddReciprocal();

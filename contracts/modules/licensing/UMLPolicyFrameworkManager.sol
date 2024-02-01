@@ -36,18 +36,15 @@ contract UMLPolicyFrameworkManager is
     LicensorApprovalChecker
 {
     IRoyaltyModule public immutable ROYALTY_MODULE;
-    IRoyaltyPolicy public immutable ROYALTY_POLICY_LS;
 
     constructor(
         address accessController,
         address licRegistry,
         address royaltyModule,
-        address royaltyPolicyLS,
         string memory name_,
         string memory licenseUrl_
     ) BasePolicyFrameworkManager(licRegistry, name_, licenseUrl_) LicensorApprovalChecker(accessController) {
         ROYALTY_MODULE = IRoyaltyModule(royaltyModule);
-        ROYALTY_POLICY_LS = IRoyaltyPolicy(royaltyPolicyLS);
     }
 
     function licenseRegistry()
@@ -97,7 +94,7 @@ contract UMLPolicyFrameworkManager is
 
             ROYALTY_MODULE.setRoyaltyPolicy(
                 ipId,
-                address(ROYALTY_POLICY_LS),
+                policy.royaltyPolicy,
                 parentIpIds,
                 abi.encode(policy.derivativesRevShare) // uint32
             );
@@ -277,6 +274,14 @@ contract UMLPolicyFrameworkManager is
             if (policy.derivativesRevShare > 0) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddDerivRevShare();
             }
+            if (policy.royaltyPolicy != address(0)) {
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddRoyaltyPolicy();
+            }
+        } else {
+            // TODO: check for supportInterface instead
+            if (policy.royaltyPolicy == address(0)) {
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialEnabled_RoyaltyPolicyRequired();
+            }
         }
     }
 
@@ -294,6 +299,7 @@ contract UMLPolicyFrameworkManager is
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddReciprocal();
             }
             if (policy.derivativesRevShare > 0) {
+                // additional !policy.commecialUse is already checked in `_verifyComercialUse`
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddRevShare();
             }
         }

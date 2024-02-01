@@ -305,7 +305,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             address(accessController),
             address(licenseRegistry),
             address(royaltyModule),
-            address(royaltyPolicyLS),
             "UML_ALL_TRUE",
             "https://very-nice-verifier-license.com/{id}.json"
         );
@@ -314,7 +313,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             address(accessController),
             address(licenseRegistry),
             address(royaltyModule),
-            address(royaltyPolicyLS),
             "UML_MINT_PAYMENT",
             "https://expensive-minting-license.com/{id}.json"
         );
@@ -340,7 +338,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 derivativesReciprocal: true,
                 derivativesRevShare: 0,
                 territories: new string[](0),
-                distributionChannels: new string[](0)
+                distributionChannels: new string[](0),
+                royaltyPolicy: address(royaltyPolicyLS)
             })
         );
 
@@ -358,7 +357,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 derivativesReciprocal: true,
                 derivativesRevShare: 0,
                 territories: new string[](0),
-                distributionChannels: new string[](0)
+                distributionChannels: new string[](0),
+                royaltyPolicy: address(royaltyPolicyLS)
             })
         );
 

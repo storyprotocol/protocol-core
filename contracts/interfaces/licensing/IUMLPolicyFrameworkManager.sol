@@ -21,6 +21,7 @@ import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyF
 /// @param derivativesRevShare Percentage of revenue that must be shared with the licensor for derivatives of the work
 /// @param territories List of territories where the license is valid. If empty, global.
 /// @param distributionChannels List of distribution channels where the license is valid. Empty if no restrictions.
+/// @param royaltyPolicy Address of a royalty policy contract (e.g. RoyaltyPolicyLS) that will handle royalty payments
 struct UMLPolicy {
     bool attribution;
     bool transferable;
@@ -35,6 +36,7 @@ struct UMLPolicy {
     uint32 derivativesRevShare;
     string[] territories;
     string[] distributionChannels;
+    address royaltyPolicy;
 }
 
 
