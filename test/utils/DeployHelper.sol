@@ -148,7 +148,6 @@ contract DeployHelper is Test {
             address(taggingModule),
             address(royaltyModule)
         );
-
         arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), address(USDC), ARBITRATION_PRICE);
         royaltyPolicyLS = new RoyaltyPolicyLS(
             address(royaltyModule),
@@ -196,7 +195,7 @@ contract DeployHelper is Test {
         accessController.setGlobalPermission(
             address(registrationModule),
             address(licenseRegistry),
-            bytes4(licenseRegistry.linkIpToParent.selector),
+            bytes4(licenseRegistry.linkIpToParents.selector),
             1 // AccessPermission.ALLOW
         );
 

@@ -380,9 +380,11 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             2,
             deployer
         );
+        uint256[] memory licenseIds = new uint256[](1);
+        licenseIds[0] = licenseId1;
 
         registrationModule.registerDerivativeIp(
-            licenseId1,
+            licenseIds,
             address(mockNft),
             nftIds[3],
             "best derivative ip",
@@ -393,8 +395,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         // /*///////////////////////////////////////////////////////////////
         //             LINK IPACCOUNTS TO PARENTS USING LICENSES
         // ////////////////////////////////////////////////////////////////*/
-
-        licenseRegistry.linkIpToParent(licenseId1, getIpId(mockNft, nftIds[4]), deployer);
+       
+        licenseRegistry.linkIpToParents(licenseIds, getIpId(mockNft, nftIds[4]), deployer);
     }
 
     function getIpId(MockERC721 mnft, uint256 tokenId) public view returns (address ipId) {

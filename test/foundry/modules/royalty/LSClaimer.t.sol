@@ -25,6 +25,8 @@ import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { TestHelper } from "test/utils/TestHelper.sol";
 
 contract TestLSClaimer is TestHelper {
+    // TODO: can change to royaltyPolicyLS vs testRoyaltyPolicyLS
+    RoyaltyPolicyLS testRoyaltyPolicyLS;
     address[] public LONG_CHAIN = new address[](100);
     address[] public accounts = new address[](2);
     uint32[] public initAllocations = new uint32[](2);
@@ -100,8 +102,9 @@ contract TestLSClaimer is TestHelper {
         );
         vm.label(ipAddr, string(abi.encodePacked("IPAccount", Strings.toString(nftIds[0]))));
 
+        uint256[] memory licenseId = new uint256[](1);
         for (uint256 i = 0; i < 99; i++) {
-            uint256 licenseId = licenseRegistry.mintLicense(
+            licenseId[0] = licenseRegistry.mintLicense(
                 policyIds["uml_cheap_flexible"],
                 _getIpId(nft, nftIds[i]),
                 2,
@@ -133,7 +136,6 @@ contract TestLSClaimer is TestHelper {
         //                     SET UP LSCLAIMER
         // ////////////////////////////////////////////////////////////////*/
 
-        RoyaltyPolicyLS testRoyaltyPolicyLS;
         testRoyaltyPolicyLS = new RoyaltyPolicyLS(
             address(1),
             address(licenseRegistry),
@@ -197,7 +199,7 @@ contract TestLSClaimer is TestHelper {
 
     function test_LSClaimer_claim_revert_AlreadyClaimed() public {
         address claimerIpId = _getIpId(nft, nftIds[0]);
-        tokens[0] = ERC20(USDC);
+        tokens[0] = ERC20(WETH);
 
         lsClaimer100.claim(LONG_CHAIN, claimerIpId, true, tokens);
 
@@ -206,7 +208,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_LSClaimer_claim_revert_InvalidPathFirstPosition() public {
-        tokens[0] = ERC20(USDC);
+        tokens[0] = ERC20(WETH);
 
         vm.expectRevert(Errors.LSClaimer__InvalidPathFirstPosition.selector);
         lsClaimer100.claim(LONG_CHAIN, address(0), true, tokens);
@@ -214,7 +216,7 @@ contract TestLSClaimer is TestHelper {
 
     function test_LSClaimer_claim_revert_InvalidPathLastPosition() public {
         address claimerIpId = _getIpId(nft, nftIds[0]);
-        tokens[0] = ERC20(USDC);
+        tokens[0] = ERC20(WETH);
 
         LONG_CHAIN.push(address(1));
 
@@ -224,7 +226,7 @@ contract TestLSClaimer is TestHelper {
 
     function test_LSClaimer_claim_revert_InvalidPath() public {
         address claimerIpId = _getIpId(nft, nftIds[0]);
-        tokens[0] = ERC20(USDC);
+        tokens[0] = ERC20(WETH);
 
         LONG_CHAIN[5] = address(1);
 
@@ -240,14 +242,14 @@ contract TestLSClaimer is TestHelper {
 
         ILiquidSplitClone(splitClone100).distributeFunds(address(USDC), accounts, address(0));
 
-        ERC20 token_ = ERC20(USDC);
+        ERC20 token_ = ERC20(WETH);
         assertGt(
             ILiquidSplitMain(royaltyPolicyLS.LIQUID_SPLIT_MAIN()).getERC20Balance(address(lsClaimer100), token_),
             0
         );
 
         address claimerIpId = _getIpId(nft, nftIds[0]);
-        tokens[0] = ERC20(USDC);
+        tokens[0] = ERC20(WETH);
 
         vm.expectRevert(Errors.LSClaimer__ERC20BalanceNotZero.selector);
         lsClaimer100.claim(LONG_CHAIN, claimerIpId, true, tokens);
@@ -264,7 +266,7 @@ contract TestLSClaimer is TestHelper {
         assertGt(ILiquidSplitMain(royaltyPolicyLS.LIQUID_SPLIT_MAIN()).getETHBalance(address(lsClaimer100)), 0);
 
         address claimerIpId = _getIpId(nft, nftIds[0]);
-        tokens[0] = ERC20(USDC);
+        tokens[0] = ERC20(WETH);
 
         vm.expectRevert(Errors.LSClaimer__ETHBalanceNotZero.selector);
         lsClaimer100.claim(LONG_CHAIN, claimerIpId, true, tokens);
@@ -276,23 +278,24 @@ contract TestLSClaimer is TestHelper {
         USDC.mint(address(lsClaimer100), usdcRoyaltyAmount);
 
         address claimerIpId = _getIpId(nft, nftIds[0]);
-        tokens[0] = ERC20(USDC);
+        (address claimerSplitClone,,,) = testRoyaltyPolicyLS.royaltyData(_getIpId(nft, nftIds[0]));
+        tokens[0] = ERC20(WETH);
 
-        uint256 lsClaimerUSDCBalBefore = IERC20(USDC).balanceOf(address(lsClaimer100));
+        uint256 lsClaimerUSDCBalBefore = IERC20(WETH).balanceOf(address(lsClaimer100));
         uint256 lsClaimerETHBalBefore = address(lsClaimer100).balance;
         uint256 lsClaimerRNFTBalBefore = ILiquidSplitClone(splitClone100).balanceOf(address(lsClaimer100), 0);
-        uint256 claimerUSDCBalBefore = IERC20(USDC).balanceOf(claimerIpId);
-        uint256 claimerETHBalBefore = address(claimerIpId).balance;
-        uint256 claimerRNFTBalBefore = ILiquidSplitClone(splitClone100).balanceOf(claimerIpId, 0);
+        uint256 claimerSplitUSDCBalBefore = IERC20(WETH).balanceOf(claimerSplitClone);
+        uint256 claimerSplitETHBalBefore = address(claimerSplitClone).balance;
+        uint256 claimerSplitRNFTBalBefore = ILiquidSplitClone(splitClone100).balanceOf(claimerSplitClone, 0);
 
         lsClaimer100.claim(LONG_CHAIN, claimerIpId, true, tokens);
 
-        uint256 lsClaimerUSDCBalAfter = IERC20(USDC).balanceOf(address(lsClaimer100));
+        uint256 lsClaimerUSDCBalAfter = IERC20(WETH).balanceOf(address(lsClaimer100));
         uint256 lsClaimerETHBalAfter = address(lsClaimer100).balance;
         uint256 lsClaimerRNFTBalAfter = ILiquidSplitClone(splitClone100).balanceOf(address(lsClaimer100), 0);
-        uint256 claimerUSDCBalAfter = IERC20(USDC).balanceOf(claimerIpId);
-        uint256 claimerETHBalAfter = address(claimerIpId).balance;
-        uint256 claimerRNFTBalAfter = ILiquidSplitClone(splitClone100).balanceOf(claimerIpId, 0);
+        uint256 claimerSplitUSDCBalAfter = IERC20(WETH).balanceOf(claimerSplitClone);
+        uint256 claimerSplitETHBalAfter = address(claimerSplitClone).balance;
+        uint256 claimerSplitRNFTBalAfter = ILiquidSplitClone(splitClone100).balanceOf(claimerSplitClone, 0);
 
         assertEq(lsClaimer100.claimedPaths(keccak256(abi.encodePacked(LONG_CHAIN))), true);
         assertEq(
@@ -305,13 +308,13 @@ contract TestLSClaimer is TestHelper {
         );
         assertEq(lsClaimerRNFTBalBefore - lsClaimerRNFTBalAfter, minRoyalty100);
         assertEq(
-            claimerUSDCBalAfter - claimerUSDCBalBefore,
+            claimerSplitUSDCBalAfter - claimerSplitUSDCBalBefore,
             (usdcRoyaltyAmount * minRoyalty100) / (royaltyStack100 - minRoyalty100)
         );
         assertEq(
-            claimerETHBalAfter - claimerETHBalBefore,
+            claimerSplitETHBalAfter - claimerSplitETHBalBefore,
             (ethRoyaltyAmount * minRoyalty100) / (royaltyStack100 - minRoyalty100)
         );
-        assertEq(claimerRNFTBalAfter - claimerRNFTBalBefore, minRoyalty100);
+        assertEq(claimerSplitRNFTBalAfter - claimerSplitRNFTBalBefore, minRoyalty100);
     }
 }

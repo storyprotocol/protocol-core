@@ -7,11 +7,8 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import { TestHelper } from "../../../utils/TestHelper.sol";
 import { RoyaltyPolicyLS } from "../../../../contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
-import { IClaimerLS } from "../../../../contracts/interfaces/modules/royalty/policies/IClaimerLS.sol";
 import { ILiquidSplitClone } from "../../../../contracts/interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
 import { Errors } from "../../../../contracts/lib/Errors.sol";
-
-
 
 contract TestLSClaimer is TestHelper {
     RoyaltyPolicyLS internal testRoyaltyPolicyLS;
@@ -161,13 +158,13 @@ contract TestLSClaimer is TestHelper {
         accounts[0] = ipAccount2;
         accounts[1] = claimer2;
 
-        uint256 splitClone2USDCBalBefore = IERC20(USDC).balanceOf(splitClone2);
-        uint256 splitMainUSDCBalBefore = IERC20(USDC).balanceOf(royaltyPolicyLS.LIQUID_SPLIT_MAIN());
+        uint256 splitClone2USDCBalBefore = IERC20(WETH).balanceOf(splitClone2);
+        uint256 splitMainUSDCBalBefore = IERC20(WETH).balanceOf(royaltyPolicyLS.LIQUID_SPLIT_MAIN());
 
         royaltyPolicyLS.distributeFunds(ipAccount2, address(USDC), accounts, address(0));
 
-        uint256 splitClone2USDCBalAfter = IERC20(USDC).balanceOf(splitClone2);
-        uint256 splitMainUSDCBalAfter = IERC20(USDC).balanceOf(royaltyPolicyLS.LIQUID_SPLIT_MAIN());
+        uint256 splitClone2USDCBalAfter = IERC20(WETH).balanceOf(splitClone2);
+        uint256 splitMainUSDCBalAfter = IERC20(WETH).balanceOf(royaltyPolicyLS.LIQUID_SPLIT_MAIN());
 
         assertApproxEqRel(splitClone2USDCBalBefore - splitClone2USDCBalAfter, royaltyAmount, 0.0001e18);
         assertApproxEqRel(splitMainUSDCBalAfter - splitMainUSDCBalBefore, royaltyAmount, 0.0001e18);
@@ -197,7 +194,7 @@ contract TestLSClaimer is TestHelper {
         accounts[1] = claimer2;
 
         ERC20[] memory tokens = new ERC20[](1);
-        tokens[0] = ERC20(USDC);
+        tokens[0] = ERC20(WETH);
 
         royaltyPolicyLS.distributeFunds(ipAccount2, address(USDC), accounts, address(0));
 

@@ -144,7 +144,7 @@ contract TestRoyaltyModule is TestHelper {
     }
 
     function test_RoyaltyModule_payRoyaltyOnBehalf() public {
-         uint256 royaltyAmount = 100 * 10 ** 6; // 100 USDC
+         uint256 royaltyAmount = 100 * 10 ** 6; // 100 WETH
 
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; // 10%
@@ -161,18 +161,18 @@ contract TestRoyaltyModule is TestHelper {
         (address splitClone1,,,) = royaltyPolicyLS.royaltyData(ipAccount1);
 
         vm.startPrank(ipAccount2);
-        IERC20(USDC).approve(address(royaltyPolicyLS), royaltyAmount);
+        IERC20(WETH).approve(address(royaltyPolicyLS), royaltyAmount);
 
-        uint256 ipAccount2USDCBalBefore = IERC20(USDC).balanceOf(ipAccount2);
-        uint256 splitClone1USDCBalBefore = IERC20(USDC).balanceOf(splitClone1);
+        uint256 ipAccount2USDCBalBefore = IERC20(WETH).balanceOf(ipAccount2);
+        uint256 splitClone1USDCBalBefore = IERC20(WETH).balanceOf(splitClone1);
 
         vm.expectEmit(true, true, true, true, address(royaltyModule));
         emit RoyaltyPaid(ipAccount1, ipAccount2, ipAccount2, address(USDC), royaltyAmount);
 
         royaltyModule.payRoyaltyOnBehalf(ipAccount1, ipAccount2, address(USDC), royaltyAmount);
 
-        uint256 ipAccount2USDCBalAfter = IERC20(USDC).balanceOf(ipAccount2);
-        uint256 splitClone1USDCBalAfter = IERC20(USDC).balanceOf(splitClone1);
+        uint256 ipAccount2USDCBalAfter = IERC20(WETH).balanceOf(ipAccount2);
+        uint256 splitClone1USDCBalAfter = IERC20(WETH).balanceOf(splitClone1);
 
         assertEq(ipAccount2USDCBalBefore - ipAccount2USDCBalAfter, royaltyAmount);
         assertEq(splitClone1USDCBalAfter - splitClone1USDCBalBefore, royaltyAmount);
