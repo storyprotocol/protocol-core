@@ -58,14 +58,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// This tracks the number of licenses registered in the protocol, it will not decrease when a license is burnt.
     uint256 private _totalLicenses;
 
-    modifier onlyLicensee(uint256 licenseId, address holder) {
-        // Should ERC1155 operator count? IMO is a security risk. Better use ACL
-        if (balanceOf(holder, licenseId) == 0) {
-            revert Errors.LicenseRegistry__NotLicensee();
-        }
-        _;
-    }
-
     constructor(address accessController, address ipAccountRegistry) ERC1155("") {
         ACCESS_CONTROLLER = IAccessController(accessController);
         IP_ACCOUNT_REGISTRY = IIPAccountRegistry(ipAccountRegistry);
@@ -106,7 +98,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         if (!isPolicyDefined(polId)) {
             revert Errors.LicenseRegistry__PolicyNotFound();
         }
-        return _addPolictyIdToIp(ipId, polId, false);
+        return _addPolicyIdToIp(ipId, polId, false);
     }
 
     /// @notice Registers a policy into the contract. MUST be called by a registered
@@ -191,58 +183,61 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return licenseId;
     }
 
-    /// Relates an IP ID with its parents (licensors), by burning the License NFT the holder owns
-    /// Licensing parameters related to linking IPAs must be verified in order to succeed, reverts otherwise.
-    /// The child IP ID will have the policy that the license represent added to it's own, if it's compatible with
-    /// existing child policies.
-    /// The child IP ID will be linked to the parent (if it wasn't before).
-    /// @param licenseId license NFT to be burned
-    /// @param childIpId that will receive the policy defined by licenseId
-    /// @param holder of the license NFT
-    function linkIpToParent(
-        uint256 licenseId,
+    /// @notice Links an IP to the licensors (parent IP IDs) listed in the License NFTs, if their policies allow it,
+    /// burning the NFTs in the proccess. The caller must be the owner of the NFTs and the IP owner.
+    /// @param licenseIds The id of the licenses to burn
+    /// @param childIpId The id of the child IP to be linked
+    /// @param holder The address that holds the license
+    function linkIpToParents(
+        uint256[] calldata licenseIds,
         address childIpId,
         address holder
-    ) external onlyLicensee(licenseId, holder) {
+    ) external {
         // check the caller is owner or authorized by the childIp
         if (
             msg.sender != childIpId &&
-            !ACCESS_CONTROLLER.checkPermission(childIpId, msg.sender, address(this), this.linkIpToParent.selector)
+            !ACCESS_CONTROLLER.checkPermission(childIpId, msg.sender, address(this), this.linkIpToParents.selector)
         ) {
             revert Errors.LicenseRegistry__UnauthorizedAccess();
         }
-        // TODO: check if childIpId exists and is owned by holder
-        Licensing.License memory licenseData = _licenses[licenseId];
-        address parentIpId = licenseData.licensorIpId;
-        if (parentIpId == childIpId) {
-            revert Errors.LicenseRegistry__ParentIdEqualThanChild();
-        }
-        // TODO: check licensor exist
-        // TODO: check licensor not part of a branch tagged by disputer
-
-        // Verify linking params
-        Licensing.Policy memory pol = policy(licenseData.policyId);
-        if (ERC165Checker.supportsInterface(pol.policyFramework, type(ILinkParamVerifier).interfaceId)) {
-            if (
-                !ILinkParamVerifier(pol.policyFramework).verifyLink(
-                    licenseId,
-                    msg.sender,
-                    childIpId,
-                    parentIpId,
-                    pol.data
-                )
-            ) {
-                revert Errors.LicenseRegistry__LinkParentParamFailed();
+        uint256 licenses = licenseIds.length;
+        address[] memory licensors = new address[](licenses);
+        uint256[] memory values = new uint256[](licenses);
+        for (uint256 i = 0; i < licenses; i++) {
+            uint256 licenseId = licenseIds[i];
+            if (balanceOf(holder, licenseId) == 0) {
+                revert Errors.LicenseRegistry__NotLicensee();
             }
+            Licensing.License memory licenseData = _licenses[licenseId];
+            licensors[i] = licenseData.licensorIpId;
+            // TODO: check licensor not part of a branch tagged by disputer
+            if (licensors[i] == childIpId) {
+                revert Errors.LicenseRegistry__ParentIdEqualThanChild();
+            }
+            // Verify linking params
+            Licensing.Policy memory pol = policy(licenseData.policyId);
+            if (ERC165Checker.supportsInterface(pol.policyFramework, type(ILinkParamVerifier).interfaceId)) {
+                if (
+                    !ILinkParamVerifier(pol.policyFramework).verifyLink(
+                        licenseId,
+                        msg.sender,
+                        childIpId,
+                        licensors[i],
+                        pol.data
+                    )
+                ) {
+                    revert Errors.LicenseRegistry__LinkParentParamFailed();
+                }
+            }
+            // Add policy to kid
+            _addPolicyIdToIp(childIpId, licenseData.policyId, true);
+            // Set parent
+            _ipIdParents[childIpId].add(licensors[i]);
+            values[i] = 1;
         }
-        // Add policy to kid
-        _addPolictyIdToIp(childIpId, licenseData.policyId, true);
-        // Set parent
-        _ipIdParents[childIpId].add(parentIpId);
-        emit IpIdLinkedToParent(msg.sender, childIpId, parentIpId);
-
-        // Burn license
-        _burn(holder, licenseId, 1);
+        emit IpIdLinkedToParents(msg.sender, childIpId, licensors);
+        // Burn licenses
+        _burnBatch(holder, licenseIds, values);
     }
 
     /// @notice True if the framework address is registered in LicenseRegistry
@@ -373,7 +368,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         super._update(from, to, ids, values);
     }
 
-    function _verifyRegisteredFramework(address policyFramework) internal view returns (address) {
+    function _verifyRegisteredFramework(address policyFramework) internal view {
         if (!_registeredFrameworkManagers[policyFramework]) {
             revert Errors.LicenseRegistry__FrameworkNotFound();
         }
@@ -385,7 +380,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// @param policyId id of the policy data
     /// @param inheritedPolicy true if set in linkIpToParent, false otherwise
     /// @return index of the policy added to the set
-    function _addPolictyIdToIp(address ipId, uint256 policyId, bool inheritedPolicy) internal returns (uint256 index) {
+    function _addPolicyIdToIp(address ipId, uint256 policyId, bool inheritedPolicy) internal returns (uint256 index) {
         EnumerableSet.UintSet storage _pols = _policiesPerIpId[ipId];
         if (!_pols.add(policyId)) {
             revert Errors.LicenseRegistry__PolicyAlreadySetForIpId();
@@ -431,7 +426,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return (id, true);
     }
 
-    function _verifyPolicy(Licensing.Policy memory pol) private view {
+    function _verifyPolicy(Licensing.Policy memory pol) private pure {
         if (pol.policyFramework == address(0)) {
             revert Errors.LicenseRegistry__PolicyNotFound();
         }

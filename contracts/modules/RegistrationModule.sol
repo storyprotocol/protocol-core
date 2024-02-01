@@ -67,8 +67,8 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         return ipId;
     }
 
-    /// @notice Registers an IP derivative into the protocol.
-    /// @param licenseId The license to incorporate for the new IP.
+    /// @notice Registers IP derivatives into the protocol.
+    /// @param licenseIds The licenses to incorporate for the new IP.
     /// @param tokenContract The address of the NFT bound to the derivative IP.
     /// @param tokenId The token id of the NFT bound to the derivative IP.
     /// @param ipName The name assigned to the new IP.
@@ -77,7 +77,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
     /// TODO: Replace all metadata with a generic bytes parameter type, and do
     ///       encoding on the periphery contract level instead.
     function registerDerivativeIp(
-        uint256 licenseId,
+        uint256[] calldata licenseIds,
         address tokenContract,
         uint256 tokenId,
         string memory ipName,
@@ -115,10 +115,9 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         // metadataProvider.setMetadata(ipId, metadata);
 
         // Perform core IP derivative licensing - the license must be owned by the caller.
-        // TODO: return resulting policy index
-        LICENSE_REGISTRY.linkIpToParent(licenseId, ipId, msg.sender);
+        LICENSE_REGISTRY.linkIpToParents(licenseIds, ipId, msg.sender);
 
-        emit DerivativeIPRegistered(msg.sender, ipId, licenseId);
+        emit DerivativeIPRegistered(msg.sender, ipId, licenseIds);
     }
 
     /// @notice Gets the protocol-wide module identifier for this module.

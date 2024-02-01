@@ -243,9 +243,11 @@ contract UMLPolicyFrameworkTest is Test {
         umlFramework.setApproval(licenseId, ipId2, false);
         assertFalse(umlFramework.isDerivativeApproved(licenseId, ipId2));
 
+        uint256[] memory licenseIds = new uint256[](1);
+        licenseIds[0] = licenseId;
         vm.expectRevert(Errors.LicenseRegistry__LinkParentParamFailed.selector);
         vm.prank(ipOwner);
-        registry.linkIpToParent(licenseId, ipId2, licenseHolder);
+        registry.linkIpToParents(licenseIds, ipId2, licenseHolder);
     }
 
     function test_UMLPolicyFrameworkManager_derivatives_withApproval_linkApprovedIpId() public {
@@ -274,9 +276,11 @@ contract UMLPolicyFrameworkTest is Test {
         vm.prank(ipOwner);
         umlFramework.setApproval(licenseId, ipId2, true);
         assertTrue(umlFramework.isDerivativeApproved(licenseId, ipId2));
+        uint256[] memory licenseIds = new uint256[](1);
+        licenseIds[0] = licenseId;
 
         vm.prank(ipOwner);
-        registry.linkIpToParent(licenseId, ipId2, licenseHolder);
+        registry.linkIpToParents(licenseIds, ipId2, licenseHolder);
         assertTrue(registry.isParent(ipId1, ipId2));
     }
 
