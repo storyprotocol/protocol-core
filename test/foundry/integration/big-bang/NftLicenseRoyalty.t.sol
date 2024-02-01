@@ -11,7 +11,7 @@ import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { ILiquidSplitClone } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
 import { IRoyaltyModule } from "contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
 import { IRoyaltyPolicyLS } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLS.sol";
-import { IClaimerLS } from "contracts/interfaces/modules/royalty/policies/IClaimerLS.sol";
+import { ILSClaimer } from "contracts/interfaces/modules/royalty/policies/ILSClaimer.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { LSClaimer } from "contracts/modules/royalty-module/policies/LSClaimer.sol";
 
@@ -275,7 +275,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
             emit IERC20.Transfer(address(danClaimer), ipAcct_Alice, 649999998);
 
             vm.expectEmit(address(danClaimer));
-            emit IClaimerLS.Claimed({
+            emit ILSClaimer.Claimed({
                 path: chain_alice_to_dan,
                 claimer: ipAcct_Alice,
                 withdrawETH: false,
