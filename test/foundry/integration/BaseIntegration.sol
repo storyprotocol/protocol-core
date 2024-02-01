@@ -269,7 +269,7 @@ contract BaseIntegration is Test {
     }
 
     function registerDerivativeIps(
-        uint256[] calldata licenseIds,
+        uint256[] memory licenseIds,
         address nft,
         uint256 tokenId,
         IP.MetadataV1 memory metadata,
@@ -380,11 +380,11 @@ contract BaseIntegration is Test {
         emit IRegistrationModule.DerivativeIPRegistered({ caller: caller, ipId: expectedAddr, licenseIds: licenseIds });
 
         vm.startPrank(caller);
-        registrationModule.registerDerivativeIp(licenseId, nft, tokenId, metadata.name, metadata.hash, metadata.uri);
+        registrationModule.registerDerivativeIp(licenseIds, nft, tokenId, metadata.name, metadata.hash, metadata.uri);
         return expectedAddr;
     }
 
-    function linkIpToParents(uint256[] calldata licenseIds, address ipId, address caller) internal {
+    function linkIpToParents(uint256[] memory licenseIds, address ipId, address caller) internal {
         uint256[] memory policyIds = new uint256[](licenseIds.length);
         address[] memory parentIpIds = new address[](licenseIds.length);
         uint256[] memory newPolicyIndexes = new uint256[](licenseIds.length);

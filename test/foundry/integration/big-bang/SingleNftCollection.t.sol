@@ -136,7 +136,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         // Carl activates the license on his NFT 6 IPAccount, linking as child to Alice's NFT 1 IPAccount
         {
             vm.startPrank(u.carl);
-            uint256 carl_license_from_root_alice = licenseRegistry.mintLicense(
+            uint256[] memory carl_license_from_root_alice = new uint256[](1);
+            carl_license_from_root_alice[0] = licenseRegistry.mintLicense(
                 policyIds["uml_com_deriv_cheap_flexible"],
                 ipAcct[1],
                 1,
@@ -144,7 +145,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             );
 
             ipAcct[6] = registerIpAccount(nft, 6, u.carl);
-            linkIpToParent(carl_license_from_root_alice, ipAcct[6], u.carl);
+            linkIpToParents(carl_license_from_root_alice, ipAcct[6], u.carl);
         }
 
         // Alice mints 2 license for policy "noncom_deriv_mint_payment" on Bob's NFT 3 IPAccount
@@ -162,7 +163,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             uint256 aliceTokenBalance = erc20.balanceOf(u.alice);
             uint256 pfmTokenBalance = erc20.balanceOf(pfm["mint_payment"].addr);
 
-            uint256 alice_license_from_root_bob = licenseRegistry.mintLicense(
+            uint256[] memory alice_license_from_root_bob = new uint256[](1);
+            alice_license_from_root_bob[0] = licenseRegistry.mintLicense(
                 policyIds["mint_payment_normal"],
                 ipAcct[3],
                 mintAmount,
@@ -181,12 +183,12 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             );
 
             ipAcct[2] = registerIpAccount(nft, 2, u.alice);
-            linkIpToParent(alice_license_from_root_bob, ipAcct[2], u.alice);
+            linkIpToParents(alice_license_from_root_bob, ipAcct[2], u.alice);
 
             uint256 tokenId = 99999999;
             nft.mintId(u.alice, tokenId);
 
-            ipAcct[tokenId] = registerDerivativeIp(
+            ipAcct[tokenId] = registerDerivativeIps(
                 alice_license_from_root_bob,
                 address(nft),
                 tokenId,
