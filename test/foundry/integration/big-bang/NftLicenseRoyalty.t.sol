@@ -229,16 +229,6 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
             royaltyPolicyLS.distributeFunds(ipAcct_Dan, address(USDC), accounts, address(0));
         }
 
-        // Alice claims her royalties
-        {
-            vm.startPrank(u.alice);
-
-            ERC20[] memory tokens = new ERC20[](1);
-            tokens[0] = ERC20(USDC);
-
-            royaltyPolicyLS.claimRoyalties({ _account: ipAcct[1], _withdrawETH: 0, _tokens: tokens });
-        }
-
 
         // Alice claims her rNFTs (for distribution claim later), only done once since it's a single chain
         {
@@ -279,6 +269,8 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
                 withdrawETH: false,
                 tokens: tokens
             });
+            
+            royaltyPolicyLS.claimRoyalties({ _account: danClaimer, _withdrawETH: 0, _tokens: tokens });
 
             LSClaimer(danClaimer).claim({
                 _path: chain_alice_to_dan,
