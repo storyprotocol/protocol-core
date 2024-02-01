@@ -11,10 +11,7 @@ contract TestArbitrationPolicySP is TestHelper {
     function setUp() public override {
         super.setUp();
 
-        // fund USDC
-        vm.startPrank(USDC_RICH);
-        IERC20(USDC).transfer(ipAccount1, 1000 * 10 ** 6);
-        vm.stopPrank();
+        USDC.mint(ipAccount1, 1000 * 10 ** 6);
 
         // whitelist dispute tag
         disputeModule.whitelistDisputeTags("PLAGIARISM", true);

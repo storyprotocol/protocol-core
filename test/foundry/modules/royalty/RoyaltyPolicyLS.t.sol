@@ -154,10 +154,8 @@ contract TestLSClaimer is TestHelper {
         (address splitClone2, address claimer2,,) = royaltyPolicyLS.royaltyData(ipAccount2);
 
         // send USDC to 0xSplitClone
-        vm.startPrank(USDC_RICH);
         uint256 royaltyAmount = 1000 * 10 ** 6;
-        IERC20(USDC).transfer(splitClone2, royaltyAmount);
-        vm.stopPrank();
+        USDC.mint(splitClone2, royaltyAmount);
 
         address[] memory accounts = new address[](2);
         accounts[1] = ipAccount2;
@@ -166,7 +164,7 @@ contract TestLSClaimer is TestHelper {
         uint256 splitClone2USDCBalBefore = IERC20(USDC).balanceOf(splitClone2);
         uint256 splitMainUSDCBalBefore = IERC20(USDC).balanceOf(royaltyPolicyLS.LIQUID_SPLIT_MAIN());
 
-        royaltyPolicyLS.distributeFunds(ipAccount2, USDC, accounts, address(0));
+        royaltyPolicyLS.distributeFunds(ipAccount2, address(USDC), accounts, address(0));
 
         uint256 splitClone2USDCBalAfter = IERC20(USDC).balanceOf(splitClone2);
         uint256 splitMainUSDCBalAfter = IERC20(USDC).balanceOf(royaltyPolicyLS.LIQUID_SPLIT_MAIN());
@@ -191,19 +189,17 @@ contract TestLSClaimer is TestHelper {
         (address splitClone2, address claimer2,,) = royaltyPolicyLS.royaltyData(ipAccount2);
 
         // send USDC to 0xSplitClone
-        vm.startPrank(USDC_RICH);
         uint256 royaltyAmount = 1000 * 10 ** 6;
-        IERC20(USDC).transfer(splitClone2, royaltyAmount);
-        vm.stopPrank();
+        USDC.mint(splitClone2, royaltyAmount);
 
         address[] memory accounts = new address[](2);
-        accounts[1] = ipAccount2;
-        accounts[0] = claimer2;
+        accounts[0] = ipAccount2;
+        accounts[1] = claimer2;
 
         ERC20[] memory tokens = new ERC20[](1);
         tokens[0] = ERC20(USDC);
 
-        royaltyPolicyLS.distributeFunds(ipAccount2, USDC, accounts, address(0));
+        royaltyPolicyLS.distributeFunds(ipAccount2, address(USDC), accounts, address(0));
 
         royaltyPolicyLS.claimRoyalties(ipAccount2, 0, tokens);
     }

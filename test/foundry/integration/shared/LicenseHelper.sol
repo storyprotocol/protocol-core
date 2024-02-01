@@ -9,6 +9,8 @@ import { AccessController } from "contracts/AccessController.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 
 // test
@@ -37,14 +39,14 @@ struct UMLPolicyGenericParams {
 struct UMLPolicyCommercialParams {
     bool commercialAttribution;
     string[] commercializers;
-    uint256 commercialRevShare;
+    uint32 commercialRevShare;
 }
 
 struct UMLPolicyDerivativeParams {
     bool derivativesAttribution;
     bool derivativesApproval;
     bool derivativesReciprocal;
-    uint256 derivativesRevShare;
+    uint32 derivativesRevShare;
 }
 
 contract Integration_Shared_LicensingHelper {
@@ -58,12 +60,20 @@ contract Integration_Shared_LicensingHelper {
 
     AccessController private accessController; // keep private to avoid collision with `BaseIntegration`
 
+    RoyaltyModule private royaltyModule; // keep private to avoid collision with `BaseIntegration`
+
+    RoyaltyPolicyLS private royaltyPolicyLS; // keep private to avoid collision with `BaseIntegration`
+
     function initLicenseFrameworkAndPolicy(
         AccessController accessController_,
-        LicenseRegistry licenseRegistry_
+        LicenseRegistry licenseRegistry_,
+        RoyaltyModule royaltyModule_,
+        RoyaltyPolicyLS royaltyPolicyLS_
     ) public {
         accessController = accessController_;
         licenseRegistry = licenseRegistry_;
+        royaltyModule = royaltyModule_;
+        royaltyPolicyLS = royaltyPolicyLS_;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -72,7 +82,14 @@ contract Integration_Shared_LicensingHelper {
 
     modifier withLFM_UML() {
         BasePolicyFrameworkManager _pfm = BasePolicyFrameworkManager(
-            new UMLPolicyFrameworkManager(address(accessController), address(licenseRegistry), "uml", "license Url")
+            new UMLPolicyFrameworkManager(
+                address(accessController),
+                address(licenseRegistry),
+                address(royaltyModule),
+                address(royaltyPolicyLS),
+                "uml",
+                "license Url"
+            )
         );
         licenseRegistry.registerPolicyFrameworkManager(address(_pfm));
         pfm["uml"] = PFMData({ pfmType: PFMType.UML, addr: address(_pfm) });
@@ -118,10 +135,7 @@ contract Integration_Shared_LicensingHelper {
     modifier withLFM_MockOnTransfer() {
         BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(false, false, true);
         licenseRegistry.registerPolicyFrameworkManager(address(_pfm));
-        pfm["mock_on_transfer"] = PFMData({
-            pfmType: PFMType.MockGeneric,
-            addr: address(_pfm)
-        });
+        pfm["mock_on_transfer"] = PFMData({ pfmType: PFMType.MockGeneric, addr: address(_pfm) });
         _;
     }
 

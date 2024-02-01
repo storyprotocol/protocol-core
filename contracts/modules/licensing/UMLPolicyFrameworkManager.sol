@@ -19,6 +19,8 @@ import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransfer
 import { IUMLPolicyFrameworkManager, UMLPolicy } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
+import { IRoyaltyModule } from "contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
+import { IRoyaltyPolicy } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
 import { LicensorApprovalChecker } from "contracts/modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
 
 /// @title UMLPolicyFrameworkManager
@@ -33,12 +35,20 @@ contract UMLPolicyFrameworkManager is
     ITransferParamVerifier,
     LicensorApprovalChecker
 {
+    IRoyaltyModule public immutable ROYALTY_MODULE;
+    IRoyaltyPolicy public immutable ROYALTY_POLICY_LS;
+
     constructor(
         address accessController,
         address licRegistry,
+        address royaltyModule,
+        address royaltyPolicyLS,
         string memory name_,
         string memory licenseUrl_
-    ) BasePolicyFrameworkManager(licRegistry, name_, licenseUrl_) LicensorApprovalChecker(accessController) {}
+    ) BasePolicyFrameworkManager(licRegistry, name_, licenseUrl_) LicensorApprovalChecker(accessController) {
+        ROYALTY_MODULE = IRoyaltyModule(royaltyModule);
+        ROYALTY_POLICY_LS = IRoyaltyPolicy(royaltyPolicyLS);
+    }
 
     function licenseRegistry()
         external
@@ -66,9 +76,9 @@ contract UMLPolicyFrameworkManager is
     /// @param policyData the licensing policy to verify
     function verifyLink(
         uint256 licenseId,
-        address,
+        address, // caller
         address ipId,
-        address,
+        address parentIpId,
         bytes calldata policyData
     ) external override onlyLicenseRegistry returns (bool) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
@@ -82,6 +92,15 @@ contract UMLPolicyFrameworkManager is
         // to set it for the licensor in future derivatives
         if (policy.derivativesRevShare > 0) {
             // RoyaltyModule.setRevShareForDerivatives()
+            address[] memory parentIpIds = new address[](1);
+            parentIpIds[0] = parentIpId;
+
+            ROYALTY_MODULE.setRoyaltyPolicy(
+                ipId,
+                address(ROYALTY_POLICY_LS),
+                parentIpIds,
+                abi.encode(policy.derivativesRevShare) // uint32
+            );
         }
         // If the policy defines the licensor must approve derivatives, check if the
         // derivative is approved by the licensor
@@ -154,20 +173,6 @@ contract UMLPolicyFrameworkManager is
         string memory json = string(
             '{"name": "Story Protocol License NFT", "description": "License agreement stating the terms of a Story Protocol IPAsset", "attributes": ['
         );
-
-        // bool attribution;
-        // bool transferable;
-        // bool commercialUse;
-        // bool commercialAttribution;
-        // string[] commercializers;
-        // uint256 commercialRevShare;
-        // bool derivativesAllowed;
-        // bool derivativesAttribution;
-        // bool derivativesApproval;
-        // bool derivativesReciprocal;
-        // uint256 derivativesRevShare;
-        // string[] territories;
-        // string[] distributionChannels;
 
         // Attributions
         json = string(

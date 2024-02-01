@@ -56,6 +56,8 @@ contract LicenseRegistryTest is Test {
         umlManager = new UMLPolicyFrameworkManager(
             address(accessController),
             address(registry),
+            address(0), // TODO: mock royaltyModule
+            address(0), // TODO: mock royaltyPolicyLS
             "UMLPolicyFrameworkManager",
             licenseUrl
         );

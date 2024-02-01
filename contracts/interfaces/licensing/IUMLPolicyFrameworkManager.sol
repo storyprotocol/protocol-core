@@ -27,12 +27,12 @@ struct UMLPolicy {
     bool commercialUse;
     bool commercialAttribution;
     string[] commercializers;
-    uint256 commercialRevShare;
+    uint32 commercialRevShare;
     bool derivativesAllowed;
     bool derivativesAttribution;
     bool derivativesApproval;
     bool derivativesReciprocal;
-    uint256 derivativesRevShare;
+    uint32 derivativesRevShare;
     string[] territories;
     string[] distributionChannels;
 }

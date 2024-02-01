@@ -232,14 +232,12 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_LSClaimer_claim_revert_ERC20BalanceNotZero() public {
-        vm.startPrank(USDC_RICH);
-        IERC20(USDC).transfer(address(splitClone100), usdcRoyaltyAmount);
-        vm.stopPrank();
+        USDC.mint(ipAccount1, usdcRoyaltyAmount);
 
         accounts[0] = _getIpId(nft, nftIds[99]);
         accounts[1] = address(lsClaimer100);
 
-        ILiquidSplitClone(splitClone100).distributeFunds(USDC, accounts, address(0));
+        ILiquidSplitClone(splitClone100).distributeFunds(address(USDC), accounts, address(0));
 
         ERC20 token_ = ERC20(USDC);
         assertGt(
@@ -274,9 +272,7 @@ contract TestLSClaimer is TestHelper {
     function test_LSClaimer_claim() public {
         // claimer contract receives royalties
         vm.deal(address(lsClaimer100), ethRoyaltyAmount);
-        vm.startPrank(USDC_RICH);
-        IERC20(USDC).transfer(address(lsClaimer100), usdcRoyaltyAmount);
-        vm.stopPrank();
+        USDC.mint(address(lsClaimer100), usdcRoyaltyAmount);
 
         address claimerIpId = _getIpId(nft, nftIds[0]);
         tokens[0] = ERC20(USDC);

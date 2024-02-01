@@ -87,29 +87,23 @@ contract DeployHelper is Test {
     // Mocks
     MockERC20 internal erc20;
     MockERC721s internal erc721;
+    MockUSDC internal USDC;
 
     // Helpers
     Users internal u;
 
     uint256 internal constant ARBITRATION_PRICE = 1000 * 10 ** 6; // 1000 USDC
 
-    // USDC
-    string internal constant USDC_NAME = "USD Coin";
-    string internal constant USDC_SYMBOL = "USDC";
-    uint8 internal constant USDC_DECIMALS = 6;
-    address internal constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address internal constant USDC_RICH = 0xcEe284F754E854890e311e3280b767F80797180d;
-
-    // Liquid Split (ETH Mainnet)
-    address internal constant LIQUID_SPLIT_FACTORY = 0xdEcd8B99b7F763e16141450DAa5EA414B7994831;
-    address internal constant LIQUID_SPLIT_MAIN = 0x2ed6c4B5dA6378c7897AC67Ba9e43102Feb694EE;
+    // 0xSplits Liquid Split (Sepolia)
+    address internal constant LIQUID_SPLIT_FACTORY = 0xF678Bae6091Ab6933425FE26Afc20Ee5F324c4aE;
+    address internal constant LIQUID_SPLIT_MAIN = 0x57CBFA83f000a38C5b5881743E298819c503A559;
 
     function deploy() public virtual {
         u = UsersLib.createMockUsers(vm);
 
+        _deployMockAssets(); // deploy mock assets first
         _deployContracts();
         _configDeployedContracts();
-        _deployMockAssets();
         _mintMockAssets();
         _configAccessControl();
     }
@@ -155,7 +149,7 @@ contract DeployHelper is Test {
             address(royaltyModule)
         );
 
-        arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), USDC, ARBITRATION_PRICE);
+        arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), address(USDC), ARBITRATION_PRICE);
         royaltyPolicyLS = new RoyaltyPolicyLS(
             address(royaltyModule),
             address(licenseRegistry),
@@ -173,18 +167,25 @@ contract DeployHelper is Test {
         moduleRegistry.registerModule("LICENSE_REGISTRY", address(licenseRegistry));
 
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
+        royaltyModule.whitelistRoyaltyToken(address(USDC), true);
         vm.stopPrank();
     }
 
     function _deployMockAssets() internal {
         erc20 = new MockERC20();
         erc721 = MockERC721s({ ape: new MockERC721("Ape"), cat: new MockERC721("Cat"), dog: new MockERC721("Dog") });
+        USDC = new MockUSDC();
     }
 
     function _mintMockAssets() internal {
         erc20.mint(u.alice, 1000 * 10 ** erc20.decimals());
         erc20.mint(u.bob, 1000 * 10 ** erc20.decimals());
         erc20.mint(u.carl, 1000 * 10 ** erc20.decimals());
+        erc20.mint(u.dan, 1000 * 10 ** erc20.decimals());
+        USDC.mint(u.alice, 100_000 * 10 ** USDC.decimals());
+        USDC.mint(u.bob, 100_000 * 10 ** USDC.decimals());
+        USDC.mint(u.carl, 100_000 * 10 ** USDC.decimals());
+        USDC.mint(u.dan, 100_000 * 10 ** USDC.decimals());
         // skip minting NFTs
     }
 

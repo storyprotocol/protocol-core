@@ -63,6 +63,8 @@ contract TestHelper is Test, DeployHelper {
         UMLPolicyFrameworkManager umlPfm = new UMLPolicyFrameworkManager(
             address(accessController),
             address(licenseRegistry),
+            address(royaltyModule),
+            address(royaltyPolicyLS),
             "UML_MINT_PAYMENT",
             "license Url"
         );

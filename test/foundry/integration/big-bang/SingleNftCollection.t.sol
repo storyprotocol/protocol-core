@@ -25,7 +25,12 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
 
     function setUp() public override {
         BaseIntegration.setUp();
-        Integration_Shared_LicensingHelper.initLicenseFrameworkAndPolicy(accessController, licenseRegistry);
+        Integration_Shared_LicensingHelper.initLicenseFrameworkAndPolicy(
+            accessController,
+            licenseRegistry,
+            royaltyModule,
+            royaltyPolicyLS
+        );
 
         nft = erc721.cat;
 

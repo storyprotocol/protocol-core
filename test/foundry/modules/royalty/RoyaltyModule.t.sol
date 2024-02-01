@@ -18,16 +18,13 @@ contract TestRoyaltyModule is TestHelper {
     function setUp() public override {
         super.setUp();
 
-        // fund USDC
-        vm.startPrank(USDC_RICH);
-        IERC20(USDC).transfer(ipAccount2, 1000 * 10 ** 6); // 1000 USDC
-        vm.stopPrank();
+        USDC.mint(ipAccount2, 1000 * 10 ** 6); // 1000 USDC
 
         // whitelist royalty policy
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
 
         // whitelist royalty token
-        royaltyModule.whitelistRoyaltyToken(USDC, true);
+        royaltyModule.whitelistRoyaltyToken(address(USDC), true);
     }
 
     function test_RoyaltyModule_whitelistRoyaltyPolicy_revert_ZeroRoyaltyToken() public {
@@ -119,7 +116,7 @@ contract TestRoyaltyModule is TestHelper {
     function test_RoyaltyModule_payRoyaltyOnBehalf_revert_NoRoyaltyPolicySet() public {
         vm.expectRevert(Errors.RoyaltyModule__NoRoyaltyPolicySet.selector);
 
-        royaltyModule.payRoyaltyOnBehalf(ipAccount1, ipAccount2, USDC, 100);
+        royaltyModule.payRoyaltyOnBehalf(ipAccount1, ipAccount2, address(USDC), 100);
     }
 
     function test_RoyaltyModule_payRoyaltyOnBehalf_revert_NotWhitelistedRoyaltyToken() public {
@@ -143,7 +140,7 @@ contract TestRoyaltyModule is TestHelper {
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), false);
 
         vm.expectRevert(Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy.selector);
-        royaltyModule.payRoyaltyOnBehalf(ipAccount1, ipAccount2, USDC, 100);
+        royaltyModule.payRoyaltyOnBehalf(ipAccount1, ipAccount2, address(USDC), 100);
     }
 
     function test_RoyaltyModule_payRoyaltyOnBehalf() public {
@@ -170,9 +167,9 @@ contract TestRoyaltyModule is TestHelper {
         uint256 splitClone1USDCBalBefore = IERC20(USDC).balanceOf(splitClone1);
 
         vm.expectEmit(true, true, true, true, address(royaltyModule));
-        emit RoyaltyPaid(ipAccount1, ipAccount2, ipAccount2, USDC, royaltyAmount);
+        emit RoyaltyPaid(ipAccount1, ipAccount2, ipAccount2, address(USDC), royaltyAmount);
 
-        royaltyModule.payRoyaltyOnBehalf(ipAccount1, ipAccount2, USDC, royaltyAmount);
+        royaltyModule.payRoyaltyOnBehalf(ipAccount1, ipAccount2, address(USDC), royaltyAmount);
 
         uint256 ipAccount2USDCBalAfter = IERC20(USDC).balanceOf(ipAccount2);
         uint256 splitClone1USDCBalAfter = IERC20(USDC).balanceOf(splitClone1);
