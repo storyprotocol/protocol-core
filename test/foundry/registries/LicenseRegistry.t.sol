@@ -99,7 +99,7 @@ contract LicenseRegistryTest is Test {
     function test_LicenseRegistry_registerPolicy_revert_policyAlreadyAdded() public {
         registry.registerPolicyFrameworkManager(address(module1));
         vm.startPrank(address(module1));
-        uint256 polId = registry.registerPolicy(_createPolicy());
+        registry.registerPolicy(_createPolicy());
         vm.expectRevert(Errors.LicenseRegistry__PolicyAlreadyAdded.selector);
         registry.registerPolicy(_createPolicy());
         vm.stopPrank();
@@ -208,11 +208,12 @@ contract LicenseRegistryTest is Test {
         return licenseId;
     }
 
-    function test_LicenseRegistry_linkIpToParent() public {
-        // TODO: something cleaner than this
+    function test_LicenseRegistry_linkIpToParents_single_parent() public {
         uint256 licenseId = test_LicenseRegistry_mintLicense();
+        uint256[] memory licenseIds = new uint256[](1);
+        licenseIds[0] = licenseId;
         vm.prank(ipOwner);
-        registry.linkIpToParent(licenseId, ipId2, licenseHolder);
+        registry.linkIpToParents(licenseIds, ipId2, licenseHolder);
         assertEq(registry.balanceOf(licenseHolder, licenseId), 1, "not burnt");
         assertEq(registry.isParent(ipId1, ipId2), true, "not parent");
         assertEq(
