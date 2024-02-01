@@ -43,7 +43,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
     IMetadataProviderMigratable internal _metadataProvider;
 
     /// @notice Ensures only protocol governance owner may call a function.
-    modifier onlyOwner {
+    modifier onlyOwner() {
         if (msg.sender != owner) {
             revert Errors.IPAssetRegistry__Unauthorized();
         }
@@ -82,11 +82,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
             revert Errors.IPAssetRegistry__AlreadyRegistered();
         }
 
-        if (
-            id.code.length == 0 && 
-            createAccount &&
-            id != registerIpAccount(chainId, tokenContract, tokenId)
-        ) {
+        if (id.code.length == 0 && createAccount && id != registerIpAccount(chainId, tokenContract, tokenId)) {
             revert Errors.IPAssetRegistry__InvalidAccount();
         }
         _setResolver(id, resolverAddr);
@@ -155,7 +151,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
     /// @param id The canonical ID of the IP.
     /// @param data Canonical metadata to associate with the IP.
     function setMetadata(address id, address provider, bytes calldata data) external {
-        // Metadata is set on registration and immutable thereafter, with new fields 
+        // Metadata is set on registration and immutable thereafter, with new fields
         // only added during a migration to new protocol-approved metadata provider.
         if (address(_records[id].metadataProvider) != msg.sender) {
             revert Errors.IPAssetRegistry__Unauthorized();
@@ -195,5 +191,4 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
         provider.setMetadata(id, data);
         emit MetadataSet(id, address(provider), data);
     }
-
 }
