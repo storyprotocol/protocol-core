@@ -285,14 +285,14 @@ contract BaseIntegration is Test {
         );
 
         vm.label(expectedAddr, string(abi.encodePacked("IPAccount", Strings.toString(tokenId))));
-        
+
         uint256[] memory policyIds = new uint256[](licenseIds.length);
         address[] memory parentIpIds = new address[](licenseIds.length);
         uint256[] memory newPolicyIndexes = new uint256[](licenseIds.length);
         for (uint256 i = 0; i < licenseIds.length; i++) {
             policyIds[i] = licenseRegistry.policyIdForLicense(licenseIds[i]);
             parentIpIds[i] = licenseRegistry.licensorIpId(licenseIds[i]);
-            newPolicyIndexes[i] = licenseRegistry.totalPoliciesForIp(expectedAddr);
+            newPolicyIndexes[i] = licenseRegistry.totalPoliciesForIp(expectedAddr) + i;
         }
 
         vm.expectEmit();
@@ -349,6 +349,7 @@ contract BaseIntegration is Test {
                 inheritedPolicy: true
             });
         }
+
         vm.expectEmit();
         emit ILicenseRegistry.IpIdLinkedToParents({
             caller: address(registrationModule),
@@ -366,13 +367,18 @@ contract BaseIntegration is Test {
                 value: 1
             });
         } else {
+            uint256[] memory values = new uint256[](licenseIds.length);
+            for (uint256 i = 0; i < licenseIds.length; ++i) {
+                values[i] = 1;
+            }
+
             vm.expectEmit();
             emit IERC1155.TransferBatch({
                 operator: address(registrationModule),
                 from: caller,
                 to: address(0), // burn addr
                 ids: licenseIds,
-                values: new uint256[](licenseIds.length)
+                values: values
             });
         }
 
@@ -432,9 +438,13 @@ contract BaseIntegration is Test {
 
         vm.startPrank(caller);
         licenseRegistry.linkIpToParents(licenseIds, ipId, caller);
-        
+
         for (uint256 i = 0; i < licenseIds.length; i++) {
-            assertEq(licenseRegistry.balanceOf(caller, licenseIds[i]), prevLicenseAmounts[i] - 1, "license not burnt on linking");
+            assertEq(
+                licenseRegistry.balanceOf(caller, licenseIds[i]),
+                prevLicenseAmounts[i] - 1,
+                "license not burnt on linking"
+            );
             assertTrue(licenseRegistry.isParent(parentIpIds[i], ipId), "parent IP account is not parent");
             assertEq(
                 keccak256(
@@ -450,5 +460,4 @@ contract BaseIntegration is Test {
             );
         }
     }
-
 }

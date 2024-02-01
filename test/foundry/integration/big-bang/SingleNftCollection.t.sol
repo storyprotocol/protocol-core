@@ -209,5 +209,47 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             taggingModule.setTag("sequel", ipAcct[99999999]);
             assertTrue(taggingModule.isTagged("sequel", ipAcct[99999999]));
         }
+
+        // Carl mints licenses and linkts to multiple parents
+        // Carl creates NFT 6 IPAccount
+        // Carl activates the license on his NFT 6 IPAccount, linking as child to Alice's NFT 1 IPAccount
+        {
+            vm.startPrank(u.carl);
+
+            uint256 paymentPerMint = MintPaymentPolicyFrameworkManager(pfm["mint_payment"].addr).payment();
+
+            uint256 tokenId = 7;
+            nft.mintId(u.carl, tokenId);
+
+            erc20.approve(pfm["mint_payment"].addr, 1 * paymentPerMint);
+
+            uint256[] memory carl_licenses = new uint256[](2);
+            carl_licenses[0] = licenseRegistry.mintLicense(
+                policyIds["uml_com_deriv_cheap_flexible"], // ipAcct[1] has this policy attached
+                ipAcct[1],
+                1,
+                u.carl
+            );
+            carl_licenses[1] = licenseRegistry.mintLicense(
+                policyIds["mint_payment_normal"], // ipAcct[3] has this policy attached
+                ipAcct[3],
+                1,
+                u.carl
+            );
+
+            registerDerivativeIps(
+                carl_licenses,
+                address(nft),
+                tokenId,
+                IP.MetadataV1({
+                    name: "IP NAME",
+                    hash: bytes32("hash"),
+                    registrationDate: uint64(block.timestamp),
+                    registrant: u.carl, // caller
+                    uri: "external URL"
+                }),
+                u.carl // caller
+            );
+        }
     }
 }
