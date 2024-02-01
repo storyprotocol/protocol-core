@@ -37,7 +37,8 @@ contract TestRoyaltyModule is TestHelper {
 
         bytes memory data = abi.encode(accounts, initAllocations, uint32(0), address(0));
 
-        royaltyModule.setRoyaltyPolicy(ipAccount3, address(royaltyPolicyLS), data);
+        address[] memory parentIpIds = new address[](0);
+        royaltyModule.setRoyaltyPolicy(ipAccount3, address(royaltyPolicyLS), parentIpIds, data);
 
         assertEq(royaltyModule.royaltyPolicies(ipAccount3), address(royaltyPolicyLS));
         // TODO: assertNotEq(royaltyModule.royaltyPolicies(ipAccount3), address(0)); // assertNotEq was deprecated?
@@ -56,7 +57,8 @@ contract TestRoyaltyModule is TestHelper {
 
         bytes memory data = abi.encode(accounts, initAllocations, uint32(0), address(0));
 
-        royaltyModule.setRoyaltyPolicy(ipAccount3, address(royaltyPolicyLS), data);
+        address[] memory parentIpIds = new address[](0);
+        royaltyModule.setRoyaltyPolicy(ipAccount3, address(royaltyPolicyLS), parentIpIds, data);
         vm.stopPrank();
 
         vm.startPrank(ipAccount4);
@@ -89,7 +91,8 @@ contract TestRoyaltyModule is TestHelper {
 
         bytes memory data = abi.encode(accounts, initAllocations, uint32(0), address(0));
 
-        royaltyModule.setRoyaltyPolicy(ipAccount3, address(royaltyPolicyLS), data);
+        address[] memory parentIpIds = new address[](0);
+        royaltyModule.setRoyaltyPolicy(ipAccount3, address(royaltyPolicyLS), parentIpIds, data);
         vm.stopPrank();
 
         vm.startPrank(ipAccount4);
@@ -127,7 +130,8 @@ contract TestRoyaltyModule is TestHelper {
 
         bytes memory data = abi.encode(accounts, initAllocations, uint32(0), address(0));
 
-        royaltyModule.setRoyaltyPolicy(ipAccount3, address(royaltyPolicyLS), data);
+        address[] memory parentIpIds = new address[](0);
+        royaltyModule.setRoyaltyPolicy(ipAccount3, address(royaltyPolicyLS), parentIpIds, data);
         vm.stopPrank();
 
         vm.startPrank(ipAccount4);

@@ -1,23 +1,28 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+// external
 import { console2 } from "forge-std/console2.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import { TestHelper } from "../../../utils/TestHelper.sol";
-import { ILiquidSplitFactory } from "../../../../contracts/interfaces/modules/royalty/policies/ILiquidSplitFactory.sol";
-import { LSClaimer } from "../../../../contracts/modules/royalty-module/policies/LSClaimer.sol";
-import { RoyaltyPolicyLS } from "../../../../contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
-import { ILiquidSplitClone } from "../../../../contracts/interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
-import { ILiquidSplitMain } from "../../../../contracts/interfaces/modules/royalty/policies/ILiquidSplitMain.sol";
+// contracts
+import { ILiquidSplitFactory } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitFactory.sol";
+import { Errors } from "contracts/lib/Errors.sol";
+import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
+import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { ILiquidSplitClone } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
+import { ILiquidSplitMain } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitMain.sol";
+import { LSClaimer } from "contracts/modules/royalty-module/policies/LSClaimer.sol";
+import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
+
 // test
-import { BaseIntegration } from "test/foundry/integration/BaseIntegration.sol";
+import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseFrameworkPolicy.sol";
 import { MintPaymentPolicyFrameworkManager } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { Integration_Shared_LicensingHelper, UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseFrameworkPolicy.sol";
+import { TestHelper } from "test/utils/TestHelper.sol";
 
-contract TestLSClaimer is TestHelper, BaseIntegration, Integration_Shared_LicensingHelper {
+contract TestLSClaimer is TestHelper {
     address[] public LONG_CHAIN = new address[](100);
     address[] public accounts = new address[](2);
     uint32[] public initAllocations = new uint32[](2);
@@ -30,57 +35,87 @@ contract TestLSClaimer is TestHelper, BaseIntegration, Integration_Shared_Licens
     uint256 public usdcRoyaltyAmount = 1000 * 10 ** 6;
 
     function setUp() public override {
-        BaseIntegration.setUp();
-        Integration_Shared_LicensingHelper.initLicenseFrameworkAndPolicy(accessController, licenseRegistry);
+        TestHelper.setUp();
+        _setUMLPolicyFrameworkManager();
+        _setLsClaimer();
 
-        // Mints 1 license for policy "test_true" on NFT id 1 IPAccount
+        _addUMLPolicy(
+            true,
+            true,
+            UMLPolicyGenericParams({
+                policyName: "cheap_flexible", // => uml_cheap_flexible
+                attribution: false,
+                transferable: true,
+                territories: new string[](0),
+                distributionChannels: new string[](0)
+            }),
+            UMLPolicyCommercialParams({
+                commercialAttribution: true,
+                commercializers: new string[](0),
+                commercialRevShare: 10
+            }),
+            UMLPolicyDerivativeParams({
+                derivativesAttribution: true,
+                derivativesApproval: false,
+                derivativesReciprocal: false,
+                derivativesRevShare: 10
+            })
+        );
+    }
+
+    function _setLsClaimer() internal {
         vm.startPrank(deployer);
         for (uint256 i = 1; i < 100; i++) {
-            uint256 licenseId = licenseRegistry.mintLicense(policyIds["test_true"], getIpId(mockNft, nftIds[i]), 2, deployer);
-
-            registrationModule.registerDerivativeIp(
-                licenseId,
-                address(mockNft),
-                nftIds[i+1],
-                "",
-                bytes32(""),
-                ""
+            uint256 licenseId = licenseRegistry.mintLicense(
+                policyIds["uml_cheap_flexible"],
+                _getIpId(nft, nftIds[i]),
+                2,
+                deployer
             );
+
+            registrationModule.registerDerivativeIp(licenseId, address(nft), nftIds[i + 1], "", bytes32(""), "");
         }
-        vm.stopPrank();        
+        vm.stopPrank();
 
         // /*///////////////////////////////////////////////////////////////
         //                     SET UP LSCLAIMER
         // ////////////////////////////////////////////////////////////////*/
 
         RoyaltyPolicyLS testRoyaltyPolicyLS;
-        testRoyaltyPolicyLS = new RoyaltyPolicyLS(address(1), address(licenseRegistry), LIQUID_SPLIT_FACTORY, LIQUID_SPLIT_MAIN);
+        testRoyaltyPolicyLS = new RoyaltyPolicyLS(
+            address(1),
+            address(licenseRegistry),
+            LIQUID_SPLIT_FACTORY,
+            LIQUID_SPLIT_MAIN
+        );
 
         vm.startPrank(address(1));
         // set up root royalty policy
         address[] memory parentsIds1 = new address[](1);
-        testRoyaltyPolicyLS.initPolicy(getIpId(mockNft, nftIds[1]), parentsIds1, abi.encode(10));
+        testRoyaltyPolicyLS.initPolicy(_getIpId(nft, nftIds[1]), parentsIds1, abi.encode(10));
 
         // set up derivative royalty policy
-        for (uint256 i = 1; i < 100 ; i++) {
+        for (uint256 i = 1; i < 100; i++) {
             address[] memory parentsIds = new address[](1);
-            parentsIds[0] = getIpId(mockNft, nftIds[i]);
-            testRoyaltyPolicyLS.initPolicy(getIpId(mockNft, nftIds[i+1]), parentsIds, abi.encode(10));
-        } 
+            parentsIds[0] = _getIpId(nft, nftIds[i]);
+            testRoyaltyPolicyLS.initPolicy(_getIpId(nft, nftIds[i + 1]), parentsIds, abi.encode(10));
+        }
         vm.stopPrank();
 
-        (address split, address claimer, uint32 rStack, uint32 mRoyalty) = testRoyaltyPolicyLS.royaltyData(getIpId(mockNft, nftIds[100]));
+        (address split, address claimer, uint32 rStack, uint32 mRoyalty) = testRoyaltyPolicyLS.royaltyData(
+            _getIpId(nft, nftIds[100])
+        );
         lsClaimer100 = LSClaimer(claimer);
         splitClone100 = split;
         royaltyStack100 = rStack;
         minRoyalty100 = mRoyalty;
 
         // set up longest chain possible of 100 elements
-        for (uint256 i = 0; i < 100 ; i++) {
-            LONG_CHAIN[i] = getIpId(mockNft, nftIds[i+1]);
+        for (uint256 i = 0; i < 100; i++) {
+            LONG_CHAIN[i] = _getIpId(nft, nftIds[i + 1]);
         }
-        assertEq(LONG_CHAIN[0], getIpId(mockNft, nftIds[1]));
-        assertEq(LONG_CHAIN[99], getIpId(mockNft, nftIds[100]));
+        assertEq(LONG_CHAIN[0], _getIpId(nft, nftIds[1]));
+        assertEq(LONG_CHAIN[99], _getIpId(nft, nftIds[100]));
         assertEq(LONG_CHAIN.length, 100);
         assertEq(royaltyStack100, 1000);
     }
@@ -108,7 +143,7 @@ contract TestLSClaimer is TestHelper, BaseIntegration, Integration_Shared_Licens
         assertEq(address(testLsClaimer.IROYALTY_POLICY_LS()), address(royaltyPolicyLS));
     }
 
-/*     function test_LSClaimer_setRNFT() public {
+    /*     function test_LSClaimer_setRNFT() public {
         LSClaimer testClaimer = new LSClaimer(address(licenseRegistry), address(royaltyPolicyLS), address(1));
 
         vm.startPrank(address(1));
@@ -118,7 +153,7 @@ contract TestLSClaimer is TestHelper, BaseIntegration, Integration_Shared_Licens
     } */
 
     function test_LSClaimer_claim_revert_AlreadyClaimed() public {
-        address claimerIpId = getIpId(mockNft, nftIds[1]);
+        address claimerIpId = _getIpId(nft, nftIds[1]);
         tokens[0] = ERC20(USDC);
 
         lsClaimer100.claim(LONG_CHAIN, claimerIpId, true, tokens);
@@ -135,7 +170,7 @@ contract TestLSClaimer is TestHelper, BaseIntegration, Integration_Shared_Licens
     }
 
     function test_LSClaimer_claim_revert_InvalidPathLastPosition() public {
-        address claimerIpId = getIpId(mockNft, nftIds[1]);
+        address claimerIpId = _getIpId(nft, nftIds[1]);
         tokens[0] = ERC20(USDC);
 
         LONG_CHAIN.push(address(1));
@@ -145,7 +180,7 @@ contract TestLSClaimer is TestHelper, BaseIntegration, Integration_Shared_Licens
     }
 
     function test_LSClaimer_claim_revert_InvalidPath() public {
-        address claimerIpId = getIpId(mockNft, nftIds[1]);
+        address claimerIpId = _getIpId(nft, nftIds[1]);
         tokens[0] = ERC20(USDC);
 
         LONG_CHAIN[5] = address(1);
@@ -158,37 +193,40 @@ contract TestLSClaimer is TestHelper, BaseIntegration, Integration_Shared_Licens
         vm.startPrank(USDC_RICH);
         IERC20(USDC).transfer(address(splitClone100), usdcRoyaltyAmount);
         vm.stopPrank();
-        
-        accounts[0] = getIpId(mockNft, nftIds[100]);
+
+        accounts[0] = _getIpId(nft, nftIds[100]);
         accounts[1] = address(lsClaimer100);
 
         ILiquidSplitClone(splitClone100).distributeFunds(USDC, accounts, address(0));
 
         ERC20 token_ = ERC20(USDC);
-        assertGt(ILiquidSplitMain(royaltyPolicyLS.LIQUID_SPLIT_MAIN()).getERC20Balance(address(lsClaimer100), token_), 0);
+        assertGt(
+            ILiquidSplitMain(royaltyPolicyLS.LIQUID_SPLIT_MAIN()).getERC20Balance(address(lsClaimer100), token_),
+            0
+        );
 
-        address claimerIpId = getIpId(mockNft, nftIds[1]);
+        address claimerIpId = _getIpId(nft, nftIds[1]);
         tokens[0] = ERC20(USDC);
 
         vm.expectRevert(Errors.LSClaimer__ERC20BalanceNotZero.selector);
-        lsClaimer100.claim(LONG_CHAIN, claimerIpId, true, tokens);    
+        lsClaimer100.claim(LONG_CHAIN, claimerIpId, true, tokens);
     }
 
     function test_LSClaimer_claim_revert_ETHBalanceNotZero() public {
         vm.deal(address(splitClone100), ethRoyaltyAmount);
-        
-        accounts[0] = getIpId(mockNft, nftIds[100]);
+
+        accounts[0] = _getIpId(nft, nftIds[100]);
         accounts[1] = address(lsClaimer100);
 
         ILiquidSplitClone(splitClone100).distributeFunds(address(0), accounts, address(0));
 
         assertGt(ILiquidSplitMain(royaltyPolicyLS.LIQUID_SPLIT_MAIN()).getETHBalance(address(lsClaimer100)), 0);
 
-        address claimerIpId = getIpId(mockNft, nftIds[1]);
+        address claimerIpId = _getIpId(nft, nftIds[1]);
         tokens[0] = ERC20(USDC);
 
         vm.expectRevert(Errors.LSClaimer__ETHBalanceNotZero.selector);
-        lsClaimer100.claim(LONG_CHAIN, claimerIpId, true, tokens);    
+        lsClaimer100.claim(LONG_CHAIN, claimerIpId, true, tokens);
     }
 
     function test_LSClaimer_claim() public {
@@ -198,7 +236,7 @@ contract TestLSClaimer is TestHelper, BaseIntegration, Integration_Shared_Licens
         IERC20(USDC).transfer(address(lsClaimer100), usdcRoyaltyAmount);
         vm.stopPrank();
 
-        address claimerIpId = getIpId(mockNft, nftIds[1]);
+        address claimerIpId = _getIpId(nft, nftIds[1]);
         tokens[0] = ERC20(USDC);
 
         uint256 lsClaimerUSDCBalBefore = IERC20(USDC).balanceOf(address(lsClaimer100));
@@ -218,11 +256,23 @@ contract TestLSClaimer is TestHelper, BaseIntegration, Integration_Shared_Licens
         uint256 claimerRNFTBalAfter = ILiquidSplitClone(splitClone100).balanceOf(claimerIpId, 0);
 
         assertEq(lsClaimer100.claimedPaths(keccak256(abi.encodePacked(LONG_CHAIN))), true);
-        assertEq(lsClaimerUSDCBalBefore - lsClaimerUSDCBalAfter, usdcRoyaltyAmount * minRoyalty100 / (royaltyStack100 - minRoyalty100)); // calculation not aggregated in a variable due to stack too deep error
-        assertEq(lsClaimerETHBalBefore - lsClaimerETHBalAfter, ethRoyaltyAmount * minRoyalty100 / (royaltyStack100 - minRoyalty100));
+        assertEq(
+            lsClaimerUSDCBalBefore - lsClaimerUSDCBalAfter,
+            (usdcRoyaltyAmount * minRoyalty100) / (royaltyStack100 - minRoyalty100)
+        ); // calculation not aggregated in a variable due to stack too deep error
+        assertEq(
+            lsClaimerETHBalBefore - lsClaimerETHBalAfter,
+            (ethRoyaltyAmount * minRoyalty100) / (royaltyStack100 - minRoyalty100)
+        );
         assertEq(lsClaimerRNFTBalBefore - lsClaimerRNFTBalAfter, minRoyalty100);
-        assertEq(claimerUSDCBalAfter - claimerUSDCBalBefore, usdcRoyaltyAmount * minRoyalty100 / (royaltyStack100 - minRoyalty100));
-        assertEq(claimerETHBalAfter - claimerETHBalBefore, ethRoyaltyAmount * minRoyalty100 / (royaltyStack100 - minRoyalty100));
+        assertEq(
+            claimerUSDCBalAfter - claimerUSDCBalBefore,
+            (usdcRoyaltyAmount * minRoyalty100) / (royaltyStack100 - minRoyalty100)
+        );
+        assertEq(
+            claimerETHBalAfter - claimerETHBalBefore,
+            (ethRoyaltyAmount * minRoyalty100) / (royaltyStack100 - minRoyalty100)
+        );
         assertEq(claimerRNFTBalAfter - claimerRNFTBalBefore, minRoyalty100);
     }
 }
