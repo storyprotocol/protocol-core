@@ -209,7 +209,9 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
             assertEq(USDC.balanceOf(danSplitClone), royaltyAmount);
         }
 
-        // Distribute the accrued revenue from Dan's Claimer contract to the 0xSplits Main Wallet
+        // Distribute the accrued revenue from the 0xSplitWallet associated with Dan's IPAccount to
+        // 0xSplits Main, which will get distributed to Dan's IPAccount AND Dan's claimer based on revenue
+        // sharing terms specified in royalty policy.
         {
             vm.startPrank(u.dan);
 
@@ -229,8 +231,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
             royaltyPolicyLS.distributeFunds(ipAcct_Dan, address(USDC), accounts, address(0));
         }
 
-
-        // Alice claims her rNFTs (for distribution claim later), only done once since it's a single chain
+        // Alice claims her rNFTs and tokens, only done once since it's a single chain
         {
             vm.startPrank(u.alice);
 
@@ -247,7 +248,8 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
             ERC20[] memory tokens = new ERC20[](1);
             tokens[0] = ERC20(USDC);
 
-            // Alice calls the claimer to claim her portion of rNFTs and tokens
+            // Alice calls on behalf of Dan's claimer to send money from the Split Main to Dan's claimer,
+            // since the revenue payment was made to Dan's Split Wallet, which got distributed to the claimer.
 
             vm.expectEmit(address(danSplitClone));
             emit IERC1155.TransferSingle({ // rNFTs
@@ -258,9 +260,13 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
                 value: minRevShareIpAcct1
             });
 
+            royaltyPolicyLS.claimRoyalties({ _account: danClaimer, _withdrawETH: 0, _tokens: tokens });
+
+            // Alice calls the claim her portion of rNFTs and tokens. She can only call `claim` once.
+            // Afterwards, she will automatically receive money on revenue distribution.
+
             vm.expectEmit(address(USDC));
-            // TODO: no token received on claim...? Even though the royalty was paid (not in 0xSplits Main Wallet yet)
-            emit IERC20.Transfer(address(danClaimer), ipAcct_Alice, 0);
+            emit IERC20.Transfer(address(danClaimer), ipAcct_Alice, 649999998);
 
             vm.expectEmit(address(danClaimer));
             emit IClaimerLS.Claimed({
@@ -269,8 +275,6 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
                 withdrawETH: false,
                 tokens: tokens
             });
-            
-            royaltyPolicyLS.claimRoyalties({ _account: danClaimer, _withdrawETH: 0, _tokens: tokens });
 
             LSClaimer(danClaimer).claim({
                 _path: chain_alice_to_dan,
