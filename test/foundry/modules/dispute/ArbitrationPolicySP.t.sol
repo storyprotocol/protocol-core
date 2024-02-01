@@ -11,9 +11,9 @@ contract TestArbitrationPolicySP is TestHelper {
     function setUp() public override {
         super.setUp();
 
-        // fund USDC
-        vm.startPrank(USDC_RICH);
-        IERC20(USDC).transfer(ipAccount1, 1000 * 10 ** 6);
+        // fund WETH
+        vm.startPrank(WETH_RICH);
+        IERC20(WETH).transfer(ipAccount1, 1000 * 10 ** 6);
         vm.stopPrank();
 
         // whitelist dispute tag
@@ -62,20 +62,20 @@ contract TestArbitrationPolicySP is TestHelper {
     }
 
     function test_ArbitrationPolicySP_onRaiseDispute() public {
-        address caller = address(1);
+        address caller = ipAccount1;
         vm.startPrank(caller);
-        IERC20(USDC).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
+        IERC20(WETH).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
         vm.stopPrank();
 
         vm.startPrank(address(disputeModule));
 
-        uint256 userUSDCBalBefore = IERC20(USDC).balanceOf(caller);
-        uint256 arbitrationContractBalBefore = IERC20(USDC).balanceOf(address(arbitrationPolicySP));
+        uint256 userUSDCBalBefore = IERC20(WETH).balanceOf(caller);
+        uint256 arbitrationContractBalBefore = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
 
         arbitrationPolicySP.onRaiseDispute(caller, new bytes(0));
 
-        uint256 userUSDCBalAfter = IERC20(USDC).balanceOf(caller);
-        uint256 arbitrationContractBalAfter = IERC20(USDC).balanceOf(address(arbitrationPolicySP));
+        uint256 userUSDCBalAfter = IERC20(WETH).balanceOf(caller);
+        uint256 arbitrationContractBalAfter = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
 
         assertEq(userUSDCBalBefore - userUSDCBalAfter, ARBITRATION_PRICE);
         assertEq(arbitrationContractBalAfter - arbitrationContractBalBefore, ARBITRATION_PRICE);
@@ -89,19 +89,19 @@ contract TestArbitrationPolicySP is TestHelper {
     function test_ArbitrationPolicySP_onDisputeJudgement_True() public {
         // raise dispute
         vm.startPrank(ipAccount1);
-        IERC20(USDC).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
+        IERC20(WETH).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
         disputeModule.raiseDispute(ipAccount1, address(arbitrationPolicySP), string("urlExample"), "PLAGIARISM", "");
         vm.stopPrank();
 
         // set dispute judgement
-        uint256 ipAccount1USDCBalanceBefore = IERC20(USDC).balanceOf(ipAccount1);
-        uint256 arbitrationPolicySPUSDCBalanceBefore = IERC20(USDC).balanceOf(address(arbitrationPolicySP));
+        uint256 ipAccount1USDCBalanceBefore = IERC20(WETH).balanceOf(ipAccount1);
+        uint256 arbitrationPolicySPUSDCBalanceBefore = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
 
         vm.startPrank(arbitrationRelayer);
         disputeModule.setDisputeJudgement(1, true, "");
 
-        uint256 ipAccount1USDCBalanceAfter = IERC20(USDC).balanceOf(ipAccount1);
-        uint256 arbitrationPolicySPUSDCBalanceAfter = IERC20(USDC).balanceOf(address(arbitrationPolicySP));
+        uint256 ipAccount1USDCBalanceAfter = IERC20(WETH).balanceOf(ipAccount1);
+        uint256 arbitrationPolicySPUSDCBalanceAfter = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
 
         assertEq(ipAccount1USDCBalanceAfter - ipAccount1USDCBalanceBefore, ARBITRATION_PRICE);
         assertEq(arbitrationPolicySPUSDCBalanceBefore - arbitrationPolicySPUSDCBalanceAfter, ARBITRATION_PRICE);
@@ -110,19 +110,19 @@ contract TestArbitrationPolicySP is TestHelper {
     function test_ArbitrationPolicySP_onDisputeJudgement_False() public {
         // raise dispute
         vm.startPrank(ipAccount1);
-        IERC20(USDC).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
+        IERC20(WETH).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
         disputeModule.raiseDispute(ipAccount1, address(arbitrationPolicySP), string("urlExample"), "PLAGIARISM", "");
         vm.stopPrank();
 
         // set dispute judgement
-        uint256 ipAccount1USDCBalanceBefore = IERC20(USDC).balanceOf(ipAccount1);
-        uint256 arbitrationPolicySPUSDCBalanceBefore = IERC20(USDC).balanceOf(address(arbitrationPolicySP));
+        uint256 ipAccount1USDCBalanceBefore = IERC20(WETH).balanceOf(ipAccount1);
+        uint256 arbitrationPolicySPUSDCBalanceBefore = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
 
         vm.startPrank(arbitrationRelayer);
         disputeModule.setDisputeJudgement(1, false, "");
 
-        uint256 ipAccount1USDCBalanceAfter = IERC20(USDC).balanceOf(ipAccount1);
-        uint256 arbitrationPolicySPUSDCBalanceAfter = IERC20(USDC).balanceOf(address(arbitrationPolicySP));
+        uint256 ipAccount1USDCBalanceAfter = IERC20(WETH).balanceOf(ipAccount1);
+        uint256 arbitrationPolicySPUSDCBalanceAfter = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
 
         assertEq(ipAccount1USDCBalanceAfter - ipAccount1USDCBalanceBefore, 0);
         assertEq(arbitrationPolicySPUSDCBalanceBefore - arbitrationPolicySPUSDCBalanceAfter, 0);

@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /// @title Liquid split policy claimer interface
-interface IClaimerLS {
+interface ILSClaimer {
     /// @notice Event emitted when a claim is made
     /// @param path The path from the ipId to the claimer
     /// @param claimer The claimer ipId address
