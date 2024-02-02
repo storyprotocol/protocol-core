@@ -18,7 +18,16 @@ interface IDisputeModule {
     /// @param arbitrationRelayer The address of the arbitration relayer
     /// @param allowed Indicates if the arbitration relayer is whitelisted
     event ArbitrationRelayerWhitelistUpdated(address arbitrationPolicy, address arbitrationRelayer, bool allowed);
+
+    /// @notice Event emitted when the base arbitration policy is set
+    /// @param arbitrationPolicy The address of the arbitration policy
+    event DefaultArbitrationPolicySet(address arbitrationPolicy);
     
+    /// @notice Event emitted when an arbitration policy is set for an ipId
+    /// @param ipId The ipId address
+    /// @param arbitrationPolicy The address of the arbitration policy
+    event ArbitrationPolicySet(address ipId, address arbitrationPolicy);
+
     /// @notice Event emitted when a dispute is raised
     /// @param disputeId The dispute id
     /// @param targetIpId The ipId that is the target of the dispute
@@ -70,14 +79,12 @@ interface IDisputeModule {
 
     /// @notice Raises a dispute
     /// @param targetIpId The ipId that is the target of the dispute
-    /// @param arbitrationPolicy The address of the arbitration policy
     /// @param linkToDisputeEvidence The link of the dispute evidence
     /// @param targetTag The target tag of the dispute
     /// @param data The data to initialize the policy
     /// @return disputeId The dispute id
     function raiseDispute(
         address targetIpId,
-        address arbitrationPolicy,
         string memory linkToDisputeEvidence,
         bytes32 targetTag,
         bytes calldata data
@@ -99,6 +106,7 @@ interface IDisputeModule {
     function resolveDispute(uint256 disputeId) external;
 
     /// @notice Gets the dispute struct characteristics
+    /// @param disputeId The dispute id
     function disputes(uint256 disputeId)
         external
         view
