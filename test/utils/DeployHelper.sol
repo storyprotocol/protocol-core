@@ -93,11 +93,17 @@ contract DeployHelper is Test {
     // Helpers
     Users internal u;
 
-    uint256 internal constant ARBITRATION_PRICE = 1000 * 10 ** 6; // 1000 USDC
+    uint256 internal constant ARBITRATION_PRICE = 1000 * 10 ** 6;
+
+    // WETH (Sepolia)
+    address internal constant WETH = 0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9;
+    address internal constant WETH_RICH = 0x546e37DAA15cdb82fd1a717E5dEEa4AF08D4349A;
 
     // 0xSplits Liquid Split (Sepolia)
     address internal constant LIQUID_SPLIT_FACTORY = 0xF678Bae6091Ab6933425FE26Afc20Ee5F324c4aE;
     address internal constant LIQUID_SPLIT_MAIN = 0x57CBFA83f000a38C5b5881743E298819c503A559;
+
+
 
     function deploy() public virtual {
         u = UsersLib.createMockUsers(vm);
