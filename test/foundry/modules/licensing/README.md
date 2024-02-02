@@ -4,19 +4,19 @@ A license is to make a derivative
 # Starting from Not a derivative
 
 Bob owns IP1
+1) If Bob adds 1 Policy in IP -> others can mint if they pass verifications ✅
+1) If Bob doesn't set Policy in IP -> others can't mint✅
+2) Bob can mint Licenses with whatever Policy in any of the above✅
 
-1) If Bob adds 1 Policy in IP -> others can mint if they pass verifications
-2) If Bob doesn't set Policy in IP -> others can't mint
-3) Bob can mint Licenses with whatever Policy in any of the above
+3) Bob can add different policies on IP1 without compatibility checks. Others can mint licenses to make derivatives of IP1 from each different policy, as long as they pass the verifications✅
 
-4) Bob can add different policies on IP1 without compatibility checks. Others can mint licenses to make derivatives of IP1 from each different policy, as long as they pass the verifications
-
-5) Bob can mint licenses with different policies, transfer to others, and the holders can make derivatives from each License, regardless of IP1 having several policies set
+4) Bob can mint licenses with different policies, transfer to others, and the holders can make derivatives from each License, regardless of IP1 having several policies set✅
    
-6) Bob has set P1 and P2 in IP1, and gets license(LE) with PE from Emergence (IPE)
+5) Bob has set P1 and P2 in IP1, and gets license(LE) with PE from Emergence (IPE)
    Bobs wants to set IPE as parent of IP1
-    6.1) If the policies that IP1 has are in conflict with PE, revert
-    6.2) If the policies that IP1 has are not in conflict with PE, OK -> IP1 adds PE, IPE parent of IP1
+    6.1) If the policies that IP1 has are in conflict with PE, revert 🚧
+    6.2) If the policies that IP1 has are not in conflict with PE, OK -> IP1 adds PE, IPE parent of IP1 🚧
+    6.3) Bob disable conflicting policies, then Adds PE 🚧
 
 # Starting from A Derivative
 
@@ -25,37 +25,37 @@ Bob creates a license L1 with P1
 Alice owns IP2
 Alice burns L1, P1 is set in IP2
 
-1) P1 does not allow for derivatives
-1.1) Don tries to mint a license from P1 in IP2 -> fails
-1.2) Alice tries to mint a license from P1 in IP2 -> fails
-1.3) Alice tries to mint 
+1) P1 does not allow for derivatives 🚧
+1.1) Don tries to mint a license from P1 in IP2 -> fails 🚧
+1.2) Alice tries to mint a license from P1 in IP2 -> fails 🚧
+1.3) Alice tries to mint 🚧
 
 // Edge case, later on, Alice buys the right from her licensor to make derivatives
 // Setting the parent again should work in this case, P2 should be
-1.4) Bob mints L2 with P2 (allows derivatives) and sends it to Alice
-     Alice burns L2 and P2 is set in IP2
-     Alice can mint now L3 with P2?
+1.4) Bob mints L2 with P2 (allows derivatives) and sends it to Alice 🚧
+     Alice burns L2 and P2 is set in IP2 🚧
+     Alice can mint now L3 with P2? 🚧
 
 
-1) P1 allows for derivatives of this derivatives, but meaning P1 propagates down, no other can be set (reciprocal == true)
-2.1) Don tries to mint a license from P1 in IP2 -> License mints, has P1
-2.2) Alice tries to mint a license from P1 in IP2 -> License mints, has P1
-2.3) Alice tries to set P2 in IP2 -> Fails, reciprocal means no different policies allowed,
-and you cannot add the same policy twice
+1) P1 allows for derivatives of this derivatives, but meaning P1 propagates down, no other can be set (reciprocal == true) 🚧
+2.1) Don tries to mint a license from P1 in IP2 -> License mints, has P1 🚧
+2.2) Alice tries to mint a license from P1 in IP2 -> License mints, has P1 🚧
+2.3) Alice tries to set P2 in IP2 -> Fails, reciprocal means no different policies allowed, 
+and you cannot add the same policy twice 🚧
 
 # Commercial
-Bob owns IP1
+Bob owns IP1 
 Bob creates a license L1 with P1
 Alice owns IP2
 Alice burns L1, P1 is set in IP2
 
 1) P1 is Non Commercial (assume derivatives allowed)
-1.1) Alice tries to mint a commercial license -> fail
-1.2) Alice tries to add a commercial policy -> fail
+1.1) Alice tries to mint a commercial license -> fail🚧
+1.2) Alice tries to add a commercial policy -> fail🚧
 
 2) P1 is Commercial (assume derivatives allowed)
-1.1) Alice tries to mint a non commercial license -> OK? (if the only derivatives of derivatives are reciprocal, this fails)
-1.2) Alice tries to add a commercial policy -> OK? (if the only derivatives of derivatives are reciprocal, this fails)
+1.1) Alice tries to mint a non commercial license -> OK? (if the only derivatives of derivatives are reciprocal, this fails)🚧
+1.2) Alice tries to add a commercial policy -> OK? (if the only derivatives of derivatives are reciprocal, this fails)🚧
 
 
 # Setting multiple parents
@@ -66,8 +66,8 @@ Bob mints L3 with P3 from IP3
 
 Alice owns IP4
 Alice wants to burn L1,L2 and L3 to link as parents for IP4
-1) If one is reciprocal, all Ps have to be the same or fail. Result is verify all 3, set 1 policy set for IP4
-2) If no reciprocal, some parameters make the operation impossible, others are indifferent as long as validations pass
+1) If one is reciprocal, all Ps have to be the same or fail. Result is verify all 3, set 1 policy set for IP4🚧
+2) If no reciprocal, some parameters make the operation impossible, others are indifferent as long as validations pass🚧
 
 -- Attribution is indifferent
 -- Transferable is ???

@@ -59,6 +59,17 @@ contract UMLPolicyFrameworkCompatibilityTest is Test {
         _;
     }
 
+    modifier withAliceOwningDerivativeWork(string memory policyName) {
+        vm.prank(bob);
+        uint256 licenseId = registry.mintLicense(policyIDs[policyName], ipId1, 1, alice);
+        vm.prank(alice);
+        uint256[] memory licenseIds = new uint256[](1);
+        licenseIds[0] = licenseId;
+        console2.log("withAliceOwningDerivativeWork");
+        registry.linkIpToParents(licenseIds, ipId2, alice);
+        _;
+    }
+
     function setUp() public {
         ipAccountRegistry = new IPAccountRegistry(
             address(new ERC6551Registry()),
@@ -123,7 +134,7 @@ contract UMLPolicyFrameworkCompatibilityTest is Test {
     */
 
     /// STARTING FROM AN ORIGINAL WORK
-    function test_original_work_bob_adds_different_policies_alice_mints()
+    function test_UMLPolicyFramework_originalWork_bobAddsDifferentPoliciesAndAliceMints()
         withPolicy("comm_deriv", true, true)
         withPolicy("comm_non_deriv", true, false)
         public {
@@ -144,11 +155,49 @@ contract UMLPolicyFrameworkCompatibilityTest is Test {
         
         uint256 licenseId2 = registry.mintLicense(policyIDs["comm_non_deriv"], ipId1, 1, don);
         console2.log("License ID2: ", licenseId2);
-        assertFalse(licenseId1 == licenseId2, "wtf");
         assertEq(registry.balanceOf(don, licenseId2), 1, "Don doesn't have license2");
     }
 
     /// TODO: STARTING FROM AN ORIGINAL WORK, WITH APPROVALS and UPFRONT PAY
+    function test_UMLPolicyFramework_originalWork_bobMintsWithDifferentPolicies()
+        withPolicy("comm_deriv", true, true)
+        withPolicy("comm_non_deriv", true, false)
+        public {
+        // Bob can add different policies on IP1 without compatibility checks.
+        vm.startPrank(bob);
+        uint256 licenseId1 = registry.mintLicense(policyIDs["comm_deriv"], ipId1, 1, don);
+        console2.log("License ID1: ", licenseId1);
+        assertEq(registry.balanceOf(don, licenseId1), 1, "Don doesn't have license1");
+        
+        uint256 licenseId2 = registry.mintLicense(policyIDs["comm_non_deriv"], ipId1, 1, don);
+        console2.log("License ID2: ", licenseId2);
+        assertEq(registry.balanceOf(don, licenseId2), 1, "Don doesn't have license2");
+        vm.stopPrank();
+    }
+
+    
+    function test_UMLPolicyFramework_originalWork_bobSetsPoliciesThenCompatibleParent()
+        withPolicy("comm_deriv", true, true)
+        withPolicy("comm_non_deriv", true, false)
+        public {
+        // TODO: This works if all policies compatible.
+        // Can bob disable some policies?
+    }
+
+
+    // STARTING FROM DERIVATIVE WORK
+    function test_UMLPolicyFramework_derivative_revert_cantMintDerivativeOfDerivative()
+        withPolicy("comm_non_deriv", true, false)
+        withAliceOwningDerivativeWork("comm_non_deriv")
+        public {
+        vm.expectRevert(Errors.LicenseRegistry__MintLicenseParamFailed.selector);
+        vm.prank(don);
+        registry.mintLicense(policyIDs["comm_non_deriv"], ipId2, 1, don);
+        vm.expectRevert(Errors.LicenseRegistry__MintLicenseParamFailed.selector);
+        vm.prank(alice);
+        registry.mintLicense(policyIDs["comm_non_deriv"], ipId2, 1, alice);
+
+    }
 
 
 }
