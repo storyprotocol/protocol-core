@@ -245,4 +245,24 @@ contract AccessControlledTest is Test {
         vm.prank(owner);
         mockModule.customizedFunction(address(ipAccount), "test", false);
     }
+
+    function test_AccessControlled_revert_constructor_zeroAddress_accessController() public {
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessControlled__ZeroAddress.selector));
+        new MockAccessControlledModule(
+            address(0),
+            address(ipAccountRegistry),
+            address(moduleRegistry),
+            "MockAccessControlledModule"
+        );
+    }
+
+    function test_AccessControlled_revert_constructor_zeroAddress_ipAccountRegistry() public {
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessControlled__ZeroAddress.selector));
+        new MockAccessControlledModule(
+            address(accessController),
+            address(0),
+            address(moduleRegistry),
+            "MockAccessControlledModule"
+        );
+    }
 }
