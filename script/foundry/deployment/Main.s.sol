@@ -49,7 +49,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     AccessController public accessController;
 
     IPAssetRenderer public renderer;
-//    IPAccountRegistry public ipAccountRegistry;
     IPAssetRegistry public ipAssetRegistry;
     LicenseRegistry public licenseRegistry;
     ModuleRegistry public moduleRegistry;
@@ -58,7 +57,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     MockERC721 public mockNft;
 
     IIPAccount public ipAccount;
-    //    ERC6551Registry public erc6551Registry;
 
     RegistrationModule public registrationModule;
     TaggingModule public taggingModule;
@@ -126,11 +124,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         _predeploy(contractKey);
         moduleRegistry = new ModuleRegistry(address(governance));
         _postdeploy(contractKey, address(moduleRegistry));
-
-//        contractKey = "IPAccountRegistry";
-//        _predeploy(contractKey);
-//        ipAccountRegistry = new IPAccountRegistry(ERC6551_REGISTRY, address(accessController), address(implementation));
-//        _postdeploy(contractKey, address(ipAccountRegistry));
 
         // TODO: deployment sequence
         contractKey = "IPAssetRegistry";
@@ -200,7 +193,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         _readDeployment();
 
         accessController = AccessController(_readAddress("main.AccessController"));
-//        ipAccountRegistry = IPAccountRegistry(_readAddress("main.IPAccountRegistry"));
         moduleRegistry = ModuleRegistry(_readAddress("main.ModuleRegistry"));
         licenseRegistry = LicenseRegistry(_readAddress("main.LicenseRegistry"));
         ipAssetRegistry = IPAssetRegistry(_readAddress("main.IPAssetRegistry"));
