@@ -113,3 +113,41 @@ B can buy P2 from A.
 C can't buy P2 from A?
 C can't buy P2 from B?
 Once B has bought P2, C can buy P2 from B?
+
+
+# DISPUTED CASES
+
+# Plagiarism
+Bob owns IP1 
+Bob sets P1 in IP1 (he can, since he clains IP1 is original)
+Alice owns IP2
+Alice mints L1 from IP1-P1
+Alice links IP2 to IP1 with L1
+Don finds out IP1 plagiarizes his IP0
+Don raises dispute against IP1 for plagiarism
+Dispute passes, IP1 is labeled as plagiarism
+Bob cannot set policies in IP1
+Bob cannot mint licenses from IP1
+Alice cannot set policies in IP2
+Alice cannot mint licenses from IP2
+// TODO: royalties?
+
+# Unnatributed derivative
+Bob owns IP1 
+Bob sets P1 in IP1 (he can, since he clains IP1 is original)
+Alice owns IP2
+Alice mints L1 from IP1-P1
+Alice links IP2 to IP1 with L1
+Don finds out IP1 is a clear derivative of his IP0
+Don raises dispute against IP1 for unatributed derivative
+Dispute passes, IP1 is labeled as plagiarism
+??? Either:
+Bob cannot set policies in IP1
+Bob cannot mint licenses from IP1
+Alice cannot set policies in IP2
+Alice cannot mint licenses from IP2
+// TODO: royalties?
+???? Or:
+IP1 is forced to set IP0 as parent, 
+All policies from IP1 are disabled and IP0 policy is set instead
+// Does this propagate through children/royalties?
