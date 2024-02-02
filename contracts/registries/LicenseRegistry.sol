@@ -57,7 +57,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
     /// This tracks the number of licenses registered in the protocol, it will not decrease when a license is burnt.
     uint256 private _totalLicenses;
 
-    constructor(address accessController, address ipAccountRegistry) ERC1155("")  AccessControlled(accessController, ipAccountRegistry) {}
+    constructor(
+        address accessController,
+        address ipAccountRegistry
+    ) ERC1155("") AccessControlled(accessController, ipAccountRegistry) {}
 
     /// @notice registers a policy framework manager into the contract, so it can add policy data for
     /// licenses.
@@ -174,7 +177,11 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
     /// @param licenseIds The id of the licenses to burn
     /// @param childIpId The id of the child IP to be linked
     /// @param holder The address that holds the license
-    function linkIpToParents(uint256[] calldata licenseIds, address childIpId, address holder) external verifyPermission(childIpId) {
+    function linkIpToParents(
+        uint256[] calldata licenseIds,
+        address childIpId,
+        address holder
+    ) external verifyPermission(childIpId) {
         uint256 licenses = licenseIds.length;
         address[] memory licensors = new address[](licenses);
         uint256[] memory values = new uint256[](licenses);
