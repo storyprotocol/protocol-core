@@ -25,10 +25,10 @@ Bob creates a license L1 with P1
 Alice owns IP2
 Alice burns L1, P1 is set in IP2
 
-1) P1 does not allow for derivatives 🚧
-1.1) Don tries to mint a license from P1 in IP2 -> fails 🚧
-1.2) Alice tries to mint a license from P1 in IP2 -> fails 🚧
-1.3) Alice tries to mint 🚧
+1) P1 does not allow for derivatives
+1.1) Don tries to mint a license from P1 in IP2 -> fails ✅
+1.2) Alice tries to mint a license from P1 in IP2 -> fails ✅
+1.3) Alice tries to set a policy --> fails?
 
 // Edge case, later on, Alice buys the right from her licensor to make derivatives
 // Setting the parent again should work in this case, P2 should be
@@ -89,7 +89,7 @@ Alice wants to burn L1,L2 and L3 to link as parents for IP4
 -- Content Restrictions: same logic as Commercializers
 
 
-# Demo use case
+# INTEGRATION
 
 | Demo Use Case                   |                                                            Social Remixing                                                            |                                                               Commercial Activity                                                               |
 |---------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------:|

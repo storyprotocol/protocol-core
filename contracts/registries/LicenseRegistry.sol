@@ -403,17 +403,17 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     }
 
     function _processNewInheritedPolicy(uint256 policyId, address ipId) private {
-         // Checking for policy compatibility
-         IPolicyFrameworkManager polManager = IPolicyFrameworkManager(policy(policyId).policyFramework);
-         Licensing.Policy memory pol = _policies[policyId];
-         (bool rightsChanged, bytes memory newRights) = polManager.processInheritedPolicy(
-             _ipRights[pol.policyFramework][ipId],
-             pol.data
-         );
-         if (rightsChanged) {
-             _ipRights[pol.policyFramework][ipId] = newRights;
-             emit IPRightsUpdated(ipId, newRights);
-         }
+        // Checking for policy compatibility
+        IPolicyFrameworkManager polManager = IPolicyFrameworkManager(policy(policyId).policyFramework);
+        Licensing.Policy memory pol = _policies[policyId];
+        (bool rightsChanged, bytes memory newRights) = polManager.processInheritedPolicy(
+            _ipRights[pol.policyFramework][ipId],
+            pol.data
+        );
+        if (rightsChanged) {
+            _ipRights[pol.policyFramework][ipId] = newRights;
+            emit IPRightsUpdated(ipId, newRights);
+        }
     }
 
     /// Stores data without repetition, assigning an id to it if new or reusing existing one if already stored

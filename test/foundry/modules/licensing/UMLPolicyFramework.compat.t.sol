@@ -196,7 +196,6 @@ contract UMLPolicyFrameworkCompatibilityTest is Test {
         vm.expectRevert(Errors.LicenseRegistry__MintLicenseParamFailed.selector);
         vm.prank(alice);
         registry.mintLicense(policyIDs["comm_non_deriv"], ipId2, 1, alice);
-
     }
 
 
