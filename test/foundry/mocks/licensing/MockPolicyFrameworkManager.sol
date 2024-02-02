@@ -83,4 +83,11 @@ contract MockPolicyFrameworkManager is
     function policyToJson(bytes memory policyData) public pure returns (string memory) {
         return "MockPolicyFrameworkManager";
     }
+    
+    function processNewPolicies(
+        bytes memory ipRights,
+        bytes memory policy
+    ) external view override returns (bool changedRights, bytes memory newRights) {
+        return (false, ipRights);
+    }
 }

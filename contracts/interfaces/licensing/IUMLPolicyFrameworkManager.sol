@@ -37,6 +37,12 @@ struct UMLPolicy {
     string[] distributionChannels;
 }
 
+struct UMLRights {
+    bool commercial;
+    bool derivable;
+    bool reciprocalSet;
+}
+
 
 /// @title IUMLPolicyFrameworkManager
 /// @notice Defines the interface for a Policy Framework Manager compliant with the UML standard
@@ -49,4 +55,6 @@ interface IUMLPolicyFrameworkManager is IPolicyFrameworkManager {
     /// @param policyId  The ID of the policy to fetch
     /// @return policy The UMLPolicy struct
     function getPolicy(uint256 policyId) external view returns (UMLPolicy memory policy);
+    
+    function getRights(address ipId) external view returns (UMLRights memory rights);
 }

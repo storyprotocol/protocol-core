@@ -49,12 +49,11 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// Policies can't be removed, but they can be deactivated by setting active to false
     mapping(address ipId => mapping(uint256 policyId => PolicySetup setup)) private _policySetups;
     mapping(address ipId => EnumerableSet.UintSet policyIds) private _policiesPerIpId;
-
     mapping(address ipId => EnumerableSet.AddressSet parentIpIds) private _ipIdParents;
+    mapping(address framework => mapping(address ipId => bytes rightsData)) private _ipRights;
 
     mapping(bytes32 licenseHash => uint256 ids) private _hashedLicenses;
     mapping(uint256 licenseIds => Licensing.License licenseData) private _licenses;
-
     /// This tracks the number of licenses registered in the protocol, it will not decrease when a license is burnt.
     uint256 private _totalLicenses;
 
@@ -270,6 +269,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return pol;
     }
 
+    function rightsData(address framework, address ipId) external view returns (bytes memory) {
+        return _ipRights[framework][ipId];
+    }
+
     /// Returns true if policyId is defined in LicenseRegistry, false otherwise.
     function isPolicyDefined(uint256 policyId) public view returns (bool) {
         return _policies[policyId].policyFramework != address(0);
@@ -381,8 +384,18 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         if (!_pols.add(policyId)) {
             revert Errors.LicenseRegistry__PolicyAlreadySetForIpId();
         }
-        // TODO: check for policy compatibility.
-        // compatibilityManager.isPolicyCompatible(newPolicy, policiesInIpId);
+        // Checking for policy compatibility
+        IPolicyFrameworkManager polManager = IPolicyFrameworkManager(policy(policyId).policyFramework);
+        Licensing.Policy memory pol = _policies[policyId];
+        (bool rightsChanged, bytes memory newRights) = polManager.processNewPolicies(
+            _ipRights[pol.policyFramework][ipId],
+            pol.data
+        );
+        if (rightsChanged) {
+            _ipRights[pol.policyFramework][ipId] = newRights;
+            emit IPRightsUpdated(ipId, newRights);
+        }
+
         index = _pols.length() - 1;
         PolicySetup storage setup = _policySetups[ipId][policyId];
         // This should not happen, but just in case

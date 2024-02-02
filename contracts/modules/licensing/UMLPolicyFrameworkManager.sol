@@ -1,4 +1,4 @@
-// // SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: UNLICENSED
 
 pragma solidity ^0.8.23;
 
@@ -16,10 +16,13 @@ import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
-import { IUMLPolicyFrameworkManager, UMLPolicy } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
+import { IUMLPolicyFrameworkManager, UMLPolicy, UMLRights } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 import { LicensorApprovalChecker } from "contracts/modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
+
+import "forge-std/console2.sol";
+
 
 /// @title UMLPolicyFrameworkManager
 /// @notice This is the UML Policy Framework Manager, which implements the UML Policy Framework
@@ -142,6 +145,61 @@ contract UMLPolicyFrameworkManager is
             revert Errors.PolicyFrameworkManager__GettingPolicyWrongFramework();
         }
         policy = abi.decode(protocolPolicy.data, (UMLPolicy));
+    }
+
+    function getRights(address ipId) external view returns (UMLRights memory rights) {
+        bytes memory rightsData = LICENSE_REGISTRY.rightsData(address(this), ipId);
+        if (rightsData.length == 0) {
+            revert UMLFrameworkErrors.UMLPolicyFrameworkManager_RightsNotFound();
+        }
+        rights = abi.decode(rightsData, (UMLRights));
+    }
+
+    function processNewPolicies(
+        bytes memory ipRights,
+        bytes memory policy
+    ) external view onlyLicenseRegistry returns (bool changedRights, bytes memory newRights) {
+        UMLPolicy memory umlPolicy = abi.decode(policy, (UMLPolicy));
+        console2.log("processing new policies");
+        // Decode the rights and check if they need to be initialized
+        UMLRights memory umlRights;
+        bool mustInitializeRights;
+        if (ipRights.length == 0) {
+            umlRights = UMLRights(false, false, false);
+            mustInitializeRights = true;
+        } else {
+            umlRights = abi.decode(ipRights, (UMLRights));
+        }
+        // If this is the first policy, initialize the rights with it
+        if (mustInitializeRights) {
+            if (umlPolicy.commercialUse) {
+                umlRights.commercial = true;
+            }
+            if (umlPolicy.derivativesAllowed) {
+                umlRights.derivable = true;
+            }
+            if (umlPolicy.derivativesReciprocal) {
+                umlRights.reciprocalSet = true;
+            }
+        } else {
+            // There are already policies set
+            if (umlRights.reciprocalSet || umlPolicy.derivativesReciprocal) {
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager_ReciprocaConfiglNegatesNewPolicy();
+
+            }
+        }
+        if (!umlRights.commercial && umlPolicy.commercialUse) {
+            revert UMLFrameworkErrors.UMLPolicyFrameworkManager_NewCommercialPolicyNotAccepted();
+        }
+        if (umlRights.derivable != umlPolicy.derivativesAllowed) {
+            revert UMLFrameworkErrors.UMLPolicyFrameworkManager_NewDerivativesPolicyNotAccepted();
+        }
+        //if (umlRights.reciprocalSet != umlPolicy.derivativesReciprocal) {
+        //    revert UMLFrameworkErrors.UMLPolicyFrameworkManager_NewReciprocalPolicyNotAccepted();
+        //}
+
+        newRights = abi.encode(umlRights);
+        return (keccak256(newRights) != keccak256(ipRights), newRights);
     }
 
     function policyToJson(bytes memory policyData) public view returns (string memory) {

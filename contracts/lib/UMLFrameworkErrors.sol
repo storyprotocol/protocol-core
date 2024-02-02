@@ -17,4 +17,9 @@ library UMLFrameworkErrors {
     error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddApproval();
     error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddReciprocal();
     error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddRevShare();
+    error UMLPolicyFrameworkManager_RightsNotFound();
+
+    error UMLPolicyFrameworkManager_NewCommercialPolicyNotAccepted();
+    error UMLPolicyFrameworkManager_NewDerivativesPolicyNotAccepted();
+    error UMLPolicyFrameworkManager_ReciprocaConfiglNegatesNewPolicy();
 }
