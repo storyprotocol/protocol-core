@@ -73,6 +73,7 @@ contract DeployHelper is Test {
     RegistrationModule internal registrationModule;
     DisputeModule internal disputeModule;
     ArbitrationPolicySP internal arbitrationPolicySP;
+    ArbitrationPolicySP internal arbitrationPolicySP2;
     RoyaltyModule internal royaltyModule;
     RoyaltyPolicyLS internal royaltyPolicyLS;
     LSClaimer internal lsClaimer;
@@ -152,7 +153,7 @@ contract DeployHelper is Test {
         );
         taggingModule = new TaggingModule();
         royaltyModule = new RoyaltyModule();
-        disputeModule = new DisputeModule();
+        disputeModule = new DisputeModule(address(accessController), address(ipAssetRegistry), address(licenseRegistry));
         ipAssetRenderer = new IPAssetRenderer(
             address(ipAssetRegistry),
             address(licenseRegistry),
@@ -161,6 +162,7 @@ contract DeployHelper is Test {
         );
 
         arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), WETH, ARBITRATION_PRICE);
+        arbitrationPolicySP2 = new ArbitrationPolicySP(address(disputeModule), WETH, ARBITRATION_PRICE);
         royaltyPolicyLS = new RoyaltyPolicyLS(
             address(royaltyModule),
             address(licenseRegistry),

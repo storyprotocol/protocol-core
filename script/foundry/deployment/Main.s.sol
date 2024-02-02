@@ -160,7 +160,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "DisputeModule";
         _predeploy(contractKey);
-        disputeModule = new DisputeModule();
+        disputeModule = new DisputeModule(address(accessController), address(ipAssetRegistry), address(licenseRegistry));
         _postdeploy(contractKey, address(disputeModule));
 
         contractKey = "IPAssetRenderer";

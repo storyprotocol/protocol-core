@@ -133,7 +133,7 @@ contract BaseIntegration is Test {
         );
         taggingModule = new TaggingModule();
         royaltyModule = new RoyaltyModule();
-        disputeModule = new DisputeModule();
+        disputeModule = new DisputeModule(address(accessController), address(ipAssetRegistry), address(licenseRegistry));
         ipAssetRenderer = new IPAssetRenderer(
             address(ipAssetRegistry),
             address(licenseRegistry),
