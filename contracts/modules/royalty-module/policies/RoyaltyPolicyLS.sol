@@ -86,7 +86,7 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
         (uint32 royaltyStack, uint32 newRoyaltyStack) = _checkRoyaltyStackIsValid(_parentIpIds, minRoyalty);
 
         // deploy claimer if not root ip
-        address claimer = address(this); // 0xSplit requires two addresses to allow a split so for root ip address(this) as the second address
+        address claimer = address(this); // 0xSplit requires two addresses to allow a split so for root ip address(this) is used as the second address
         if (_parentIpIds.length > 0) claimer = address(new LSClaimer(_ipId, LICENSE_REGISTRY, address(this)));
 
         // deploy split clone
