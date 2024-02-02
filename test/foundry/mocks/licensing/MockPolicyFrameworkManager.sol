@@ -95,7 +95,7 @@ contract MockPolicyFrameworkManager is
     function policyToJson(bytes memory policyData) public pure returns (string memory) {
         return "MockPolicyFrameworkManager";
     }
-
+    
     function processInheritedPolicies(
         bytes memory ipRights,
         bytes memory policy
