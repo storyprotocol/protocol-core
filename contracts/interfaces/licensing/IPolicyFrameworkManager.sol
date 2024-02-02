@@ -22,7 +22,7 @@ interface IPolicyFrameworkManager is IPolicyVerifier {
     /// Must return ERC1155 OpenSea standard compliant metadata
     function policyToJson(bytes memory policyData) external view returns (string memory);
 
-    function processInheritedPolicy(
+    function processisInherited(
         bytes memory ipRights,
         bytes memory policy
     ) external view returns (bool changedRights, bytes memory newRights);

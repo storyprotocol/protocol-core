@@ -128,6 +128,7 @@ library Errors {
     error LicenseRegistry__UnauthorizedAccess();
     error LicenseRegistry__LicensorNotRegistered();
     error LicenseRegistry__CallerNotLicensorAndPolicyNotSet();
+    error LicenseRegistry__DerivativesCannotAddPolicy();
 
     ////////////////////////////////////////////////////////////////////////////
     //                        LicenseRegistryAware                            //

@@ -28,7 +28,7 @@ Alice burns L1, P1 is set in IP2
 1) P1 does not allow for derivatives
 1.1) Don tries to mint a license from P1 in IP2 -> fails ✅
 1.2) Alice tries to mint a license from P1 in IP2 -> fails ✅
-1.3) Alice tries to set a policy --> fails???? 
+1.3) Alice tries to set a policy --> fails???? ✅
 
 // Edge case, later on, Alice buys the right from her licensor to make derivatives
 // Setting the parent again should work in this case, P2 should be
@@ -38,10 +38,10 @@ Alice burns L1, P1 is set in IP2
 
 
 1) P1 allows for derivatives of this derivatives, but meaning P1 propagates down, no other can be set (reciprocal == true) 
-2.1) Don tries to mint a license from P1 in IP2 -> License mints, has P1 
-2.2) Alice tries to mint a license from P1 in IP2 -> License mints, has P1 
+2.1) Don tries to mint a license from P1 in IP2 -> License mints, has P1 ✅
+2.2) Alice tries to mint a license from P1 in IP2 -> License mints, has P1 ✅
 2.3) Alice tries to set P2 in IP2 -> Fails, reciprocal means no different policies allowed, 
-and you cannot add the same policy twice 
+and you cannot add the same policy twice ✅
 
 # Commercial
 Bob owns IP1 
@@ -50,12 +50,12 @@ Alice owns IP2
 Alice burns L1, P1 is set in IP2
 
 1) P1 is Non Commercial (assume derivatives allowed)
-1.1) Alice tries to mint a commercial license -> fail🚧
-1.2) Alice tries to add a commercial policy -> fail🚧
+1.1) Alice tries to mint a commercial license -> fail
+1.2) Alice tries to add a commercial policy -> fail
 
-2) P1 is Commercial (assume derivatives allowed)
-1.1) Alice tries to mint a non commercial license -> OK? (if the only derivatives of derivatives are reciprocal, this fails)🚧
-1.2) Alice tries to add a commercial policy -> OK? (if the only derivatives of derivatives are reciprocal, this fails)🚧
+1) P1 is Commercial (assume derivatives allowed)
+1.1) Alice tries to mint a non commercial license -> OK? (if the only derivatives of derivatives are reciprocal, this fails)
+1.2) Alice tries to add a commercial policy -> OK? (if the only derivatives of derivatives are reciprocal, this fails)
 
 
 # Setting multiple parents

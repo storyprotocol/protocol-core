@@ -55,11 +55,11 @@ contract MockPolicyFrameworkManager is
     }
 
     function registerPolicy(MockPolicy calldata mockPolicy) external returns (uint256 policyId) {
-        return LICENSE_REGISTRY.registerPolicy(abi.encode(mockPolicy));
         emit MockPolicyAdded(policyId, mockPolicy);
+        return LICENSE_REGISTRY.registerPolicy(abi.encode(mockPolicy));
     }
 
-    function verifyMint(address, bool, address, address, uint256, bytes memory data) external view returns (bool) {
+    function verifyMint(address, bool, address, address, uint256, bytes memory data) external pure returns (bool) {
         MockPolicy memory policy = abi.decode(data, (MockPolicy));
         return policy.returnVerifyMint;
     }
@@ -84,10 +84,10 @@ contract MockPolicyFrameworkManager is
         return "MockPolicyFrameworkManager";
     }
     
-    function processInheritedPolicy(
+    function processisInherited(
         bytes memory ipRights,
         bytes memory policy
-    ) external view override returns (bool changedRights, bytes memory newRights) {
+    ) external pure override returns (bool changedRights, bytes memory newRights) {
         return (false, ipRights);
     }
 }
