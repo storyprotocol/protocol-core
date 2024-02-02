@@ -20,7 +20,7 @@ contract MockAccessControlledModule is IModule, AccessControlled {
     /// @param accessController The address of the AccessController contract.
     /// @param ipAccountRegistry The address of the IPAccountRegistry contract.
     /// @param moduleRegistry_ The address of the ModuleRegistry contract.
-    /// @param _name The name of the module.    
+    /// @param name_ The name of the module.
     constructor(
         address accessController,
         address ipAccountRegistry,
