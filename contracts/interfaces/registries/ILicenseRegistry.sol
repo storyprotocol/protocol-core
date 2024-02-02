@@ -26,6 +26,11 @@ interface ILicenseRegistry {
 
     event IPRightsUpdated(address indexed ipId, bytes rights);
 
+    event IPRightsUpdated(
+        address indexed ipId,
+        bytes rights
+    );
+
     /// @notice Emitted when a policy is added to an IP
     /// @param caller The address that called the function
     /// @param ipId The id of the IP
@@ -144,6 +149,8 @@ interface ILicenseRegistry {
         address ipId,
         uint256 policyId
     ) external view returns (uint256 index, bool isInherited, bool active);
+
+    function rightsData(address framework, address ipId) external view returns (bytes memory);
 
     function rightsData(address framework, address ipId) external view returns (bytes memory);
 

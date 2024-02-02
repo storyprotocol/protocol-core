@@ -45,6 +45,12 @@ struct UMLRights {
     bool reciprocalSet;
 }
 
+struct UMLRights {
+    bool commercial;
+    bool derivable;
+    bool reciprocalSet;
+}
+
 
 /// @title IUMLPolicyFrameworkManager
 /// @notice Defines the interface for a Policy Framework Manager compliant with the UML standard
