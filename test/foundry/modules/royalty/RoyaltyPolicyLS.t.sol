@@ -150,23 +150,21 @@ contract TestLSClaimer is TestHelper {
         royaltyModule.setRoyaltyPolicy(ipAccount2, address(royaltyPolicyLS), parentIpIds2, data2);
         (address splitClone2, address claimer2,,) = royaltyPolicyLS.royaltyData(ipAccount2);
 
-        // send WETH to 0xSplitClone
-        vm.startPrank(WETH_RICH);
+        // send USDC to 0xSplitClone
         uint256 royaltyAmount = 1000 * 10 ** 6;
-        IERC20(WETH).transfer(splitClone2, royaltyAmount);
-        vm.stopPrank();
+        USDC.mint(splitClone2, royaltyAmount);
 
         address[] memory accounts = new address[](2);
-        accounts[1] = ipAccount2;
-        accounts[0] = claimer2;
+        accounts[0] = ipAccount2;
+        accounts[1] = claimer2;
 
-        uint256 splitClone2USDCBalBefore = IERC20(WETH).balanceOf(splitClone2);
-        uint256 splitMainUSDCBalBefore = IERC20(WETH).balanceOf(royaltyPolicyLS.LIQUID_SPLIT_MAIN());
+        uint256 splitClone2USDCBalBefore = USDC.balanceOf(splitClone2);
+        uint256 splitMainUSDCBalBefore = USDC.balanceOf(royaltyPolicyLS.LIQUID_SPLIT_MAIN());
 
-        royaltyPolicyLS.distributeFunds(ipAccount2, WETH, accounts, address(0));
+        royaltyPolicyLS.distributeFunds(ipAccount2, address(USDC), accounts, address(0));
 
-        uint256 splitClone2USDCBalAfter = IERC20(WETH).balanceOf(splitClone2);
-        uint256 splitMainUSDCBalAfter = IERC20(WETH).balanceOf(royaltyPolicyLS.LIQUID_SPLIT_MAIN());
+        uint256 splitClone2USDCBalAfter = USDC.balanceOf(splitClone2);
+        uint256 splitMainUSDCBalAfter = USDC.balanceOf(royaltyPolicyLS.LIQUID_SPLIT_MAIN());
 
         assertApproxEqRel(splitClone2USDCBalBefore - splitClone2USDCBalAfter, royaltyAmount, 0.0001e18);
         assertApproxEqRel(splitMainUSDCBalAfter - splitMainUSDCBalBefore, royaltyAmount, 0.0001e18);
@@ -187,20 +185,18 @@ contract TestLSClaimer is TestHelper {
         royaltyModule.setRoyaltyPolicy(ipAccount2, address(royaltyPolicyLS), parentIpIds2, data2);
         (address splitClone2, address claimer2,,) = royaltyPolicyLS.royaltyData(ipAccount2);
 
-        // send WETH to 0xSplitClone
-        vm.startPrank(WETH_RICH);
+        // send USDC to 0xSplitClone
         uint256 royaltyAmount = 1000 * 10 ** 6;
-        IERC20(WETH).transfer(splitClone2, royaltyAmount);
-        vm.stopPrank();
+        USDC.mint(splitClone2, royaltyAmount);
 
         address[] memory accounts = new address[](2);
-        accounts[1] = ipAccount2;
-        accounts[0] = claimer2;
+        accounts[0] = ipAccount2;
+        accounts[1] = claimer2;
 
         ERC20[] memory tokens = new ERC20[](1);
-        tokens[0] = ERC20(WETH);
+        tokens[0] = USDC;
 
-        royaltyPolicyLS.distributeFunds(ipAccount2, WETH, accounts, address(0));
+        royaltyPolicyLS.distributeFunds(ipAccount2, address(USDC), accounts, address(0));
 
         royaltyPolicyLS.claimRoyalties(ipAccount2, 0, tokens);
     }

@@ -27,6 +27,7 @@ import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
 import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
@@ -62,12 +63,16 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     RegistrationModule public registrationModule;
     TaggingModule public taggingModule;
     RoyaltyModule public royaltyModule;
+    RoyaltyPolicyLS public royaltyPolicyLS;
     DisputeModule public disputeModule;
     IPResolver public ipResolver;
 
     mapping(uint256 => uint256) internal nftIds;
     mapping(string => uint256) internal policyIds;
     mapping(string => address) internal frameworkIds;
+
+    address internal constant LIQUID_SPLIT_FACTORY = address(0);
+    address internal constant LIQUID_SPLIT_MAIN = address(0);
 
     constructor() JsonDeploymentHandler("main") {}
 
@@ -93,6 +98,11 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     }
 
     function _deployProtocolContracts(address accessControlDeployer) private {
+        require(
+            LIQUID_SPLIT_FACTORY != address(0) && LIQUID_SPLIT_MAIN != address(0),
+            "DeployMain: Liquid Split Addresses Not Set"
+        );
+
         string memory contractKey;
 
         contractKey = "Governance";
@@ -158,6 +168,16 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         royaltyModule = new RoyaltyModule();
         _postdeploy(contractKey, address(royaltyModule));
 
+        contractKey = "RoyaltyPolicyLS";
+        _predeploy(contractKey);
+        royaltyPolicyLS = new RoyaltyPolicyLS(
+            address(royaltyModule),
+            address(licenseRegistry),
+            LIQUID_SPLIT_FACTORY,
+            LIQUID_SPLIT_MAIN
+        );
+        _postdeploy(contractKey, address(royaltyPolicyLS));
+
         contractKey = "DisputeModule";
         _predeploy(contractKey);
         disputeModule = new DisputeModule();
@@ -188,6 +208,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         registrationModule = RegistrationModule(_readAddress("main.RegistrationModule"));
         taggingModule = TaggingModule(_readAddress("main.TaggingModule"));
         royaltyModule = RoyaltyModule(_readAddress("main.RoyaltyModule"));
+        royaltyPolicyLS = RoyaltyPolicyLS(_readAddress("main.RoyaltyPolicyLS"));
         disputeModule = DisputeModule(_readAddress("main.DisputeModule"));
         renderer = IPAssetRenderer(_readAddress("main.IPAssetRenderer"));
 
@@ -283,6 +304,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         UMLPolicyFrameworkManager umlAllTrue = new UMLPolicyFrameworkManager(
             address(accessController),
             address(licenseRegistry),
+            address(royaltyModule),
             "UML_ALL_TRUE",
             "https://very-nice-verifier-license.com/{id}.json"
         );
@@ -290,6 +312,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         UMLPolicyFrameworkManager umlMintPayment = new UMLPolicyFrameworkManager(
             address(accessController),
             address(licenseRegistry),
+            address(royaltyModule),
             "UML_MINT_PAYMENT",
             "https://expensive-minting-license.com/{id}.json"
         );
@@ -315,7 +338,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 derivativesReciprocal: true,
                 derivativesRevShare: 0,
                 territories: new string[](0),
-                distributionChannels: new string[](0)
+                distributionChannels: new string[](0),
+                royaltyPolicy: address(royaltyPolicyLS)
             })
         );
 
@@ -333,7 +357,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 derivativesReciprocal: true,
                 derivativesRevShare: 0,
                 territories: new string[](0),
-                distributionChannels: new string[](0)
+                distributionChannels: new string[](0),
+                royaltyPolicy: address(royaltyPolicyLS)
             })
         );
 
