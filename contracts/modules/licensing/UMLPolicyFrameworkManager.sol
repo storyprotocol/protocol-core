@@ -19,6 +19,8 @@ import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransfer
 import { IUMLPolicyFrameworkManager, UMLPolicy } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
+import { IRoyaltyModule } from "contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
+import { IRoyaltyPolicy } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
 import { LicensorApprovalChecker } from "contracts/modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
 
 /// @title UMLPolicyFrameworkManager
@@ -33,12 +35,17 @@ contract UMLPolicyFrameworkManager is
     ITransferParamVerifier,
     LicensorApprovalChecker
 {
+    IRoyaltyModule public immutable ROYALTY_MODULE;
+
     constructor(
         address accessController,
         address licRegistry,
+        address royaltyModule,
         string memory name_,
         string memory licenseUrl_
-    ) BasePolicyFrameworkManager(licRegistry, name_, licenseUrl_) LicensorApprovalChecker(accessController) {}
+    ) BasePolicyFrameworkManager(licRegistry, name_, licenseUrl_) LicensorApprovalChecker(accessController) {
+        ROYALTY_MODULE = IRoyaltyModule(royaltyModule);
+    }
 
     function licenseRegistry()
         external
@@ -66,9 +73,9 @@ contract UMLPolicyFrameworkManager is
     /// @param policyData the licensing policy to verify
     function verifyLink(
         uint256 licenseId,
-        address,
+        address, // caller
         address ipId,
-        address,
+        address parentIpId,
         bytes calldata policyData
     ) external override onlyLicenseRegistry returns (bool) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
@@ -82,6 +89,15 @@ contract UMLPolicyFrameworkManager is
         // to set it for the licensor in future derivatives
         if (policy.derivativesRevShare > 0) {
             // RoyaltyModule.setRevShareForDerivatives()
+            address[] memory parentIpIds = new address[](1);
+            parentIpIds[0] = parentIpId;
+
+            ROYALTY_MODULE.setRoyaltyPolicy(
+                ipId,
+                policy.royaltyPolicy,
+                parentIpIds,
+                abi.encode(policy.derivativesRevShare) // uint32
+            );
         }
         // If the policy defines the licensor must approve derivatives, check if the
         // derivative is approved by the licensor
@@ -154,20 +170,6 @@ contract UMLPolicyFrameworkManager is
         string memory json = string(
             '{"name": "Story Protocol License NFT", "description": "License agreement stating the terms of a Story Protocol IPAsset", "attributes": ['
         );
-
-        // bool attribution;
-        // bool transferable;
-        // bool commercialUse;
-        // bool commercialAttribution;
-        // string[] commercializers;
-        // uint256 commercialRevShare;
-        // bool derivativesAllowed;
-        // bool derivativesAttribution;
-        // bool derivativesApproval;
-        // bool derivativesReciprocal;
-        // uint256 derivativesRevShare;
-        // string[] territories;
-        // string[] distributionChannels;
 
         // Attributions
         json = string(
@@ -272,6 +274,14 @@ contract UMLPolicyFrameworkManager is
             if (policy.derivativesRevShare > 0) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddDerivRevShare();
             }
+            if (policy.royaltyPolicy != address(0)) {
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddRoyaltyPolicy();
+            }
+        } else {
+            // TODO: check for supportInterface instead
+            if (policy.royaltyPolicy == address(0)) {
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialEnabled_RoyaltyPolicyRequired();
+            }
         }
     }
 
@@ -289,6 +299,7 @@ contract UMLPolicyFrameworkManager is
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddReciprocal();
             }
             if (policy.derivativesRevShare > 0) {
+                // additional !policy.commecialUse is already checked in `_verifyComercialUse`
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddRevShare();
             }
         }

@@ -40,7 +40,7 @@ import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/A
 // test
 import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { MockModule } from "test/foundry/mocks/MockModule.sol";
+import { MockUSDC } from "test/foundry/mocks/MockUSDC.sol";
 import { Users, UsersLib } from "test/foundry/utils/Users.sol";
 
 struct MockERC721s {
@@ -77,14 +77,14 @@ contract BaseIntegration is Test {
     // Mocks
     MockERC20 internal erc20;
     MockERC721s internal erc721;
+    MockUSDC internal USDC;
 
     // Helpers
     Users internal u;
 
-    // USDC & Liquid Split (ETH Mainnet)
-    address internal constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address internal constant LIQUID_SPLIT_FACTORY = 0xdEcd8B99b7F763e16141450DAa5EA414B7994831;
-    address internal constant LIQUID_SPLIT_MAIN = 0x2ed6c4B5dA6378c7897AC67Ba9e43102Feb694EE;
+    // 0xSplits Liquid Split (Sepolia)
+    address internal constant LIQUID_SPLIT_FACTORY = 0xF678Bae6091Ab6933425FE26Afc20Ee5F324c4aE;
+    address internal constant LIQUID_SPLIT_MAIN = 0x57CBFA83f000a38C5b5881743E298819c503A559;
 
     uint256 internal constant ARBITRATION_PRICE = 1000 * 10 ** 6; // 1000 USDC
 
@@ -93,9 +93,9 @@ contract BaseIntegration is Test {
 
         // changePrank(u.admin);
 
+        _deployMockAssets(); // deploy mock assets first
         _deployContracts();
         _configDeployedContracts();
-        _deployMockAssets();
         _mintMockAssets();
         _configAccessControl();
     }
@@ -141,13 +141,16 @@ contract BaseIntegration is Test {
             address(royaltyModule)
         );
 
-        arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), USDC, ARBITRATION_PRICE);
+        arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), address(USDC), ARBITRATION_PRICE);
         royaltyPolicyLS = new RoyaltyPolicyLS(
             address(royaltyModule),
             address(licenseRegistry),
             LIQUID_SPLIT_FACTORY,
             LIQUID_SPLIT_MAIN
         );
+
+        vm.label(LIQUID_SPLIT_FACTORY, "LIQUID_SPLIT_FACTORY");
+        vm.label(LIQUID_SPLIT_MAIN, "LIQUID_SPLIT_MAIN");
     }
 
     function _configDeployedContracts() internal {
@@ -158,31 +161,51 @@ contract BaseIntegration is Test {
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));
         moduleRegistry.registerModule("LICENSE_REGISTRY", address(licenseRegistry));
 
+        // whitelist royalty policy
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
+        // whitelist royalty token
+        royaltyModule.whitelistRoyaltyToken(address(USDC), true);
+
         vm.stopPrank();
     }
 
     function _deployMockAssets() internal {
         erc20 = new MockERC20();
         erc721 = MockERC721s({ ape: new MockERC721("Ape"), cat: new MockERC721("Cat"), dog: new MockERC721("Dog") });
+        USDC = new MockUSDC();
     }
 
     function _mintMockAssets() internal {
         erc20.mint(u.alice, 1000 * 10 ** erc20.decimals());
         erc20.mint(u.bob, 1000 * 10 ** erc20.decimals());
         erc20.mint(u.carl, 1000 * 10 ** erc20.decimals());
+        erc20.mint(u.dan, 1000 * 10 ** erc20.decimals());
+        USDC.mint(u.alice, 100_000 * 10 ** USDC.decimals());
+        USDC.mint(u.bob, 100_000 * 10 ** USDC.decimals());
+        USDC.mint(u.carl, 100_000 * 10 ** USDC.decimals());
+        USDC.mint(u.dan, 100_000 * 10 ** USDC.decimals());
         // skip minting NFTs
     }
 
     function _configAccessControl() internal {
         // Set global perm to allow Registration Module to call License Registry on all IPAccounts
-        vm.prank(u.admin); // admin of governance
+        vm.startPrank(u.admin); // admin of governance
+
         accessController.setGlobalPermission(
             address(registrationModule),
             address(licenseRegistry),
             bytes4(licenseRegistry.linkIpToParents.selector),
             1 // AccessPermission.ALLOW
         );
+
+        accessController.setGlobalPermission(
+            address(licenseRegistry),
+            address(royaltyModule),
+            bytes4(royaltyModule.setRoyaltyPolicy.selector),
+            1 // AccessPermission.ALLOW
+        );
+
+        vm.stopPrank();
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -390,6 +413,18 @@ contract BaseIntegration is Test {
         return expectedAddr;
     }
 
+    function registerDerivativeIp(
+        uint256 licenseId,
+        address nft,
+        uint256 tokenId,
+        IP.MetadataV1 memory metadata,
+        address caller
+    ) internal returns (address) {
+        uint256[] memory licenseIds = new uint256[](1);
+        licenseIds[0] = licenseId;
+        return registerDerivativeIps(licenseIds, nft, tokenId, metadata, caller);
+    }
+
     function linkIpToParents(uint256[] memory licenseIds, address ipId, address caller) internal {
         uint256[] memory policyIds = new uint256[](licenseIds.length);
         address[] memory parentIpIds = new address[](licenseIds.length);
@@ -459,5 +494,11 @@ contract BaseIntegration is Test {
                 "policy not the same in parent to child"
             );
         }
+    }
+
+    function linkIpToParent(uint256 licenseId, address ipId, address caller) internal {
+        uint256[] memory licenseIds = new uint256[](1);
+        licenseIds[0] = licenseId;
+        linkIpToParents(licenseIds, ipId, caller);
     }
 }

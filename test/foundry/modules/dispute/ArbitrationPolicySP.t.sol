@@ -22,10 +22,7 @@ contract TestArbitrationPolicySP is TestHelper {
     function setUp() public override {
         super.setUp();
 
-        // fund WETH
-        vm.startPrank(WETH_RICH);
-        IERC20(WETH).transfer(ipAccount1, 1000 * 10 ** 6);
-        vm.stopPrank();
+        USDC.mint(ipAccount1, 10000 * 10 ** 6);
 
         // whitelist dispute tag
         disputeModule.whitelistDisputeTags("PLAGIARISM", true);
@@ -135,18 +132,20 @@ contract TestArbitrationPolicySP is TestHelper {
     function test_ArbitrationPolicySP_onRaiseDispute() public {
         address caller = ipAccount1;
         vm.startPrank(caller);
-        IERC20(WETH).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
+        USDC.approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
         vm.stopPrank();
+
+        USDC.mint(caller, 10000 * 10 ** 6);
 
         vm.startPrank(address(disputeModule));
 
-        uint256 userUSDCBalBefore = IERC20(WETH).balanceOf(caller);
-        uint256 arbitrationContractBalBefore = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
+        uint256 userUSDCBalBefore = USDC.balanceOf(caller);
+        uint256 arbitrationContractBalBefore = USDC.balanceOf(address(arbitrationPolicySP));
 
         arbitrationPolicySP.onRaiseDispute(caller, new bytes(0));
 
-        uint256 userUSDCBalAfter = IERC20(WETH).balanceOf(caller);
-        uint256 arbitrationContractBalAfter = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
+        uint256 userUSDCBalAfter = USDC.balanceOf(caller);
+        uint256 arbitrationContractBalAfter = USDC.balanceOf(address(arbitrationPolicySP));
 
         assertEq(userUSDCBalBefore - userUSDCBalAfter, ARBITRATION_PRICE);
         assertEq(arbitrationContractBalAfter - arbitrationContractBalBefore, ARBITRATION_PRICE);
@@ -165,14 +164,14 @@ contract TestArbitrationPolicySP is TestHelper {
         vm.stopPrank();
 
         // set dispute judgement
-        uint256 ipAccount1USDCBalanceBefore = IERC20(WETH).balanceOf(ipAccount1);
-        uint256 arbitrationPolicySPUSDCBalanceBefore = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
+        uint256 ipAccount1USDCBalanceBefore = USDC.balanceOf(ipAccount1);
+        uint256 arbitrationPolicySPUSDCBalanceBefore = USDC.balanceOf(address(arbitrationPolicySP));
 
         vm.startPrank(arbitrationRelayer);
         disputeModule.setDisputeJudgement(1, true, "");
 
-        uint256 ipAccount1USDCBalanceAfter = IERC20(WETH).balanceOf(ipAccount1);
-        uint256 arbitrationPolicySPUSDCBalanceAfter = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
+        uint256 ipAccount1USDCBalanceAfter = USDC.balanceOf(ipAccount1);
+        uint256 arbitrationPolicySPUSDCBalanceAfter = USDC.balanceOf(address(arbitrationPolicySP));
 
         assertEq(ipAccount1USDCBalanceAfter - ipAccount1USDCBalanceBefore, ARBITRATION_PRICE);
         assertEq(arbitrationPolicySPUSDCBalanceBefore - arbitrationPolicySPUSDCBalanceAfter, ARBITRATION_PRICE);
@@ -186,14 +185,14 @@ contract TestArbitrationPolicySP is TestHelper {
         vm.stopPrank();
 
         // set dispute judgement
-        uint256 ipAccount1USDCBalanceBefore = IERC20(WETH).balanceOf(ipAccount1);
-        uint256 arbitrationPolicySPUSDCBalanceBefore = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
+        uint256 ipAccount1USDCBalanceBefore = USDC.balanceOf(ipAccount1);
+        uint256 arbitrationPolicySPUSDCBalanceBefore = USDC.balanceOf(address(arbitrationPolicySP));
 
         vm.startPrank(arbitrationRelayer);
         disputeModule.setDisputeJudgement(1, false, "");
 
-        uint256 ipAccount1USDCBalanceAfter = IERC20(WETH).balanceOf(ipAccount1);
-        uint256 arbitrationPolicySPUSDCBalanceAfter = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
+        uint256 ipAccount1USDCBalanceAfter = USDC.balanceOf(ipAccount1);
+        uint256 arbitrationPolicySPUSDCBalanceAfter = USDC.balanceOf(address(arbitrationPolicySP));
 
         assertEq(ipAccount1USDCBalanceAfter - ipAccount1USDCBalanceBefore, 0);
         assertEq(arbitrationPolicySPUSDCBalanceBefore - arbitrationPolicySPUSDCBalanceAfter, 0);

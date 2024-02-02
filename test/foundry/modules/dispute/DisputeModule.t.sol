@@ -40,10 +40,8 @@ contract TestDisputeModule is TestHelper {
     function setUp() public override {
         super.setUp();
 
-        // fund WETH
-        vm.startPrank(WETH_RICH);
-        IERC20(WETH).transfer(ipAccount1, ARBITRATION_PRICE);
-        vm.stopPrank();
+
+        USDC.mint(ipAccount1, 1000 * 10 ** 6);
 
         // whitelist dispute tag
         disputeModule.whitelistDisputeTags("PLAGIARISM", true);
@@ -275,8 +273,8 @@ contract TestDisputeModule is TestHelper {
         IERC20(WETH).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
 
         uint256 disputeIdBefore = disputeModule.disputeId();
-        uint256 ipAccount1USDCBalanceBefore = IERC20(WETH).balanceOf(ipAccount1);
-        uint256 arbitrationPolicySPUSDCBalanceBefore = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
+        uint256 ipAccount1USDCBalanceBefore = USDC.balanceOf(ipAccount1);
+        uint256 arbitrationPolicySPUSDCBalanceBefore = USDC.balanceOf(address(arbitrationPolicySP));
 
         vm.expectEmit(true, true, true, true, address(disputeModule));
         emit DisputeRaised(
@@ -292,8 +290,8 @@ contract TestDisputeModule is TestHelper {
         disputeModule.raiseDispute(ipAddr, string("urlExample"), "PLAGIARISM", "");
 
         uint256 disputeIdAfter = disputeModule.disputeId();
-        uint256 ipAccount1USDCBalanceAfter = IERC20(WETH).balanceOf(ipAccount1);
-        uint256 arbitrationPolicySPUSDCBalanceAfter = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
+        uint256 ipAccount1USDCBalanceAfter = USDC.balanceOf(ipAccount1);
+        uint256 arbitrationPolicySPUSDCBalanceAfter = USDC.balanceOf(address(arbitrationPolicySP));
 
         (
             address targetIpId,
@@ -340,8 +338,8 @@ contract TestDisputeModule is TestHelper {
 
         // set dispute judgement
         (,,,,, bytes32 currentTagBefore) = disputeModule.disputes(1);
-        uint256 ipAccount1USDCBalanceBefore = IERC20(WETH).balanceOf(ipAccount1);
-        uint256 arbitrationPolicySPUSDCBalanceBefore = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
+        uint256 ipAccount1USDCBalanceBefore = USDC.balanceOf(ipAccount1);
+        uint256 arbitrationPolicySPUSDCBalanceBefore = USDC.balanceOf(address(arbitrationPolicySP));
 
         vm.expectEmit(true, true, true, true, address(disputeModule));
         emit DisputeJudgementSet(1, true, "");
@@ -350,8 +348,8 @@ contract TestDisputeModule is TestHelper {
         disputeModule.setDisputeJudgement(1, true, "");
 
         (,,,,, bytes32 currentTagAfter) = disputeModule.disputes(1);
-        uint256 ipAccount1USDCBalanceAfter = IERC20(WETH).balanceOf(ipAccount1);
-        uint256 arbitrationPolicySPUSDCBalanceAfter = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
+        uint256 ipAccount1USDCBalanceAfter = USDC.balanceOf(ipAccount1);
+        uint256 arbitrationPolicySPUSDCBalanceAfter = USDC.balanceOf(address(arbitrationPolicySP));
 
         assertEq(ipAccount1USDCBalanceAfter - ipAccount1USDCBalanceBefore, ARBITRATION_PRICE);
         assertEq(arbitrationPolicySPUSDCBalanceBefore - arbitrationPolicySPUSDCBalanceAfter, ARBITRATION_PRICE);
@@ -368,8 +366,8 @@ contract TestDisputeModule is TestHelper {
 
         // set dispute judgement
         (,,,,, bytes32 currentTagBefore) = disputeModule.disputes(1);
-        uint256 ipAccount1USDCBalanceBefore = IERC20(WETH).balanceOf(ipAccount1);
-        uint256 arbitrationPolicySPUSDCBalanceBefore = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
+        uint256 ipAccount1USDCBalanceBefore = USDC.balanceOf(ipAccount1);
+        uint256 arbitrationPolicySPUSDCBalanceBefore = USDC.balanceOf(address(arbitrationPolicySP));
 
         vm.expectEmit(true, true, true, true, address(disputeModule));
         emit DisputeJudgementSet(1, false, "");
@@ -378,8 +376,8 @@ contract TestDisputeModule is TestHelper {
         disputeModule.setDisputeJudgement(1, false, "");
 
         (,,,,, bytes32 currentTagAfter) = disputeModule.disputes(1);
-        uint256 ipAccount1USDCBalanceAfter = IERC20(WETH).balanceOf(ipAccount1);
-        uint256 arbitrationPolicySPUSDCBalanceAfter = IERC20(WETH).balanceOf(address(arbitrationPolicySP));
+        uint256 ipAccount1USDCBalanceAfter = USDC.balanceOf(ipAccount1);
+        uint256 arbitrationPolicySPUSDCBalanceAfter = USDC.balanceOf(address(arbitrationPolicySP));
 
         assertEq(ipAccount1USDCBalanceAfter - ipAccount1USDCBalanceBefore, 0);
         assertEq(arbitrationPolicySPUSDCBalanceBefore - arbitrationPolicySPUSDCBalanceAfter, 0);

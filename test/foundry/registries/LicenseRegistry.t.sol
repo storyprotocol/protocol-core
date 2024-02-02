@@ -66,6 +66,7 @@ contract LicenseRegistryTest is Test {
         umlManager = new UMLPolicyFrameworkManager(
             address(accessController),
             address(registry),
+            address(0), // TODO: mock royaltyModule
             "UMLPolicyFrameworkManager",
             licenseUrl
         );
@@ -384,7 +385,8 @@ contract LicenseRegistryTest is Test {
             derivativesReciprocal: true,
             derivativesRevShare: 0,
             territories: new string[](1),
-            distributionChannels: new string[](1)
+            distributionChannels: new string[](1),
+            royaltyPolicy: address(0xbeef) // TODO: mock royaltyPolicyLS
         });
 
         policyData.commercializers[0] = "commercializer1";
