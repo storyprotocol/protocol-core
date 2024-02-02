@@ -22,8 +22,6 @@ import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
 
-import "forge-std/console2.sol";
-
 // TODO: consider disabling operators/approvals on creation
 contract LicenseRegistry is ERC1155, ILicenseRegistry {
     using IPAccountChecker for IIPAccountRegistry;
@@ -415,26 +413,18 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
     function _verifyCanAddPolicy(uint256 policyId, address ipId, bool isInherited) private {
         bool ipIdIsDerivative = _policySetPerIpId(true, ipId).length() > 0;
-        console2.log("policyId", policyId);
-        console2.log("ipId", ipId);
-        console2.log("ipIdIsDerivative", ipIdIsDerivative);
-        console2.log("isInherited", isInherited);
-
         if (
             // Original work, owner is setting policies
-            !ipIdIsDerivative && !isInherited
-            ||
+            // or
             // IpId is becoming a derivative
-            !ipIdIsDerivative && isInherited
+            (!ipIdIsDerivative && !isInherited) || (!ipIdIsDerivative && isInherited)
         ) {
-            console2.log("Can add policy");
             // Can add policy
             return;
         } else if (ipIdIsDerivative && !isInherited) {
             // Owner of derivative is trying to set policies
             revert Errors.LicenseRegistry__DerivativesCannotAddPolicy();
         }
-        console2.log("Check compat");
         // If we are here, this is a multiparent derivative
         // Checking for policy compatibility
         IPolicyFrameworkManager polManager = IPolicyFrameworkManager(policy(policyId).policyFramework);
