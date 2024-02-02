@@ -160,6 +160,8 @@ library Errors {
     error DisputeModule__NotDisputeInitiator();
     error DisputeModule__NotInDisputeState();
     error DisputeModule__NotAbleToResolve();
+    error DisputeModule__NotRegisteredIpId();
+    error DisputeModule__UnauthorizedAccess();
 
     error ArbitrationPolicySP__ZeroDisputeModule();
     error ArbitrationPolicySP__ZeroPaymentToken();
