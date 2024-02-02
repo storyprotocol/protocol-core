@@ -43,6 +43,7 @@ contract UMLPolicyFrameworkTest is Test {
         registry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
         umlFramework = new UMLPolicyFrameworkManager(
             address(accessController),
+            address(ipAccountRegistry),
             address(registry),
             address(0), // TODO: mock royaltyModule
             "UMLPolicyFrameworkManager",

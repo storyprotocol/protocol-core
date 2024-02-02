@@ -22,7 +22,10 @@ abstract contract LicensorApprovalChecker is LicenseRegistryAware, AccessControl
     /// @dev License Id => licensor => childIpId => approved
     mapping(uint256 => mapping(address => mapping(address => bool))) private _approvals;
 
-    constructor(address accessController) AccessControlled(accessController) {}
+    constructor(
+        address accessController,
+        address ipAccountRegistry
+    ) AccessControlled(accessController, ipAccountRegistry) {}
 
     /// @notice Approves or disapproves a derivative IP account.
     /// @param licenseId id of the license waiting for approval

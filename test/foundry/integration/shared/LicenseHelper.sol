@@ -11,6 +11,7 @@ import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePoli
 import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
+import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 
 // test
 import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy } from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
@@ -60,15 +61,19 @@ contract Integration_Shared_LicensingHelper {
 
     AccessController private accessController; // keep private to avoid collision with `BaseIntegration`
 
+    IPAccountRegistry private ipAccountRegistry; // keep private to avoid collision with `BaseIntegration`
+
     RoyaltyModule private royaltyModule; // keep private to avoid collision with `BaseIntegration`
 
     function initLicenseFrameworkAndPolicy(
         AccessController accessController_,
+        IPAccountRegistry ipAccountRegistry_,
         LicenseRegistry licenseRegistry_,
         RoyaltyModule royaltyModule_
     ) public {
         accessController = accessController_;
         licenseRegistry = licenseRegistry_;
+        ipAccountRegistry = ipAccountRegistry_;
         royaltyModule = royaltyModule_;
     }
 
@@ -80,6 +85,7 @@ contract Integration_Shared_LicensingHelper {
         BasePolicyFrameworkManager _pfm = BasePolicyFrameworkManager(
             new UMLPolicyFrameworkManager(
                 address(accessController),
+                address(ipAccountRegistry),
                 address(licenseRegistry),
                 address(royaltyModule),
                 "uml",

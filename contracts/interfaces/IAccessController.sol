@@ -51,10 +51,5 @@ interface IAccessController {
     /// @param signer_ The account that signs the transaction
     /// @param to_ The recipient of the transaction
     /// @param func_ The function selector
-    function checkPermission(
-        address ipAccount_,
-        address signer_,
-        address to_,
-        bytes4 func_
-    ) external view;
+    function checkPermission(address ipAccount_, address signer_, address to_, bytes4 func_) external view;
 }

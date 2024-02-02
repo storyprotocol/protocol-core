@@ -233,6 +233,13 @@ library Errors {
     error AccessController__PermissionDenied(address ipAccount, address signer, address to, bytes4 func);
 
     ////////////////////////////////////////////////////////////////////////////
+    //                             AccessControlled                           //
+    ////////////////////////////////////////////////////////////////////////////
+    error AccessControlled__ZeroAddress();
+    error AccessControlled__NotIpAccount(address ipAccount);
+    error AccessControlled__CallerIsNotIpAccount(address caller);
+
+    ////////////////////////////////////////////////////////////////////////////
     //                             TaggingModule                              //
     ////////////////////////////////////////////////////////////////////////////
 

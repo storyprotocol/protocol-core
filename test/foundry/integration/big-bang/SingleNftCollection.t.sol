@@ -27,6 +27,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         BaseIntegration.setUp();
         Integration_Shared_LicensingHelper.initLicenseFrameworkAndPolicy(
             accessController,
+            ipAssetRegistry,
             licenseRegistry,
             royaltyModule
         );
@@ -116,7 +117,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         vm.startPrank(u.alice);
         licenseRegistry.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_cheap_flexible"]);
 
-        // Alice sets royalty policy for her IPAccount (so other IPAccounts can use her policies that 
+        // Alice sets royalty policy for her IPAccount (so other IPAccounts can use her policies that
         // inits royalty policy on linking)
         royaltyModule.setRoyaltyPolicy(
             ipAcct[1],
