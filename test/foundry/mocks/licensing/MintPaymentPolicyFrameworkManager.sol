@@ -51,7 +51,7 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintP
         return LICENSE_REGISTRY.registerPolicy(abi.encode(mmpol));
     }
 
-    function processNewPolicies(
+    function processInheritedPolicy(
         bytes memory, // ipRights
         bytes memory // policy
     ) external view override returns (bool changedRights, bytes memory newRights) {

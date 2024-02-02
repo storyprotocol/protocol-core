@@ -155,7 +155,7 @@ contract UMLPolicyFrameworkManager is
         rights = abi.decode(rightsData, (UMLRights));
     }
 
-    function processNewPolicies(
+    function processInheritedPolicy(
         bytes memory ipRights,
         bytes memory policy
     ) external view onlyLicenseRegistry returns (bool changedRights, bytes memory newRights) {

@@ -367,7 +367,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         super._update(from, to, ids, values);
     }
 
-    function _verifyRegisteredFramework(address policyFramework) internal view {
+    function _verifyRegisteredFramework(address policyFramework) private view {
         if (!_registeredFrameworkManagers[policyFramework]) {
             revert Errors.LicenseRegistry__FrameworkNotFound();
         }
@@ -379,21 +379,13 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// @param policyId id of the policy data
     /// @param inheritedPolicy true if set in linkIpToParent, false otherwise
     /// @return index of the policy added to the set
-    function _addPolicyIdToIp(address ipId, uint256 policyId, bool inheritedPolicy) internal returns (uint256 index) {
+    function _addPolicyIdToIp(address ipId, uint256 policyId, bool inheritedPolicy) private returns (uint256 index) {
         EnumerableSet.UintSet storage _pols = _policiesPerIpId[ipId];
         if (!_pols.add(policyId)) {
             revert Errors.LicenseRegistry__PolicyAlreadySetForIpId();
         }
-        // Checking for policy compatibility
-        IPolicyFrameworkManager polManager = IPolicyFrameworkManager(policy(policyId).policyFramework);
-        Licensing.Policy memory pol = _policies[policyId];
-        (bool rightsChanged, bytes memory newRights) = polManager.processNewPolicies(
-            _ipRights[pol.policyFramework][ipId],
-            pol.data
-        );
-        if (rightsChanged) {
-            _ipRights[pol.policyFramework][ipId] = newRights;
-            emit IPRightsUpdated(ipId, newRights);
+        if (inheritedPolicy) {
+            _processNewInheritedPolicy(policyId, ipId);
         }
 
         index = _pols.length() - 1;
@@ -408,6 +400,20 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         setup.inheritedPolicy = inheritedPolicy;
         emit PolicyAddedToIpId(msg.sender, ipId, policyId, index, inheritedPolicy);
         return index;
+    }
+
+    function _processNewInheritedPolicy(uint256 policyId, address ipId) private {
+         // Checking for policy compatibility
+         IPolicyFrameworkManager polManager = IPolicyFrameworkManager(policy(policyId).policyFramework);
+         Licensing.Policy memory pol = _policies[policyId];
+         (bool rightsChanged, bytes memory newRights) = polManager.processInheritedPolicy(
+             _ipRights[pol.policyFramework][ipId],
+             pol.data
+         );
+         if (rightsChanged) {
+             _ipRights[pol.policyFramework][ipId] = newRights;
+             emit IPRightsUpdated(ipId, newRights);
+         }
     }
 
     /// Stores data without repetition, assigning an id to it if new or reusing existing one if already stored

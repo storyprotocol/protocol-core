@@ -18,24 +18,26 @@ import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import "forge-std/console2.sol";
 
 contract UMLPolicyFrameworkCompatibilityTest is Test {
-    MockAccessController public accessController = new MockAccessController();
-    IPAccountRegistry public ipAccountRegistry;
+    MockAccessController internal accessController = new MockAccessController();
+    IPAccountRegistry internal ipAccountRegistry;
 
-    LicenseRegistry public registry;
+    LicenseRegistry internal registry;
 
-    UMLPolicyFrameworkManager public umlFramework;
+    UMLPolicyFrameworkManager internal umlFramework;
 
     MockERC721 nft = new MockERC721("MockERC721");
 
-    string public licenseUrl = "https://example.com/license";
-    address public ipId1;
-    address public ipId2;
-    address public ipOwner = vm.addr(1);
-    address public licenseHolder = address(0x101);
-    string[] public emptyStringArray = new string[](0);
-    uint256 public policyID;
-    mapping(string => UMLPolicy) public policies;
-    mapping(string => uint256) public policyIDs;
+    string internal licenseUrl = "https://example.com/license";
+    address internal bob = address(0x111);
+    address internal ipId1;
+    address internal alice = address(0x222);
+    address internal ipId2;
+    address internal don = address(0x333);
+    address internal licenseHolder = address(0x101);
+    string[] internal emptyStringArray = new string[](0);
+    uint256 internal policyID;
+    mapping(string => UMLPolicy) internal policies;
+    mapping(string => uint256) internal policyIDs;
 
     modifier withPolicy(string memory name, bool commercial, bool derivatives) {
         policies[name] = UMLPolicy({
@@ -72,13 +74,19 @@ contract UMLPolicyFrameworkCompatibilityTest is Test {
         );
         registry.registerPolicyFrameworkManager(address(umlFramework));
 
-        nft.mintId(ipOwner, 1);
-        nft.mintId(ipOwner, 2);
+        nft.mintId(bob, 1);
+        nft.mintId(alice, 2);
         ipId1 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 1);
         ipId2 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 2);
+        vm.label(bob, "Bob");
+        vm.label(alice, "Alice");
+        vm.label(don, "Don");
+        vm.label(ipId1, "IP1");
+        vm.label(ipId2, "IP2");
+
     }
 
-
+    /*
     function test_addFirstPolicyToIpId_rightsUpdate()
         withPolicy("comm_deriv", true, true)
         public{
@@ -111,20 +119,36 @@ contract UMLPolicyFrameworkCompatibilityTest is Test {
         vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_NewDerivativesPolicyNotAccepted.selector);
         registry.addPolicyToIp(ipId1, policyIDs["comm_non_deriv"]);
     }
-    /*
-    function test_revert_firstReciprocal_nextPolicyNonReciprocal()
-        withPolicy("reciprocal", true, true)
-        withPolicy("non_reciprocal", true, true)
-        public {
-        policies["reciprocal"].reciprocal = true;
-        policies["non_reciprocal"].reciprocal = false;
-        vm.prank(ipOwner);
-        registry.addPolicyToIp(ipId1, policyIDs["reciprocal"]);
-        vm.prank(ipOwner);
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_ReciprocaConfiglNegatesNewPolicy.selector);
-        registry.addPolicyToIp(ipId1, policyIDs["non_reciprocal"]);
-    }
+
     */
+
+    /// STARTING FROM AN ORIGINAL WORK
+    function test_original_work_bob_adds_different_policies_alice_mints()
+        withPolicy("comm_deriv", true, true)
+        withPolicy("comm_non_deriv", true, false)
+        public {
+        // Bob can add different policies on IP1 without compatibility checks.
+        vm.startPrank(bob);
+        registry.addPolicyToIp(ipId1, policyIDs["comm_deriv"]);
+        registry.addPolicyToIp(ipId1, policyIDs["comm_non_deriv"]);
+        vm.stopPrank();
+        assertEq(registry.totalPoliciesForIp(ipId1), 2);
+        assertTrue(registry.isPolicyIdSetForIp(ipId1, policyIDs["comm_deriv"]), "comm_deriv not set");
+        assertTrue(registry.isPolicyIdSetForIp(ipId1, policyIDs["comm_non_deriv"]), "comm_non_deriv not set");
+
+        // Others can mint licenses to make derivatives of IP1 from each different policy,
+        // as long as they pass the verifications
+        uint256 licenseId1 = registry.mintLicense(policyIDs["comm_deriv"], ipId1, 1, don);
+        console2.log("License ID1: ", licenseId1);
+        assertEq(registry.balanceOf(don, licenseId1), 1, "Don doesn't have license1");
+        
+        uint256 licenseId2 = registry.mintLicense(policyIDs["comm_non_deriv"], ipId1, 1, don);
+        console2.log("License ID2: ", licenseId2);
+        assertFalse(licenseId1 == licenseId2, "wtf");
+        assertEq(registry.balanceOf(don, licenseId2), 1, "Don doesn't have license2");
+    }
+
+    /// TODO: STARTING FROM AN ORIGINAL WORK, WITH APPROVALS and UPFRONT PAY
 
 
 }
