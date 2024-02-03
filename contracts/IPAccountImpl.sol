@@ -91,12 +91,17 @@ contract IPAccountImpl is IERC165, IIPAccount {
     /// @param data_ The calldata to check against
     /// @return True if the signer is valid, false otherwise
     function _isValidSigner(address signer_, address to_, bytes calldata data_) internal view returns (bool) {
+        if (data_.length > 0 && data_.length < 4) {
+            revert Errors.IPAccount__InvalidCalldata();
+        }
         require(data_.length == 0 || data_.length >= 4, "Invalid calldata");
         bytes4 selector = bytes4(0);
         if (data_.length >= 4) {
             selector = bytes4(data_[:4]);
         }
-        return IAccessController(accessController).checkPermission(address(this), signer_, to_, selector);
+        // the check will revert if permission is denied
+        IAccessController(accessController).checkPermission(address(this), signer_, to_, selector);
+        return true;
     }
 
     /// @notice Executes a transaction from the IP Account on behalf of the signer.

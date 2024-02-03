@@ -39,6 +39,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
         BaseIntegration.setUp();
         Integration_Shared_LicensingHelper.initLicenseFrameworkAndPolicy(
             accessController,
+            ipAccountRegistry,
             licenseRegistry,
             royaltyModule
         );

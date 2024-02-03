@@ -21,9 +21,10 @@ import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyF
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
+import { AccessControlled } from "contracts/access/AccessControlled.sol";
 
 // TODO: consider disabling operators/approvals on creation
-contract LicenseRegistry is ERC1155, ILicenseRegistry {
+contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
     using IPAccountChecker for IIPAccountRegistry;
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -35,10 +36,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         uint256 index;
         bool isSet;
         bool active;
-        bool inheritedPolicy;
+        bool isInherited;
     }
-    IAccessController public immutable ACCESS_CONTROLLER;
-    IIPAccountRegistry public immutable IP_ACCOUNT_REGISTRY;
 
     mapping(address framework => bool registered) private _registeredFrameworkManagers;
     mapping(bytes32 policyHash => uint256 policyId) private _hashedPolicies;
@@ -48,20 +47,19 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// index of the policy in the ipId policy set
     /// Policies can't be removed, but they can be deactivated by setting active to false
     mapping(address ipId => mapping(uint256 policyId => PolicySetup setup)) private _policySetups;
-    mapping(address ipId => EnumerableSet.UintSet policyIds) private _policiesPerIpId;
-
+    mapping(bytes32 hashIpIdAnInherited => EnumerableSet.UintSet policyIds) private _policiesPerIpId;
     mapping(address ipId => EnumerableSet.AddressSet parentIpIds) private _ipIdParents;
+    mapping(address framework => mapping(address ipId => bytes rightsData)) private _ipRights;
 
     mapping(bytes32 licenseHash => uint256 ids) private _hashedLicenses;
     mapping(uint256 licenseIds => Licensing.License licenseData) private _licenses;
-
     /// This tracks the number of licenses registered in the protocol, it will not decrease when a license is burnt.
     uint256 private _totalLicenses;
 
-    constructor(address accessController, address ipAccountRegistry) ERC1155("") {
-        ACCESS_CONTROLLER = IAccessController(accessController);
-        IP_ACCOUNT_REGISTRY = IIPAccountRegistry(ipAccountRegistry);
-    }
+    constructor(
+        address accessController,
+        address ipAccountRegistry
+    ) ERC1155("") AccessControlled(accessController, ipAccountRegistry) {}
 
     /// @notice registers a policy framework manager into the contract, so it can add policy data for
     /// licenses.
@@ -87,14 +85,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// @param ipId to receive the policy
     /// @param polId id of the policy data
     /// @return indexOnIpId position of policy within the ipIds policy set
-    function addPolicyToIp(address ipId, uint256 polId) external returns (uint256 indexOnIpId) {
-        if (
-            msg.sender != ipId &&
-            !ACCESS_CONTROLLER.checkPermission(ipId, msg.sender, address(this), this.addPolicyToIp.selector)
-        ) {
-            revert Errors.LicenseRegistry__UnauthorizedAccess();
-        }
-
+    function addPolicyToIp(address ipId, uint256 polId) external verifyPermission(ipId) returns (uint256 indexOnIpId) {
         if (!isPolicyDefined(polId)) {
             revert Errors.LicenseRegistry__PolicyNotFound();
         }
@@ -141,26 +132,22 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         if (!IP_ACCOUNT_REGISTRY.isIpAccount(licensorIp)) {
             revert Errors.LicenseRegistry__LicensorNotRegistered();
         }
+        bool isInherited = _policySetups[licensorIp][policyId].isInherited;
         // If the IP ID doesn't have a policy (meaning, no permissionless derivatives)
-        if (!_policiesPerIpId[licensorIp].contains(policyId)) {
+        if (!_policySetPerIpId(isInherited, licensorIp).contains(policyId)) {
             // We have to check if the caller is licensor or authorized to mint.
-            if (
-                msg.sender != licensorIp &&
-                !ACCESS_CONTROLLER.checkPermission(licensorIp, msg.sender, address(this), this.mintLicense.selector)
-            ) {
+            if (!_hasPermission(licensorIp)) {
                 revert Errors.LicenseRegistry__CallerNotLicensorAndPolicyNotSet();
             }
         }
         // If a policy is set, then is only up to the policy params.
         // Verify minting param
         Licensing.Policy memory pol = policy(policyId);
-        bool inheritedPolicy = _policySetups[licensorIp][policyId].inheritedPolicy;
-
         if (ERC165Checker.supportsInterface(pol.policyFramework, type(IMintParamVerifier).interfaceId)) {
             if (
                 !IMintParamVerifier(pol.policyFramework).verifyMint(
                     msg.sender,
-                    inheritedPolicy,
+                    isInherited,
                     licensorIp,
                     receiver,
                     amount,
@@ -188,14 +175,11 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// @param licenseIds The id of the licenses to burn
     /// @param childIpId The id of the child IP to be linked
     /// @param holder The address that holds the license
-    function linkIpToParents(uint256[] calldata licenseIds, address childIpId, address holder) external {
-        // check the caller is owner or authorized by the childIp
-        if (
-            msg.sender != childIpId &&
-            !ACCESS_CONTROLLER.checkPermission(childIpId, msg.sender, address(this), this.linkIpToParents.selector)
-        ) {
-            revert Errors.LicenseRegistry__UnauthorizedAccess();
-        }
+    function linkIpToParents(
+        uint256[] calldata licenseIds,
+        address childIpId,
+        address holder
+    ) external verifyPermission(childIpId) {
         uint256 licenses = licenseIds.length;
         address[] memory licensors = new address[](licenses);
         uint256[] memory values = new uint256[](licenses);
@@ -270,6 +254,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return pol;
     }
 
+    function rightsData(address framework, address ipId) external view returns (bytes memory) {
+        return _ipRights[framework][ipId];
+    }
+
     /// Returns true if policyId is defined in LicenseRegistry, false otherwise.
     function isPolicyDefined(uint256 policyId) public view returns (bool) {
         return _policies[policyId].policyFramework != address(0);
@@ -277,32 +265,44 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
     /// Gets the policy set for an IpId
     /// @dev potentially expensive operation, use with care
-    function policyIdsForIp(address ipId) external view returns (uint256[] memory policyIds) {
-        return _policiesPerIpId[ipId].values();
+    function policyIdsForIp(bool isInherited, address ipId) external view returns (uint256[] memory policyIds) {
+        return _policySetPerIpId(isInherited, ipId).values();
     }
 
-    function totalPoliciesForIp(address ipId) external view returns (uint256) {
-        return _policiesPerIpId[ipId].length();
+    function totalPoliciesForIp(bool isInherited, address ipId) public view returns (uint256) {
+        return _policySetPerIpId(isInherited, ipId).length();
     }
 
-    function isPolicyIdSetForIp(address ipId, uint256 policyId) external view returns (bool) {
-        return _policiesPerIpId[ipId].contains(policyId);
+    function isPolicyIdSetForIp(bool isInherited, address ipId, uint256 policyId) external view returns (bool) {
+        return _policySetPerIpId(isInherited, ipId).contains(policyId);
     }
 
-    function policyIdForIpAtIndex(address ipId, uint256 index) external view returns (uint256 policyId) {
-        return _policiesPerIpId[ipId].at(index);
+    function policyIdForIpAtIndex(
+        bool isInherited,
+        address ipId,
+        uint256 index
+    ) external view returns (uint256 policyId) {
+        return _policySetPerIpId(isInherited, ipId).at(index);
     }
 
-    function policyForIpAtIndex(address ipId, uint256 index) external view returns (Licensing.Policy memory) {
-        return _policies[_policiesPerIpId[ipId].at(index)];
+    function policyForIpAtIndex(
+        bool isInherited,
+        address ipId,
+        uint256 index
+    ) external view returns (Licensing.Policy memory) {
+        return _policies[_policySetPerIpId(isInherited, ipId).at(index)];
     }
 
-    function indexOfPolicyForIp(address ipId, uint256 policyId) external view returns (uint256 index) {
-        return _policySetups[ipId][policyId].index;
+    function policyStatus(
+        address ipId,
+        uint256 policyId
+    ) external view returns (uint256 index, bool isInherited, bool active) {
+        PolicySetup storage setup = _policySetups[ipId][policyId];
+        return (setup.index, setup.isInherited, setup.active);
     }
 
     function isPolicyInherited(address ipId, uint256 policyId) external view returns (bool) {
-        return _policySetups[ipId][policyId].inheritedPolicy;
+        return _policySetups[ipId][policyId].isInherited;
     }
 
     /// Returns true if the child is derivative from the parent, by at least 1 policy.
@@ -364,7 +364,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         super._update(from, to, ids, values);
     }
 
-    function _verifyRegisteredFramework(address policyFramework) internal view {
+    function _verifyRegisteredFramework(address policyFramework) private view {
         if (!_registeredFrameworkManagers[policyFramework]) {
             revert Errors.LicenseRegistry__FrameworkNotFound();
         }
@@ -374,15 +374,15 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// Will revert if policy set already has policyId
     /// @param ipId the IP identifier
     /// @param policyId id of the policy data
-    /// @param inheritedPolicy true if set in linkIpToParent, false otherwise
+    /// @param isInherited true if set in linkIpToParent, false otherwise
     /// @return index of the policy added to the set
-    function _addPolicyIdToIp(address ipId, uint256 policyId, bool inheritedPolicy) internal returns (uint256 index) {
-        EnumerableSet.UintSet storage _pols = _policiesPerIpId[ipId];
+    function _addPolicyIdToIp(address ipId, uint256 policyId, bool isInherited) private returns (uint256 index) {
+        _verifyCanAddPolicy(policyId, ipId, isInherited);
+        // Try and add the policy into the set.
+        EnumerableSet.UintSet storage _pols = _policySetPerIpId(isInherited, ipId);
         if (!_pols.add(policyId)) {
             revert Errors.LicenseRegistry__PolicyAlreadySetForIpId();
         }
-        // TODO: check for policy compatibility.
-        // compatibilityManager.isPolicyCompatible(newPolicy, policiesInIpId);
         index = _pols.length() - 1;
         PolicySetup storage setup = _policySetups[ipId][policyId];
         // This should not happen, but just in case
@@ -392,9 +392,40 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         setup.index = index;
         setup.isSet = true;
         setup.active = true;
-        setup.inheritedPolicy = inheritedPolicy;
-        emit PolicyAddedToIpId(msg.sender, ipId, policyId, index, inheritedPolicy);
+        setup.isInherited = isInherited;
+        emit PolicyAddedToIpId(msg.sender, ipId, policyId, index, isInherited);
         return index;
+    }
+
+    function _verifyCanAddPolicy(uint256 policyId, address ipId, bool isInherited) private {
+        bool ipIdIsDerivative = _policySetPerIpId(true, ipId).length() > 0;
+        if (
+            // Original work, owner is setting policies
+            // (ipIdIsDerivative false, adding isInherited false)
+            // or
+            // IpId is becoming a derivative.
+            // (ipIdIsDerivative false, adding isInherited true)
+            // Next time, ipIdIsDerivative will be true
+            (!ipIdIsDerivative)
+        ) {
+            // Can add policy
+            return;
+        } else if (ipIdIsDerivative && !isInherited) {
+            // Owner of derivative is trying to set policies
+            revert Errors.LicenseRegistry__DerivativesCannotAddPolicy();
+        }
+        // If we are here, this is a multiparent derivative
+        // Checking for policy compatibility
+        IPolicyFrameworkManager polManager = IPolicyFrameworkManager(policy(policyId).policyFramework);
+        Licensing.Policy memory pol = _policies[policyId];
+        (bool rightsChanged, bytes memory newRights) = polManager.processInheritedPolicies(
+            _ipRights[pol.policyFramework][ipId],
+            pol.data
+        );
+        if (rightsChanged) {
+            _ipRights[pol.policyFramework][ipId] = newRights;
+            emit IPRightsUpdated(ipId, newRights);
+        }
     }
 
     /// Stores data without repetition, assigning an id to it if new or reusing existing one if already stored
@@ -426,5 +457,9 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         if (pol.policyFramework == address(0)) {
             revert Errors.LicenseRegistry__PolicyNotFound();
         }
+    }
+
+    function _policySetPerIpId(bool isInherited, address ipId) private view returns (EnumerableSet.UintSet storage) {
+        return _policiesPerIpId[keccak256(abi.encode(isInherited, ipId))];
     }
 }

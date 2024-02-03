@@ -51,6 +51,13 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintP
         return LICENSE_REGISTRY.registerPolicy(abi.encode(mmpol));
     }
 
+    function processInheritedPolicies(
+        bytes memory, // ipRights
+        bytes memory // policy
+    ) external view override returns (bool changedRights, bytes memory newRights) {
+        return (false, newRights);
+    }
+
     /// @dev Mock verifies the param by decoding it as a bool. If you want the verifier
     /// to return true, pass in abi.encode(true) as the value.
     function verifyMint(

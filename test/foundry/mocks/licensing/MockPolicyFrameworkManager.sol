@@ -55,11 +55,11 @@ contract MockPolicyFrameworkManager is
     }
 
     function registerPolicy(MockPolicy calldata mockPolicy) external returns (uint256 policyId) {
-        return LICENSE_REGISTRY.registerPolicy(abi.encode(mockPolicy));
         emit MockPolicyAdded(policyId, mockPolicy);
+        return LICENSE_REGISTRY.registerPolicy(abi.encode(mockPolicy));
     }
 
-    function verifyMint(address, bool, address, address, uint256, bytes memory data) external view returns (bool) {
+    function verifyMint(address, bool, address, address, uint256, bytes memory data) external pure returns (bool) {
         MockPolicy memory policy = abi.decode(data, (MockPolicy));
         return policy.returnVerifyMint;
     }
@@ -82,5 +82,12 @@ contract MockPolicyFrameworkManager is
 
     function policyToJson(bytes memory policyData) public pure returns (string memory) {
         return "MockPolicyFrameworkManager";
+    }
+    
+    function processInheritedPolicies(
+        bytes memory ipRights,
+        bytes memory policy
+    ) external pure override returns (bool changedRights, bytes memory newRights) {
+        return (false, ipRights);
     }
 }

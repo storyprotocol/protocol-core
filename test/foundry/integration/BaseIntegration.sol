@@ -311,11 +311,9 @@ contract BaseIntegration is Test {
 
         uint256[] memory policyIds = new uint256[](licenseIds.length);
         address[] memory parentIpIds = new address[](licenseIds.length);
-        uint256[] memory newPolicyIndexes = new uint256[](licenseIds.length);
         for (uint256 i = 0; i < licenseIds.length; i++) {
             policyIds[i] = licenseRegistry.policyIdForLicense(licenseIds[i]);
             parentIpIds[i] = licenseRegistry.licensorIpId(licenseIds[i]);
-            newPolicyIndexes[i] = licenseRegistry.totalPoliciesForIp(expectedAddr) + i;
         }
 
         vm.expectEmit();
@@ -368,8 +366,8 @@ contract BaseIntegration is Test {
                 caller: address(registrationModule),
                 ipId: expectedAddr,
                 policyId: policyIds[i],
-                index: newPolicyIndexes[i],
-                inheritedPolicy: true
+                index: i,
+                isInherited: true
             });
         }
 
@@ -428,14 +426,12 @@ contract BaseIntegration is Test {
     function linkIpToParents(uint256[] memory licenseIds, address ipId, address caller) internal {
         uint256[] memory policyIds = new uint256[](licenseIds.length);
         address[] memory parentIpIds = new address[](licenseIds.length);
-        uint256[] memory newPolicyIndexes = new uint256[](licenseIds.length);
         uint256[] memory prevLicenseAmounts = new uint256[](licenseIds.length);
         uint256[] memory values = new uint256[](licenseIds.length);
 
         for (uint256 i = 0; i < licenseIds.length; i++) {
             policyIds[i] = licenseRegistry.policyIdForLicense(licenseIds[i]);
             parentIpIds[i] = licenseRegistry.licensorIpId(licenseIds[i]);
-            newPolicyIndexes[i] = licenseRegistry.totalPoliciesForIp(ipId);
             prevLicenseAmounts[i] = licenseRegistry.balanceOf(caller, licenseIds[i]);
             values[i] = 1;
             vm.expectEmit();
@@ -443,8 +439,8 @@ contract BaseIntegration is Test {
                 caller: caller,
                 ipId: ipId,
                 policyId: policyIds[i],
-                index: newPolicyIndexes[i],
-                inheritedPolicy: true
+                index: i,
+                isInherited: true
             });
         }
 
@@ -481,16 +477,18 @@ contract BaseIntegration is Test {
                 "license not burnt on linking"
             );
             assertTrue(licenseRegistry.isParent(parentIpIds[i], ipId), "parent IP account is not parent");
+            (uint256 index, bool isInherited, bool active) = licenseRegistry.policyStatus(parentIpIds[i], policyIds[i]);
             assertEq(
                 keccak256(
                     abi.encode(
                         licenseRegistry.policyForIpAtIndex(
+                            isInherited,
                             parentIpIds[i],
-                            licenseRegistry.indexOfPolicyForIp(parentIpIds[i], policyIds[i])
+                            index
                         )
                     )
                 ),
-                keccak256(abi.encode(licenseRegistry.policyForIpAtIndex(ipId, newPolicyIndexes[i]))),
+                keccak256(abi.encode(licenseRegistry.policyForIpAtIndex(true, ipId, i))),
                 "policy not the same in parent to child"
             );
         }

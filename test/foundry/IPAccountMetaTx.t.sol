@@ -360,7 +360,15 @@ contract IPAccountMetaTxTest is Test {
 
         bytes memory signature = abi.encodePacked(r, s, v);
 
-        vm.expectRevert("Invalid signer");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
+                address(ipAccount),
+                address(caller),
+                address(module),
+                module.executeSuccessfully.selector
+            )
+        );
         vm.prank(caller);
         metaTxModule.callAnotherModuleWithSignature(payable(address(ipAccount)), caller, deadline, signature);
         assertEq(ipAccount.state(), 0);
@@ -465,11 +473,23 @@ contract IPAccountMetaTxTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
 
         bytes memory signature = abi.encodePacked(r, s, v);
-
-        vm.expectRevert("Invalid signer");
+        MockModule module3WithoutPermission = new MockModule(
+            address(registry),
+            address(moduleRegistry),
+            "Module3WithoutPermission"
+        );
+        moduleRegistry.registerModule("Module3WithoutPermission", address(module3WithoutPermission));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
+                address(ipAccount),
+                address(metaTxModule),
+                address(module3WithoutPermission),
+                module3WithoutPermission.executeNoReturn.selector
+            )
+        );
         vm.prank(caller);
         metaTxModule.workflowFailureWithSignature(payable(address(ipAccount)), owner, deadline, signature);
         assertEq(ipAccount.state(), 0);
     }
-
 }

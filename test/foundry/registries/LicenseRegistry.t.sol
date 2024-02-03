@@ -65,6 +65,7 @@ contract LicenseRegistryTest is Test {
         );
         umlManager = new UMLPolicyFrameworkManager(
             address(accessController),
+            address(ipAccountRegistry),
             address(registry),
             address(0), // TODO: mock royaltyModule
             "UMLPolicyFrameworkManager",
@@ -150,7 +151,7 @@ contract LicenseRegistryTest is Test {
     function test_LicenseRegistry_add2PoliciesToIpId() public {
         registry.registerPolicyFrameworkManager(address(module1));
         assertEq(registry.totalPolicies(), 0);
-        assertEq(registry.totalPoliciesForIp(ipId1), 0);
+        assertEq(registry.totalPoliciesForIp(false, ipId1), 0);
         bytes memory policy = _createPolicy();
 
         // First time adding a policy
@@ -161,9 +162,10 @@ contract LicenseRegistryTest is Test {
         assertEq(policyId, 1, "policyId not 1");
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
         assertEq(registry.totalPolicies(), 1, "totalPolicies not incremented");
-        assertEq(registry.totalPoliciesForIp(ipId1), 1, "totalPoliciesForIp not incremented");
-        assertEq(registry.policyIdForIpAtIndex(ipId1, 0), 1, "policyIdForIpAtIndex not 1");
-        assertFalse(registry.isPolicyInherited(ipId1, policyId));
+        assertEq(registry.totalPoliciesForIp(false, ipId1), 1, "totalPoliciesForIp not incremented");
+        assertEq(registry.policyIdForIpAtIndex(false, ipId1, 0), 1, "policyIdForIpAtIndex not 1");
+        (uint256 index, bool isInherited, bool active) = registry.policyStatus(ipId1, policyId);
+        assertFalse(isInherited);
 
         // Adding different policy to same ipId
         policy = abi.encode(
@@ -176,9 +178,10 @@ contract LicenseRegistryTest is Test {
         assertEq(policyId2, 2, "policyId not 2");
         assertEq(indexOnIpId2, 1, "indexOnIpId not 1");
         assertEq(registry.totalPolicies(), 2, "totalPolicies not incremented");
-        assertEq(registry.totalPoliciesForIp(ipId1), 2, "totalPoliciesForIp not incremented");
-        assertEq(registry.policyIdForIpAtIndex(ipId1, 1), 2, "policyIdForIpAtIndex not 2");
-        assertFalse(registry.isPolicyInherited(ipId1, policyId2));
+        assertEq(registry.totalPoliciesForIp(false, ipId1), 2, "totalPoliciesForIp not incremented");
+        assertEq(registry.policyIdForIpAtIndex(false, ipId1, 1), 2, "policyIdForIpAtIndex not 2");
+        (index, isInherited, active) = registry.policyStatus(ipId1, policyId2);
+        assertFalse(isInherited);
     }
 
     function test_LicenseRegistry_mintLicense() public returns (uint256 licenseId) {
@@ -189,9 +192,9 @@ contract LicenseRegistryTest is Test {
         vm.prank(ipOwner);
         uint256 indexOnIpId = registry.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1);
-        assertTrue(registry.isPolicyIdSetForIp(ipId1, policyId));
 
-        uint256[] memory policyIds = registry.policyIdsForIp(ipId1);
+        assertTrue(registry.isPolicyIdSetForIp(false, ipId1, policyId));
+        uint256[] memory policyIds = registry.policyIdsForIp(false, ipId1);
         assertEq(policyIds.length, 1);
         assertEq(policyIds[indexOnIpId], policyId);
 
@@ -300,12 +303,15 @@ contract LicenseRegistryTest is Test {
         assertEq(registry.balanceOf(licenseHolder, licenseId), 1, "not burnt");
         assertEq(registry.isParent(ipId1, ipId2), true, "not parent");
         assertEq(
-            keccak256(abi.encode(registry.policyForIpAtIndex(ipId2, 0))),
-            keccak256(abi.encode(registry.policyForIpAtIndex(ipId1, 0))),
+            keccak256(abi.encode(registry.policyForIpAtIndex(true, ipId2, 0))),
+            keccak256(abi.encode(registry.policyForIpAtIndex(false, ipId1, 0))),
             "policy not copied"
         );
-        assertEq(registry.policyIdForIpAtIndex(ipId2, 0), 1);
-        assertTrue(registry.isPolicyInherited(ipId2, 1));
+        assertEq(registry.policyIdForIpAtIndex(true, ipId2, 0), 1);
+        (uint256 index, bool isInherited, bool active) = registry.policyStatus(ipId2, 1);
+        assertEq(index, 0, "index not 0");
+        assertEq(isInherited, true, "not inherited");
+        assertEq(active, true, "not active");
 
         address[] memory parents = registry.parentIpIds(ipId2);
         assertEq(parents.length, 1, "not 1 parent");
