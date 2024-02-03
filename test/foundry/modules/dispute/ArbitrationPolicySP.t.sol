@@ -210,7 +210,7 @@ contract TestArbitrationPolicySP is TestHelper {
         arbitrationPolicySP.onDisputeCancel(address(1), 1, new bytes(0));
     }
 
-    function test_ArbitrationPolicySP_withdraw() public {
+    function test_ArbitrationPolicySP_governanceWithdraw() public {
         // send USDC to arbitration policy
         uint256 mintAmount = 10000 * 10 ** 6;
         USDC.mint(address(arbitrationPolicySP), mintAmount);
