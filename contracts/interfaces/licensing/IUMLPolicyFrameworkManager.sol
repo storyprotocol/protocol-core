@@ -59,10 +59,10 @@ struct UMLAggregator {
     bytes32 contentRestrictionsAcc;
 }
 
-struct UMLRights {
-    bool commercial;
-    bool derivable;
-    bool reciprocalSet;
+struct UMLInheritedPolicyAggregator {
+    bool commercialUse;
+    bool derivativesReciprocal;
+    uint256 lastPolicyId;
 }
 
 
