@@ -17,6 +17,11 @@ import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { TestHelper } from "test/utils/TestHelper.sol";
 
 contract UMLPolicyFrameworkMultiParentTest is TestHelper {
+<<<<<<< HEAD
+=======
+
+    LicenseRegistry internal registry;
+>>>>>>> 1913303 (uml test with helpers, fix post rebase)
 
     UMLPolicyFrameworkManager internal umlFramework;
     string internal licenseUrl = "https://example.com/license";
@@ -30,6 +35,7 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
     uint256[] internal licenses;
 
     mapping(address => address) internal ipIdToOwner;
+    address mockRoyaltyPolicy = address(0x555);
 
     modifier withUMLPolicySimple(string memory name, bool commercial, bool derivatives, bool reciprocal) {
         _mapUMLPolicySimple(name, commercial, derivatives, reciprocal);
@@ -47,12 +53,24 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
 
     function setUp() public override {
         TestHelper.setUp();
+<<<<<<< HEAD
+=======
+        ipAccountRegistry = new IPAccountRegistry(
+            address(new ERC6551Registry()),
+            address(accessController),
+            address(new IPAccountImpl())
+        );
+>>>>>>> 1913303 (uml test with helpers, fix post rebase)
         nft = erc721.ape;
 
         umlFramework = new UMLPolicyFrameworkManager(
             address(accessController),
             address(ipAccountRegistry),
             address(licenseRegistry),
+<<<<<<< HEAD
+=======
+            address(royaltyModule),
+>>>>>>> 1913303 (uml test with helpers, fix post rebase)
             "UMLPolicyFrameworkManager",
             licenseUrl
         );
@@ -99,6 +117,7 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         assertTrue(licenseRegistry.isPolicyIdSetForIp(true, ipId4, _getUmlPolicyId("reciprocal")));
     }
 
+<<<<<<< HEAD
     function test_UMLPolicyFramework_multiParent_revert_AliceSets3Parents_OneNonReciprocal()
         withUMLPolicySimple("reciprocal", true, true, true)
         withUMLPolicySimple("non_reciprocal", true, true, false)
@@ -360,6 +379,30 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         assertTrue(licenseRegistry.isPolicyIdSetForIp(true, ipId4, polAId));
         assertTrue(licenseRegistry.isPolicyIdSetForIp(true, ipId4, polBId));
         licenses = new uint256[](0); // To call this function multiple times
+=======
+    function _savePolicyInMapping(
+        string memory name,
+        bool commercial,
+        bool derivatives,
+        bool reciprocal
+    ) internal {
+        policies[name] = UMLPolicy({
+            attribution: true,
+            transferable: true,
+            commercialUse: commercial,
+            commercialAttribution: false,
+            commercializers: emptyStringArray,
+            commercialRevShare: 0,
+            derivativesAllowed: derivatives,
+            derivativesAttribution: false,
+            derivativesApproval: false,
+            derivativesReciprocal: reciprocal,
+            derivativesRevShare: 0,
+            territories: emptyStringArray,
+            distributionChannels: emptyStringArray,
+            royaltyPolicy: mockRoyaltyPolicy
+        });
+>>>>>>> 1913303 (uml test with helpers, fix post rebase)
     }
 
 }
