@@ -5,6 +5,7 @@ pragma solidity ^0.8.23;
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // contracts
+import { Governable } from "contracts/governance/Governable.sol";
 import { IDisputeModule } from "contracts/interfaces/modules/dispute/IDisputeModule.sol";
 import { IArbitrationPolicy } from "contracts/interfaces/modules/dispute/policies/IArbitrationPolicy.sol";
 import { Errors } from "contracts/lib/Errors.sol";
@@ -14,7 +15,7 @@ import { Errors } from "contracts/lib/Errors.sol";
 ///         requires the dispute initiator to pay a fixed amount of tokens
 ///         to raise a dispute and refunds that amount if the dispute initiator
 ///         wins the dispute.
-contract ArbitrationPolicySP is IArbitrationPolicy {
+contract ArbitrationPolicySP is IArbitrationPolicy, Governable {
     using SafeERC20 for IERC20;
 
     /// @notice Dispute module address
@@ -26,12 +27,6 @@ contract ArbitrationPolicySP is IArbitrationPolicy {
     /// @notice Arbitration price
     uint256 public immutable ARBITRATION_PRICE;
 
-    /// @notice Restricts the calls to the governance address
-    modifier onlyGovernance() {
-        // TODO: where is governance address defined?
-        _;
-    }
-
     /// @notice Restricts the calls to the dispute module
     modifier onlyDisputeModule() {
         if (msg.sender != DISPUTE_MODULE) revert Errors.ArbitrationPolicySP__NotDisputeModule();
@@ -42,7 +37,8 @@ contract ArbitrationPolicySP is IArbitrationPolicy {
     /// @param _disputeModule Address of the dispute module contract
     /// @param _paymentToken Address of the payment token
     /// @param _arbitrationPrice Arbitration price
-    constructor(address _disputeModule, address _paymentToken, uint256 _arbitrationPrice) {
+    /// @param _governable Address of the governable contract
+    constructor(address _disputeModule, address _paymentToken, uint256 _arbitrationPrice, address _governable) Governable(_governable) {
         if (_disputeModule == address(0)) revert Errors.ArbitrationPolicySP__ZeroDisputeModule();
         if (_paymentToken == address(0)) revert Errors.ArbitrationPolicySP__ZeroPaymentToken();
 
@@ -72,10 +68,10 @@ contract ArbitrationPolicySP is IArbitrationPolicy {
     function onDisputeCancel(address, uint256, bytes calldata) external onlyDisputeModule {}
 
     /// @notice Allows governance address to withdraw
-    /// @param _amount The amount to withdraw
-    function withdraw(uint256 _amount) external onlyGovernance {
-        // TODO: where is governance address defined?
-        /* IERC20(PAYMENT_TOKEN).safeTransfer(governance, _amount); */
-        // TODO: emit event
+    function governanceWithdraw() external onlyProtocolAdmin {
+        uint256 balance = IERC20(PAYMENT_TOKEN).balanceOf(address(this));
+        IERC20(PAYMENT_TOKEN).safeTransfer(governance, balance);
+
+        emit GovernanceWithdrew(balance);
     }
 }
