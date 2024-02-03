@@ -69,7 +69,6 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     }
 
     // TODO: Ensure that parentsIds should be correctly passed in through the licensing contract, otherwise we must call parents() on licenseRegistry directly
-    // TODO: setApprovalForAll for splitClone to this contract to allow it to transfer RNFTs? Useful for the corner case where someone holds all rnfts
     /// @notice Initializes the royalty policy
     /// @param _ipId The ipId
     /// @param _parentIpIds The parent ipIds

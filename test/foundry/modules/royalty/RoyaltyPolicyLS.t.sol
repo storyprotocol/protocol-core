@@ -16,8 +16,10 @@ contract TestLSClaimer is TestHelper {
     function setUp() public override {
         super.setUp();
 
+        vm.startPrank(u.admin);
         // whitelist royalty policy
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
+        vm.stopPrank();
     }
 
     function test_RoyaltyPolicyLS_constructor_revert_ZeroRoyaltyModule() public {
@@ -55,6 +57,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_RoyaltyPolicyLS_revert_InvalidMinRoyalty() public {
+        vm.startPrank(address(registrationModule));
         // set root parent royalty policy
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; 
@@ -72,6 +75,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_RoyaltyPolicyLS_revert_ZeroMinRoyalty() public {
+        vm.startPrank(address(registrationModule));
         // set root parent royalty policy
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; 
@@ -89,6 +93,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_RoyaltyPolicyLS_revert_InvalidRoyaltyStack() public {
+        vm.startPrank(address(registrationModule));
         address[] memory parentIpIds = new address[](0);
         uint32 minRoyaltyIpAccount3 = 1010; // 100.1%
         bytes memory data = abi.encode(minRoyaltyIpAccount3);
@@ -102,6 +107,7 @@ contract TestLSClaimer is TestHelper {
         uint32 minRoyaltyIpAccount1 = 0; 
         bytes memory data = abi.encode(minRoyaltyIpAccount1);
 
+        vm.startPrank(address(registrationModule));
         royaltyModule.setRoyaltyPolicy(ipAccount1, address(royaltyPolicyLS), parentIpIds, data);
 
         (address splitClone, address claimer, uint32 royaltyStack, uint32 minRoyalty) = royaltyPolicyLS.royaltyData(ipAccount1);
@@ -113,6 +119,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_RoyaltyPolicyLS_initPolicy_derivativeIPA() public {
+        vm.startPrank(address(registrationModule));
         // set root parent royalty policy
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; 
@@ -136,6 +143,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_RoyaltyPolicyLS_distributeFunds() public {
+        vm.startPrank(address(registrationModule));
         // set root parent royalty policy
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; 
@@ -155,8 +163,8 @@ contract TestLSClaimer is TestHelper {
         USDC.mint(splitClone2, royaltyAmount);
 
         address[] memory accounts = new address[](2);
-        accounts[0] = ipAccount2;
-        accounts[1] = claimer2;
+        accounts[1] = ipAccount2;
+        accounts[0] = claimer2;
 
         uint256 splitClone2USDCBalBefore = USDC.balanceOf(splitClone2);
         uint256 splitMainUSDCBalBefore = USDC.balanceOf(royaltyPolicyLS.LIQUID_SPLIT_MAIN());
@@ -171,6 +179,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_RoyaltyPolicyLS_claimRoyalties() public{
+        vm.startPrank(address(registrationModule));
         // set root parent royalty policy
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; 
@@ -184,14 +193,15 @@ contract TestLSClaimer is TestHelper {
         bytes memory data2 = abi.encode(minRoyaltyIpAccount2);
         royaltyModule.setRoyaltyPolicy(ipAccount2, address(royaltyPolicyLS), parentIpIds2, data2);
         (address splitClone2, address claimer2,,) = royaltyPolicyLS.royaltyData(ipAccount2);
+        vm.stopPrank();
 
         // send USDC to 0xSplitClone
         uint256 royaltyAmount = 1000 * 10 ** 6;
         USDC.mint(splitClone2, royaltyAmount);
 
         address[] memory accounts = new address[](2);
-        accounts[0] = ipAccount2;
-        accounts[1] = claimer2;
+        accounts[1] = ipAccount2;
+        accounts[0] = claimer2;
 
         ERC20[] memory tokens = new ERC20[](1);
         tokens[0] = USDC;
