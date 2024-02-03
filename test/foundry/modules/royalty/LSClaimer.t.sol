@@ -25,7 +25,6 @@ import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { TestHelper } from "test/utils/TestHelper.sol";
 
 contract TestLSClaimer is TestHelper {
-    // TODO: can change to royaltyPolicyLS vs testRoyaltyPolicyLS
     RoyaltyPolicyLS testRoyaltyPolicyLS;
     address[] public LONG_CHAIN = new address[](100);
     address[] public accounts = new address[](2);
@@ -101,15 +100,18 @@ contract TestLSClaimer is TestHelper {
             )
         );
         vm.label(ipAddr, string(abi.encodePacked("IPAccount", Strings.toString(nftIds[0]))));
+        vm.stopPrank();
         // User sets royalty policy for her IPAccount (so other IPAccounts can use her policies that 
         // inits royalty policy on linking)
+        vm.startPrank(address(registrationModule));
         royaltyModule.setRoyaltyPolicy(
             ipAddr,
             address(royaltyPolicyLS),
             new address[](0), // no parent
             abi.encode(10)
         );
-
+        vm.stopPrank();
+        vm.startPrank(deployer);
         uint256[] memory licenseId = new uint256[](1);
         for (uint256 i = 0; i < 99; i++) {
             licenseId[0] = licenseRegistry.mintLicense(
@@ -129,7 +131,7 @@ contract TestLSClaimer is TestHelper {
             );
             string memory ipAcctName = string(abi.encodePacked("IPAccount", Strings.toString(nftIds[i + 1])));
             vm.label(expectedAddr, ipAcctName);
-
+            
             registrationModule.registerDerivativeIp(
                 licenseId,
                 address(nft),

@@ -132,8 +132,8 @@ contract BaseIntegration is Test {
             address(ipResolver)
         );
         taggingModule = new TaggingModule();
-        royaltyModule = new RoyaltyModule();
-        disputeModule = new DisputeModule();
+        royaltyModule = new RoyaltyModule(address(registrationModule), address(governance));
+        disputeModule = new DisputeModule(address(accessController), address(ipAssetRegistry), address(licenseRegistry), address(governance));
         ipAssetRenderer = new IPAssetRenderer(
             address(ipAssetRegistry),
             address(licenseRegistry),
@@ -141,7 +141,7 @@ contract BaseIntegration is Test {
             address(royaltyModule)
         );
 
-        arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), address(USDC), ARBITRATION_PRICE);
+        arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), address(USDC), ARBITRATION_PRICE, address(governance));
         royaltyPolicyLS = new RoyaltyPolicyLS(
             address(royaltyModule),
             address(licenseRegistry),

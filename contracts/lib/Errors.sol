@@ -162,6 +162,8 @@ library Errors {
     error DisputeModule__NotDisputeInitiator();
     error DisputeModule__NotInDisputeState();
     error DisputeModule__NotAbleToResolve();
+    error DisputeModule__NotRegisteredIpId();
+    error DisputeModule__UnauthorizedAccess();
 
     error ArbitrationPolicySP__ZeroDisputeModule();
     error ArbitrationPolicySP__ZeroPaymentToken();
@@ -178,6 +180,8 @@ library Errors {
     error RoyaltyModule__NotWhitelistedRoyaltyToken();
     error RoyaltyModule__NoRoyaltyPolicySet();
     error RoyaltyModule__IncompatibleRoyaltyPolicy();
+    error RoyaltyModule__NotRegistrationModule();
+    error RoyaltyModule__ZeroLicensingModule();
 
     error RoyaltyPolicyLS__ZeroRoyaltyModule();
     error RoyaltyPolicyLS__ZeroLiquidSplitFactory();

@@ -7,3 +7,6 @@ string constant IP_RESOLVER_MODULE_KEY = "IP_RESOLVER_MODULE";
 
 // String values for core protocol modules.
 string constant REGISTRATION_MODULE_KEY = "REGISTRATION_MODULE";
+
+// String values for core protocol modules.
+string constant DISPUTE_MODULE_KEY = "DISPUTE_MODULE";

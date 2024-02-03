@@ -4,6 +4,7 @@ pragma solidity ^0.8.23;
 // external
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 // contracts
+import { Governable } from "contracts/governance/Governable.sol";
 import { IRoyaltyModule } from "contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
 import { IRoyaltyPolicy } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
 import { Errors } from "contracts/lib/Errors.sol";
@@ -11,7 +12,10 @@ import { Errors } from "contracts/lib/Errors.sol";
 /// @title Story Protocol Royalty Module
 /// @notice The Story Protocol royalty module allows to set royalty policies an ipId
 ///         and pay royalties as a derivative ip.
-contract RoyaltyModule is IRoyaltyModule, ReentrancyGuard {
+contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
+    /// @notice registration module address
+    address public immutable REGISTRATION_MODULE;
+
     /// @notice Indicates if a royalty policy is whitelisted
     mapping(address royaltyPolicy => bool allowed) public isWhitelistedRoyaltyPolicy;
 
@@ -21,22 +25,25 @@ contract RoyaltyModule is IRoyaltyModule, ReentrancyGuard {
     /// @notice Indicates the royalty policy for a given ipId
     mapping(address ipId => address royaltyPolicy) public royaltyPolicies;
 
-    /// @notice Restricts the calls to the governance address
-    modifier onlyGovernance() {
-        // TODO: where is governance address defined?
+    /// @notice Restricts the calls to the license module
+    modifier onlyRegistrationModule() {
+        // TODO: if (msg.sender != REGISTRATION_MODULE) revert Errors.RoyaltyModule__NotRegistrationModule();
         _;
     }
 
-    /// @notice Restricts the calls to the license module
-    modifier onlyLicensingModule() {
-        // TODO: where is license module address defined?
-        _;
+    /// @notice Constructor
+    /// @param _registrationModule The address of the registration module
+    /// @param _governance The address of the governance contract
+    constructor(address _registrationModule, address _governance) Governable(_governance) {
+        if (_registrationModule == address(0)) revert Errors.RoyaltyModule__ZeroLicensingModule();
+
+        REGISTRATION_MODULE = _registrationModule;
     }
 
     /// @notice Whitelist a royalty policy
     /// @param _royaltyPolicy The address of the royalty policy
     /// @param _allowed Indicates if the royalty policy is whitelisted or not
-    function whitelistRoyaltyPolicy(address _royaltyPolicy, bool _allowed) external onlyGovernance {
+    function whitelistRoyaltyPolicy(address _royaltyPolicy, bool _allowed) external onlyProtocolAdmin {
         if (_royaltyPolicy == address(0)) revert Errors.RoyaltyModule__ZeroRoyaltyPolicy();
 
         isWhitelistedRoyaltyPolicy[_royaltyPolicy] = _allowed;
@@ -47,7 +54,7 @@ contract RoyaltyModule is IRoyaltyModule, ReentrancyGuard {
     /// @notice Whitelist a royalty token
     /// @param _token The token address
     /// @param _allowed Indicates if the token is whitelisted or not
-    function whitelistRoyaltyToken(address _token, bool _allowed) external onlyGovernance {
+    function whitelistRoyaltyToken(address _token, bool _allowed) external onlyProtocolAdmin {
         if (_token == address(0)) revert Errors.RoyaltyModule__ZeroRoyaltyToken();
 
         isWhitelistedRoyaltyToken[_token] = _allowed;
@@ -67,7 +74,7 @@ contract RoyaltyModule is IRoyaltyModule, ReentrancyGuard {
         address _royaltyPolicy,
         address[] calldata _parentIpIds,
         bytes calldata _data
-    ) external onlyLicensingModule nonReentrant {
+    ) external onlyRegistrationModule nonReentrant {
         if (royaltyPolicies[_ipId] != address(0)) revert Errors.RoyaltyModule__AlreadySetRoyaltyPolicy();
         if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
 
@@ -91,13 +98,10 @@ contract RoyaltyModule is IRoyaltyModule, ReentrancyGuard {
         address royaltyPolicy = royaltyPolicies[_receiverIpId];
         if (royaltyPolicy == address(0)) revert Errors.RoyaltyModule__NoRoyaltyPolicySet();
         if (!isWhitelistedRoyaltyToken[_token]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyToken();
-        
-        // TODO: check how to handle the below with replacement
         if (!isWhitelistedRoyaltyPolicy[royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
 
         IRoyaltyPolicy(royaltyPolicy).onRoyaltyPayment(msg.sender, _receiverIpId, _token, _amount);
 
-        // TODO: review event vs variable for royalty tracking
         emit RoyaltyPaid(_receiverIpId, _payerIpId, msg.sender, _token, _amount);
     }
 }

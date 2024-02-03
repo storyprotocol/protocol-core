@@ -1,12 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
+// external
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { ERC6551AccountLib } from "lib/reference/src/lib/ERC6551AccountLib.sol";
+// contracts
 import {Errors} from "contracts/lib/Errors.sol";
 import {ShortStringOps} from "contracts/utils/ShortStringOps.sol";
 import {DisputeModule} from "contracts/modules/dispute-module/DisputeModule.sol";
-import {TestHelper} from "test/utils/TestHelper.sol";
+import { IP } from "contracts/lib/IP.sol";
+// test
+import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
+import { MintPaymentPolicyFrameworkManager } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
+import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { TestHelper } from "test/utils/TestHelper.sol";
 
 contract TestDisputeModule is TestHelper {
     event TagWhitelistUpdated(bytes32 tag, bool allowed);
@@ -24,29 +32,101 @@ contract TestDisputeModule is TestHelper {
     event DisputeJudgementSet(uint256 disputeId, bool decision, bytes data);
     event DisputeCancelled(uint256 disputeId, bytes data);
     event DisputeResolved(uint256 disputeId);
+    event DefaultArbitrationPolicySet(address arbitrationPolicy);
+    event ArbitrationPolicySet(address ipId, address arbitrationPolicy);
+
+    address public ipAddr;
 
     function setUp() public override {
         super.setUp();
 
-
         USDC.mint(ipAccount1, 1000 * 10 ** 6);
 
+        vm.startPrank(u.admin);
         // whitelist dispute tag
         disputeModule.whitelistDisputeTags("PLAGIARISM", true);
 
         // whitelist arbitration policy
         disputeModule.whitelistArbitrationPolicy(address(arbitrationPolicySP), true);
+        disputeModule.whitelistArbitrationPolicy(address(arbitrationPolicySP2), true);
 
         // whitelist arbitration relayer
         disputeModule.whitelistArbitrationRelayer(address(arbitrationPolicySP), arbitrationRelayer, true);
+
+        // set base arbitration policy
+        disputeModule.setBaseArbitrationPolicy(address(arbitrationPolicySP2));
+        vm.stopPrank();
+
+        _setUMLPolicyFrameworkManager();
+        nft = new MockERC721("mock");
+        _addUMLPolicy(
+            true,
+            true,
+            UMLPolicyGenericParams({
+                policyName: "cheap_flexible", // => uml_cheap_flexible
+                attribution: false,
+                transferable: true,
+                territories: new string[](0),
+                distributionChannels: new string[](0)
+            }),
+            UMLPolicyCommercialParams({
+                commercialAttribution: true,
+                commercializers: new string[](0),
+                commercialRevShare: 10,
+                royaltyPolicy: address(royaltyPolicyLS)
+            }),
+            UMLPolicyDerivativeParams({
+                derivativesAttribution: true,
+                derivativesApproval: false,
+                derivativesReciprocal: false,
+                derivativesRevShare: 10
+            })
+        );
+
+
+        nft.mintId(deployer, 0);
+
+        address expectedAddr = ERC6551AccountLib.computeAddress(
+            address(erc6551Registry),
+            address(ipAccountImpl),
+            ipAccountRegistry.IP_ACCOUNT_SALT(),
+            block.chainid,
+            address(nft),
+            0
+        );
+        vm.label(expectedAddr, string(abi.encodePacked("IPAccount", Strings.toString(0))));
+
+        vm.startPrank(deployer);
+        ipAddr = registrationModule.registerRootIp(
+            policyIds["uml_cheap_flexible"],
+            address(nft),
+            0,
+            abi.encode(
+                IP.MetadataV1({
+                    name: "IPAccount1",
+                    hash: bytes32("some of the best description"),
+                    registrationDate: uint64(block.timestamp),
+                    registrant: deployer,
+                    uri: "https://example.com/test-ip"
+                })
+            )
+        );
+        vm.label(ipAddr, string(abi.encodePacked("IPAccount", Strings.toString(0))));
+
+        // set arbitration policy
+        vm.startPrank(ipAddr);
+        disputeModule.setArbitrationPolicy(ipAddr, address(arbitrationPolicySP));
+        vm.stopPrank();
     }
 
-    function test_DisputeModule_whitelistDisputeTags_ZeroDisputeTag() public {
+    function test_DisputeModule_whitelistDisputeTags_revert_ZeroDisputeTag() public {
+        vm.startPrank(u.admin);
         vm.expectRevert(Errors.DisputeModule__ZeroDisputeTag.selector);
         disputeModule.whitelistDisputeTags(bytes32(0), true);
     }
 
     function test_DisputeModule_whitelistDisputeTags() public {
+        vm.startPrank(u.admin);
         vm.expectEmit(true, true, true, true, address(disputeModule));
         emit TagWhitelistUpdated(bytes32("INAPPROPRIATE_CONTENT"), true);
 
@@ -54,12 +134,15 @@ contract TestDisputeModule is TestHelper {
         assertEq(disputeModule.isWhitelistedDisputeTag("INAPPROPRIATE_CONTENT"), true);
     }
 
-    function test_DisputeModule_whitelistArbitrationPolicy_ZeroArbitrationPolicy() public {
+    function test_DisputeModule_whitelistArbitrationPolicy_revert_ZeroArbitrationPolicy() public {
+        vm.startPrank(u.admin);
         vm.expectRevert(Errors.DisputeModule__ZeroArbitrationPolicy.selector);
         disputeModule.whitelistArbitrationPolicy(address(0), true);
     }
 
     function test_DisputeModule_whitelistArbitrationPolicy() public {
+        vm.startPrank(u.admin);
+
         vm.expectEmit(true, true, true, true, address(disputeModule));
         emit ArbitrationPolicyWhitelistUpdated(address(1), true);
 
@@ -68,17 +151,20 @@ contract TestDisputeModule is TestHelper {
         assertEq(disputeModule.isWhitelistedArbitrationPolicy(address(1)), true);
     }
 
-    function test_DisputeModule_whitelistArbitrationRelayer_ZeroArbitrationPolicy() public {
+    function test_DisputeModule_whitelistArbitrationRelayer_revert_ZeroArbitrationPolicy() public {
+        vm.startPrank(u.admin);
         vm.expectRevert(Errors.DisputeModule__ZeroArbitrationPolicy.selector);
         disputeModule.whitelistArbitrationRelayer(address(0), arbitrationRelayer, true);
     }
 
-    function test_DisputeModule_whitelistArbitrationRelayer_ZeroArbitrationRelayer() public {
+    function test_DisputeModule_whitelistArbitrationRelayer_revert_ZeroArbitrationRelayer() public {
+        vm.startPrank(u.admin);
         vm.expectRevert(Errors.DisputeModule__ZeroArbitrationRelayer.selector);
         disputeModule.whitelistArbitrationRelayer(address(arbitrationPolicySP), address(0), true);
     }
 
     function test_DisputeModule_whitelistArbitrationRelayer() public {
+        vm.startPrank(u.admin);
         vm.expectEmit(true, true, true, true, address(disputeModule));
         emit ArbitrationRelayerWhitelistUpdated(address(arbitrationPolicySP), address(1), true);
 
@@ -87,27 +173,122 @@ contract TestDisputeModule is TestHelper {
         assertEq(disputeModule.isWhitelistedArbitrationRelayer(address(arbitrationPolicySP), address(1)), true);
     }
 
-    function test_DisputeModule_PolicySP_raiseDispute_NotWhitelistedArbitrationPolicy() public {
+    function test_DisputeModule_setBaseArbitrationPolicy_revert_NotWhitelistedArbitrationPolicy() public {
+        vm.startPrank(u.admin);
         vm.expectRevert(Errors.DisputeModule__NotWhitelistedArbitrationPolicy.selector);
-        disputeModule.raiseDispute(address(1), address(1), string("urlExample"), "PLAGIARISM", "");
+        disputeModule.setBaseArbitrationPolicy(address(0));
     }
 
-    function test_DisputeModule_PolicySP_raiseDispute_NotWhitelistedDisputeTag() public {
-        vm.expectRevert(Errors.DisputeModule__NotWhitelistedDisputeTag.selector);
+    function test_DisputeModule_setBaseArbitrationPolicy() public {
+        vm.startPrank(u.admin);
+        vm.expectEmit(true, true, true, true, address(disputeModule));
+        emit DefaultArbitrationPolicySet(address(arbitrationPolicySP2));
+
+        disputeModule.setBaseArbitrationPolicy(address(arbitrationPolicySP2));
+
+        assertEq(disputeModule.baseArbitrationPolicy(), address(arbitrationPolicySP2));
+    }
+
+    function test_DisputeModule_setArbitrationPolicy_revert_UnauthorizedAccess() public {
+        vm.expectRevert(Errors.Module_Unauthorized.selector);
+        disputeModule.setArbitrationPolicy(ipAddr, address(arbitrationPolicySP2));
+    }
+
+    function test_DisputeModule_setArbitrationPolicy_revert_NotWhitelistedArbitrationPolicy() public {
+        vm.startPrank(u.admin);
+        disputeModule.whitelistArbitrationPolicy(address(arbitrationPolicySP2), false);
+        vm.stopPrank();
+
+        vm.startPrank(ipAddr);
+        vm.expectRevert(Errors.DisputeModule__NotWhitelistedArbitrationPolicy.selector);
+        disputeModule.setArbitrationPolicy(ipAddr, address(arbitrationPolicySP2));
+    }
+
+    function test_setArbitrationPolicy() public {
+        vm.startPrank(u.admin);
+        disputeModule.whitelistArbitrationPolicy(address(arbitrationPolicySP2), true);
+        vm.stopPrank();
+
+        vm.startPrank(ipAddr);
+
+        vm.expectEmit(true, true, true, true, address(disputeModule));
+        emit ArbitrationPolicySet(ipAddr, address(arbitrationPolicySP2));
+
+        disputeModule.setArbitrationPolicy(ipAddr, address(arbitrationPolicySP2));
+        assertEq(disputeModule.arbitrationPolicies(ipAddr), address(arbitrationPolicySP2));
+    }
+
+    function test_DisputeModule_PolicySP_raiseDispute_revert_NotRegisteredIpId() public {
+        vm.expectRevert(Errors.DisputeModule__NotRegisteredIpId.selector);
         disputeModule.raiseDispute(
-            address(1), address(arbitrationPolicySP), string("urlExample"), "NOT_WHITELISTED", ""
+            address(1), string("urlExample"), "PLAGIARISM", ""
         );
     }
 
-    function test_DisputeModule_PolicySP_raiseDispute_ZeroLinkToDisputeEvidence() public {
+    function test_DisputeModule_PolicySP_raiseDispute_revert_NotWhitelistedDisputeTag() public {
+        vm.expectRevert(Errors.DisputeModule__NotWhitelistedDisputeTag.selector);
+        disputeModule.raiseDispute(
+            ipAddr, string("urlExample"), "NOT_WHITELISTED", ""
+        );
+    }
+
+    function test_DisputeModule_PolicySP_raiseDispute_revert_ZeroLinkToDisputeEvidence() public {
         vm.expectRevert(Errors.DisputeModule__ZeroLinkToDisputeEvidence.selector);
-        disputeModule.raiseDispute(address(1), address(arbitrationPolicySP), string(""), "PLAGIARISM", "");
+        disputeModule.raiseDispute(ipAddr, string(""), "PLAGIARISM", "");
+    }
+
+    function test_DisputeModule_PolicySP_raiseDispute_BlacklistedPolicy() public {
+        vm.startPrank(u.admin);
+        disputeModule.whitelistArbitrationPolicy(address(arbitrationPolicySP), false);
+        vm.stopPrank();
+
+        vm.startPrank(ipAccount1);
+        IERC20(USDC).approve(address(arbitrationPolicySP2), ARBITRATION_PRICE);
+
+        uint256 disputeIdBefore = disputeModule.disputeId();
+        uint256 ipAccount1USDCBalanceBefore = IERC20(USDC).balanceOf(ipAccount1);
+        uint256 arbitrationPolicySPUSDCBalanceBefore = IERC20(USDC).balanceOf(address(arbitrationPolicySP2));
+
+        vm.expectEmit(true, true, true, true, address(disputeModule));
+        emit DisputeRaised(
+            disputeIdBefore + 1,
+            ipAddr,
+            ipAccount1,
+            address(arbitrationPolicySP2),
+            ShortStringOps.stringToBytes32("urlExample"),
+            bytes32("PLAGIARISM"),
+            ""
+        );
+
+        disputeModule.raiseDispute(ipAddr, string("urlExample"), "PLAGIARISM", "");
+
+        uint256 disputeIdAfter = disputeModule.disputeId();
+        uint256 ipAccount1USDCBalanceAfter = IERC20(USDC).balanceOf(ipAccount1);
+        uint256 arbitrationPolicySPUSDCBalanceAfter = IERC20(USDC).balanceOf(address(arbitrationPolicySP2));
+
+        (
+            address targetIpId,
+            address disputeInitiator,
+            address arbitrationPolicy,
+            bytes32 linkToDisputeEvidence,
+            bytes32 targetTag,
+            bytes32 currentTag
+        ) = disputeModule.disputes(disputeIdAfter);
+
+        assertEq(disputeIdAfter - disputeIdBefore, 1);
+        assertEq(ipAccount1USDCBalanceBefore - ipAccount1USDCBalanceAfter, ARBITRATION_PRICE);
+        assertEq(arbitrationPolicySPUSDCBalanceAfter - arbitrationPolicySPUSDCBalanceBefore, ARBITRATION_PRICE);
+        assertEq(targetIpId, ipAddr);
+        assertEq(disputeInitiator, ipAccount1);
+        assertEq(arbitrationPolicy, address(arbitrationPolicySP2));
+        assertEq(linkToDisputeEvidence, ShortStringOps.stringToBytes32("urlExample"));
+        assertEq(targetTag, bytes32("PLAGIARISM"));
+        assertEq(currentTag, bytes32("IN_DISPUTE"));
     }
 
     function test_DisputeModule_PolicySP_raiseDispute() public {
         vm.startPrank(ipAccount1);
-
-        USDC.approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
+        IERC20(USDC).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
 
         uint256 disputeIdBefore = disputeModule.disputeId();
         uint256 ipAccount1USDCBalanceBefore = USDC.balanceOf(ipAccount1);
@@ -116,7 +297,7 @@ contract TestDisputeModule is TestHelper {
         vm.expectEmit(true, true, true, true, address(disputeModule));
         emit DisputeRaised(
             disputeIdBefore + 1,
-            ipAccount2,
+            ipAddr,
             ipAccount1,
             address(arbitrationPolicySP),
             ShortStringOps.stringToBytes32("urlExample"),
@@ -124,7 +305,7 @@ contract TestDisputeModule is TestHelper {
             ""
         );
 
-        disputeModule.raiseDispute(ipAccount2, address(arbitrationPolicySP), string("urlExample"), "PLAGIARISM", "");
+        disputeModule.raiseDispute(ipAddr, string("urlExample"), "PLAGIARISM", "");
 
         uint256 disputeIdAfter = disputeModule.disputeId();
         uint256 ipAccount1USDCBalanceAfter = USDC.balanceOf(ipAccount1);
@@ -142,7 +323,7 @@ contract TestDisputeModule is TestHelper {
         assertEq(disputeIdAfter - disputeIdBefore, 1);
         assertEq(ipAccount1USDCBalanceBefore - ipAccount1USDCBalanceAfter, ARBITRATION_PRICE);
         assertEq(arbitrationPolicySPUSDCBalanceAfter - arbitrationPolicySPUSDCBalanceBefore, ARBITRATION_PRICE);
-        assertEq(targetIpId, ipAccount2);
+        assertEq(targetIpId, ipAddr);
         assertEq(disputeInitiator, ipAccount1);
         assertEq(arbitrationPolicy, address(arbitrationPolicySP));
         assertEq(linkToDisputeEvidence, ShortStringOps.stringToBytes32("urlExample"));
@@ -150,16 +331,16 @@ contract TestDisputeModule is TestHelper {
         assertEq(currentTag, bytes32("IN_DISPUTE"));
     }
 
-    function test_DisputeModule_PolicySP_setDisputeJudgement_NotInDisputeState() public {
+    function test_DisputeModule_PolicySP_setDisputeJudgement_revert_NotInDisputeState() public {
         vm.expectRevert(Errors.DisputeModule__NotInDisputeState.selector);
         disputeModule.setDisputeJudgement(1, true, "");
     }
 
-    function test_DisputeModule_PolicySP_setDisputeJudgement_NotWhitelistedArbitrationRelayer() public {
+    function test_DisputeModule_PolicySP_setDisputeJudgement_revert_NotWhitelistedArbitrationRelayer() public {
         // raise dispute
         vm.startPrank(ipAccount1);
-        USDC.approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
-        disputeModule.raiseDispute(ipAccount2, address(arbitrationPolicySP), string("urlExample"), "PLAGIARISM", "");
+        IERC20(USDC).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
+        disputeModule.raiseDispute(ipAddr, string("urlExample"), "PLAGIARISM", "");
         vm.stopPrank();
 
         vm.expectRevert(Errors.DisputeModule__NotWhitelistedArbitrationRelayer.selector);
@@ -169,8 +350,8 @@ contract TestDisputeModule is TestHelper {
     function test_DisputeModule_PolicySP_setDisputeJudgement_True() public {
         // raise dispute
         vm.startPrank(ipAccount1);
-        USDC.approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
-        disputeModule.raiseDispute(ipAccount1, address(arbitrationPolicySP), string("urlExample"), "PLAGIARISM", "");
+        IERC20(USDC).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
+        disputeModule.raiseDispute(ipAddr, string("urlExample"), "PLAGIARISM", "");
         vm.stopPrank();
 
         // set dispute judgement
@@ -197,8 +378,8 @@ contract TestDisputeModule is TestHelper {
     function test_DisputeModule_PolicySP_setDisputeJudgement_False() public {
         // raise dispute
         vm.startPrank(ipAccount1);
-        USDC.approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
-        disputeModule.raiseDispute(ipAccount1, address(arbitrationPolicySP), string("urlExample"), "PLAGIARISM", "");
+        IERC20(USDC).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
+        disputeModule.raiseDispute(ipAddr, string("urlExample"), "PLAGIARISM", "");
         vm.stopPrank();
 
         // set dispute judgement
@@ -222,18 +403,18 @@ contract TestDisputeModule is TestHelper {
         assertEq(currentTagAfter, bytes32(0));
     }
 
-    function test_DisputeModule_PolicySP_cancelDispute_NotDisputeInitiator() public {
+    function test_DisputeModule_PolicySP_cancelDispute_revert_NotDisputeInitiator() public {
         // raise dispute
         vm.startPrank(ipAccount1);
-        USDC.approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
-        disputeModule.raiseDispute(address(1), address(arbitrationPolicySP), string("urlExample"), "PLAGIARISM", "");
+        IERC20(USDC).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
+        disputeModule.raiseDispute(ipAddr, string("urlExample"), "PLAGIARISM", "");
         vm.stopPrank();
 
         vm.expectRevert(Errors.DisputeModule__NotDisputeInitiator.selector);
         disputeModule.cancelDispute(1, "");
     }
 
-    function test_DisputeModule_PolicySP_cancelDispute_NotInDisputeState() public {
+    function test_DisputeModule_PolicySP_cancelDispute_revert_NotInDisputeState() public {
         vm.expectRevert(Errors.DisputeModule__NotInDisputeState.selector);
         disputeModule.cancelDispute(1, "");
     }
@@ -241,8 +422,8 @@ contract TestDisputeModule is TestHelper {
     function test_DisputeModule_PolicySP_cancelDispute() public {
         // raise dispute
         vm.startPrank(ipAccount1);
-        USDC.approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
-        disputeModule.raiseDispute(address(1), address(arbitrationPolicySP), string("urlExample"), "PLAGIARISM", "");
+        IERC20(USDC).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
+        disputeModule.raiseDispute(ipAddr, string("urlExample"), "PLAGIARISM", "");
         vm.stopPrank();
 
         (,,,,, bytes32 currentTagBeforeCancel) = disputeModule.disputes(1);
@@ -260,16 +441,16 @@ contract TestDisputeModule is TestHelper {
         assertEq(currentTagAfterCancel, bytes32(0));
     }
 
-    function test_DisputeModule_resolveDispute_NotDisputeInitiator() public {
+    function test_DisputeModule_resolveDispute_revert_NotDisputeInitiator() public {
         vm.expectRevert(Errors.DisputeModule__NotDisputeInitiator.selector);
         disputeModule.resolveDispute(1);
     }
 
-    function test_DisputeModule_resolveDispute_NotAbleToResolve() public {
+    function test_DisputeModule_resolveDispute_revert_NotAbleToResolve() public {
         // raise dispute
         vm.startPrank(ipAccount1);
-        USDC.approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
-        disputeModule.raiseDispute(address(1), address(arbitrationPolicySP), string("urlExample"), "PLAGIARISM", "");
+        IERC20(USDC).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
+        disputeModule.raiseDispute(ipAddr, string("urlExample"), "PLAGIARISM", "");
         vm.stopPrank();
 
         vm.startPrank(ipAccount1);
@@ -280,8 +461,8 @@ contract TestDisputeModule is TestHelper {
     function test_DisputeModule_resolveDispute() public {
         // raise dispute
         vm.startPrank(ipAccount1);
-        USDC.approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
-        disputeModule.raiseDispute(address(1), address(arbitrationPolicySP), string("urlExample"), "PLAGIARISM", "");
+        IERC20(USDC).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
+        disputeModule.raiseDispute(ipAddr, string("urlExample"), "PLAGIARISM", "");
         vm.stopPrank();
 
         // set dispute judgement
@@ -302,5 +483,9 @@ contract TestDisputeModule is TestHelper {
 
         assertEq(currentTagBeforeResolve, bytes32("PLAGIARISM"));
         assertEq(currentTagAfterResolve, bytes32(0));
+    }
+
+    function test_DisputeModule_name() public {
+        assertEq(disputeModule.name(), "DISPUTE_MODULE");
     }
 }
