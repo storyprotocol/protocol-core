@@ -1,4 +1,4 @@
-// // SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: UNLICENSED
 
 pragma solidity ^0.8.23;
 
@@ -16,12 +16,13 @@ import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
-import { IUMLPolicyFrameworkManager, UMLPolicy } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
+import { IUMLPolicyFrameworkManager, UMLPolicy, UMLRights } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 import { IRoyaltyModule } from "contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
 import { IRoyaltyPolicy } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
 import { LicensorApprovalChecker } from "contracts/modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
+
 
 /// @title UMLPolicyFrameworkManager
 /// @notice This is the UML Policy Framework Manager, which implements the UML Policy Framework
@@ -162,6 +163,22 @@ contract UMLPolicyFrameworkManager is
             revert Errors.PolicyFrameworkManager__GettingPolicyWrongFramework();
         }
         policy = abi.decode(protocolPolicy.data, (UMLPolicy));
+    }
+
+    function getRights(address ipId) external view returns (UMLRights memory rights) {
+        bytes memory rightsData = LICENSE_REGISTRY.rightsData(address(this), ipId);
+        if (rightsData.length == 0) {
+            revert UMLFrameworkErrors.UMLPolicyFrameworkManager_RightsNotFound();
+        }
+        rights = abi.decode(rightsData, (UMLRights));
+    }
+
+    function processInheritedPolicies(
+        bytes memory ipRights,
+        bytes memory policy
+    ) external view onlyLicenseRegistry returns (bool changedRights, bytes memory newRights) {
+        // TODO verify compatibility on multi parent inheritance
+        return (false, bytes(""));
     }
 
     function policyToJson(bytes memory policyData) public view returns (string memory) {

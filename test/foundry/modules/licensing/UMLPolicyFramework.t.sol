@@ -15,8 +15,6 @@ import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 
-import "forge-std/console2.sol";
-
 contract UMLPolicyFrameworkTest is Test {
     MockAccessController public accessController = new MockAccessController();
     IPAccountRegistry public ipAccountRegistry;
@@ -242,7 +240,6 @@ contract UMLPolicyFrameworkTest is Test {
                 royaltyPolicy: address(0)
             })
         );
-        console2.log("policyId", policyId);
         vm.prank(ipOwner);
         registry.addPolicyToIp(ipId1, policyId);
         uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);

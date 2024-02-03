@@ -17,33 +17,27 @@ interface ILicenseRegistry {
     /// @notice Emitted when a policy framework is created by registering a policy framework manager
     /// @param framework The address of the IPolicyFrameworkManager
     /// @param framework The policy framework data
-    event PolicyFrameworkRegistered(
-        address indexed framework,
-        string name,
-        string licenseTextUrl
-    );
+    event PolicyFrameworkRegistered(address indexed framework, string name, string licenseTextUrl);
     /// @notice Emitted when a policy is added to the contract
     /// @param policyFrameworkManager The address that created the policy
     /// @param policyId The id of the policy
     /// @param policy The encoded policy data
-    event PolicyRegistered(
-        address indexed policyFrameworkManager,
-        uint256 indexed policyId,
-        bytes policy
-    );
+    event PolicyRegistered(address indexed policyFrameworkManager, uint256 indexed policyId, bytes policy);
+
+    event IPRightsUpdated(address indexed ipId, bytes rights);
 
     /// @notice Emitted when a policy is added to an IP
     /// @param caller The address that called the function
     /// @param ipId The id of the IP
     /// @param policyId The id of the policy
     /// @param index The index of the policy in the IP's policy list
-    /// @param inheritedPolicy Whether the policy was inherited from a parent IP (linking) or set by IP owner
+    /// @param isInherited Whether the policy was inherited from a parent IP (linking) or set by IP owner
     event PolicyAddedToIpId(
         address indexed caller,
         address indexed ipId,
         uint256 indexed policyId,
         uint256 index,
-        bool inheritedPolicy
+        bool isInherited
     );
 
     /// @notice Emitted when a license is minted
@@ -119,25 +113,35 @@ interface ILicenseRegistry {
     function isPolicyDefined(uint256 policyId) external view returns (bool);
 
     /// @notice Gets the policy ids for an IP
-    function policyIdsForIp(address ipId) external view returns (uint256[] memory policyIds);
+    function policyIdsForIp(bool isInherited, address ipId) external view returns (uint256[] memory policyIds);
 
     /// @notice Gets total number of policies for an IP
-    function totalPoliciesForIp(address ipId) external view returns (uint256);
+    function totalPoliciesForIp(bool isInherited, address ipId) external view returns (uint256);
 
     /// @notice True if policy is part of an IP's policy list
-    function isPolicyIdSetForIp(address ipId, uint256 policyId) external view returns (bool);
+    function isPolicyIdSetForIp(bool isInherited, address ipId, uint256 policyId) external view returns (bool);
 
     /// @notice Gets the policy ID for an IP by index on the IP's policy list
-    function policyIdForIpAtIndex(address ipId, uint256 index) external view returns (uint256 policyId);
+    function policyIdForIpAtIndex(
+        bool isInherited,
+        address ipId,
+        uint256 index
+    ) external view returns (uint256 policyId);
 
     /// @notice Gets the policy for an IP by index on the IP's policy list
-    function policyForIpAtIndex(address ipId, uint256 index) external view returns (Licensing.Policy memory);
+    function policyForIpAtIndex(
+        bool isInherited,
+        address ipId,
+        uint256 index
+    ) external view returns (Licensing.Policy memory);
 
-    /// @notice Gets the index of a policy in an IP's policy list
-    function indexOfPolicyForIp(address ipId, uint256 policyId) external view returns (uint256 index);
+    /// @notice Gets the status of a policy in an IP's policy list
+    function policyStatus(
+        address ipId,
+        uint256 policyId
+    ) external view returns (uint256 index, bool isInherited, bool active);
 
-    /// @notice True if the license was added to the IP by linking (burning a license)
-    function isPolicyInherited(address ipId, uint256 policyId) external view returns (bool);
+    function rightsData(address framework, address ipId) external view returns (bytes memory);
 
     /// @notice True if holder is the licensee for the license (owner of the license NFT), or derivative IP owner if
     /// the license was added to the IP by linking (burning a license)
