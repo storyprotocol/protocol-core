@@ -287,7 +287,7 @@ contract UMLPolicyFrameworkManager is
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddDerivRevShare();
             }
             if (policy.royaltyPolicy != address(0)) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddRoyaltyPolicy();
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddRoyaltyPolicy();
             }
         } else {
             // TODO: check for supportInterface instead

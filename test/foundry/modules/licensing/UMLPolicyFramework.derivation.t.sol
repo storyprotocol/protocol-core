@@ -31,6 +31,7 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
     string[] internal emptyStringArray = new string[](0);
     mapping(string => UMLPolicy) internal policies;
     mapping(string => uint256) internal policyIDs;
+    address mockRoyaltyPolicyLS = address(0x555);
 
     modifier withUMLPolicySimple(
         string memory name,
@@ -122,11 +123,11 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
     {
         // Bob can add different policies on IP1 without compatibility checks.
         vm.startPrank(bob);
-        uint256 licenseId1 = registry.mintLicense(policyIDs["comm_deriv"], ipId1, 1, don);
-        assertEq(registry.balanceOf(don, licenseId1), 1, "Don doesn't have license1");
+        uint256 licenseId1 = licenseRegistry.mintLicense(policyIDs["comm_deriv"], ipId1, 1, don);
+        assertEq(licenseRegistry.balanceOf(don, licenseId1), 1, "Don doesn't have license1");
         
-        uint256 licenseId2 = registry.mintLicense(policyIDs["comm_non_deriv"], ipId1, 1, don);
-        assertEq(registry.balanceOf(don, licenseId2), 1, "Don doesn't have license2");
+        uint256 licenseId2 = licenseRegistry.mintLicense(policyIDs["comm_non_deriv"], ipId1, 1, don);
+        assertEq(licenseRegistry.balanceOf(don, licenseId2), 1, "Don doesn't have license2");
         vm.stopPrank();
     }
 
@@ -250,25 +251,23 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
         vm.startPrank(bob);
         uint256 licenseId1 = licenseRegistry.mintLicense(policyIDs["comm_deriv"], ipId1, 1, don);
         assertEq(licenseRegistry.balanceOf(don, licenseId1), 1, "Don doesn't have license1");
-
-        uint256 licenseId2 = licenseRegistry.mintLicense(_getUmlPolicyId("comm_non_deriv"), ipId1, 1, don);
+        
+        uint256 licenseId2 = licenseRegistry.mintLicense(policyIDs["comm_non_deriv"], ipId1, 1, don);
         assertEq(licenseRegistry.balanceOf(don, licenseId2), 1, "Don doesn't have license2");
         vm.stopPrank();
     }
 
+    
     function test_UMLPolicyFramework_originalWork_bobSetsPoliciesThenCompatibleParent()
-        public
-        withUMLPolicySimple("comm_deriv", true, true, false)
-        withUMLPolicySimple("comm_non_deriv", true, false, false)
-    {
+        withPolicy("comm_deriv", true, true, false)
+        withPolicy("comm_non_deriv", true, false, false)
+        public {
         // TODO: This works if all policies compatible.
         // Can bob disable some policies?
     }
 
-    /////////////////////////////////////////////////////////////////
-    //////  SETTING POLICIES IN DERIVATIVE WORK (WITH PARENTS) //////
-    /////////////////////////////////////////////////////////////////
 
+    // STARTING FROM DERIVATIVE WORK
     function test_UMLPolicyFramework_derivative_revert_cantMintDerivativeOfDerivative()
         public
         withUMLPolicySimple("comm_non_deriv", true, false, false)
@@ -301,9 +300,7 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
         licenseRegistry.addPolicyToIp(ipId2, _getUmlPolicyId("other_policy"));
     }
 
-    /////////////////////////////////////////////////////////////////
-    //////                RECIPROCAL DERIVATIVES               //////
-    /////////////////////////////////////////////////////////////////
+    // Reciprocal
 
     function test_UMLPolicyFramework_reciprocal_DonMintsLicenseFromIp2()
         public
@@ -339,7 +336,31 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
         licenseRegistry.addPolicyToIp(ipId2, _getUmlPolicyId("comm_reciprocal"));
     }
 
-    function _addUMLPolicyFromMapping(string memory name) internal {
-        
+
+    function _savePolicyInMapping(
+        string memory name,
+        bool commercial,
+        bool derivatives,
+        bool reciprocal
+    ) internal {
+        address royaltyPolicy = !commercial ? address(0) : address(royaltyPolicyLS);
+        policies[name] = UMLPolicy({
+            attribution: true,
+            transferable: true,
+            commercialUse: commercial,
+            commercialAttribution: false,
+            commercializers: emptyStringArray,
+            commercialRevShare: 0,
+            derivativesAllowed: derivatives,
+            derivativesAttribution: false,
+            derivativesApproval: false,
+            derivativesReciprocal: reciprocal,
+            derivativesRevShare: 0,
+            territories: emptyStringArray,
+            distributionChannels: emptyStringArray,
+            royaltyPolicy: royaltyPolicy
+        });
     }
+
+
 }
