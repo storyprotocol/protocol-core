@@ -415,9 +415,12 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         bool ipIdIsDerivative = _policySetPerIpId(true, ipId).length() > 0;
         if (
             // Original work, owner is setting policies
+            // (ipIdIsDerivative false, adding isInherited false)
             // or
-            // IpId is becoming a derivative
-            (!ipIdIsDerivative && !isInherited) || (!ipIdIsDerivative && isInherited)
+            // IpId is becoming a derivative.
+            // (ipIdIsDerivative false, adding isInherited true)
+            // Next time, ipIdIsDerivative will be true
+            (!ipIdIsDerivative)
         ) {
             // Can add policy
             return;
@@ -429,7 +432,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         // Checking for policy compatibility
         IPolicyFrameworkManager polManager = IPolicyFrameworkManager(policy(policyId).policyFramework);
         Licensing.Policy memory pol = _policies[policyId];
-        (bool rightsChanged, bytes memory newRights) = polManager.processisInherited(
+        (bool rightsChanged, bytes memory newRights) = polManager.processInheritedPolicies(
             _ipRights[pol.policyFramework][ipId],
             pol.data
         );

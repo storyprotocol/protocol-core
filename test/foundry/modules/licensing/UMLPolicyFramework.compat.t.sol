@@ -15,7 +15,6 @@ import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 
-import "forge-std/console2.sol";
 
 contract UMLPolicyFrameworkCompatibilityTest is Test {
     MockAccessController internal accessController = new MockAccessController();
@@ -51,7 +50,6 @@ contract UMLPolicyFrameworkCompatibilityTest is Test {
         vm.prank(alice);
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
-        console2.log("withAliceOwningDerivativeIp2");
         registry.linkIpToParents(licenseIds, ipId2, alice);
         _;
     }

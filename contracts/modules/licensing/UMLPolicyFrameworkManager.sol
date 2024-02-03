@@ -21,8 +21,6 @@ import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyF
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 import { LicensorApprovalChecker } from "contracts/modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
 
-import "forge-std/console2.sol";
-
 
 /// @title UMLPolicyFrameworkManager
 /// @notice This is the UML Policy Framework Manager, which implements the UML Policy Framework
@@ -155,11 +153,11 @@ contract UMLPolicyFrameworkManager is
         rights = abi.decode(rightsData, (UMLRights));
     }
 
-    function processisInherited(
+    function processInheritedPolicies(
         bytes memory ipRights,
         bytes memory policy
     ) external view onlyLicenseRegistry returns (bool changedRights, bytes memory newRights) {
-        // TODO
+        // TODO verify compatibility on multi parent inheritance
         return (false, bytes(""));
     }
 

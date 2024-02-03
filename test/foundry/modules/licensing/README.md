@@ -12,7 +12,7 @@ Bob owns IP1
 
 4) Bob can mint licenses with different policies, transfer to others, and the holders can make derivatives from each License, regardless of IP1 having several policies set✅
    
-5) Bob has set P1 and P2 in IP1, and gets license(LE) with PE from Emergence (IPE)
+5) Bob has set P1 and P2 in IP1, and gets license(LE) with PolicyEmergence(PE) from Emergence's World Bible IP (IPE)
    Bobs wants to set IPE as parent of IP1
     6.1) If the policies that IP1 has are in conflict with PE, revert 🚧
     6.2) If the policies that IP1 has are not in conflict with PE, OK -> IP1 adds PE, IPE parent of IP1 🚧
