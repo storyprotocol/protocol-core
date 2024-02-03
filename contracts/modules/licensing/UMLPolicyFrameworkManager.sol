@@ -39,11 +39,15 @@ contract UMLPolicyFrameworkManager is
 
     constructor(
         address accessController,
+        address ipAccountRegistry,
         address licRegistry,
         address royaltyModule,
         string memory name_,
         string memory licenseUrl_
-    ) BasePolicyFrameworkManager(licRegistry, name_, licenseUrl_) LicensorApprovalChecker(accessController) {
+    )
+        BasePolicyFrameworkManager(licRegistry, name_, licenseUrl_)
+        LicensorApprovalChecker(accessController, ipAccountRegistry)
+    {
         ROYALTY_MODULE = IRoyaltyModule(royaltyModule);
     }
 

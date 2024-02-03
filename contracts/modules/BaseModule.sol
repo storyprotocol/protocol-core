@@ -47,7 +47,7 @@ abstract contract BaseModule is IModule {
 
     /// @notice Authenticates the caller entity through the access controller.
     function _authenticate(address ipId) internal view {
-        if (!ACCESS_CONTROLLER.checkPermission(ipId, msg.sender, address(this), msg.sig)) {
+        try ACCESS_CONTROLLER.checkPermission(ipId, msg.sender, address(this), msg.sig) {} catch {
             revert Errors.Module_Unauthorized();
         }
     }

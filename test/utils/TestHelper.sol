@@ -62,6 +62,7 @@ contract TestHelper is Test, DeployHelper {
     function _setUMLPolicyFrameworkManager() internal {
         UMLPolicyFrameworkManager umlPfm = new UMLPolicyFrameworkManager(
             address(accessController),
+            address(ipAssetRegistry),
             address(licenseRegistry),
             address(royaltyModule),
             "UML_MINT_PAYMENT",

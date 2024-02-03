@@ -89,7 +89,7 @@ contract AccessController is IAccessController, Governable {
             revert Errors.AccessController__SignerIsZeroAddress();
         }
         if (!IIPAccountRegistry(IP_ACCOUNT_REGISTRY).isIpAccount(ipAccount_)) {
-            revert Errors.AccessController__IPAccountIsNotValid();
+            revert Errors.AccessController__IPAccountIsNotValid(ipAccount_);
         }
         // permission must be one of ABSTAIN, ALLOW, DENY
         if (permission_ > 2) {
@@ -111,30 +111,29 @@ contract AccessController is IAccessController, Governable {
     /// @param signer_ The account that signs the transaction.
     /// @param to_ The recipient of the transaction.
     /// @param func_ The function selector.
-    /// @return True if the function call is allowed, false otherwise.
     // solhint-disable code-complexity
     function checkPermission(
         address ipAccount_,
         address signer_,
         address to_,
         bytes4 func_
-    ) external view whenNotPaused returns (bool) {
+    ) external view whenNotPaused {
         // ipAccount_ can only call registered modules or set Permissions
         if (to_ != address(this) && !IModuleRegistry(MODULE_REGISTRY).isRegistered(to_)) {
-            return false;
+            revert Errors.AccessController__RecipientIsNotRegisteredModule(to_);
         }
         // Must be a valid IPAccount
         if (!IIPAccountRegistry(IP_ACCOUNT_REGISTRY).isIpAccount(ipAccount_)) {
-            return false;
+            revert Errors.AccessController__IPAccountIsNotValid(ipAccount_);
         }
         // Owner can call all functions of all modules
         if (IIPAccount(payable(ipAccount_)).owner() == signer_) {
-            return true;
+            return;
         }
         uint functionPermission = getPermission(ipAccount_, signer_, to_, func_);
         // Specific function permission overrides wildcard/general permission
         if (functionPermission == AccessPermission.ALLOW) {
-            return true;
+            return;
         }
 
         // If specific function permission is ABSTAIN, check module level permission
@@ -142,20 +141,23 @@ contract AccessController is IAccessController, Governable {
             uint8 modulePermission = getPermission(ipAccount_, signer_, to_, bytes4(0));
             // Return true if allow to call all functions of the module
             if (modulePermission == AccessPermission.ALLOW) {
-                return true;
+                return;
             }
             // If module level permission is ABSTAIN, check transaction signer level permission
             if (modulePermission == AccessPermission.ABSTAIN) {
                 if (getPermission(address(0), signer_, to_, func_) == AccessPermission.ALLOW) {
-                    return true;
+                    return;
                 }
-                // Return true if the ipAccount allow the signer can call all functions of all modules
-                // Otherwise, return false
-                return getPermission(ipAccount_, signer_, address(0), bytes4(0)) == AccessPermission.ALLOW;
+                // Pass if the ipAccount allow the signer can call all functions of all modules
+                // Otherwise, revert
+                if (getPermission(ipAccount_, signer_, address(0), bytes4(0)) == AccessPermission.ALLOW) {
+                    return;
+                }
+                revert Errors.AccessController__PermissionDenied(ipAccount_, signer_, to_, func_);
             }
-            return false;
+            revert Errors.AccessController__PermissionDenied(ipAccount_, signer_, to_, func_);
         }
-        return false;
+        revert Errors.AccessController__PermissionDenied(ipAccount_, signer_, to_, func_);
     }
 
     /// @notice Returns the permission level for a specific function call.

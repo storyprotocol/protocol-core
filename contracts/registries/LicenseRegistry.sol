@@ -21,9 +21,10 @@ import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyF
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
+import { AccessControlled } from "contracts/access/AccessControlled.sol";
 
 // TODO: consider disabling operators/approvals on creation
-contract LicenseRegistry is ERC1155, ILicenseRegistry {
+contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
     using IPAccountChecker for IIPAccountRegistry;
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -37,8 +38,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         bool active;
         bool inheritedPolicy;
     }
-    IAccessController public immutable ACCESS_CONTROLLER;
-    IIPAccountRegistry public immutable IP_ACCOUNT_REGISTRY;
 
     mapping(address framework => bool registered) private _registeredFrameworkManagers;
     mapping(bytes32 policyHash => uint256 policyId) private _hashedPolicies;
@@ -58,10 +57,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// This tracks the number of licenses registered in the protocol, it will not decrease when a license is burnt.
     uint256 private _totalLicenses;
 
-    constructor(address accessController, address ipAccountRegistry) ERC1155("") {
-        ACCESS_CONTROLLER = IAccessController(accessController);
-        IP_ACCOUNT_REGISTRY = IIPAccountRegistry(ipAccountRegistry);
-    }
+    constructor(
+        address accessController,
+        address ipAccountRegistry
+    ) ERC1155("") AccessControlled(accessController, ipAccountRegistry) {}
 
     /// @notice registers a policy framework manager into the contract, so it can add policy data for
     /// licenses.
@@ -87,14 +86,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// @param ipId to receive the policy
     /// @param polId id of the policy data
     /// @return indexOnIpId position of policy within the ipIds policy set
-    function addPolicyToIp(address ipId, uint256 polId) external returns (uint256 indexOnIpId) {
-        if (
-            msg.sender != ipId &&
-            !ACCESS_CONTROLLER.checkPermission(ipId, msg.sender, address(this), this.addPolicyToIp.selector)
-        ) {
-            revert Errors.LicenseRegistry__UnauthorizedAccess();
-        }
-
+    function addPolicyToIp(address ipId, uint256 polId) external verifyPermission(ipId) returns (uint256 indexOnIpId) {
         if (!isPolicyDefined(polId)) {
             revert Errors.LicenseRegistry__PolicyNotFound();
         }
@@ -144,10 +136,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         // If the IP ID doesn't have a policy (meaning, no permissionless derivatives)
         if (!_policiesPerIpId[licensorIp].contains(policyId)) {
             // We have to check if the caller is licensor or authorized to mint.
-            if (
-                msg.sender != licensorIp &&
-                !ACCESS_CONTROLLER.checkPermission(licensorIp, msg.sender, address(this), this.mintLicense.selector)
-            ) {
+            if (!_hasPermission(licensorIp)) {
                 revert Errors.LicenseRegistry__CallerNotLicensorAndPolicyNotSet();
             }
         }
@@ -188,14 +177,11 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// @param licenseIds The id of the licenses to burn
     /// @param childIpId The id of the child IP to be linked
     /// @param holder The address that holds the license
-    function linkIpToParents(uint256[] calldata licenseIds, address childIpId, address holder) external {
-        // check the caller is owner or authorized by the childIp
-        if (
-            msg.sender != childIpId &&
-            !ACCESS_CONTROLLER.checkPermission(childIpId, msg.sender, address(this), this.linkIpToParents.selector)
-        ) {
-            revert Errors.LicenseRegistry__UnauthorizedAccess();
-        }
+    function linkIpToParents(
+        uint256[] calldata licenseIds,
+        address childIpId,
+        address holder
+    ) external verifyPermission(childIpId) {
         uint256 licenses = licenseIds.length;
         address[] memory licensors = new address[](licenses);
         uint256[] memory values = new uint256[](licenses);

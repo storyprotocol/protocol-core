@@ -49,7 +49,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     AccessController public accessController;
 
     IPAssetRenderer public renderer;
-    IPAccountRegistry public ipAccountRegistry;
     IPAssetRegistry public ipAssetRegistry;
     LicenseRegistry public licenseRegistry;
     ModuleRegistry public moduleRegistry;
@@ -58,7 +57,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     MockERC721 public mockNft;
 
     IIPAccount public ipAccount;
-    //    ERC6551Registry public erc6551Registry;
 
     RegistrationModule public registrationModule;
     TaggingModule public taggingModule;
@@ -127,11 +125,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         moduleRegistry = new ModuleRegistry(address(governance));
         _postdeploy(contractKey, address(moduleRegistry));
 
-        contractKey = "IPAccountRegistry";
-        _predeploy(contractKey);
-        ipAccountRegistry = new IPAccountRegistry(ERC6551_REGISTRY, address(accessController), address(implementation));
-        _postdeploy(contractKey, address(ipAccountRegistry));
-
         // TODO: deployment sequence
         contractKey = "IPAssetRegistry";
         _predeploy(contractKey);
@@ -140,7 +133,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "LicenseRegistry";
         _predeploy(contractKey);
-        licenseRegistry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
+        licenseRegistry = new LicenseRegistry(address(accessController), address(ipAssetRegistry));
         _postdeploy(contractKey, address(licenseRegistry));
 
         contractKey = "IPResolver";
@@ -200,7 +193,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         _readDeployment();
 
         accessController = AccessController(_readAddress("main.AccessController"));
-        ipAccountRegistry = IPAccountRegistry(_readAddress("main.IPAccountRegistry"));
         moduleRegistry = ModuleRegistry(_readAddress("main.ModuleRegistry"));
         licenseRegistry = LicenseRegistry(_readAddress("main.LicenseRegistry"));
         ipAssetRegistry = IPAssetRegistry(_readAddress("main.IPAssetRegistry"));
@@ -233,7 +225,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     }
 
     function _configureAccessController() private {
-        accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
+        accessController.initialize(address(ipAssetRegistry), address(moduleRegistry));
     }
 
     function _configureModuleRegistry() private {
@@ -303,6 +295,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         UMLPolicyFrameworkManager umlAllTrue = new UMLPolicyFrameworkManager(
             address(accessController),
+            address(ipAssetRegistry),
             address(licenseRegistry),
             address(royaltyModule),
             "UML_ALL_TRUE",
@@ -311,6 +304,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         licenseRegistry.registerPolicyFrameworkManager(address(umlAllTrue));
         UMLPolicyFrameworkManager umlMintPayment = new UMLPolicyFrameworkManager(
             address(accessController),
+            address(ipAssetRegistry),
             address(licenseRegistry),
             address(royaltyModule),
             "UML_MINT_PAYMENT",
@@ -400,6 +394,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     }
 
     function getIpId(MockERC721 mnft, uint256 tokenId) public view returns (address ipId) {
-        return ipAccountRegistry.ipAccount(block.chainid, address(mnft), tokenId);
+        return ipAssetRegistry.ipAccount(block.chainid, address(mnft), tokenId);
     }
 }
