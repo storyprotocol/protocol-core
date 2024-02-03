@@ -14,19 +14,13 @@ import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { TestHelper } from "test/utils/TestHelper.sol";
 
-import "forge-std/console2.sol";
-
-contract UMLPolicyFrameworkMultiParentTest is Test {
-    MockAccessController internal accessController = new MockAccessController();
-    IPAccountRegistry internal ipAccountRegistry;
+contract UMLPolicyFrameworkMultiParentTest is TestHelper {
 
     LicenseRegistry internal registry;
 
     UMLPolicyFrameworkManager internal umlFramework;
-
-    MockERC721 nft = new MockERC721("MockERC721");
-
     string internal licenseUrl = "https://example.com/license";
     address internal bob = address(0x111);
     address internal ipId1;
@@ -41,6 +35,7 @@ contract UMLPolicyFrameworkMultiParentTest is Test {
     mapping(string => UMLPolicy) internal policies;
     mapping(string => uint256) internal policyIDs;
     mapping(address => address) internal ipIdToOwner;
+    address mockRoyaltyPolicy = address(0x555);
 
     modifier withPolicy(string memory name, bool commercial, bool derivatives, bool reciprocal) {
         _savePolicyInMapping(name, commercial, derivatives, reciprocal);
@@ -55,20 +50,25 @@ contract UMLPolicyFrameworkMultiParentTest is Test {
         _;
     }
 
-    function setUp() public {
+    function setUp() public override {
+        TestHelper.setUp();
         ipAccountRegistry = new IPAccountRegistry(
             address(new ERC6551Registry()),
             address(accessController),
             address(new IPAccountImpl())
         );
-        registry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
+        nft = erc721.ape;
+
         umlFramework = new UMLPolicyFrameworkManager(
             address(accessController),
-            address(registry),
+            address(ipAccountRegistry),
+            address(licenseRegistry),
+            address(royaltyModule),
             "UMLPolicyFrameworkManager",
             licenseUrl
         );
-        registry.registerPolicyFrameworkManager(address(umlFramework));
+
+        licenseRegistry.registerPolicyFrameworkManager(address(umlFramework));
 
         nft.mintId(bob, 1);
         nft.mintId(bob, 2);
@@ -130,7 +130,8 @@ contract UMLPolicyFrameworkMultiParentTest is Test {
             derivativesReciprocal: reciprocal,
             derivativesRevShare: 0,
             territories: emptyStringArray,
-            distributionChannels: emptyStringArray
+            distributionChannels: emptyStringArray,
+            royaltyPolicy: mockRoyaltyPolicy
         });
     }
 
