@@ -103,6 +103,33 @@ contract AccessController is IAccessController, Governable {
         emit PermissionSet(ipAccount_, signer_, to_, func_, permission_);
     }
 
+    function setBatchPermission(
+        address[] ipAccount,
+        address[] signer,
+        address[] to,
+        bytes4[] func,
+        uint8[] permission
+    ) external {
+        if (ipAccount.length == 0) {
+            revert Errors.AccessController__IPAccountIsEmpty();
+        }
+        if (ipAccount.length != signer.length) {
+            revert Errors.AccessController__SignerLengthMismatch();
+        }
+        if (ipAccount.length != to.length) {
+            revert Errors.AccessController__ToLengthMismatch();
+        }
+        if (ipAccount.length != func.length) {
+            revert Errors.AccessController__FuncLengthMismatch();
+        }
+        if (ipAccount.length != permission.length) {
+            revert Errors.AccessController__PermissionLengthMismatch();
+        }
+        for (uint256 i = 0; i < ipAccount.length; i++) {
+            setPermission(ipAccount[i], signer[i], to[i], func[i], permission[i]);
+        }
+    }
+
     /// @notice Checks if a specific function call is allowed.
     /// @dev This function checks the permission level for a specific function call.
     /// If a specific permission is set, it overrides the general (wildcard) permission.

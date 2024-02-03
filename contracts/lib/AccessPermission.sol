@@ -15,4 +15,12 @@ library AccessPermission {
 
     // DENY means the permission is denied to transaction signer to call the function.
     uint8 public constant DENY = 2;
+
+    struct Permission {
+        address ipAccount;
+        address signer;
+        address to;
+        bytes4 func;
+        uint8 permission;
+    }
 }

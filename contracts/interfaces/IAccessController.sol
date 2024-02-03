@@ -22,6 +22,14 @@ interface IAccessController {
     /// @param permission_ The permission level
     function setPermission(address ipAccount_, address signer_, address to_, bytes4 func_, uint8 permission_) external;
 
+    function setBatchPermission(
+        address[] ipAccount,
+        address[] signer,
+        address[] to,
+        bytes4[] func,
+        uint8[] permission
+    ) external;
+
     /// @notice Sets the permission for all IPAccounts
     /// @dev Only the protocol admin can set the global permission
     /// @param signer_ The account that signs the transaction
