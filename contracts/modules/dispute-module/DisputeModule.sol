@@ -116,12 +116,7 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
     /// @param _ipId The ipId
     /// @param _arbitrationPolicy The address of the arbitration policy
     function setArbitrationPolicy(address _ipId, address _arbitrationPolicy) external {
-        if (
-            msg.sender != _ipId &&
-            !ACCESS_CONTROLLER.checkPermission(_ipId, msg.sender, address(this), this.setArbitrationPolicy.selector)
-        ) {
-            revert Errors.DisputeModule__UnauthorizedAccess();
-        }
+        _authenticate(_ipId);
         if (!isWhitelistedArbitrationPolicy[_arbitrationPolicy]) revert Errors.DisputeModule__NotWhitelistedArbitrationPolicy();
 
         arbitrationPolicies[_ipId] = _arbitrationPolicy;
