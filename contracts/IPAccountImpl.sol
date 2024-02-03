@@ -99,6 +99,7 @@ contract IPAccountImpl is IERC165, IIPAccount {
         if (data_.length >= 4) {
             selector = bytes4(data_[:4]);
         }
+        // the check will revert if permission is denied
         IAccessController(accessController).checkPermission(address(this), signer_, to_, selector);
         return true;
     }
