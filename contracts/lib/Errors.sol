@@ -178,6 +178,8 @@ library Errors {
     error RoyaltyModule__NotWhitelistedRoyaltyToken();
     error RoyaltyModule__NoRoyaltyPolicySet();
     error RoyaltyModule__IncompatibleRoyaltyPolicy();
+    error RoyaltyModule__NotRegistrationModule();
+    error RoyaltyModule__ZeroLicensingModule();
 
     error RoyaltyPolicyLS__ZeroRoyaltyModule();
     error RoyaltyPolicyLS__ZeroLiquidSplitFactory();
