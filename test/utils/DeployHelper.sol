@@ -24,7 +24,7 @@ import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegist
 import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
-import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
+import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
@@ -99,8 +99,6 @@ contract DeployHelper is Test {
     address internal constant LIQUID_SPLIT_FACTORY = 0xF678Bae6091Ab6933425FE26Afc20Ee5F324c4aE;
     address internal constant LIQUID_SPLIT_MAIN = 0x57CBFA83f000a38C5b5881743E298819c503A559;
 
-
-
     function deploy() public virtual {
         u = UsersLib.createMockUsers(vm);
 
@@ -144,7 +142,12 @@ contract DeployHelper is Test {
         );
         taggingModule = new TaggingModule();
         royaltyModule = new RoyaltyModule(address(registrationModule), address(governance));
-        disputeModule = new DisputeModule(address(accessController), address(ipAssetRegistry), address(licenseRegistry), address(governance));
+        disputeModule = new DisputeModule(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(licenseRegistry),
+            address(governance)
+        );
         ipAssetRenderer = new IPAssetRenderer(
             address(ipAssetRegistry),
             address(licenseRegistry),
@@ -152,8 +155,18 @@ contract DeployHelper is Test {
             address(royaltyModule)
         );
 
-        arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), address(USDC), ARBITRATION_PRICE, address(governance));
-        arbitrationPolicySP2 = new ArbitrationPolicySP(address(disputeModule), address(USDC), ARBITRATION_PRICE, address(governance));
+        arbitrationPolicySP = new ArbitrationPolicySP(
+            address(disputeModule),
+            address(USDC),
+            ARBITRATION_PRICE,
+            address(governance)
+        );
+        arbitrationPolicySP2 = new ArbitrationPolicySP(
+            address(disputeModule),
+            address(USDC),
+            ARBITRATION_PRICE,
+            address(governance)
+        );
         royaltyPolicyLS = new RoyaltyPolicyLS(
             address(royaltyModule),
             address(licenseRegistry),
@@ -169,6 +182,7 @@ contract DeployHelper is Test {
         moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));
         moduleRegistry.registerModule("LICENSE_REGISTRY", address(licenseRegistry));
+        moduleRegistry.registerModule(DISPUTE_MODULE_KEY, address(disputeModule));
 
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
         royaltyModule.whitelistRoyaltyToken(address(USDC), true);

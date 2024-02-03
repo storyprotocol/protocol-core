@@ -190,7 +190,7 @@ contract TestDisputeModule is TestHelper {
     }
 
     function test_DisputeModule_setArbitrationPolicy_revert_UnauthorizedAccess() public {
-        vm.expectRevert(Errors.DisputeModule__UnauthorizedAccess.selector);
+        vm.expectRevert(Errors.Module_Unauthorized.selector);
         disputeModule.setArbitrationPolicy(ipAddr, address(arbitrationPolicySP2));
     }
 
