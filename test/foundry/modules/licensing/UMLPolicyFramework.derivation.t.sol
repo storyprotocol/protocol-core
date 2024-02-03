@@ -28,9 +28,7 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
     address internal alice = address(0x222);
     address internal ipId2;
     address internal don = address(0x333);
-    address internal licenseHolder = address(0x101);
     string[] internal emptyStringArray = new string[](0);
-    uint256 internal policyID;
     mapping(string => UMLPolicy) internal policies;
     mapping(string => uint256) internal policyIDs;
 
@@ -166,7 +164,7 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
         registry.addPolicyToIp(ipId2, policyIDs["other_policy"]);
     }
 
-    // Reciprocal
+    // RECIPROCAL DERIVATIVES
 
     function test_UMLPolicyFramework_reciprocal_DonMintsLicenseFromIp2()
         withPolicy("comm_reciprocal", true, true, true)
@@ -203,7 +201,6 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
         vm.prank(alice);
         registry.addPolicyToIp(ipId2, policyIDs["comm_reciprocal"]);
     }
-
 
     function _savePolicyInMapping(
         string memory name,

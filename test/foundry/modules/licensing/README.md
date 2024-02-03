@@ -43,19 +43,19 @@ Alice burns L1, P1 is set in IP2
 2.3) Alice tries to set P2 in IP2 -> Fails, reciprocal means no different policies allowed, 
 and you cannot add the same policy twice ✅
 
-# Commercial
-Bob owns IP1 
-Bob creates a license L1 with P1
-Alice owns IP2
-Alice burns L1, P1 is set in IP2
+# Commercial (Since derivatives cannot add policies, this is already supported)
+~~Bob owns IP1~~
+~~Bob creates a license L1 with P1~~
+~~Alice owns IP2~~
+~~Alice burns L1, P1 is set in IP2~~
 
-1) P1 is Non Commercial (assume derivatives allowed)
-1.1) Alice tries to mint a commercial license -> fail
-1.2) Alice tries to add a commercial policy -> fail
+~~1) P1 is Non Commercial (assume derivatives allowed)~~
+~~1.1) Alice tries to mint a commercial license -> fail~~
+~~1.2) Alice tries to add a commercial policy -> fail~~
 
-1) P1 is Commercial (assume derivatives allowed)
-1.1) Alice tries to mint a non commercial license -> OK? (if the only derivatives of derivatives are reciprocal, this fails)
-1.2) Alice tries to add a commercial policy -> OK? (if the only derivatives of derivatives are reciprocal, this fails)
+~~1) P1 is Commercial (assume derivatives allowed)~~
+~~1.1) Alice tries to mint a non commercial license -> OK? (if the only derivatives of derivatives are reciprocal, this fails)~~
+~~1.2) Alice tries to add a commercial policy -> OK? (if the only derivatives of derivatives are reciprocal, this fails)~~
 
 
 # Setting multiple parents
@@ -66,8 +66,10 @@ Bob mints L3 with P3 from IP3
 
 Alice owns IP4
 Alice wants to burn L1,L2 and L3 to link as parents for IP4
-1) If one is reciprocal, all Ps have to be the same or fail. Result is verify all 3, set 1 policy set for IP4🚧
-2) If no reciprocal, some parameters make the operation impossible, others are indifferent as long as validations pass🚧
+
+1) Reciprocal
+1.1) All licenses have the same reciprocal policy -> OK, result has 1 Policy
+1.2) Different policies, but at least 1 reciprocal -> Fail
 
 -- Attribution is indifferent
 -- Transferable is ???
