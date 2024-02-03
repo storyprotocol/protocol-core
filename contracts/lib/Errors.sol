@@ -130,6 +130,7 @@ library Errors {
     error LicenseRegistry__LicensorNotRegistered();
     error LicenseRegistry__CallerNotLicensorAndPolicyNotSet();
     error LicenseRegistry__DerivativesCannotAddPolicy();
+    error LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
 
     ////////////////////////////////////////////////////////////////////////////
     //                        LicenseRegistryAware                            //

@@ -14,16 +14,25 @@ import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 
 contract UMLPolicyFrameworkTest is Test {
     MockAccessController public accessController = new MockAccessController();
     IPAccountRegistry public ipAccountRegistry;
+    IPAssetRegistry internal ipAssetRegistry;
 
     LicenseRegistry public registry;
 
     UMLPolicyFrameworkManager public umlFramework;
 
-    MockERC721 nft = new MockERC721("MockERC721");
+    RoyaltyModule internal royaltyModule;
+
+    MockERC721 internal nft = new MockERC721("MockERC721");
+
+    ERC6551Registry internal erc6551Registry;
+
+    IPAccountImpl internal ipAccountImpl;
 
     string public licenseUrl = "https://example.com/license";
     address public ipId1;
@@ -33,17 +42,28 @@ contract UMLPolicyFrameworkTest is Test {
     string[] public emptyStringArray = new string[](0);
 
     function setUp() public {
+        erc6551Registry = new ERC6551Registry();
+        ipAccountImpl = new IPAccountImpl();
         ipAccountRegistry = new IPAccountRegistry(
-            address(new ERC6551Registry()),
+            address(erc6551Registry),
             address(accessController),
-            address(new IPAccountImpl())
+            address(ipAccountImpl)
         );
-        registry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
+        ipAssetRegistry = new IPAssetRegistry(
+            address(accessController),
+            address(erc6551Registry),
+            address(ipAccountImpl)
+        );
+        royaltyModule = new RoyaltyModule();
+        registry = new LicenseRegistry(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(royaltyModule)
+        );
         umlFramework = new UMLPolicyFrameworkManager(
             address(accessController),
             address(ipAccountRegistry),
             address(registry),
-            address(0), // TODO: mock royaltyModule
             "UMLPolicyFrameworkManager",
             licenseUrl
         );

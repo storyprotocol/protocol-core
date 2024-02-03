@@ -131,9 +131,18 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         ipAssetRegistry = new IPAssetRegistry(address(accessController), ERC6551_REGISTRY, address(implementation));
         _postdeploy(contractKey, address(ipAssetRegistry));
 
+        contractKey = "RoyaltyModule";
+        _predeploy(contractKey);
+        royaltyModule = new RoyaltyModule();
+        _postdeploy(contractKey, address(royaltyModule));
+
         contractKey = "LicenseRegistry";
         _predeploy(contractKey);
-        licenseRegistry = new LicenseRegistry(address(accessController), address(ipAssetRegistry));
+        licenseRegistry = new LicenseRegistry(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(royaltyModule)
+        );
         _postdeploy(contractKey, address(licenseRegistry));
 
         contractKey = "IPResolver";
@@ -297,7 +306,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             address(accessController),
             address(ipAssetRegistry),
             address(licenseRegistry),
-            address(royaltyModule),
             "UML_ALL_TRUE",
             "https://very-nice-verifier-license.com/{id}.json"
         );
@@ -306,7 +314,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             address(accessController),
             address(ipAssetRegistry),
             address(licenseRegistry),
-            address(royaltyModule),
             "UML_MINT_PAYMENT",
             "https://expensive-minting-license.com/{id}.json"
         );
@@ -389,7 +396,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         // /*///////////////////////////////////////////////////////////////
         //             LINK IPACCOUNTS TO PARENTS USING LICENSES
         // ////////////////////////////////////////////////////////////////*/
-       
+
         licenseRegistry.linkIpToParents(licenseIds, getIpId(mockNft, nftIds[4]), deployer);
     }
 

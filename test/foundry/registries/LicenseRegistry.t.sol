@@ -17,6 +17,8 @@ import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensin
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
+import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 
 // test
 import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy } from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
@@ -37,6 +39,14 @@ contract LicenseRegistryTest is Test {
 
     MockERC721 internal nft = new MockERC721("MockERC721");
 
+    ERC6551Registry internal erc6551Registry;
+
+    IPAccountImpl internal ipAccountImpl;
+
+    RoyaltyModule internal royaltyModule;
+
+    IPAssetRegistry internal ipAssetRegistry;
+
     string public licenseUrl = "https://example.com/license";
     address public ipId1;
     address public ipId2;
@@ -45,12 +55,24 @@ contract LicenseRegistryTest is Test {
 
     function setUp() public {
         // Registry
+        erc6551Registry = new ERC6551Registry();
+        ipAccountImpl = new IPAccountImpl();
         ipAccountRegistry = new IPAccountRegistry(
-            address(new ERC6551Registry()),
+            address(erc6551Registry),
             address(accessController),
-            address(new IPAccountImpl())
+            address(ipAccountImpl)
         );
-        registry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
+        ipAssetRegistry = new IPAssetRegistry(
+            address(accessController),
+            address(erc6551Registry),
+            address(ipAccountImpl)
+        );
+        royaltyModule = new RoyaltyModule();
+        registry = new LicenseRegistry(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(royaltyModule)
+        );
 
         // Setup Framework Managers (don't register PFM here, do in each test case)
         module1 = new MockPolicyFrameworkManager(
@@ -67,7 +89,6 @@ contract LicenseRegistryTest is Test {
             address(accessController),
             address(ipAccountRegistry),
             address(registry),
-            address(0), // TODO: mock royaltyModule
             "UMLPolicyFrameworkManager",
             licenseUrl
         );

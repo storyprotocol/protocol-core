@@ -87,7 +87,6 @@ contract Integration_Shared_LicensingHelper {
                 address(accessController),
                 address(ipAccountRegistry),
                 address(licenseRegistry),
-                address(royaltyModule),
                 "uml",
                 "license Url"
             )

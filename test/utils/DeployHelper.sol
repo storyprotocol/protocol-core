@@ -126,13 +126,18 @@ contract DeployHelper is Test {
             address(accessController),
             address(ipAccountImpl)
         );
-        licenseRegistry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
-        ipMetadataProvider = new IPMetadataProvider(address(moduleRegistry));
+        royaltyModule = new RoyaltyModule();
         ipAssetRegistry = new IPAssetRegistry(
             address(accessController),
             address(erc6551Registry),
             address(ipAccountImpl)
         );
+        licenseRegistry = new LicenseRegistry(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(royaltyModule)
+        );
+        ipMetadataProvider = new IPMetadataProvider(address(moduleRegistry));
         ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry), address(licenseRegistry));
         registrationModule = new RegistrationModule(
             address(accessController),

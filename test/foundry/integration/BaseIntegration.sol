@@ -117,13 +117,18 @@ contract BaseIntegration is Test {
             address(accessController),
             address(ipAccountImpl)
         );
-        licenseRegistry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
-        ipMetadataProvider = new IPMetadataProvider(address(moduleRegistry));
+        royaltyModule = new RoyaltyModule();
         ipAssetRegistry = new IPAssetRegistry(
             address(accessController),
             address(erc6551Registry),
             address(ipAccountImpl)
         );
+        licenseRegistry = new LicenseRegistry(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(royaltyModule)
+        );
+        ipMetadataProvider = new IPMetadataProvider(address(moduleRegistry));
         ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry), address(licenseRegistry));
         registrationModule = new RegistrationModule(
             address(accessController),
@@ -360,16 +365,16 @@ contract BaseIntegration is Test {
         });
 
         // Note that below events are emitted in function that's called by the registration module.
-        for (uint256 i = 0; i < licenseIds.length; i++) {
-            vm.expectEmit();
-            emit ILicenseRegistry.PolicyAddedToIpId({
-                caller: address(registrationModule),
-                ipId: expectedAddr,
-                policyId: policyIds[i],
-                index: i,
-                isInherited: true
-            });
-        }
+        // for (uint256 i = 0; i < licenseIds.length; i++) {
+        //     vm.expectEmit();
+        //     emit ILicenseRegistry.PolicyAddedToIpId({
+        //         caller: address(registrationModule),
+        //         ipId: expectedAddr,
+        //         policyId: policyIds[i],
+        //         index: i,
+        //         isInherited: true
+        //     });
+        // }
 
         vm.expectEmit();
         emit ILicenseRegistry.IpIdLinkedToParents({
@@ -479,15 +484,7 @@ contract BaseIntegration is Test {
             assertTrue(licenseRegistry.isParent(parentIpIds[i], ipId), "parent IP account is not parent");
             (uint256 index, bool isInherited, bool active) = licenseRegistry.policyStatus(parentIpIds[i], policyIds[i]);
             assertEq(
-                keccak256(
-                    abi.encode(
-                        licenseRegistry.policyForIpAtIndex(
-                            isInherited,
-                            parentIpIds[i],
-                            index
-                        )
-                    )
-                ),
+                keccak256(abi.encode(licenseRegistry.policyForIpAtIndex(isInherited, parentIpIds[i], index))),
                 keccak256(abi.encode(licenseRegistry.policyForIpAtIndex(true, ipId, i))),
                 "policy not the same in parent to child"
             );

@@ -9,19 +9,19 @@ import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortSt
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 // contracts
-import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
+import { AccessControlled } from "contracts/access/AccessControlled.sol";
 import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
 import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
-import { Errors } from "contracts/lib/Errors.sol";
-import { Licensing } from "contracts/lib/Licensing.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
+import { Errors } from "contracts/lib/Errors.sol";
+import { Licensing } from "contracts/lib/Licensing.sol";
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
-import { AccessControlled } from "contracts/access/AccessControlled.sol";
+import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 
 // TODO: consider disabling operators/approvals on creation
 contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
@@ -38,6 +38,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         bool active;
         bool isInherited;
     }
+
+    RoyaltyModule public immutable ROYALTY_MODULE;
 
     mapping(address framework => bool registered) private _registeredFrameworkManagers;
     mapping(bytes32 policyHash => uint256 policyId) private _hashedPolicies;
@@ -58,8 +60,11 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
 
     constructor(
         address accessController,
-        address ipAccountRegistry
-    ) ERC1155("") AccessControlled(accessController, ipAccountRegistry) {}
+        address ipAccountRegistry,
+        address royaltyModule
+    ) ERC1155("") AccessControlled(accessController, ipAccountRegistry) {
+        ROYALTY_MODULE = RoyaltyModule(royaltyModule);
+    }
 
     /// @notice registers a policy framework manager into the contract, so it can add policy data for
     /// licenses.
@@ -89,7 +94,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         if (!isPolicyDefined(polId)) {
             revert Errors.LicenseRegistry__PolicyNotFound();
         }
-        return _addPolicyIdToIp(ipId, polId, false);
+        return _addPolicyIdToIp({ ipId: ipId, policyId: polId, isInherited: false, skipIfDuplicate: false });
     }
 
     /// @notice Registers a policy into the contract. MUST be called by a registered
@@ -180,15 +185,18 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         address childIpId,
         address holder
     ) external verifyPermission(childIpId) {
-        uint256 licenses = licenseIds.length;
-        address[] memory licensors = new address[](licenses);
-        uint256[] memory values = new uint256[](licenses);
-        for (uint256 i = 0; i < licenses; i++) {
-            uint256 licenseId = licenseIds[i];
-            if (balanceOf(holder, licenseId) == 0) {
+        address[] memory licensors = new address[](licenseIds.length);
+        uint256[] memory values = new uint256[](licenseIds.length);
+        // If royalty policy address is address(0), this means no royalty policy to set.
+        // When a child passes in a royalty policy
+        address royaltyPolicyAddress = address(0);
+        uint32 royaltyDerivativeRevShare = 0;
+
+        for (uint256 i = 0; i < licenseIds.length; i++) {
+            if (balanceOf(holder, licenseIds[i]) == 0) {
                 revert Errors.LicenseRegistry__NotLicensee();
             }
-            Licensing.License memory licenseData = _licenses[licenseId];
+            Licensing.License memory licenseData = _licenses[licenseIds[i]];
             licensors[i] = licenseData.licensorIpId;
             // TODO: check licensor not part of a branch tagged by disputer
             if (licensors[i] == childIpId) {
@@ -197,25 +205,54 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
             // Verify linking params
             Licensing.Policy memory pol = policy(licenseData.policyId);
             if (ERC165Checker.supportsInterface(pol.policyFramework, type(ILinkParamVerifier).interfaceId)) {
-                if (
-                    !ILinkParamVerifier(pol.policyFramework).verifyLink(
-                        licenseId,
-                        msg.sender,
-                        childIpId,
-                        licensors[i],
-                        pol.data
-                    )
-                ) {
+                ILinkParamVerifier.VerifyLinkResponse memory response = ILinkParamVerifier(pol.policyFramework)
+                    .verifyLink(licenseIds[i], msg.sender, childIpId, licensors[i], pol.data);
+
+                if (!response.isLinkingAllowed) {
                     revert Errors.LicenseRegistry__LinkParentParamFailed();
                 }
+
+                // Compatibility check: If link says no royalty is required for license (licenseIds[i]) but
+                // another license requires royalty, revert.
+                if (!response.isRoyaltyRequired && royaltyPolicyAddress != address(0)) {
+                    revert Errors.LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
+                }
+
+                // If link says royalty is required for license (licenseIds[i]) and no royalty policy is set, set it.
+                // But if the index is NOT 0, this is previous licenses didn't set the royalty policy because they don't
+                // require royalty payment. So, revert in this case.
+                if (response.isRoyaltyRequired && royaltyPolicyAddress == address(0)) {
+                    if (i != 0) {
+                        revert Errors.LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
+                    }
+                    royaltyPolicyAddress = response.royaltyPolicy;
+                    royaltyDerivativeRevShare = response.royaltyDerivativeRevShare;
+                }
             }
-            // Add policy to kid
-            _addPolicyIdToIp(childIpId, licenseData.policyId, true);
+            // Add the policy of licenseIds[i] to the child. If the policy's already set from previous parents,
+            // then the addition will be skipped.
+            _addPolicyIdToIp({
+                ipId: childIpId,
+                policyId: licenseData.policyId,
+                isInherited: true,
+                skipIfDuplicate: true
+            });
             // Set parent
             _ipIdParents[childIpId].add(licensors[i]);
             values[i] = 1;
         }
         emit IpIdLinkedToParents(msg.sender, childIpId, licensors);
+
+        // Licenses unanimously require royalty.
+        if (royaltyPolicyAddress != address(0)) {
+            ROYALTY_MODULE.setRoyaltyPolicy(
+                childIpId,
+                royaltyPolicyAddress,
+                licensors,
+                abi.encode(royaltyDerivativeRevShare)
+            );
+        }
+
         // Burn licenses
         _burnBatch(holder, licenseIds, values);
     }
@@ -375,12 +412,21 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
     /// @param ipId the IP identifier
     /// @param policyId id of the policy data
     /// @param isInherited true if set in linkIpToParent, false otherwise
+    /// @param skipIfDuplicate if true, will skip if policyId is already set
     /// @return index of the policy added to the set
-    function _addPolicyIdToIp(address ipId, uint256 policyId, bool isInherited) private returns (uint256 index) {
+    function _addPolicyIdToIp(
+        address ipId,
+        uint256 policyId,
+        bool isInherited,
+        bool skipIfDuplicate
+    ) private returns (uint256 index) {
         _verifyCanAddPolicy(policyId, ipId, isInherited);
         // Try and add the policy into the set.
         EnumerableSet.UintSet storage _pols = _policySetPerIpId(isInherited, ipId);
         if (!_pols.add(policyId)) {
+            if (skipIfDuplicate) {
+                return _policySetups[ipId][policyId].index;
+            }
             revert Errors.LicenseRegistry__PolicyAlreadySetForIpId();
         }
         index = _pols.length() - 1;
