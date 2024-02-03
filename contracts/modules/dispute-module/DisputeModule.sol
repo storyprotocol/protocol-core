@@ -6,6 +6,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 // contracts
 import { DISPUTE_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { BaseModule } from "contracts/modules/BaseModule.sol";
+import { Governable } from "contracts/governance/Governable.sol";
 import { IDisputeModule } from "contracts/interfaces/modules/dispute/IDisputeModule.sol";
 import { IArbitrationPolicy } from "contracts/interfaces/modules/dispute/policies/IArbitrationPolicy.sol";
 import { Errors } from "contracts/lib/Errors.sol";
@@ -14,7 +15,7 @@ import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 /// @title Story Protocol Dispute Module
 /// @notice The Story Protocol dispute module acts as an enforcement layer for
 ///         that allows to raise disputes and resolve them through arbitration.
-contract DisputeModule is IDisputeModule, BaseModule, ReentrancyGuard {
+contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuard {
 
     /// @notice tag to represent the dispute is in dispute state waiting for judgement
     bytes32 public constant IN_DISPUTE = bytes32("IN_DISPUTE");
@@ -51,26 +52,22 @@ contract DisputeModule is IDisputeModule, BaseModule, ReentrancyGuard {
     /// @notice Arbitration policy for a given ipId
     mapping(address ipId => address arbitrationPolicy) public arbitrationPolicies;
 
-    /// @notice Restricts the calls to the governance address
-    modifier onlyGovernance() {
-        // TODO: where is governance address defined?
-        _;
-    }
-
     /// @notice Initializes the registration module contract
-    /// @param controller The access controller used for IP authorization
-    /// @param assetRegistry The address of the IP asset registry
-    /// @param licenseRegistry The address of the license registry
+    /// @param _controller The access controller used for IP authorization
+    /// @param _assetRegistry The address of the IP asset registry
+    /// @param _licenseRegistry The address of the license registry
+    /// @param _governance The address of the governance contract
     constructor(
-        address controller,
-        address assetRegistry,
-        address licenseRegistry
-    ) BaseModule(controller, assetRegistry, licenseRegistry) {}
+        address _controller,
+        address _assetRegistry,
+        address _licenseRegistry,
+        address _governance
+    ) BaseModule(_controller, _assetRegistry, _licenseRegistry) Governable(_governance) {}
 
     /// @notice Whitelists a dispute tag
     /// @param _tag The dispute tag
     /// @param _allowed Indicates if the dispute tag is whitelisted or not
-    function whitelistDisputeTags(bytes32 _tag, bool _allowed) external onlyGovernance {
+    function whitelistDisputeTags(bytes32 _tag, bool _allowed) external onlyProtocolAdmin {
         if (_tag == bytes32(0)) revert Errors.DisputeModule__ZeroDisputeTag();
 
         isWhitelistedDisputeTag[_tag] = _allowed;
@@ -81,7 +78,7 @@ contract DisputeModule is IDisputeModule, BaseModule, ReentrancyGuard {
     /// @notice Whitelists an arbitration policy
     /// @param _arbitrationPolicy The address of the arbitration policy
     /// @param _allowed Indicates if the arbitration policy is whitelisted or not
-    function whitelistArbitrationPolicy(address _arbitrationPolicy, bool _allowed) external onlyGovernance {
+    function whitelistArbitrationPolicy(address _arbitrationPolicy, bool _allowed) external onlyProtocolAdmin {
         if (_arbitrationPolicy == address(0)) revert Errors.DisputeModule__ZeroArbitrationPolicy();
 
         isWhitelistedArbitrationPolicy[_arbitrationPolicy] = _allowed;
@@ -95,7 +92,7 @@ contract DisputeModule is IDisputeModule, BaseModule, ReentrancyGuard {
     /// @param _allowed Indicates if the arbitration relayer is whitelisted or not
     function whitelistArbitrationRelayer(address _arbitrationPolicy, address _arbPolicyRelayer, bool _allowed)
         external
-        onlyGovernance
+        onlyProtocolAdmin
     {
         if (_arbitrationPolicy == address(0)) revert Errors.DisputeModule__ZeroArbitrationPolicy();
         if (_arbPolicyRelayer == address(0)) revert Errors.DisputeModule__ZeroArbitrationRelayer();
@@ -107,7 +104,7 @@ contract DisputeModule is IDisputeModule, BaseModule, ReentrancyGuard {
 
     /// @notice Sets the base arbitration policy
     /// @param _arbitrationPolicy The address of the arbitration policy
-    function setBaseArbitrationPolicy(address _arbitrationPolicy) external onlyGovernance {
+    function setBaseArbitrationPolicy(address _arbitrationPolicy) external onlyProtocolAdmin {
         if (!isWhitelistedArbitrationPolicy[_arbitrationPolicy]) revert Errors.DisputeModule__NotWhitelistedArbitrationPolicy();
 
         baseArbitrationPolicy = _arbitrationPolicy;
