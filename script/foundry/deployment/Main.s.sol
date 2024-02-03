@@ -165,7 +165,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "RoyaltyModule";
         _predeploy(contractKey);
-        royaltyModule = new RoyaltyModule();
+        royaltyModule = new RoyaltyModule(address(registrationModule), address(governance));
         _postdeploy(contractKey, address(royaltyModule));
 
         contractKey = "RoyaltyPolicyLS";
@@ -180,7 +180,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "DisputeModule";
         _predeploy(contractKey);
-        disputeModule = new DisputeModule(address(accessController), address(ipAssetRegistry), address(licenseRegistry));
+        disputeModule = new DisputeModule(address(accessController), address(ipAssetRegistry), address(licenseRegistry), address(governance));
         _postdeploy(contractKey, address(disputeModule));
 
         contractKey = "IPAssetRenderer";
