@@ -45,10 +45,10 @@ struct UMLRights {
     bool reciprocalSet;
 }
 
-struct UMLRights {
-    bool commercial;
-    bool derivable;
-    bool reciprocalSet;
+struct UMLInheritedPolicyAggregator {
+    bool commercialUse;
+    bool derivativesReciprocal;
+    uint256 lastPolicyId;
 }
 
 
@@ -64,5 +64,5 @@ interface IUMLPolicyFrameworkManager is IPolicyFrameworkManager {
     /// @return policy The UMLPolicy struct
     function getPolicy(uint256 policyId) external view returns (UMLPolicy memory policy);
     
-    function getRights(address ipId) external view returns (UMLRights memory rights);
+    function getAggregator(address ipId) external view returns (UMLInheritedPolicyAggregator memory rights);
 }

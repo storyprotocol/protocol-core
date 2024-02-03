@@ -23,7 +23,8 @@ interface IPolicyFrameworkManager is IPolicyVerifier {
     function policyToJson(bytes memory policyData) external view returns (string memory);
 
     function processInheritedPolicies(
-        bytes memory ipRights,
+        bytes memory aggregator,
+        uint256 policyId,
         bytes memory policy
-    ) external view returns (bool changedRights, bytes memory newRights);
+    ) external view returns (bool changedRights, bytes memory newAggregator, bool skipAdding);
 }

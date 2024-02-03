@@ -52,10 +52,11 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintP
     }
 
     function processInheritedPolicies(
-        bytes memory, // ipRights
+        bytes memory, // aggregator
+        uint256, // policyId
         bytes memory // policy
-    ) external view override returns (bool changedRights, bytes memory newRights) {
-        return (false, newRights);
+    ) external view override returns (bool changedRights, bytes memory newAggregator, bool skipAdding) {
+        return (false, newAggregator, false);
     }
 
     /// @dev Mock verifies the param by decoding it as a bool. If you want the verifier

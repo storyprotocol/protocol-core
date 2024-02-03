@@ -9,19 +9,16 @@ library UMLFrameworkErrors {
     //                         UMLPolicyFrameworkManager                      //
     ////////////////////////////////////////////////////////////////////////////
 
-    error UMLPolicyFrameworkManager_CommecialDisabled_CantAddAttribution();
-    error UMLPolicyFrameworkManager_CommecialDisabled_CantAddCommercializers();
-    error UMLPolicyFrameworkManager_CommecialDisabled_CantAddRevShare();
-    error UMLPolicyFrameworkManager_CommecialDisabled_CantAddDerivRevShare();
-    error UMLPolicyFrameworkManager_CommecialDisabled_CantAddRoyaltyPolicy();
-    error UMLPolicyFrameworkManager_CommecialEnabled_RoyaltyPolicyRequired();
-    error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddAttribution();
-    error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddApproval();
-    error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddReciprocal();
-    error UMLPolicyFrameworkManager_DerivativesDisabled_CantAddRevShare();
-    error UMLPolicyFrameworkManager_RightsNotFound();
-
-    error UMLPolicyFrameworkManager_NewCommercialPolicyNotAccepted();
-    error UMLPolicyFrameworkManager_NewDerivativesPolicyNotAccepted();
-    error UMLPolicyFrameworkManager_ReciprocaConfiglNegatesNewPolicy();
+    error UMLPolicyFrameworkManager__CommecialDisabled_CantAddAttribution();
+    error UMLPolicyFrameworkManager__CommecialDisabled_CantAddCommercializers();
+    error UMLPolicyFrameworkManager__CommecialDisabled_CantAddRevShare();
+    error UMLPolicyFrameworkManager__CommecialDisabled_CantAddDerivRevShare();
+    error UMLPolicyFrameworkManager__DerivativesDisabled_CantAddAttribution();
+    error UMLPolicyFrameworkManager__DerivativesDisabled_CantAddApproval();
+    error UMLPolicyFrameworkManager__DerivativesDisabled_CantAddReciprocal();
+    error UMLPolicyFrameworkManager__DerivativesDisabled_CantAddRevShare();
+    error UMLPolicyFrameworkManager__RightsNotFound();
+    
+    error UMLPolicyFrameworkManager__ReciprocalPolicyMismatch();
+    error UMLPolicyFrameworkManager__ReciprocalValueMismatch();
 }

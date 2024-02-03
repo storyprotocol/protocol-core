@@ -7,7 +7,7 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
-import { IUMLPolicyFrameworkManager, UMLPolicy, UMLRights } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
+import { IUMLPolicyFrameworkManager, UMLPolicy } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
@@ -76,8 +76,10 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
         vm.label(LIQUID_SPLIT_FACTORY, "LIQUID_SPLIT_FACTORY");
         vm.label(LIQUID_SPLIT_MAIN, "LIQUID_SPLIT_MAIN");
     }
+    /////////////////////////////////////////////////////////////
+    //////  SETTING POLICIES IN ORIGINAL WORK (NO PARENTS) ////// 
+    /////////////////////////////////////////////////////////////
 
-    /// STARTING FROM AN ORIGINAL WORK
     function test_UMLPolicyFramework_originalWork_bobAddsDifferentPoliciesAndAliceMints()
         withPolicy("comm_deriv", true, true, false)
         withPolicy("comm_non_deriv", true, false, false)
@@ -100,9 +102,6 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
         uint256 licenseId2 = licenseRegistry.mintLicense(policyIDs["comm_non_deriv"], ipId1, 1, don);
         assertEq(licenseRegistry.balanceOf(don, licenseId2), 1, "Don doesn't have license2");
     }
-
-    /// TODO: STARTING FROM AN ORIGINAL WORK, WITH APPROVALS and UPFRONT PAY
-
 
     function test_UMLPolicyFramework_originalWork_bobMintsWithDifferentPolicies()
         withPolicy("comm_deriv", true, true, false)
@@ -127,8 +126,10 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
         // Can bob disable some policies?
     }
 
+    /////////////////////////////////////////////////////////////////
+    //////  SETTING POLICIES IN DERIVATIVE WORK (WITH PARENTS) ////// 
+    /////////////////////////////////////////////////////////////////
 
-    // STARTING FROM DERIVATIVE WORK
     function test_UMLPolicyFramework_derivative_revert_cantMintDerivativeOfDerivative()
         withPolicy("comm_non_deriv", true, false, false)
         withAliceOwningDerivativeIp2("comm_non_deriv")
@@ -164,7 +165,9 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
         registry.addPolicyToIp(ipId2, policyIDs["other_policy"]);
     }
 
-    // RECIPROCAL DERIVATIVES
+    /////////////////////////////////////////////////////////////////
+    //////                RECIPROCAL DERIVATIVES               ////// 
+    /////////////////////////////////////////////////////////////////
 
     function test_UMLPolicyFramework_reciprocal_DonMintsLicenseFromIp2()
         withPolicy("comm_reciprocal", true, true, true)

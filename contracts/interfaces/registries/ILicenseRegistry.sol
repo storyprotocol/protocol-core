@@ -143,7 +143,7 @@ interface ILicenseRegistry {
         uint256 policyId
     ) external view returns (uint256 index, bool isInherited, bool active);
 
-    function rightsData(address framework, address ipId) external view returns (bytes memory);
+    function policyAggregatorData(address framework, address ipId) external view returns (bytes memory);
 
     /// @notice True if holder is the licensee for the license (owner of the license NFT), or derivative IP owner if
     /// the license was added to the IP by linking (burning a license)

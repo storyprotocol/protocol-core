@@ -97,9 +97,10 @@ contract MockPolicyFrameworkManager is
     }
     
     function processInheritedPolicies(
-        bytes memory ipRights,
-        bytes memory policy
-    ) external pure override returns (bool changedRights, bytes memory newRights) {
-        return (false, ipRights);
+        bytes memory aggregator,
+        uint256, // policyId,
+        bytes memory // policy
+    ) external pure override returns (bool changedRights, bytes memory newAggregator, bool skipAdding) {
+        return (false, aggregator, false);
     }
 }

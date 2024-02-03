@@ -7,7 +7,7 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
-import { IUMLPolicyFrameworkManager, UMLPolicy, UMLRights } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
+import { IUMLPolicyFrameworkManager, UMLPolicy, UMLInheritedPolicyAggregator } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
@@ -40,6 +40,7 @@ contract UMLPolicyFrameworkMultiParentTest is Test {
     string[] internal emptyStringArray = new string[](0);
     mapping(string => UMLPolicy) internal policies;
     mapping(string => uint256) internal policyIDs;
+    mapping(address => address) internal ipIdToOwner;
 
     modifier withPolicy(string memory name, bool commercial, bool derivatives, bool reciprocal) {
         _savePolicyInMapping(name, commercial, derivatives, reciprocal);
@@ -48,6 +49,7 @@ contract UMLPolicyFrameworkMultiParentTest is Test {
     }
 
     modifier withLicense(string memory policyName, address ipId, address owner) {
+        vm.prank(ipIdToOwner[ipId]);
         uint256 licenseId = registry.mintLicense(policyIDs[policyName], ipId, 1, owner);
         licenses.push(licenseId);
         _;
@@ -74,10 +76,13 @@ contract UMLPolicyFrameworkMultiParentTest is Test {
         nft.mintId(alice, 4);
 
         ipId1 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 1);
+        ipIdToOwner[ipId1] = bob;
         ipId2 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 2);
+        ipIdToOwner[ipId2] = bob;
         ipId3 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 3);
+        ipIdToOwner[ipId3] = bob;
         ipId4 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 4);
-
+        ipIdToOwner[ipId4] = alice;
         vm.label(bob, "Bob");
         vm.label(alice, "Alice");
         vm.label(ipId1, "IP1");
