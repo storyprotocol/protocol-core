@@ -13,7 +13,10 @@ import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
-import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
+import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
+import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
+import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
+import { IUMLPolicyFrameworkManager, UMLPolicy, UMLRights } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 import { LicensorApprovalChecker } from "contracts/modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
@@ -155,13 +158,12 @@ contract UMLPolicyFrameworkManager is
         policy = abi.decode(protocolPolicy.data, (UMLPolicy));
     }
 
-    /// @notice gets the aggregation data for inherited policies, decoded for the framework
-    function getAggregator(address ipId) external view returns (UMLAggregator memory rights) {
-        bytes memory policyAggregatorData = LICENSE_REGISTRY.policyAggregatorData(address(this), ipId);
-        if (policyAggregatorData.length == 0) {
-            revert UMLFrameworkErrors.UMLPolicyFrameworkManager__RightsNotFound();
+    function getRights(address ipId) external view returns (UMLRights memory rights) {
+        bytes memory rightsData = LICENSE_REGISTRY.rightsData(address(this), ipId);
+        if (rightsData.length == 0) {
+            revert UMLFrameworkErrors.UMLPolicyFrameworkManager_RightsNotFound();
         }
-        rights = abi.decode(policyAggregatorData, (UMLAggregator));
+        rights = abi.decode(rightsData, (UMLRights));
     }
 
     /// Called by licenseRegistry to verify compatibility when inheriting from a parent IP
@@ -175,72 +177,9 @@ contract UMLPolicyFrameworkManager is
         bytes memory aggregator,
         uint256 policyId,
         bytes memory policy
-    ) external view onlyLicenseRegistry returns (bool changedAgg, bytes memory newAggregator) {
-        UMLAggregator memory agg;
-        UMLPolicy memory newPolicy = abi.decode(policy, (UMLPolicy));
-        if (aggregator.length == 0) {
-            // Initialize the aggregator
-            agg = UMLAggregator({
-                commercial: newPolicy.commercialUse,
-                derivatives: newPolicy.derivativesAllowed,
-                derivativesReciprocal: newPolicy.derivativesReciprocal,
-                lastPolicyId: policyId,
-                territoriesAcc: keccak256(abi.encode(newPolicy.territories)),
-                distributionChannelsAcc: keccak256(abi.encode(newPolicy.distributionChannels)),
-                contentRestrictionsAcc: keccak256(abi.encode(newPolicy.contentRestrictions))
-            });
-            return (true, abi.encode(agg));
-        } else {
-            agg = abi.decode(aggregator, (UMLAggregator));
-
-            // Either all are reciprocal or none are
-            if (agg.derivativesReciprocal != newPolicy.derivativesReciprocal) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalValueMismatch();
-            } else if (agg.derivativesReciprocal && newPolicy.derivativesReciprocal) {
-                // Ids are uniqued because we hash them to compare on creation in LicenseRegistry,
-                // so we can compare the ids safely.
-                if (agg.lastPolicyId != policyId) {
-                    revert UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalButDifferentPolicyIds();
-                }
-            } else {
-                // Both non reciprocal
-                if (agg.commercial != newPolicy.commercialUse) {
-                    revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialValueMismatch();
-                }
-                if (agg.derivatives != newPolicy.derivativesAllowed) {
-                    revert UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesValueMismatch();
-                }
-
-                bytes32 newHash = _verifHashedParams(
-                    agg.territoriesAcc,
-                    keccak256(abi.encode(newPolicy.territories)),
-                    _EMPTY_STRING_ARRAY_HASH
-                );
-                if (newHash != agg.territoriesAcc) {
-                    agg.territoriesAcc = newHash;
-                    changedAgg = true;
-                }
-                newHash = _verifHashedParams(
-                    agg.distributionChannelsAcc,
-                    keccak256(abi.encode(newPolicy.distributionChannels)),
-                    _EMPTY_STRING_ARRAY_HASH
-                );
-                if (newHash != agg.distributionChannelsAcc) {
-                    agg.distributionChannelsAcc = newHash;
-                    changedAgg = true;
-                }
-                newHash = _verifHashedParams(
-                    agg.contentRestrictionsAcc,
-                    keccak256(abi.encode(newPolicy.contentRestrictions)),
-                    _EMPTY_STRING_ARRAY_HASH
-                );
-                if (newHash != agg.contentRestrictionsAcc) {
-                    agg.contentRestrictionsAcc = newHash;
-                    changedAgg = true;
-                }
-            }
-        }
-        return (changedAgg, abi.encode(agg));
+    ) external view onlyLicenseRegistry returns (bool changedRights, bytes memory newRights) {
+        // TODO verify compatibility on multi parent inheritance
+        return (false, bytes(""));
     }
 
     function policyToJson(bytes memory policyData) public view returns (string memory) {
@@ -339,7 +278,7 @@ contract UMLPolicyFrameworkManager is
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddAttribution();
             }
             if (policy.commercializers.length > 0) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddCommercializers();
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddCommercializers();
             }
             if (policy.commercialRevShare > 0) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddRevShare();
@@ -372,32 +311,9 @@ contract UMLPolicyFrameworkManager is
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddReciprocal();
             }
             if (policy.derivativesRevShare > 0) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddRevShare();
+                // additional !policy.commecialUse is already checked in `_verifyComercialUse`
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddRevShare();
             }
-        }
-    }
-
-    /// Verifies compatibility for params where the valid options are either permissive value, or equal params
-    /// @param oldHash hash of the old param
-    /// @param newHash hash of the new param
-    /// @param permissive hash of the most permissive param
-    /// @return result the hash that's different from the permissive hash
-    function _verifHashedParams(
-        bytes32 oldHash,
-        bytes32 newHash,
-        bytes32 permissive
-    ) internal view returns (bytes32 result) {
-        if (oldHash == newHash) {
-            return newHash;
-        }
-        if (oldHash != permissive && newHash != permissive) {
-            revert UMLFrameworkErrors.UMLPolicyFrameworkManager__StringArrayMismatch();
-        }
-        if (oldHash != permissive) {
-            return oldHash;
-        }
-        if (newHash != permissive) {
-            return newHash;
         }
     }
 }

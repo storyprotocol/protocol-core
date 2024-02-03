@@ -19,6 +19,8 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 
+import "forge-std/console2.sol";
+
 // TODO: consider disabling operators/approvals on creation
 contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
     using IPAccountChecker for IIPAccountRegistry;
@@ -434,13 +436,17 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
     /// @param isInherited true if set in linkIpToParent, false otherwise
     /// @param skipIfDuplicate if true, will skip if policyId is already set
     /// @return index of the policy added to the set
-    function _addPolicyIdToIp(
-        address ipId,
-        uint256 policyId,
-        bool isInherited,
-        bool skipIfDuplicate
-    ) private returns (uint256 index) {
-        _verifyCanAddPolicy(policyId, ipId, isInherited);
+    function _addPolicyIdToIp(address ipId, uint256 policyId, bool isInherited) private returns (uint256 index) {
+        bool skipAdding = _verifyCanAddPolicy(policyId, ipId, isInherited);
+        console2.log("skipAdding", skipAdding);
+        if (skipAdding) {
+            // We have multiple parents, and the policy is already set.
+            if (!_policySetups[ipId][policyId].isSet) {
+                // This should not happen, but framework is not following the rules
+                revert Errors.LicenseRegistry__CannotSkipAddingPolicy();
+            }
+            return _policySetups[ipId][policyId].index;
+        }
         // Try and add the policy into the set.
         EnumerableSet.UintSet storage _pols = _policySetPerIpId(isInherited, ipId);
         if (!_pols.add(policyId)) {
@@ -463,7 +469,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         return index;
     }
 
-    function _verifyCanAddPolicy(uint256 policyId, address ipId, bool isInherited) private {
+    function _verifyCanAddPolicy(uint256 policyId, address ipId, bool isInherited) private returns (bool skipAdding) {
         bool ipIdIsDerivative = _policySetPerIpId(true, ipId).length() > 0;
         if (
             // Original work, owner is setting policies
@@ -471,7 +477,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
             (!ipIdIsDerivative && !isInherited)
         ) {
             // Can add policy
-            return;
+            return false;
         } else if (ipIdIsDerivative && !isInherited) {
             // Owner of derivative is trying to set policies
             revert Errors.LicenseRegistry__DerivativesCannotAddPolicy();
@@ -480,14 +486,16 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         // Checking for policy compatibility
         IPolicyFrameworkManager polManager = IPolicyFrameworkManager(policy(policyId).policyFramework);
         Licensing.Policy memory pol = _policies[policyId];
-        (bool aggregatorChanged, bytes memory newAggregator) = polManager.processInheritedPolicies(
+        (bool rightsChanged, bytes memory newAggregator, bool skip) = polManager.processInheritedPolicies(
             _ipRights[pol.policyFramework][ipId],
             policyId,
             pol.data
         );
-        if (aggregatorChanged) {
+        if (rightsChanged) {
             _ipRights[pol.policyFramework][ipId] = newAggregator;
+            emit InheritedPolicyAggregatorUpdated(ipId, newAggregator);
         }
+        return skip;
     }
 
     function _verifyRoyaltyRequired(bool) private {}

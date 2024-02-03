@@ -105,7 +105,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
         umlPolicy.commercialAttribution = false;
         umlPolicy.commercializers = new string[](1);
         umlPolicy.commercializers[0] = "test";
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddCommercializers.selector);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddCommercializers.selector);
         umlFramework.registerPolicy(umlPolicy);
         // No rev share should be set; revert
         umlPolicy.commercializers = new string[](0);
@@ -144,6 +144,13 @@ contract UMLPolicyFrameworkTest is TestHelper {
         UMLPolicy memory policy = umlFramework.getPolicy(policyId);
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(umlPolicy)));
     }
+
+    function test_UMLPolicyFrameworkManager__commercialUse_revenueShareSetOnLinking() public {
+        // TODO
+    }
+
+    // DERIVATIVE TERMS
+    function test_UMLPolicyFrameworkManager__derivatives_notAllowed_revert_creating2ndDerivative() public {}
 
     function test_UMLPolicyFrameworkManager__derivatives_notAllowed_revert_settingIncompatibleTerms() public {
         // If no derivative values allowed
@@ -207,9 +214,11 @@ contract UMLPolicyFrameworkTest is TestHelper {
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(umlPolicy)));
     }
 
-    /////////////////////////////////////////////////////////////
-    //////                  APPROVAL TERMS                 ////// 
-    /////////////////////////////////////////////////////////////
+    function test_UMLPolicyFrameworkManager__derivatives_setRevenueShareWhenLinking2ndDerivative() public {
+        // TODO
+    }
+
+    // APPROVAL TERMS
 
     function test_UMLPolicyFrameworkManager_derivatives_withApproval_revert_linkNotApproved() public {
         uint256 policyId = umlFramework.registerPolicy(
@@ -287,9 +296,11 @@ contract UMLPolicyFrameworkTest is TestHelper {
         assertTrue(licenseRegistry.isParent(ipId1, ipId2));
     }
 
-    /////////////////////////////////////////////////////////////
-    //////                  TRANSFER TERMS                 ////// 
-    /////////////////////////////////////////////////////////////
+    function test_UMLPolicyFrameworkManager__derivatives_withApproval_revert_approverNotLicensor() public {
+        // TODO: ACL
+    }
+
+    // TRANSFER TERMS
 
     function test_UMLPolicyFrameworkManager__transferrable() public {
         UMLPolicy memory umlPolicy = UMLPolicy({
@@ -351,4 +362,11 @@ contract UMLPolicyFrameworkTest is TestHelper {
         vm.stopPrank();
     }
 
+    function test_UMLPolicyFrameworkManager__mintFee() public {
+        // TODO
+    }
+
+    function test_tokenUri() public {
+        // TODO
+    }
 }

@@ -81,9 +81,8 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
         vm.label(LIQUID_SPLIT_FACTORY, "LIQUID_SPLIT_FACTORY");
         vm.label(LIQUID_SPLIT_MAIN, "LIQUID_SPLIT_MAIN");
     }
-
     /////////////////////////////////////////////////////////////
-    //////  SETTING POLICIES IN ORIGINAL WORK (NO PARENTS) //////
+    //////  SETTING POLICIES IN ORIGINAL WORK (NO PARENTS) ////// 
     /////////////////////////////////////////////////////////////
 
     function test_UMLPolicyFramework_originalWork_bobAddsDifferentPoliciesAndAliceMints()
@@ -140,8 +139,10 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
         // Can bob disable some policies?
     }
 
+    /////////////////////////////////////////////////////////////////
+    //////  SETTING POLICIES IN DERIVATIVE WORK (WITH PARENTS) ////// 
+    /////////////////////////////////////////////////////////////////
 
-    // STARTING FROM DERIVATIVE WORK
     function test_UMLPolicyFramework_derivative_revert_cantMintDerivativeOfDerivative()
         withPolicy("comm_non_deriv", true, false, false)
         withAliceOwningDerivativeIp2("comm_non_deriv")
@@ -177,7 +178,9 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
         registry.addPolicyToIp(ipId2, policyIDs["other_policy"]);
     }
 
-    // RECIPROCAL DERIVATIVES
+    /////////////////////////////////////////////////////////////////
+    //////                RECIPROCAL DERIVATIVES               ////// 
+    /////////////////////////////////////////////////////////////////
 
     function test_UMLPolicyFramework_reciprocal_DonMintsLicenseFromIp2()
         withPolicy("comm_reciprocal", true, true, true)

@@ -31,30 +31,5 @@ interface IPolicyFrameworkManager is IERC165 {
         bytes memory aggregator,
         uint256 policyId,
         bytes memory policy
-    ) external view returns (bool changedAgg, bytes memory newAggregator);
-
-    function verifyMint(
-        address caller,
-        bool policyWasInherited,
-        address licensor,
-        address receiver,
-        uint256 mintAmount,
-        bytes memory policyData
-    ) external returns (bool);
-
-    function verifyLink(
-        uint256 licenseId,
-        address caller,
-        address ipId,
-        address parentIpId,
-        bytes calldata policyData
-    ) external returns (VerifyLinkResponse memory);
-
-    function verifyTransfer(
-        uint256 licenseId,
-        address from,
-        address to,
-        uint256 amount,
-        bytes memory policyData
-    ) external returns (bool);
+    ) external view returns (bool changedRights, bytes memory newAggregator, bool skipAdding);
 }

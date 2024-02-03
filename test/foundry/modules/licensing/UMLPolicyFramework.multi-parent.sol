@@ -7,7 +7,7 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
-import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
+import { IUMLPolicyFrameworkManager, UMLPolicy, UMLInheritedPolicyAggregator } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
@@ -37,6 +37,9 @@ contract UMLPolicyFrameworkMultiParentTest is Test {
 
     uint256[] internal licenses;
 
+    string[] internal emptyStringArray = new string[](0);
+    mapping(string => UMLPolicy) internal policies;
+    mapping(string => uint256) internal policyIDs;
     mapping(address => address) internal ipIdToOwner;
 
     modifier withUMLPolicySimple(string memory name, bool commercial, bool derivatives, bool reciprocal) {
@@ -46,9 +49,8 @@ contract UMLPolicyFrameworkMultiParentTest is Test {
     }
 
     modifier withLicense(string memory policyName, address ipId, address owner) {
-        uint256 policyId = _getUmlPolicyId(policyName);
         vm.prank(ipIdToOwner[ipId]);
-        uint256 licenseId = licenseRegistry.mintLicense(policyId, ipId, 1, owner);
+        uint256 licenseId = registry.mintLicense(policyIDs[policyName], ipId, 1, owner);
         licenses.push(licenseId);
         _;
     }
