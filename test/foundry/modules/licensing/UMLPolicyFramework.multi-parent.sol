@@ -14,11 +14,19 @@ import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { TestHelper } from "test/utils/TestHelper.sol";
 
-contract UMLPolicyFrameworkMultiParentTest is TestHelper {
+import "forge-std/console2.sol";
+
+contract UMLPolicyFrameworkMultiParentTest is Test {
+    MockAccessController internal accessController = new MockAccessController();
+    IPAccountRegistry internal ipAccountRegistry;
+
+    LicenseRegistry internal registry;
 
     UMLPolicyFrameworkManager internal umlFramework;
+
+    MockERC721 nft = new MockERC721("MockERC721");
+
     string internal licenseUrl = "https://example.com/license";
     address internal bob = address(0x111);
     address internal ipId1;
