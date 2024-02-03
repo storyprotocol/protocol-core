@@ -133,7 +133,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "RoyaltyModule";
         _predeploy(contractKey);
-        royaltyModule = new RoyaltyModule();
+        royaltyModule = new RoyaltyModule(address(governance));
         _postdeploy(contractKey, address(royaltyModule));
 
         contractKey = "LicenseRegistry";
@@ -165,11 +165,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         taggingModule = new TaggingModule();
         _postdeploy(contractKey, address(taggingModule));
 
-        contractKey = "RoyaltyModule";
-        _predeploy(contractKey);
-        royaltyModule = new RoyaltyModule(address(registrationModule), address(governance));
-        _postdeploy(contractKey, address(royaltyModule));
-
         contractKey = "RoyaltyPolicyLS";
         _predeploy(contractKey);
         royaltyPolicyLS = new RoyaltyPolicyLS(
@@ -182,7 +177,12 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "DisputeModule";
         _predeploy(contractKey);
-        disputeModule = new DisputeModule(address(accessController), address(ipAssetRegistry), address(licenseRegistry), address(governance));
+        disputeModule = new DisputeModule(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(licenseRegistry),
+            address(governance)
+        );
         _postdeploy(contractKey, address(disputeModule));
 
         contractKey = "IPAssetRenderer";
@@ -226,15 +226,16 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     }
 
     function _configureDeployment() private {
-        _configureAccessController();
+        _configInitialize();
         _configureModuleRegistry();
         _configureInteractions();
         // _configureIPAccountRegistry();
         // _configureIPAssetRegistry();
     }
 
-    function _configureAccessController() private {
+    function _configInitialize() private {
         accessController.initialize(address(ipAssetRegistry), address(moduleRegistry));
+        royaltyModule.initialize(address(registrationModule));
     }
 
     function _configureModuleRegistry() private {

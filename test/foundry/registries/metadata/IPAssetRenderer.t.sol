@@ -102,30 +102,36 @@ contract IPAssetRendererTest is BaseTest {
             address(erc6551Registry),
             address(ipAccountImpl)
         );
-        RoyaltyModule royaltyModule = new RoyaltyModule();
+        RoyaltyModule royaltyModule = new RoyaltyModule(address(governance));
         licenseRegistry = new LicenseRegistry(
             address(accessController),
             address(ipAssetRegistry),
             address(royaltyModule)
         );
-
-        accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-
-        vm.prank(alice);
-        uint256 tokenId = erc721.mintId(alice, 99);
-
         resolver = new IPResolver(
             address(accessController),
             address(ipAssetRegistry),
             address(licenseRegistry)
         );
-
         renderer = new IPAssetRenderer(
             address(ipAssetRegistry),
             address(licenseRegistry),
             taggingModule,
             address(royaltyModule)
         );
+        registrationModule = new RegistrationModule(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(licenseRegistry),
+            address(resolver)
+        );
+
+        accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
+        royaltyModule.initialize(address(registrationModule));
+
+        vm.prank(alice);
+        uint256 tokenId = erc721.mintId(alice, 99);
+
         bytes memory metadata = abi.encode(
             IP.MetadataV1({
                 name: IP_NAME,

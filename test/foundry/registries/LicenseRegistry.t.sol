@@ -10,6 +10,7 @@ import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 
 // contracts
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
+import { Governance } from "contracts/governance/Governance.sol";
 import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
@@ -55,6 +56,7 @@ contract LicenseRegistryTest is Test {
 
     function setUp() public {
         // Registry
+        Governance governance = new Governance(address(this));
         erc6551Registry = new ERC6551Registry();
         ipAccountImpl = new IPAccountImpl();
         ipAccountRegistry = new IPAccountRegistry(
@@ -67,7 +69,7 @@ contract LicenseRegistryTest is Test {
             address(erc6551Registry),
             address(ipAccountImpl)
         );
-        royaltyModule = new RoyaltyModule();
+        royaltyModule = new RoyaltyModule(address(governance));
         registry = new LicenseRegistry(
             address(accessController),
             address(ipAssetRegistry),

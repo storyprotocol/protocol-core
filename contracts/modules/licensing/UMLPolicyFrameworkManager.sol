@@ -77,7 +77,7 @@ contract UMLPolicyFrameworkManager is
     ) external override onlyLicenseRegistry returns (ILinkParamVerifier.VerifyLinkResponse memory) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
         ILinkParamVerifier.VerifyLinkResponse memory response = ILinkParamVerifier.VerifyLinkResponse({
-            isLinkingAllowed: policy.derivativesAllowed,
+            isLinkingAllowed: true, // If you successfully mint and now hold a license, you have the right to link.
             isRoyaltyRequired: false,
             royaltyPolicy: address(0),
             royaltyDerivativeRevShare: 0

@@ -117,7 +117,7 @@ contract BaseIntegration is Test {
             address(accessController),
             address(ipAccountImpl)
         );
-        royaltyModule = new RoyaltyModule();
+        royaltyModule = new RoyaltyModule(address(governance));
         ipAssetRegistry = new IPAssetRegistry(
             address(accessController),
             address(erc6551Registry),
@@ -137,8 +137,12 @@ contract BaseIntegration is Test {
             address(ipResolver)
         );
         taggingModule = new TaggingModule();
-        royaltyModule = new RoyaltyModule(address(registrationModule), address(governance));
-        disputeModule = new DisputeModule(address(accessController), address(ipAssetRegistry), address(licenseRegistry), address(governance));
+        disputeModule = new DisputeModule(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(licenseRegistry),
+            address(governance)
+        );
         ipAssetRenderer = new IPAssetRenderer(
             address(ipAssetRegistry),
             address(licenseRegistry),
@@ -146,7 +150,12 @@ contract BaseIntegration is Test {
             address(royaltyModule)
         );
 
-        arbitrationPolicySP = new ArbitrationPolicySP(address(disputeModule), address(USDC), ARBITRATION_PRICE, address(governance));
+        arbitrationPolicySP = new ArbitrationPolicySP(
+            address(disputeModule),
+            address(USDC),
+            ARBITRATION_PRICE,
+            address(governance)
+        );
         royaltyPolicyLS = new RoyaltyPolicyLS(
             address(royaltyModule),
             address(licenseRegistry),
@@ -161,6 +170,7 @@ contract BaseIntegration is Test {
     function _configDeployedContracts() internal {
         vm.startPrank(u.admin);
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
+        royaltyModule.initialize(address(registrationModule));
 
         moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));

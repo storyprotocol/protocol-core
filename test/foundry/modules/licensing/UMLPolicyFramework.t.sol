@@ -16,23 +16,10 @@ import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
+import { TestHelper } from "test/utils/TestHelper.sol";
 
-contract UMLPolicyFrameworkTest is Test {
-    MockAccessController public accessController = new MockAccessController();
-    IPAccountRegistry public ipAccountRegistry;
-    IPAssetRegistry internal ipAssetRegistry;
-
-    LicenseRegistry public registry;
-
+contract UMLPolicyFrameworkTest is TestHelper {
     UMLPolicyFrameworkManager public umlFramework;
-
-    RoyaltyModule internal royaltyModule;
-
-    MockERC721 internal nft = new MockERC721("MockERC721");
-
-    ERC6551Registry internal erc6551Registry;
-
-    IPAccountImpl internal ipAccountImpl;
 
     string public licenseUrl = "https://example.com/license";
     address public ipId1;
@@ -41,33 +28,19 @@ contract UMLPolicyFrameworkTest is Test {
     address public licenseHolder = address(0x101);
     string[] public emptyStringArray = new string[](0);
 
-    function setUp() public {
-        erc6551Registry = new ERC6551Registry();
-        ipAccountImpl = new IPAccountImpl();
-        ipAccountRegistry = new IPAccountRegistry(
-            address(erc6551Registry),
-            address(accessController),
-            address(ipAccountImpl)
-        );
-        ipAssetRegistry = new IPAssetRegistry(
-            address(accessController),
-            address(erc6551Registry),
-            address(ipAccountImpl)
-        );
-        royaltyModule = new RoyaltyModule();
-        registry = new LicenseRegistry(
-            address(accessController),
-            address(ipAssetRegistry),
-            address(royaltyModule)
-        );
+    function setUp() public override {
+        TestHelper.setUp();
+
+        nft = erc721.ape;
+
         umlFramework = new UMLPolicyFrameworkManager(
             address(accessController),
             address(ipAccountRegistry),
-            address(registry),
+            address(licenseRegistry),
             "UMLPolicyFrameworkManager",
             licenseUrl
         );
-        registry.registerPolicyFrameworkManager(address(umlFramework));
+        licenseRegistry.registerPolicyFrameworkManager(address(umlFramework));
 
         nft.mintId(ipOwner, 1);
         nft.mintId(ipOwner, 2);
@@ -241,7 +214,7 @@ contract UMLPolicyFrameworkTest is Test {
 
     // APPROVAL TERMS
 
-    function test_UMLPolicyFrameworkManager_derivativesWithApproval_revert_linkNotApproved() public {
+    function test_UMLPolicyFrameworkManager_derivatives_withApproval_revert_linkNotApproved() public {
         uint256 policyId = umlFramework.registerPolicy(
             UMLPolicy({
                 attribution: false,
@@ -260,19 +233,22 @@ contract UMLPolicyFrameworkTest is Test {
                 royaltyPolicy: address(0)
             })
         );
+
         vm.prank(ipOwner);
-        registry.addPolicyToIp(ipId1, policyId);
-        uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
+        licenseRegistry.addPolicyToIp(ipId1, policyId);
+        uint256 licenseId = licenseRegistry.mintLicense(policyId, ipId1, 1, licenseHolder);
         assertFalse(umlFramework.isDerivativeApproved(licenseId, ipId2));
-        vm.prank(ipOwner);
+        
+        vm.prank(licenseRegistry.licensorIpId(licenseId));
         umlFramework.setApproval(licenseId, ipId2, false);
         assertFalse(umlFramework.isDerivativeApproved(licenseId, ipId2));
 
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
+
         vm.expectRevert(Errors.LicenseRegistry__LinkParentParamFailed.selector);
         vm.prank(ipOwner);
-        registry.linkIpToParents(licenseIds, ipId2, licenseHolder);
+        licenseRegistry.linkIpToParents(licenseIds, ipId2, licenseHolder);
     }
 
     function test_UMLPolicyFrameworkManager_derivatives_withApproval_linkApprovedIpId() public {
@@ -295,19 +271,21 @@ contract UMLPolicyFrameworkTest is Test {
             })
         );
         vm.prank(ipOwner);
-        registry.addPolicyToIp(ipId1, policyId);
-        uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
+        licenseRegistry.addPolicyToIp(ipId1, policyId);
 
+        uint256 licenseId = licenseRegistry.mintLicense(policyId, ipId1, 1, licenseHolder);
         assertFalse(umlFramework.isDerivativeApproved(licenseId, ipId2));
-        vm.prank(ipOwner);
+        
+        vm.prank(licenseRegistry.licensorIpId(licenseId));
         umlFramework.setApproval(licenseId, ipId2, true);
         assertTrue(umlFramework.isDerivativeApproved(licenseId, ipId2));
+
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
 
         vm.prank(ipOwner);
-        registry.linkIpToParents(licenseIds, ipId2, licenseHolder);
-        assertTrue(registry.isParent(ipId1, ipId2));
+        licenseRegistry.linkIpToParents(licenseIds, ipId2, licenseHolder);
+        assertTrue(licenseRegistry.isParent(ipId1, ipId2));
     }
 
     function test_UMLPolicyFrameworkManager_derivatives_withApproval_revert_approverNotLicensor() public {
@@ -335,14 +313,14 @@ contract UMLPolicyFrameworkTest is Test {
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         vm.prank(ipOwner);
-        registry.addPolicyToIp(ipId1, policyId);
-        uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
-        assertEq(registry.balanceOf(licenseHolder, licenseId), 1);
+        licenseRegistry.addPolicyToIp(ipId1, policyId);
+        uint256 licenseId = licenseRegistry.mintLicense(policyId, ipId1, 1, licenseHolder);
+        assertEq(licenseRegistry.balanceOf(licenseHolder, licenseId), 1);
         address licenseHolder2 = address(0x222);
         vm.prank(licenseHolder);
-        registry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
-        assertEq(registry.balanceOf(licenseHolder, licenseId), 0);
-        assertEq(registry.balanceOf(licenseHolder2, licenseId), 1);
+        licenseRegistry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
+        assertEq(licenseRegistry.balanceOf(licenseHolder, licenseId), 0);
+        assertEq(licenseRegistry.balanceOf(licenseHolder2, licenseId), 1);
     }
 
     function test_UMLPolicyFrameworkManager_nonTransferrable_revertIfTransferExceptFromLicensor() public {
@@ -364,13 +342,13 @@ contract UMLPolicyFrameworkTest is Test {
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         vm.prank(ipOwner);
-        registry.addPolicyToIp(ipId1, policyId);
-        uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
-        assertEq(registry.balanceOf(licenseHolder, licenseId), 1);
+        licenseRegistry.addPolicyToIp(ipId1, policyId);
+        uint256 licenseId = licenseRegistry.mintLicense(policyId, ipId1, 1, licenseHolder);
+        assertEq(licenseRegistry.balanceOf(licenseHolder, licenseId), 1);
         address licenseHolder2 = address(0x222);
         vm.startPrank(licenseHolder);
         vm.expectRevert(Errors.LicenseRegistry__TransferParamFailed.selector);
-        registry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
+        licenseRegistry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
         vm.stopPrank();
     }
 

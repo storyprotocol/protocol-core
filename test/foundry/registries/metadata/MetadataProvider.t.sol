@@ -131,7 +131,7 @@ contract MetadataProviderTest is BaseTest {
             address(erc6551Registry),
             address(ipAccountImpl)
         );
-        RoyaltyModule royaltyModule = new RoyaltyModule();
+        RoyaltyModule royaltyModule = new RoyaltyModule(address(governance));
 
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
         LicenseRegistry licenseRegistry = new LicenseRegistry(

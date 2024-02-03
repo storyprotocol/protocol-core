@@ -22,6 +22,8 @@ import { IP } from "contracts/lib/IP.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Governance } from "contracts/governance/Governance.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { IPResolver } from "contracts/resolvers/IPResolver.sol";
+import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 
 /// @title Module Base Test Contract
 /// @notice Base contract for testing standard module functionality.
@@ -60,14 +62,26 @@ abstract contract ModuleBaseTest is BaseTest {
             address(new ERC6551Registry()),
             address(new IPAccountImpl())
         );
-        accessController.initialize(address(ipAssetRegistry), address(moduleRegistry));
-        royaltyModule = new RoyaltyModule();
+        royaltyModule = new RoyaltyModule(address(governance));
         licenseRegistry = new LicenseRegistry(
             address(accessController),
             address(ipAssetRegistry),
             address(royaltyModule)
         );
+        IPResolver ipResolver = new IPResolver(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(licenseRegistry)
+        );
+        RegistrationModule registrationModule = new RegistrationModule(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(licenseRegistry),
+            address(ipResolver)
+        );
         baseModule = IModule(_deployModule());
+        accessController.initialize(address(ipAssetRegistry), address(moduleRegistry));
+        royaltyModule.initialize(address(registrationModule));
     }
 
     /// @notice Tests that the default resolver constructor runs successfully.

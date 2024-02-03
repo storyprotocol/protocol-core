@@ -193,10 +193,12 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         uint32 royaltyDerivativeRevShare = 0;
 
         for (uint256 i = 0; i < licenseIds.length; i++) {
-            if (balanceOf(holder, licenseIds[i]) == 0) {
+            uint256 licenseId = licenseIds[i];
+            if (balanceOf(holder, licenseId) == 0) {
                 revert Errors.LicenseRegistry__NotLicensee();
             }
-            Licensing.License memory licenseData = _licenses[licenseIds[i]];
+
+            Licensing.License memory licenseData = _licenses[licenseId];
             licensors[i] = licenseData.licensorIpId;
             // TODO: check licensor not part of a branch tagged by disputer
             if (licensors[i] == childIpId) {
@@ -206,7 +208,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
             Licensing.Policy memory pol = policy(licenseData.policyId);
             if (ERC165Checker.supportsInterface(pol.policyFramework, type(ILinkParamVerifier).interfaceId)) {
                 ILinkParamVerifier.VerifyLinkResponse memory response = ILinkParamVerifier(pol.policyFramework)
-                    .verifyLink(licenseIds[i], msg.sender, childIpId, licensors[i], pol.data);
+                    .verifyLink(licenseId, msg.sender, childIpId, licensors[i], pol.data);
 
                 if (!response.isLinkingAllowed) {
                     revert Errors.LicenseRegistry__LinkParentParamFailed();

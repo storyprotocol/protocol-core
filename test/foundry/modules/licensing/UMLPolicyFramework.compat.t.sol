@@ -34,10 +34,6 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
     mapping(string => UMLPolicy) internal policies;
     mapping(string => uint256) internal policyIDs;
 
-    // 0xSplits Liquid Split (Sepolia)
-    address internal constant LIQUID_SPLIT_FACTORY = 0xF678Bae6091Ab6933425FE26Afc20Ee5F324c4aE;
-    address internal constant LIQUID_SPLIT_MAIN = 0x57CBFA83f000a38C5b5881743E298819c503A559;
-
     modifier withPolicy(string memory name, bool commercial, bool derivatives, bool reciprocal) {
         _savePolicyInMapping(name, commercial, derivatives, reciprocal);
         policyIDs[name] = umlFramework.registerPolicy(policies[name]);
@@ -63,7 +59,6 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
             address(accessController),
             address(ipAccountRegistry),
             address(licenseRegistry),
-            address(royaltyModule),
             "UMLPolicyFrameworkManager",
             licenseUrl
         );
