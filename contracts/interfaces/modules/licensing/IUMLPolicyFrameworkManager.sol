@@ -3,7 +3,7 @@
 pragma solidity ^0.8.23;
 
 import { Licensing } from "contracts/lib/Licensing.sol";
-import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
+import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 
 /// @notice Licensing parameters for the UML standard
 /// @param attribution Whether or not attribution is required when reproducing the work

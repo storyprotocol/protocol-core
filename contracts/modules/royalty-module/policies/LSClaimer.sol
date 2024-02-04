@@ -8,7 +8,7 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 // contracts
-import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
+import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
 import { ILiquidSplitClone } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
 import { IRoyaltyPolicyLS } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLS.sol";
 import { ILiquidSplitMain } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitMain.sol";
@@ -21,8 +21,8 @@ import { Errors } from "contracts/lib/Errors.sol";
 contract LSClaimer is ILSClaimer, ERC1155Holder, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    /// @notice The license registry interface
-    ILicenseRegistry public immutable ILICENSE_REGISTRY;
+    /// @notice The licensing module interface
+    ILicensingModule public immutable LICENSING_MODULE;
 
     /// @notice The liquid split royalty policy interface
     IRoyaltyPolicyLS public immutable IROYALTY_POLICY_LS;
@@ -35,15 +35,15 @@ contract LSClaimer is ILSClaimer, ERC1155Holder, ReentrancyGuard {
 
     /// @notice Constructor
     /// @param _ipId The ipId of the IP that this contract is associated with
-    /// @param _licenseRegistry The license registry address
+    /// @param _licensingModule The licensing module address
     /// @param _royaltyPolicyLS The liquid split royalty policy address
-    constructor(address _ipId, address _licenseRegistry, address _royaltyPolicyLS) {
+    constructor(address _ipId, address _licensingModule, address _royaltyPolicyLS) {
         if (_ipId == address(0)) revert Errors.LSClaimer__ZeroIpId();
-        if (_licenseRegistry == address(0)) revert Errors.LSClaimer__ZeroLicenseRegistry();
+        if (_licensingModule == address(0)) revert Errors.LSClaimer__ZeroLicensingModule();
         if (_royaltyPolicyLS == address(0)) revert Errors.LSClaimer__ZeroRoyaltyPolicyLS();
 
         IP_ID = _ipId;
-        ILICENSE_REGISTRY = ILicenseRegistry(_licenseRegistry);
+        LICENSING_MODULE = ILicensingModule(_licensingModule);
         IROYALTY_POLICY_LS = IRoyaltyPolicyLS(_royaltyPolicyLS);
     }
 
@@ -82,7 +82,7 @@ contract LSClaimer is ILSClaimer, ERC1155Holder, ReentrancyGuard {
         // the loop below is limited to no more than 100 parents 
         // given the minimum royalty step of 1% and there is a cap of 100%
         for (uint256 i = 0; i < _path.length - 1; i++) {
-           if(!ILICENSE_REGISTRY.isParent(_path[i], _path[i+1])) revert Errors.LSClaimer__InvalidPath();
+           if(!LICENSING_MODULE.isParent(_path[i], _path[i+1])) revert Errors.LSClaimer__InvalidPath();
         }
     }
 

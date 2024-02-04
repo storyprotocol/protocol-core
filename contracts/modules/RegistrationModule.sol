@@ -10,6 +10,7 @@ import { REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { BaseModule } from "contracts/modules/BaseModule.sol";
+import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
 
 /// @title Registration Module
 /// @notice The registration module is responsible for registration of IP into
@@ -19,11 +20,12 @@ import { BaseModule } from "contracts/modules/BaseModule.sol";
 contract RegistrationModule is BaseModule, IRegistrationModule {
     /// @notice The metadata resolver used by the registration module.
     IPResolver public resolver;
+    ILicensingModule private _LICENSING_MODULE;
 
     /// @notice Initializes the registration module contract.
     /// @param controller The access controller used for IP authorization.
     /// @param assetRegistry The address of the IP asset registry.
-    /// @param licenseRegistry The address of the license registry.
+    /// @param licenseRegistry The address of the license module.
     constructor(
         address controller,
         address assetRegistry,
@@ -31,6 +33,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         address resolverAddr
     ) BaseModule(controller, assetRegistry, licenseRegistry) {
         resolver = IPResolver(resolverAddr);
+        _LICENSING_MODULE = ILicensingModule(LICENSE_REGISTRY.licensingModule());
     }
 
     /// @notice Registers a root-level IP into the protocol. Root-level IPs can
@@ -74,7 +77,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         if (policyId != 0) {
             // If we know the policy ID, we can register it directly on creation.
             // TODO: return policy index
-            LICENSE_REGISTRY.addPolicyToIp(ipId, policyId);
+            _LICENSING_MODULE.addPolicyToIp(ipId, policyId);
         }
 
         emit RootIPRegistered(msg.sender, ipId, policyId);
@@ -125,7 +128,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         );
 
         // Perform core IP derivative licensing - the license must be owned by the caller.
-        LICENSE_REGISTRY.linkIpToParents(licenseIds, ipId, msg.sender);
+        _LICENSING_MODULE.linkIpToParents(licenseIds, ipId, msg.sender);
 
         emit DerivativeIPRegistered(msg.sender, ipId, licenseIds);
     }

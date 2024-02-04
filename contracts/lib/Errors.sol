@@ -131,12 +131,15 @@ library Errors {
     error LicenseRegistry__CallerNotLicensorAndPolicyNotSet();
     error LicenseRegistry__DerivativesCannotAddPolicy();
     error LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
+    error LicenseRegistry__CallerNotLicenseModule();
+    error LicenseRegistry__ZeroLicenseModule();
+    error LicensingModule__CallerNotLicenseRegistry();
 
     ////////////////////////////////////////////////////////////////////////////
-    //                        LicenseRegistryAware                            //
+    //                        LicensingModuleAware                            //
     ////////////////////////////////////////////////////////////////////////////
 
-    error LicenseRegistryAware__CallerNotLicenseRegistry();
+    error LicensingModuleAware__CallerNotLicensingModule();
 
     ////////////////////////////////////////////////////////////////////////////
     //                         PolicyFrameworkManager                         //
@@ -192,7 +195,7 @@ library Errors {
     error RoyaltyPolicyLS__InvalidMinRoyalty();
     error RoyaltyPolicyLS__InvalidRoyaltyStack();
     error RoyaltyPolicyLS__ZeroMinRoyalty();
-    error RoyaltyPolicyLS__ZeroLicenseRegistry();
+    error RoyaltyPolicyLS__ZeroLicensingModule();
 
     error LSClaimer__InvalidPath();
     error LSClaimer__InvalidPathFirstPosition();
@@ -203,7 +206,7 @@ library Errors {
     error LSClaimer__ETHBalanceNotZero();
     error LSClaimer__ERC20BalanceNotZero();
     error LSClaimer__ZeroIpId();
-    error LSClaimer__ZeroLicenseRegistry();
+    error LSClaimer__ZeroLicensingModule();
     error LSClaimer__ZeroRoyaltyPolicyLS();
     error LSClaimer__NotRoyaltyPolicyLS();
 

@@ -33,8 +33,8 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     /// @notice RoyaltyModule address
     address public immutable ROYALTY_MODULE;
 
-    /// @notice License registry address
-    address public immutable LICENSE_REGISTRY;
+    /// @notice LicensingModule address
+    address public immutable LICENSING_MODULE;
 
     /// @notice LiquidSplitFactory address
     address public immutable LIQUID_SPLIT_FACTORY;
@@ -53,17 +53,17 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
 
     /// @notice Constructor
     /// @param _royaltyModule Address of the RoyaltyModule contract
-    /// @param _licenseRegistry Address of the LicenseRegistry contract
+    /// @param _licensingModule Address of the LicensingModule contract
     /// @param _liquidSplitFactory Address of the LiquidSplitFactory contract
     /// @param _liquidSplitMain Address of the LiquidSplitMain contract
-    constructor(address _royaltyModule, address _licenseRegistry, address _liquidSplitFactory, address _liquidSplitMain) {
+    constructor(address _royaltyModule, address _licensingModule, address _liquidSplitFactory, address _liquidSplitMain) {
         if (_royaltyModule == address(0)) revert Errors.RoyaltyPolicyLS__ZeroRoyaltyModule();
-        if (_licenseRegistry == address(0)) revert Errors.RoyaltyPolicyLS__ZeroLicenseRegistry();
+        if (_licensingModule == address(0)) revert Errors.RoyaltyPolicyLS__ZeroLicensingModule();
         if (_liquidSplitFactory == address(0)) revert Errors.RoyaltyPolicyLS__ZeroLiquidSplitFactory();
         if (_liquidSplitMain == address(0)) revert Errors.RoyaltyPolicyLS__ZeroLiquidSplitMain();
 
         ROYALTY_MODULE = _royaltyModule;
-        LICENSE_REGISTRY = _licenseRegistry;
+        LICENSING_MODULE = _licensingModule;
         LIQUID_SPLIT_FACTORY = _liquidSplitFactory;
         LIQUID_SPLIT_MAIN = _liquidSplitMain;
     }
@@ -86,7 +86,7 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
 
         // deploy claimer if not root ip
         address claimer = address(this); // 0xSplit requires two addresses to allow a split so for root ip address(this) is used as the second address
-        if (_parentIpIds.length > 0) claimer = address(new LSClaimer(_ipId, LICENSE_REGISTRY, address(this)));
+        if (_parentIpIds.length > 0) claimer = address(new LSClaimer(_ipId, LICENSING_MODULE, address(this)));
 
         // deploy split clone
         address splitClone = _deploySplitClone(_ipId, claimer, royaltyStack);
