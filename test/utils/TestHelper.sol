@@ -40,6 +40,11 @@ contract TestHelper is Test, DeployHelper {
     mapping(string policyFrameworkManagerName => PolicyFrameworkManagerData) internal pfms;
 
     mapping(string policyName => uint256 policyId) internal policyIds;
+    mapping(string => UMLPolicy) internal policies;
+
+    string[] internal emptyStringArray = new string[](0);
+    address mockRoyaltyPolicy = address(0x555);
+
 
     function setUp() public virtual {
         deployer = vm.addr(accountA);
@@ -80,25 +85,69 @@ contract TestHelper is Test, DeployHelper {
         UMLPolicyDerivativeParams memory dparams
     ) internal {
         string memory pName = string(abi.encodePacked("uml_", gparams.policyName));
-        policyIds[pName] = UMLPolicyFrameworkManager(pfms["uml"].addr).registerPolicy(
-            UMLPolicy({
-                attribution: gparams.attribution,
-                transferable: gparams.transferable,
-                commercialUse: commercialUse,
-                commercialAttribution: cparams.commercialAttribution,
-                commercializers: cparams.commercializers,
-                commercialRevShare: cparams.commercialRevShare,
-                derivativesAllowed: derivativesAllowed,
-                derivativesAttribution: dparams.derivativesAttribution,
-                derivativesApproval: dparams.derivativesApproval,
-                derivativesReciprocal: dparams.derivativesReciprocal,
-                derivativesRevShare: dparams.derivativesRevShare,
-                territories: gparams.territories,
-                distributionChannels: gparams.distributionChannels,
-                royaltyPolicy: cparams.royaltyPolicy
-            })
-        );
+        policies[pName] = UMLPolicy({
+            attribution: gparams.attribution,
+            transferable: gparams.transferable,
+            commercialUse: commercialUse,
+            commercialAttribution: cparams.commercialAttribution,
+            commercializers: cparams.commercializers,
+            commercialRevShare: cparams.commercialRevShare,
+            derivativesAllowed: derivativesAllowed,
+            derivativesAttribution: dparams.derivativesAttribution,
+            derivativesApproval: dparams.derivativesApproval,
+            derivativesReciprocal: dparams.derivativesReciprocal,
+            derivativesRevShare: dparams.derivativesRevShare,
+            territories: gparams.territories,
+            distributionChannels: gparams.distributionChannels,
+            contentRestrictions: gparams.contentRestrictions,
+            royaltyPolicy: cparams.royaltyPolicy
+        });
+        policyIds[pName] = UMLPolicyFrameworkManager(pfms["uml"].addr)
+        .registerPolicy(policies[pName]);
     }
+
+    function _mapUMLPolicySimple(
+        string memory name,
+        bool commercial,
+        bool derivatives,
+        bool reciprocal
+    ) internal {
+        string memory pName = string(abi.encodePacked("uml_", name));
+        policies[pName] = UMLPolicy({
+            attribution: true,
+            transferable: true,
+            commercialUse: commercial,
+            commercialAttribution: false,
+            commercializers: emptyStringArray,
+            commercialRevShare: 0,
+            derivativesAllowed: derivatives,
+            derivativesAttribution: false,
+            derivativesApproval: false,
+            derivativesReciprocal: reciprocal,
+            derivativesRevShare: 0,
+            territories: emptyStringArray,
+            distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray,
+            royaltyPolicy: mockRoyaltyPolicy
+        });
+    }
+
+    function _addUMLPolicyFromMapping(string memory name, address umlFramework) internal returns (uint256){
+        string memory pName = string(abi.encodePacked("uml_", name));
+        policyIds[pName] = UMLPolicyFrameworkManager(umlFramework).registerPolicy(policies[pName]);
+        return policyIds[pName];
+    }
+
+    function _getMappedUmlPolicy(string memory name) internal view returns (UMLPolicy storage) {
+        string memory pName = string(abi.encodePacked("uml_", name));
+        return policies[pName];
+    }
+
+    function _getUmlPolicyId(string memory name) internal view returns (uint256) {
+        string memory pName = string(abi.encodePacked("uml_", name));
+        return policyIds[pName];
+    }
+
 
     function _getIpId(MockERC721 mnft, uint256 tokenId) internal view returns (address ipId) {
         return _getIpId(address(mnft), tokenId);

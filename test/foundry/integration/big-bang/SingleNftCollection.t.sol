@@ -46,7 +46,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                 attribution: false,
                 transferable: true,
                 territories: new string[](0),
-                distributionChannels: new string[](0)
+                distributionChannels: new string[](0),
+                contentRestrictions: new string[](0)
             }),
             UMLPolicyCommercialParams({
                 commercialAttribution: true,
@@ -67,7 +68,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                 attribution: false,
                 transferable: true,
                 territories: new string[](0),
-                distributionChannels: new string[](0)
+                distributionChannels: new string[](0),
+                contentRestrictions: new string[](0)
             }),
             UMLPolicyDerivativeParams({
                 derivativesAttribution: true,
@@ -82,7 +84,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                 attribution: false,
                 transferable: false,
                 territories: new string[](0),
-                distributionChannels: new string[](0)
+                distributionChannels: new string[](0),
+                contentRestrictions: new string[](0)
             })
         )
         withMintPaymentPolicy("normal", true) // => mint_payment_normal
@@ -115,7 +118,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                             ADD POLICIES TO IP ACCOUNTS
         ////////////////////////////////////////////////////////////////*/
 
-/*         vm.startPrank(u.alice);
+        /* vm.startPrank(u.alice);
         licenseRegistry.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_cheap_flexible"]);
         licenseRegistry.addPolicyToIp(ipAcct[100], policyIds["uml_noncom_deriv_reciprocal_derivative"]);
 

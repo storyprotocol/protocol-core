@@ -341,6 +341,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 derivativesRevShare: 0,
                 territories: new string[](0),
                 distributionChannels: new string[](0),
+                contentRestrictions: new string[](0),
                 royaltyPolicy: address(royaltyPolicyLS)
             })
         );
@@ -360,6 +361,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 derivativesRevShare: 0,
                 territories: new string[](0),
                 distributionChannels: new string[](0),
+                contentRestrictions: new string[](0),
                 royaltyPolicy: address(royaltyPolicyLS)
             })
         );

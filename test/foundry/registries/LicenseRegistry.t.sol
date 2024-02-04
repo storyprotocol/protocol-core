@@ -415,6 +415,7 @@ contract LicenseRegistryTest is Test {
             derivativesRevShare: 0,
             territories: new string[](1),
             distributionChannels: new string[](1),
+            contentRestrictions: new string[](0),
             royaltyPolicy: address(0xbeef) // TODO: mock royaltyPolicyLS
         });
 
