@@ -105,7 +105,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
         umlPolicy.commercialAttribution = false;
         umlPolicy.commercializers = new string[](1);
         umlPolicy.commercializers[0] = "test";
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddCommercializers.selector);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddCommercializers.selector);
         umlFramework.registerPolicy(umlPolicy);
         // No rev share should be set; revert
         umlPolicy.commercializers = new string[](0);
