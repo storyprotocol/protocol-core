@@ -7,11 +7,10 @@ import { ERC165, IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
-import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
-import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
+import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 
 struct MockPolicyFrameworkConfig {
-    address licenseRegistry;
+    address licensingModule;
     string name;
     string licenseUrl;
     bool supportVerifyLink;
@@ -32,13 +31,13 @@ contract MockPolicyFrameworkManager is BasePolicyFrameworkManager {
 
     constructor(
         MockPolicyFrameworkConfig memory conf
-    ) BasePolicyFrameworkManager(conf.licenseRegistry, conf.name, conf.licenseUrl) {
+    ) BasePolicyFrameworkManager(conf.licensingModule, conf.name, conf.licenseUrl) {
         config = conf;
     }
 
     function registerPolicy(MockPolicy calldata mockPolicy) external returns (uint256 policyId) {
         emit MockPolicyAdded(policyId, mockPolicy);
-        return LICENSE_REGISTRY.registerPolicy(abi.encode(mockPolicy));
+        return LICENSING_MODULE.registerPolicy(abi.encode(mockPolicy));
     }
 
     function verifyMint(address, bool, address, address, uint256, bytes memory data) external pure returns (bool) {

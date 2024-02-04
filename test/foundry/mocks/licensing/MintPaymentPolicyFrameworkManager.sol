@@ -9,8 +9,7 @@ import { ERC165, IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
-import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
-import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
+import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 
 struct MintPaymentPolicy {
     bool mustBeTrue;
@@ -23,19 +22,19 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager {
     event MintPaymentPolicyAdded(uint256 indexed policyId, MintPaymentPolicy policy);
 
     constructor(
-        address licenseRegistry,
+        address licensingModule,
         string memory name,
         string memory licenseUrl,
         address _token,
         uint256 _payment
-    ) BasePolicyFrameworkManager(licenseRegistry, name, licenseUrl) {
+    ) BasePolicyFrameworkManager(licensingModule, name, licenseUrl) {
         token = IERC20(_token);
         payment = _payment;
     }
 
     function registerPolicy(MintPaymentPolicy calldata mmpol) external returns (uint256 policyId) {
         emit MintPaymentPolicyAdded(policyId, mmpol);
-        return LICENSE_REGISTRY.registerPolicy(abi.encode(mmpol));
+        return LICENSING_MODULE.registerPolicy(abi.encode(mmpol));
     }
 
     function processInheritedPolicies(
