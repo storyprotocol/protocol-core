@@ -28,7 +28,7 @@ abstract contract BasePolicyFrameworkManager is IPolicyFrameworkManager, ERC165,
     }
 
     /// @notice ERC165 interface identifier for the policy framework manager.
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
         return interfaceId == type(IPolicyFrameworkManager).interfaceId || super.supportsInterface(interfaceId);
     }
 

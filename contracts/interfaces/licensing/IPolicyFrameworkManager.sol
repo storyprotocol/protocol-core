@@ -8,7 +8,7 @@ import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
 /// @title IPolicyFrameworkManager
 /// @notice Interface to define a policy framework contract, that will
 /// register itself into the LicenseRegistry to format policy into the LicenseRegistry
-interface IPolicyFrameworkManager {
+interface IPolicyFrameworkManager is IERC165 {
     struct VerifyLinkResponse {
         bool isLinkingAllowed;
         bool isRoyaltyRequired;
