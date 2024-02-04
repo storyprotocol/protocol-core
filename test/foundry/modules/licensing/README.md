@@ -50,8 +50,8 @@ Alice owns IP2
 Alice burns L1, P1 is set in IP2
 
 1) P1 is Non Commercial (assume derivatives allowed)
-1.1) Alice tries to mint a commercial license -> fail🚧
-1.2) Alice tries to add a commercial policy -> fail🚧
+1.1) Alice tries to mint a commercial license -> fail
+1.2) Alice tries to add a commercial policy -> fail
 
 1) P1 is Commercial (assume derivatives allowed)
 1.1) Alice tries to mint a non commercial license -> OK? (if the only derivatives of derivatives are reciprocal, this fails)

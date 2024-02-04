@@ -104,26 +104,26 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
     }
 
     /// TODO: STARTING FROM AN ORIGINAL WORK, WITH APPROVALS and UPFRONT PAY
+
+
     function test_UMLPolicyFramework_originalWork_bobMintsWithDifferentPolicies()
-        withPolicy("comm_deriv", true, true)
-        withPolicy("comm_non_deriv", true, false)
+        withPolicy("comm_deriv", true, true, false)
+        withPolicy("comm_non_deriv", true, false, false)
         public {
         // Bob can add different policies on IP1 without compatibility checks.
         vm.startPrank(bob);
         uint256 licenseId1 = registry.mintLicense(policyIDs["comm_deriv"], ipId1, 1, don);
-        console2.log("License ID1: ", licenseId1);
         assertEq(registry.balanceOf(don, licenseId1), 1, "Don doesn't have license1");
         
         uint256 licenseId2 = registry.mintLicense(policyIDs["comm_non_deriv"], ipId1, 1, don);
-        console2.log("License ID2: ", licenseId2);
         assertEq(registry.balanceOf(don, licenseId2), 1, "Don doesn't have license2");
         vm.stopPrank();
     }
 
     
     function test_UMLPolicyFramework_originalWork_bobSetsPoliciesThenCompatibleParent()
-        withPolicy("comm_deriv", true, true)
-        withPolicy("comm_non_deriv", true, false)
+        withPolicy("comm_deriv", true, true, false)
+        withPolicy("comm_non_deriv", true, false, false)
         public {
         // TODO: This works if all policies compatible.
         // Can bob disable some policies?
@@ -132,8 +132,8 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
 
     // STARTING FROM DERIVATIVE WORK
     function test_UMLPolicyFramework_derivative_revert_cantMintDerivativeOfDerivative()
-        withPolicy("comm_non_deriv", true, false)
-        withAliceOwningDerivativeWork("comm_non_deriv")
+        withPolicy("comm_non_deriv", true, false, false)
+        withAliceOwningDerivativeIp2("comm_non_deriv")
         public {
         vm.expectRevert(Errors.LicenseRegistry__MintLicenseParamFailed.selector);
         vm.prank(don);
@@ -141,6 +141,91 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
         vm.expectRevert(Errors.LicenseRegistry__MintLicenseParamFailed.selector);
         vm.prank(alice);
         registry.mintLicense(policyIDs["comm_non_deriv"], ipId2, 1, alice);
+    }
+
+    function test_UMLPolicyFramework_derivative_revert_AliceCantSetPolicyOnDerivativeOfDerivative()
+        withPolicy("comm_non_deriv", true, false, false)
+        withPolicy("comm_deriv", true, true, false)
+        withAliceOwningDerivativeIp2("comm_non_deriv")
+        public {
+        
+        vm.expectRevert(
+            Errors.LicenseRegistry__DerivativesCannotAddPolicy.selector
+        );
+        vm.prank(alice);
+        registry.addPolicyToIp(ipId2, policyIDs["comm_deriv"]);
+
+        _savePolicyInMapping("other_policy", true, true, false);
+        policies["other_policy"].attribution = false;
+        policyIDs["other_policy"] = umlFramework.registerPolicy(policies["other_policy"]);
+
+        vm.expectRevert(
+            Errors.LicenseRegistry__DerivativesCannotAddPolicy.selector
+        );
+        vm.prank(alice);
+        registry.addPolicyToIp(ipId2, policyIDs["other_policy"]);
+    }
+
+    // Reciprocal
+
+    function test_UMLPolicyFramework_reciprocal_DonMintsLicenseFromIp2()
+        withPolicy("comm_reciprocal", true, true, true)
+        withAliceOwningDerivativeIp2("comm_reciprocal")
+        public {
+        vm.prank(don);
+        uint256 licenseId = registry.mintLicense(policyIDs["comm_reciprocal"], ipId2, 1, don);
+        assertEq(registry.balanceOf(don, licenseId), 1, "Don doesn't have license");
+
+    }
+
+    function test_UMLPolicyFramework_reciprocal_AliceMintsLicenseForP1inIP2()
+        withPolicy("comm_reciprocal", true, true, true)
+        withAliceOwningDerivativeIp2("comm_reciprocal")
+        public {
+        vm.prank(alice);
+        uint256 licenseId = registry.mintLicense(policyIDs["comm_reciprocal"], ipId2, 1, alice);
+        assertEq(registry.balanceOf(alice, licenseId), 1, "Alice doesn't have license");
+    }
+
+    function test_UMLPolicyFramework_reciprocal_revert_AliceTriesToSetPolicyInReciprocalDeriv()
+        withPolicy("comm_reciprocal", true, true, true)
+        withPolicy("other_policy", true, true, false)
+        withAliceOwningDerivativeIp2("comm_reciprocal")
+        public {
+        vm.expectRevert(
+            Errors.LicenseRegistry__DerivativesCannotAddPolicy.selector
+        );
+        vm.prank(alice);
+        registry.addPolicyToIp(ipId2, policyIDs["other_policy"]);
+        vm.expectRevert(
+            Errors.LicenseRegistry__DerivativesCannotAddPolicy.selector
+        );
+        vm.prank(alice);
+        registry.addPolicyToIp(ipId2, policyIDs["comm_reciprocal"]);
+    }
+
+
+    function _savePolicyInMapping(
+        string memory name,
+        bool commercial,
+        bool derivatives,
+        bool reciprocal
+    ) internal {
+        policies[name] = UMLPolicy({
+            attribution: true,
+            transferable: true,
+            commercialUse: commercial,
+            commercialAttribution: false,
+            commercializers: emptyStringArray,
+            commercialRevShare: 0,
+            derivativesAllowed: derivatives,
+            derivativesAttribution: false,
+            derivativesApproval: false,
+            derivativesReciprocal: reciprocal,
+            derivativesRevShare: 0,
+            territories: emptyStringArray,
+            distributionChannels: emptyStringArray
+        });
     }
 
 
