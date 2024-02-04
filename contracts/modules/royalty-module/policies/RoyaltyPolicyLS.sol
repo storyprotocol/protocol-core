@@ -19,7 +19,7 @@ import { Errors } from "contracts/lib/Errors.sol";
 ///         the percentage of royalty NFTs owned by each account.
 contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     using SafeERC20 for IERC20;
-
+    
     struct LSRoyaltyData {
         address splitClone; // address of the liquid split clone contract for a given ipId
         address claimer; // address of the claimer contract for a given ipId
