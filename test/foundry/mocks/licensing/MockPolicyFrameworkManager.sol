@@ -100,7 +100,7 @@ contract MockPolicyFrameworkManager is
         bytes memory aggregator,
         uint256, // policyId,
         bytes memory // policy
-    ) external pure override returns (bool changedRights, bytes memory newAggregator, bool skipAdding) {
-        return (false, aggregator, false);
+    ) external pure override returns (bool changedRights, bytes memory newAggregator) {
+        return (false, aggregator);
     }
 }

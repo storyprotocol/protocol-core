@@ -21,6 +21,6 @@ library UMLFrameworkErrors {
     error UMLPolicyFrameworkManager__CommecialDisabled_CantAddRoyaltyPolicy();
     error UMLPolicyFrameworkManager__CommecialEnabled_RoyaltyPolicyRequired();
     
-    error UMLPolicyFrameworkManager__ReciprocalPolicyMismatch();
+    error UMLPolicyFrameworkManager__ReciprocalButDifferentPolicyIds();
     error UMLPolicyFrameworkManager__ReciprocalValueMismatch();
 }

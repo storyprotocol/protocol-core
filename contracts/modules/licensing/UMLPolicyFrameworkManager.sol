@@ -170,7 +170,7 @@ contract UMLPolicyFrameworkManager is
         bytes memory aggregator,
         uint256 policyId,
         bytes memory policy
-    ) external view onlyLicenseRegistry returns (bool changedRights, bytes memory newAggregator, bool skipAdding) {
+    ) external view onlyLicenseRegistry returns (bool changedRights, bytes memory newAggregator) {
         UMLInheritedPolicyAggregator memory agg;
         UMLPolicy memory newPolicy = abi.decode(policy, (UMLPolicy));
         if (aggregator.length == 0) {
@@ -179,7 +179,7 @@ contract UMLPolicyFrameworkManager is
                 derivativesReciprocal: newPolicy.derivativesReciprocal,
                 lastPolicyId: policyId
             });
-            return (true, abi.encode(agg), false);
+            return (true, abi.encode(agg));
         } else {
             agg = abi.decode(aggregator, (UMLInheritedPolicyAggregator));
             // Either all are reciprocal or none are
@@ -189,13 +189,11 @@ contract UMLPolicyFrameworkManager is
                 // Ids are uniqued because we hash them to compare on creation in LicenseRegistry,
                 // so we can compare the ids safely.
                 if (agg.lastPolicyId != policyId) {
-                    revert UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalPolicyMismatch();
-                } else {
-                    skipAdding = true;
+                    revert UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalButDifferentPolicyIds();
                 }
             }
         }
-        return (false, abi.encode(agg), false);
+        return (false, abi.encode(agg));
     }
 
     function policyToJson(bytes memory policyData) public view returns (string memory) {

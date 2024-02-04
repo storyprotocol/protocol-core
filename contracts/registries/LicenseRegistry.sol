@@ -418,7 +418,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
     /// @param isInherited true if set in linkIpToParent, false otherwise
     /// @param skipIfDuplicate if true, will skip if policyId is already set
     /// @return index of the policy added to the set
-<<<<<<< HEAD
     function _addPolicyIdToIp(
         address ipId,
         uint256 policyId,
@@ -426,19 +425,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         bool skipIfDuplicate
     ) private returns (uint256 index) {
         _verifyCanAddPolicy(policyId, ipId, isInherited);
-=======
-    function _addPolicyIdToIp(address ipId, uint256 policyId, bool isInherited) private returns (uint256 index) {
-        bool skipAdding = _verifyCanAddPolicy(policyId, ipId, isInherited);
-        console2.log("skipAdding", skipAdding);
-        if (skipAdding) {
-            // We have multiple parents, and the policy is already set.
-            if (!_policySetups[ipId][policyId].isSet) {
-                // This should not happen, but framework is not following the rules
-                revert Errors.LicenseRegistry__CannotSkipAddingPolicy();
-            }
-            return _policySetups[ipId][policyId].index;
-        }
->>>>>>> 8e4a414 (verify multi reciprocal and skip)
         // Try and add the policy into the set.
         EnumerableSet.UintSet storage _pols = _policySetPerIpId(isInherited, ipId);
         if (!_pols.add(policyId)) {
@@ -461,7 +447,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         return index;
     }
 
-    function _verifyCanAddPolicy(uint256 policyId, address ipId, bool isInherited) private returns (bool skipAdding) {
+    function _verifyCanAddPolicy(uint256 policyId, address ipId, bool isInherited) private {
         bool ipIdIsDerivative = _policySetPerIpId(true, ipId).length() > 0;
         if (
             // Original work, owner is setting policies
@@ -473,7 +459,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
             (!ipIdIsDerivative)
         ) {
             // Can add policy
-            return false;
+            return;
         } else if (ipIdIsDerivative && !isInherited) {
             // Owner of derivative is trying to set policies
             revert Errors.LicenseRegistry__DerivativesCannotAddPolicy();
@@ -482,16 +468,15 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         // Checking for policy compatibility
         IPolicyFrameworkManager polManager = IPolicyFrameworkManager(policy(policyId).policyFramework);
         Licensing.Policy memory pol = _policies[policyId];
-        (bool rightsChanged, bytes memory newAggregator, bool skip) = polManager.processInheritedPolicies(
+        (bool aggregatorChanged, bytes memory newAggregator) = polManager.processInheritedPolicies(
             _ipRights[pol.policyFramework][ipId],
             policyId,
             pol.data
         );
-        if (rightsChanged) {
+        if (aggregatorChanged) {
             _ipRights[pol.policyFramework][ipId] = newAggregator;
             emit InheritedPolicyAggregatorUpdated(ipId, newAggregator);
         }
-        return skip;
     }
 
     /// Stores data without repetition, assigning an id to it if new or reusing existing one if already stored

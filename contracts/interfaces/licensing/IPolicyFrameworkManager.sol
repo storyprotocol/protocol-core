@@ -26,5 +26,5 @@ interface IPolicyFrameworkManager is IPolicyVerifier {
         bytes memory aggregator,
         uint256 policyId,
         bytes memory policy
-    ) external view returns (bool changedRights, bytes memory newAggregator, bool skipAdding);
+    ) external view returns (bool changedRights, bytes memory newAggregator);
 }
