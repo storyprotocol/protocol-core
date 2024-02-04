@@ -64,9 +64,21 @@ contract MockPolicyFrameworkManager is
         return policy.returnVerifyMint;
     }
 
-    function verifyLink(uint256, address, address, address, bytes calldata data) external pure override returns (bool) {
+    function verifyLink(
+        uint256,
+        address,
+        address,
+        address,
+        bytes calldata data
+    ) external pure override returns (ILinkParamVerifier.VerifyLinkResponse memory) {
         MockPolicy memory policy = abi.decode(data, (MockPolicy));
-        return policy.returnVerifyLink;
+        return
+            ILinkParamVerifier.VerifyLinkResponse({
+                isLinkingAllowed: policy.returnVerifyLink,
+                isRoyaltyRequired: false,
+                royaltyPolicy: address(0),
+                royaltyDerivativeRevShare: 0
+            });
     }
 
     function verifyTransfer(
@@ -83,7 +95,7 @@ contract MockPolicyFrameworkManager is
     function policyToJson(bytes memory policyData) public pure returns (string memory) {
         return "MockPolicyFrameworkManager";
     }
-    
+
     function processInheritedPolicies(
         bytes memory ipRights,
         bytes memory policy

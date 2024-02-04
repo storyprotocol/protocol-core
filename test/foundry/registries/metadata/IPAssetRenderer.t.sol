@@ -28,6 +28,7 @@ import { IP } from "contracts/lib/IP.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { Governance } from "contracts/governance/Governance.sol";
+import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 
 /// @title IP Asset Renderer Test Contract
 /// @notice Tests IP asset rendering functionality.
@@ -37,7 +38,6 @@ contract IPAssetRendererTest is BaseTest {
     // Module placeholders
     // TODO: Mock these out.
     address taggingModule = vm.addr(0x1111);
-    address royaltyModule = vm.addr(0x2222);
 
     /// @notice Gets the metadata provider used for IP registration.
     MetadataProviderV1 metadataProvider;
@@ -89,35 +89,49 @@ contract IPAssetRendererTest is BaseTest {
         accessController = new AccessController(address(governance));
         moduleRegistry = new ModuleRegistry(address(governance));
         MockERC721 erc721 = new MockERC721("MockERC721");
+        
+        ERC6551Registry erc6551Registry = new ERC6551Registry();
+        IPAccountImpl ipAccountImpl = new IPAccountImpl();
         ipAccountRegistry = new IPAccountRegistry(
-            address(new ERC6551Registry()),
+            address(erc6551Registry),
             address(accessController),
-            address(new IPAccountImpl())
+            address(ipAccountImpl)
         );
-        accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-        licenseRegistry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
-
-        vm.prank(alice);
-        uint256 tokenId = erc721.mintId(alice, 99);
-
         ipAssetRegistry = new IPAssetRegistry(
             address(accessController),
-            address(new ERC6551Registry()),
-            address(new IPAccountImpl())
+            address(erc6551Registry),
+            address(ipAccountImpl)
         );
-
+        RoyaltyModule royaltyModule = new RoyaltyModule(address(governance));
+        licenseRegistry = new LicenseRegistry(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(royaltyModule)
+        );
         resolver = new IPResolver(
             address(accessController),
             address(ipAssetRegistry),
             address(licenseRegistry)
         );
-
         renderer = new IPAssetRenderer(
             address(ipAssetRegistry),
             address(licenseRegistry),
             taggingModule,
-            royaltyModule
+            address(royaltyModule)
         );
+        registrationModule = new RegistrationModule(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(licenseRegistry),
+            address(resolver)
+        );
+
+        accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
+        royaltyModule.initialize(address(registrationModule));
+
+        vm.prank(alice);
+        uint256 tokenId = erc721.mintId(alice, 99);
+
         bytes memory metadata = abi.encode(
             IP.MetadataV1({
                 name: IP_NAME,

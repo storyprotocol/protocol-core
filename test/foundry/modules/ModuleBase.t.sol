@@ -16,16 +16,18 @@ import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
 import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
-import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
+import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Governance } from "contracts/governance/Governance.sol";
+import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { IPResolver } from "contracts/resolvers/IPResolver.sol";
+import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 
 /// @title Module Base Test Contract
 /// @notice Base contract for testing standard module functionality.
 abstract contract ModuleBaseTest is BaseTest {
-
     /// @notice Gets the protocol-wide license registry.
     LicenseRegistry public licenseRegistry;
 
@@ -43,7 +45,9 @@ abstract contract ModuleBaseTest is BaseTest {
 
     Governance public governance;
 
-    IPMetadataProvider metadataProvider;
+    IPMetadataProvider public metadataProvider;
+
+    RoyaltyModule public royaltyModule;
 
     /// @notice Initializes the base module for testing.
     function setUp() public virtual override(BaseTest) {
@@ -58,9 +62,26 @@ abstract contract ModuleBaseTest is BaseTest {
             address(new ERC6551Registry()),
             address(new IPAccountImpl())
         );
-        accessController.initialize(address(ipAssetRegistry), address(moduleRegistry));
-        licenseRegistry = new LicenseRegistry(address(accessController), address(ipAssetRegistry));
+        royaltyModule = new RoyaltyModule(address(governance));
+        licenseRegistry = new LicenseRegistry(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(royaltyModule)
+        );
+        IPResolver ipResolver = new IPResolver(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(licenseRegistry)
+        );
+        RegistrationModule registrationModule = new RegistrationModule(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(licenseRegistry),
+            address(ipResolver)
+        );
         baseModule = IModule(_deployModule());
+        accessController.initialize(address(ipAssetRegistry), address(moduleRegistry));
+        royaltyModule.initialize(address(registrationModule));
     }
 
     /// @notice Tests that the default resolver constructor runs successfully.
@@ -72,6 +93,5 @@ abstract contract ModuleBaseTest is BaseTest {
     function _deployModule() internal virtual returns (address);
 
     /// @dev Gets the expected name for the module.
-    function _expectedName() internal virtual view returns (string memory);
-
+    function _expectedName() internal view virtual returns (string memory);
 }

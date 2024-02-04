@@ -8,11 +8,18 @@ import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.
 /// @notice LicenseRegistry will call this to verify the linking an IP to its parent
 /// with the policy referenced by the license in use.
 interface ILinkParamVerifier is IPolicyVerifier {
+    struct VerifyLinkResponse {
+        bool isLinkingAllowed;
+        bool isRoyaltyRequired;
+        address royaltyPolicy;
+        uint32 royaltyDerivativeRevShare;
+    }
+
     function verifyLink(
         uint256 licenseId,
         address caller,
         address ipId,
         address parentIpId,
         bytes calldata policyData
-    ) external returns (bool);
+    ) external returns (VerifyLinkResponse memory);
 }
