@@ -13,9 +13,6 @@ import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
-import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
-import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
-import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
 import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
@@ -28,9 +25,6 @@ import { LicensorApprovalChecker } from "contracts/modules/licensing/parameter-h
 contract UMLPolicyFrameworkManager is
     IUMLPolicyFrameworkManager,
     BasePolicyFrameworkManager,
-    ILinkParamVerifier,
-    IMintParamVerifier,
-    ITransferParamVerifier,
     LicensorApprovalChecker
 {
     bytes32 private constant _EMPTY_STRING_ARRAY_HASH =
@@ -77,9 +71,9 @@ contract UMLPolicyFrameworkManager is
         address ipId,
         address, // parentIpId
         bytes calldata policyData
-    ) external override onlyLicenseRegistry returns (ILinkParamVerifier.VerifyLinkResponse memory) {
+    ) external override onlyLicenseRegistry returns (IPolicyFrameworkManager.VerifyLinkResponse memory) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
-        ILinkParamVerifier.VerifyLinkResponse memory response = ILinkParamVerifier.VerifyLinkResponse({
+        IPolicyFrameworkManager.VerifyLinkResponse memory response = IPolicyFrameworkManager.VerifyLinkResponse({
             isLinkingAllowed: true, // If you successfully mint and now hold a license, you have the right to link.
             isRoyaltyRequired: false,
             royaltyPolicy: address(0),
@@ -335,16 +329,6 @@ contract UMLPolicyFrameworkManager is
         /* solhint-enable */
 
         return string(abi.encodePacked("data:application/json;base64,", Base64.encode(bytes(json))));
-    }
-
-    function supportsInterface(
-        bytes4 interfaceId
-    ) public view virtual override(BasePolicyFrameworkManager, IERC165) returns (bool) {
-        return
-            super.supportsInterface(interfaceId) ||
-            interfaceId == type(ILinkParamVerifier).interfaceId ||
-            interfaceId == type(IMintParamVerifier).interfaceId ||
-            interfaceId == type(ITransferParamVerifier).interfaceId;
     }
 
     /// Checks the configuration of commercial use and throws if the policy is not compliant

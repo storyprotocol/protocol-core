@@ -3,13 +3,18 @@
 pragma solidity ^0.8.23;
 
 import { Licensing } from "contracts/lib/Licensing.sol";
-import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.sol";
+import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
 
 /// @title IPolicyFrameworkManager
 /// @notice Interface to define a policy framework contract, that will
 /// register itself into the LicenseRegistry to format policy into the LicenseRegistry
-interface IPolicyFrameworkManager is IPolicyVerifier {
-    // TODO: move here the interfaces for verification and sunset IPolicyVerifier
+interface IPolicyFrameworkManager {
+    struct VerifyLinkResponse {
+        bool isLinkingAllowed;
+        bool isRoyaltyRequired;
+        address royaltyPolicy;
+        uint32 royaltyDerivativeRevShare;
+    }
 
     /// @notice Name to be show in LNFT metadata
     function name() external view returns (string memory);
@@ -27,4 +32,29 @@ interface IPolicyFrameworkManager is IPolicyVerifier {
         uint256 policyId,
         bytes memory policy
     ) external view returns (bool changedAgg, bytes memory newAggregator);
+
+    function verifyMint(
+        address caller,
+        bool policyWasInherited,
+        address licensor,
+        address receiver,
+        uint256 mintAmount,
+        bytes memory policyData
+    ) external returns (bool);
+
+    function verifyLink(
+        uint256 licenseId,
+        address caller,
+        address ipId,
+        address parentIpId,
+        bytes calldata policyData
+    ) external returns (VerifyLinkResponse memory);
+
+    function verifyTransfer(
+        uint256 licenseId,
+        address from,
+        address to,
+        uint256 amount,
+        bytes memory policyData
+    ) external returns (bool);
 }

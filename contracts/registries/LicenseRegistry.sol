@@ -10,12 +10,8 @@ import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC16
 
 // contracts
 import { AccessControlled } from "contracts/access/AccessControlled.sol";
-import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.sol";
-import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
-import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
-import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
-import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
+import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
 import { Errors } from "contracts/lib/Errors.sol";
@@ -148,19 +144,17 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         // If a policy is set, then is only up to the policy params.
         // Verify minting param
         Licensing.Policy memory pol = policy(policyId);
-        if (ERC165Checker.supportsInterface(pol.policyFramework, type(IMintParamVerifier).interfaceId)) {
-            if (
-                !IMintParamVerifier(pol.policyFramework).verifyMint(
-                    msg.sender,
-                    isInherited,
-                    licensorIp,
-                    receiver,
-                    amount,
-                    pol.data
-                )
-            ) {
-                revert Errors.LicenseRegistry__MintLicenseParamFailed();
-            }
+        if (
+            !IPolicyFrameworkManager(pol.policyFramework).verifyMint(
+                msg.sender,
+                isInherited,
+                licensorIp,
+                receiver,
+                amount,
+                pol.data
+            )
+        ) {
+            revert Errors.LicenseRegistry__MintLicenseParamFailed();
         }
 
         Licensing.License memory licenseData = Licensing.License({ policyId: policyId, licensorIpId: licensorIp });
@@ -206,31 +200,30 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
             }
             // Verify linking params
             Licensing.Policy memory pol = policy(licenseData.policyId);
-            if (ERC165Checker.supportsInterface(pol.policyFramework, type(ILinkParamVerifier).interfaceId)) {
-                ILinkParamVerifier.VerifyLinkResponse memory response = ILinkParamVerifier(pol.policyFramework)
-                    .verifyLink(licenseId, msg.sender, childIpId, licensors[i], pol.data);
+            IPolicyFrameworkManager.VerifyLinkResponse memory response = IPolicyFrameworkManager(pol.policyFramework)
+                .verifyLink(licenseId, msg.sender, childIpId, licensors[i], pol.data);
 
-                if (!response.isLinkingAllowed) {
-                    revert Errors.LicenseRegistry__LinkParentParamFailed();
-                }
+            if (!response.isLinkingAllowed) {
+                revert Errors.LicenseRegistry__LinkParentParamFailed();
+            }
 
-                // Compatibility check: If link says no royalty is required for license (licenseIds[i]) but
-                // another license requires royalty, revert.
-                if (!response.isRoyaltyRequired && royaltyPolicyAddress != address(0)) {
+            // Compatibility check: If link says no royalty is required for license (licenseIds[i]) but
+            // another license requires royalty, revert.
+            if (!response.isRoyaltyRequired && royaltyPolicyAddress != address(0)) {
+                revert Errors.LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
+            }
+
+            // If link says royalty is required for license (licenseIds[i]) and no royalty policy is set, set it.
+            // But if the index is NOT 0, this is previous licenses didn't set the royalty policy because they don't
+            // require royalty payment. So, revert in this case.
+            if (response.isRoyaltyRequired && royaltyPolicyAddress == address(0)) {
+                if (i != 0) {
                     revert Errors.LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
                 }
-
-                // If link says royalty is required for license (licenseIds[i]) and no royalty policy is set, set it.
-                // But if the index is NOT 0, this is previous licenses didn't set the royalty policy because they don't
-                // require royalty payment. So, revert in this case.
-                if (response.isRoyaltyRequired && royaltyPolicyAddress == address(0)) {
-                    if (i != 0) {
-                        revert Errors.LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
-                    }
-                    royaltyPolicyAddress = response.royaltyPolicy;
-                    royaltyDerivativeRevShare = response.royaltyDerivativeRevShare;
-                }
+                royaltyPolicyAddress = response.royaltyPolicy;
+                royaltyDerivativeRevShare = response.royaltyDerivativeRevShare;
             }
+
             // Add the policy of licenseIds[i] to the child. If the policy's already set from previous parents,
             // then the addition will be skipped.
             _addPolicyIdToIp({
@@ -385,18 +378,10 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
             for (uint256 i = 0; i < ids.length; i++) {
                 // Verify transfer params
                 Licensing.Policy memory pol = policy(_licenses[ids[i]].policyId);
-                if (ERC165Checker.supportsInterface(pol.policyFramework, type(ITransferParamVerifier).interfaceId)) {
-                    if (
-                        !ITransferParamVerifier(pol.policyFramework).verifyTransfer(
-                            ids[i],
-                            from,
-                            to,
-                            values[i],
-                            pol.data
-                        )
-                    ) {
-                        revert Errors.LicenseRegistry__TransferParamFailed();
-                    }
+                if (
+                    !IPolicyFrameworkManager(pol.policyFramework).verifyTransfer(ids[i], from, to, values[i], pol.data)
+                ) {
+                    revert Errors.LicenseRegistry__TransferParamFailed();
                 }
             }
         }

@@ -3,7 +3,6 @@
 pragma solidity ^0.8.23;
 
 // contracts
-import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
@@ -16,7 +15,7 @@ import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol
 
 /// @title BasePolicyFrameworkManager
 /// @notice Base contract for policy framework managers.
-abstract contract BasePolicyFrameworkManager is IPolicyVerifier, IPolicyFrameworkManager, ERC165, LicenseRegistryAware {
+abstract contract BasePolicyFrameworkManager is IPolicyFrameworkManager, ERC165, LicenseRegistryAware {
     
     string public override name;
     string public override licenseTextUrl;
@@ -29,7 +28,7 @@ abstract contract BasePolicyFrameworkManager is IPolicyVerifier, IPolicyFramewor
     }
 
     /// @notice ERC165 interface identifier for the policy framework manager.
-    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, ERC165) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
         return interfaceId == type(IPolicyFrameworkManager).interfaceId || super.supportsInterface(interfaceId);
     }
 

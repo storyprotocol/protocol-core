@@ -4,14 +4,11 @@ pragma solidity ^0.8.23;
 // external
 import { ERC165, IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 // contracts
-import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
-import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
-import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.sol";
-import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
+import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 
 struct MockPolicyFrameworkConfig {
     address licenseRegistry;
@@ -28,12 +25,7 @@ struct MockPolicy {
     bool returnVerifyTransfer;
 }
 
-contract MockPolicyFrameworkManager is
-    BasePolicyFrameworkManager,
-    ILinkParamVerifier,
-    IMintParamVerifier,
-    ITransferParamVerifier
-{
+contract MockPolicyFrameworkManager is BasePolicyFrameworkManager {
     MockPolicyFrameworkConfig internal config;
 
     event MockPolicyAdded(uint256 indexed policyId, MockPolicy policy);
@@ -42,16 +34,6 @@ contract MockPolicyFrameworkManager is
         MockPolicyFrameworkConfig memory conf
     ) BasePolicyFrameworkManager(conf.licenseRegistry, conf.name, conf.licenseUrl) {
         config = conf;
-    }
-
-    function supportsInterface(
-        bytes4 interfaceId
-    ) public view virtual override(IERC165, BasePolicyFrameworkManager) returns (bool) {
-        if (interfaceId == type(IPolicyVerifier).interfaceId) return true;
-        if (interfaceId == type(ILinkParamVerifier).interfaceId) return config.supportVerifyLink;
-        if (interfaceId == type(IMintParamVerifier).interfaceId) return config.supportVerifyMint;
-        if (interfaceId == type(ITransferParamVerifier).interfaceId) return config.supportVerifyTransfer;
-        return super.supportsInterface(interfaceId);
     }
 
     function registerPolicy(MockPolicy calldata mockPolicy) external returns (uint256 policyId) {
@@ -70,10 +52,10 @@ contract MockPolicyFrameworkManager is
         address,
         address,
         bytes calldata data
-    ) external pure override returns (ILinkParamVerifier.VerifyLinkResponse memory) {
+    ) external pure override returns (IPolicyFrameworkManager.VerifyLinkResponse memory) {
         MockPolicy memory policy = abi.decode(data, (MockPolicy));
         return
-            ILinkParamVerifier.VerifyLinkResponse({
+        IPolicyFrameworkManager.VerifyLinkResponse({
                 isLinkingAllowed: policy.returnVerifyLink,
                 isRoyaltyRequired: false,
                 royaltyPolicy: address(0),
