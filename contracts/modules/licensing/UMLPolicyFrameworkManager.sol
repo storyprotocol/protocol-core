@@ -355,7 +355,7 @@ contract UMLPolicyFrameworkManager is
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddAttribution();
             }
             if (policy.commercializers.length > 0) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddCommercializers();
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddCommercializers();
             }
             if (policy.commercialRevShare > 0) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddRevShare();
