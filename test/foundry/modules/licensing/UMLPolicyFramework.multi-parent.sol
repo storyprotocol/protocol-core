@@ -16,6 +16,8 @@ import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { TestHelper } from "test/utils/TestHelper.sol";
 
+import "forge-std/console2.sol";
+
 contract UMLPolicyFrameworkMultiParentTest is TestHelper {
 
     UMLPolicyFrameworkManager internal umlFramework;
