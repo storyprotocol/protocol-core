@@ -82,7 +82,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
                                 REGISTER IP ACCOUNTS
         ////////////////////////////////////////////////////////////////*/
 
-/*         // Alice registers NFT 1 IPAccount
+        // Alice registers NFT 1 IPAccount
 
         vm.startPrank(u.alice);
         ipAcct[1] = registerIpAccount(nft, 1, u.alice);
@@ -97,28 +97,30 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
 
         // Alice sets royalty policy on her root IP
         {
+            // TODO: setRoyaltyPolicy should be called through mintLicense or addPolicyToIp, not directly by user
+            vm.startPrank(address(licenseRegistry));
             royaltyModule.setRoyaltyPolicy(
                 ipAcct[1],
                 address(royaltyPolicyLS),
                 new address[](0), // no parent
                 abi.encode(minRevShareIpAcct1)
             );
-        } */
+        }
 
         /*///////////////////////////////////////////////////////////////
                             ADD POLICIES TO IP ACCOUNTS
         ////////////////////////////////////////////////////////////////*/
 
-/*         // Alice attaches the UML Commercial Derivative Reciprocal policy to NFT 1 IPAccount
+        // Alice attaches the UML Commercial Derivative Reciprocal policy to NFT 1 IPAccount
 
         vm.startPrank(u.alice);
-        licenseRegistry.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_reciprocal"]); */
+        licenseRegistry.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_reciprocal"]);
 
         /*///////////////////////////////////////////////////////////////
                                 MINT & USE LICENSES
         ////////////////////////////////////////////////////////////////*/
 
- /*        // Bob mints 1 license from Alice's NFT 1 IPAccount, registers NFT 2 IPAccount, and links using the license
+        // Bob mints 1 license from Alice's NFT 1 IPAccount, registers NFT 2 IPAccount, and links using the license
         {
             vm.startPrank(u.bob);
             uint256 bob_license_from_root_alice = licenseRegistry.mintLicense(
@@ -292,6 +294,6 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
                 _withdrawETH: false,
                 _tokens: tokens
             });
-        } */
+        }
     } 
 }

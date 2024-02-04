@@ -118,12 +118,14 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                             ADD POLICIES TO IP ACCOUNTS
         ////////////////////////////////////////////////////////////////*/
 
-        /* vm.startPrank(u.alice);
+        vm.startPrank(u.alice);
         licenseRegistry.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_cheap_flexible"]);
         licenseRegistry.addPolicyToIp(ipAcct[100], policyIds["uml_noncom_deriv_reciprocal_derivative"]);
 
         // Alice sets royalty policy for her root IPAccounts
         // (so other IPAccounts can use her policies that inits royalty policy on linking)
+        // TODO: setRoyaltyPolicy should be called through mintLicense or addPolicyToIp, not directly by user
+        vm.startPrank(address(licenseRegistry));
         royaltyModule.setRoyaltyPolicy(
             ipAcct[1],
             address(royaltyPolicyLS),
@@ -137,6 +139,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
 
         // Bob sets royalty policy for his root IPAccounts
         // (so other IPAccounts can use his policies that inits royalty policy on linking)
+        // TODO: setRoyaltyPolicy should be called through mintLicense or addPolicyToIp, not directly by user
+        vm.startPrank(address(licenseRegistry));
         royaltyModule.setRoyaltyPolicy(
             ipAcct[300],
             address(royaltyPolicyLS),
@@ -155,7 +159,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                 ipAcct[3],
                 policyIds["uml_noncom_deriv_reciprocal_derivative"]
             )
-        ); */
+        );
 
         /*///////////////////////////////////////////////////////////////
                                 MINT & USE LICENSES

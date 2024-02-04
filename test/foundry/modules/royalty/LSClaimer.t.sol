@@ -40,7 +40,7 @@ contract TestLSClaimer is TestHelper {
     function setUp() public override {
         TestHelper.setUp();
         _setUMLPolicyFrameworkManager();
-        nft = new MockERC721("mock");
+        nft = erc721.ape;
         _addUMLPolicy(
             true,
             true,
