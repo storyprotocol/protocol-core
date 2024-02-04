@@ -7,7 +7,7 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
-import { IUMLPolicyFrameworkManager, UMLPolicy, UMLInheritedPolicyAggregator } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
+import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
@@ -15,8 +15,6 @@ import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { TestHelper } from "test/utils/TestHelper.sol";
-
-import "forge-std/console2.sol";
 
 contract UMLPolicyFrameworkMultiParentTest is TestHelper {
 
@@ -132,6 +130,237 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         );
         vm.prank(alice);
         licenseRegistry.linkIpToParents(licenses, ipId4, alice);
+    }
+
+    function test_UMLPolicyFramework_multiParent_NonReciprocalCommercial() public {
+        // First we create 2 policies.
+        _mapUMLPolicySimple({name: "pol_a", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polA = _getMappedUmlPolicy("pol_a");
+        _mapUMLPolicySimple({name: "pol_b", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polB = _getMappedUmlPolicy("pol_b");
+        // We set some indifferents
+        polA.attribution = true;
+        polB.attribution = !polA.attribution;
+        polA.transferable = true;
+        polB.transferable = !polA.transferable;
+        // Commercial use (success)
+        _testSuccessCompat(polA, polB, 2);
+    }
+
+    function test_UMLPolicyFramework_multiParent_revert_NonReciprocalCommercial() public {
+        // First we create 2 policies.
+        _mapUMLPolicySimple({name: "pol_a", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polA = _getMappedUmlPolicy("pol_a");
+        _mapUMLPolicySimple({name: "pol_b", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polB = _getMappedUmlPolicy("pol_b");
+        // We set some indifferents
+        polA.attribution = true;
+        polB.attribution = !polA.attribution;
+        polA.transferable = true;
+        polB.transferable = !polA.transferable;
+        // Commercial use (revert)
+        polA.commercialUse = true;
+        polB.commercialUse = false;
+        polB.royaltyPolicy = address(0x0);
+        _testRevertCompat(polA, polB, UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialValueMismatch.selector);
+    }
+
+    function test_UMLPolicyFramework_multiParent_NonReciprocalDerivatives() public {
+        // First we create 2 policies.
+        _mapUMLPolicySimple({name: "pol_a", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polA = _getMappedUmlPolicy("pol_a");
+        _mapUMLPolicySimple({name: "pol_b", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polB = _getMappedUmlPolicy("pol_b");
+        // We set some indifferents
+        polA.attribution = true;
+        polB.attribution = !polA.attribution;
+        polA.transferable = true;
+        polB.transferable = !polA.transferable;
+
+        // Derivatives (success)
+        _testSuccessCompat(polA, polB, 2);
+    }
+
+    function test_UMLPolicyFramework_multiParent_revert_NonReciprocalDerivatives() public {
+        // First we create 2 policies.
+        _mapUMLPolicySimple({name: "pol_a", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polA = _getMappedUmlPolicy("pol_a");
+        _mapUMLPolicySimple({name: "pol_b", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polB = _getMappedUmlPolicy("pol_b");
+        // We set some indifferents
+        polA.attribution = true;
+        polB.attribution = !polA.attribution;
+        polA.transferable = true;
+        polB.transferable = !polA.transferable;
+
+        // Derivatives (revert)
+        polA.derivativesAllowed = true;
+        polB.derivativesAllowed = !polA.derivativesAllowed;
+        _testRevertCompat(polA, polB, UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesValueMismatch.selector);
+    }
+
+    function test_UMLPolicyFramework_multiParent_NonReciprocalTerritories() public {
+        // First we create 2 policies.
+        _mapUMLPolicySimple({name: "pol_a", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polA = _getMappedUmlPolicy("pol_a");
+        _mapUMLPolicySimple({name: "pol_b", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polB = _getMappedUmlPolicy("pol_b");
+
+        // Territories (success same)
+        polA.territories = new string[](1);
+        polA.territories[0] = "US";
+        polB.territories = new string[](1);
+        polB.territories[0] = "US";
+        polB.attribution = !polB.attribution; // generates different policyId
+        _testSuccessCompat(polA, polB, 2);
+
+        // Territories (success empty)
+        polA.territories = new string[](0);
+        polB.territories = new string[](0);
+        polB.transferable = !polB.transferable; // generates different policyId
+        _testSuccessCompat(polA, polB, 4);
+
+    }
+
+    function test_UMLPolicyFramework_multiParent_revert_NonReciprocalTerritories() public {
+        // First we create 2 policies.
+        _mapUMLPolicySimple({name: "pol_a", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polA = _getMappedUmlPolicy("pol_a");
+        _mapUMLPolicySimple({name: "pol_b", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polB = _getMappedUmlPolicy("pol_b");
+        // We set some indifferents
+        polA.attribution = true;
+        polB.attribution = !polA.attribution;
+        polA.transferable = true;
+        polB.transferable = !polA.transferable;
+
+        // Territories (revert)
+        polA.territories = new string[](1);
+        polA.territories[0] = "US";
+        polB.territories = new string[](1);
+        polB.territories[0] = "UK";
+        _testRevertCompat(polA, polB, UMLFrameworkErrors.UMLPolicyFrameworkManager__StringArrayMismatch.selector);
+    }
+
+    function test_UMLPolicyFramework_multiParent_NonReciprocalDistributionChannels() public {
+        // First we create 2 policies.
+        _mapUMLPolicySimple({name: "pol_a", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polA = _getMappedUmlPolicy("pol_a");
+        _mapUMLPolicySimple({name: "pol_b", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polB = _getMappedUmlPolicy("pol_b");
+
+        // Territories (success same)
+        polA.distributionChannels = new string[](1);
+        polA.distributionChannels[0] = "web";
+        polB.distributionChannels = new string[](1);
+        polB.distributionChannels[0] = "web";
+        polB.attribution = !polB.attribution; // generates different policyId
+        _testSuccessCompat(polA, polB, 2);
+
+        // Territories (success empty)
+        polA.distributionChannels = new string[](0);
+        polB.distributionChannels = new string[](0);
+        polB.transferable = !polB.transferable; // generates different policyId
+        _testSuccessCompat(polA, polB, 4);
+
+    }
+
+    function test_UMLPolicyFramework_multiParent_revert_NonReciprocalDistributionChannels() public {
+        // First we create 2 policies.
+        _mapUMLPolicySimple({name: "pol_a", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polA = _getMappedUmlPolicy("pol_a");
+        _mapUMLPolicySimple({name: "pol_b", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polB = _getMappedUmlPolicy("pol_b");
+        // We set some indifferents
+        polA.attribution = true;
+        polB.attribution = !polA.attribution;
+        polA.transferable = true;
+        polB.transferable = !polA.transferable;
+
+        // Distribution channels (revert)
+        polA.distributionChannels = new string[](1);
+        polA.distributionChannels[0] = "web";
+        polB.distributionChannels = new string[](1);
+        polB.distributionChannels[0] = "mobile";
+        _testRevertCompat(polA, polB, UMLFrameworkErrors.UMLPolicyFrameworkManager__StringArrayMismatch.selector);
+    }
+
+    function test_UMLPolicyFramework_multiParent_NonReciprocalContentRestrictions() public {
+        // First we create 2 policies.
+        _mapUMLPolicySimple({name: "pol_a", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polA = _getMappedUmlPolicy("pol_a");
+        _mapUMLPolicySimple({name: "pol_b", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polB = _getMappedUmlPolicy("pol_b");
+
+        // Territories (success same)
+        polA.contentRestrictions = new string[](1);
+        polA.contentRestrictions[0] = "web";
+        polB.contentRestrictions = new string[](1);
+        polB.contentRestrictions[0] = "web";
+        polB.attribution = !polB.attribution; // generates different policyId
+        _testSuccessCompat(polA, polB, 2);
+
+        // Territories (success empty)
+        polA.contentRestrictions = new string[](0);
+        polB.contentRestrictions = new string[](0);
+        polB.transferable = !polB.transferable; // generates different policyId
+        _testSuccessCompat(polA, polB, 4);
+
+    }
+
+    function test_UMLPolicyFramework_multiParent_revert_NonReciprocalContentRestrictions() public {
+        // First we create 2 policies.
+        _mapUMLPolicySimple({name: "pol_a", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polA = _getMappedUmlPolicy("pol_a");
+        _mapUMLPolicySimple({name: "pol_b", commercial: true, derivatives: true, reciprocal: false});
+        UMLPolicy memory polB = _getMappedUmlPolicy("pol_b");
+        // We set some indifferents
+        polA.attribution = true;
+        polB.attribution = !polA.attribution;
+        polA.transferable = true;
+        polB.transferable = !polA.transferable;
+
+        // Content restrictions (revert)
+        polA.contentRestrictions = new string[](1);
+        polA.contentRestrictions[0] = "adult";
+        polB.contentRestrictions = new string[](1);
+        polB.contentRestrictions[0] = "child";
+        _testRevertCompat(polA, polB, UMLFrameworkErrors.UMLPolicyFrameworkManager__StringArrayMismatch.selector);
+    }
+
+    function _testRevertCompat(UMLPolicy memory polA, UMLPolicy memory polB, bytes4 errorSelector) internal {
+        uint256 polAId = umlFramework.registerPolicy(polA);
+        vm.prank(ipId1);
+        licenses.push(licenseRegistry.mintLicense(polAId, ipId1, 1, alice));
+        uint256 polBId = umlFramework.registerPolicy(polB);
+        vm.prank(ipId2);
+        licenses.push(licenseRegistry.mintLicense(polBId, ipId2, 1, alice));
+        vm.expectRevert(errorSelector);
+        vm.prank(alice);
+        licenseRegistry.linkIpToParents(licenses, ipId4, alice);
+        licenses = new uint256[](0); 
+    }
+
+    function _testSuccessCompat(UMLPolicy memory polA, UMLPolicy memory polB, uint256 expectedPolicies) internal {
+        uint256 polAId = umlFramework.registerPolicy(polA);
+        vm.prank(ipId1);
+        licenses.push(licenseRegistry.mintLicense(polAId, ipId1, 1, alice));
+        uint256 polBId = umlFramework.registerPolicy(polB);
+        vm.prank(ipId2);
+        licenses.push(licenseRegistry.mintLicense(polBId, ipId2, 1, alice));
+        vm.prank(alice);
+        licenseRegistry.linkIpToParents(licenses, ipId4, alice);
+        assertEq(licenseRegistry.totalParentsForIpId(ipId4), 2);
+        address[] memory parents = licenseRegistry.parentIpIds(ipId4);
+        for (uint256 i = 0; i < licenses.length; i++) {
+            Licensing.License memory license = licenseRegistry.license(licenses[i]);
+            assertEq(parents[i], license.licensorIpId);
+        }
+        assertEq(licenseRegistry.totalPoliciesForIp(false, ipId4), 0);
+        assertEq(licenseRegistry.totalPoliciesForIp(true, ipId4), expectedPolicies);
+        assertTrue(licenseRegistry.isPolicyIdSetForIp(true, ipId4, polAId));
+        assertTrue(licenseRegistry.isPolicyIdSetForIp(true, ipId4, polBId));
+        licenses = new uint256[](0); // To call this function multiple times
     }
 
 }

@@ -19,8 +19,6 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 
-import "forge-std/console2.sol";
-
 // TODO: consider disabling operators/approvals on creation
 contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
     using IPAccountChecker for IIPAccountRegistry;
@@ -489,7 +487,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         );
         if (aggregatorChanged) {
             _ipRights[pol.policyFramework][ipId] = newAggregator;
-            emit InheritedPolicyAggregatorUpdated(ipId, newAggregator);
         }
     }
 

@@ -31,5 +31,5 @@ interface IPolicyFrameworkManager is IERC165 {
         bytes memory aggregator,
         uint256 policyId,
         bytes memory policy
-    ) external view returns (bool changedRights, bytes memory newAggregator);
+    ) external view returns (bool changedAgg, bytes memory newAggregator);
 }

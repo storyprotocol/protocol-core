@@ -18,9 +18,11 @@ library UMLFrameworkErrors {
     error UMLPolicyFrameworkManager__DerivativesDisabled_CantAddReciprocal();
     error UMLPolicyFrameworkManager__DerivativesDisabled_CantAddRevShare();
     error UMLPolicyFrameworkManager__RightsNotFound();
-    error UMLPolicyFrameworkManager__CommecialDisabled_CantAddRoyaltyPolicy();
+    error UMLPolicyFrameworkManager__CommercialDisabled_CantAddRoyaltyPolicy();
     error UMLPolicyFrameworkManager__CommecialEnabled_RoyaltyPolicyRequired();
-    
     error UMLPolicyFrameworkManager__ReciprocalButDifferentPolicyIds();
     error UMLPolicyFrameworkManager__ReciprocalValueMismatch();
+    error UMLPolicyFrameworkManager__CommercialValueMismatch();
+    error UMLPolicyFrameworkManager__DerivativesValueMismatch();
+    error UMLPolicyFrameworkManager__StringArrayMismatch();
 }
