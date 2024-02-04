@@ -43,20 +43,6 @@ Alice burns L1, P1 is set in IP2
 2.3) Alice tries to set P2 in IP2 -> Fails, reciprocal means no different policies allowed, 
 and you cannot add the same policy twice ✅
 
-# Commercial (Since derivatives cannot add policies, this is already supported)
-~~Bob owns IP1~~
-~~Bob creates a license L1 with P1~~
-~~Alice owns IP2~~
-~~Alice burns L1, P1 is set in IP2~~
-
-~~1) P1 is Non Commercial (assume derivatives allowed)~~
-~~1.1) Alice tries to mint a commercial license -> fail~~
-~~1.2) Alice tries to add a commercial policy -> fail~~
-
-~~1) P1 is Commercial (assume derivatives allowed)~~
-~~1.1) Alice tries to mint a non commercial license -> OK? (if the only derivatives of derivatives are reciprocal, this fails)~~
-~~1.2) Alice tries to add a commercial policy -> OK? (if the only derivatives of derivatives are reciprocal, this fails)~~
-
 
 # Setting multiple parents
 Bob owns IP1, IP2 and IP3
@@ -71,24 +57,27 @@ Alice wants to burn L1,L2 and L3 to link as parents for IP4
 1.1) All licenses have the same reciprocal policy -> OK, result has 1 Policy
 1.2) Different policies, but at least 1 reciprocal -> Fail
 
--- Attribution is indifferent
--- Transferable is ???
--- Commercial use: must be all equal or fail
--- Commercial attribution: indifferent
--- Commercializers:
-  - All empty -> OK, stays empty
-  - 1 has values -> OK, the 1 with values wins
-  - several have same values -> OK, same values
-  - some have different values -> fail
--- Commercial rev share: set all
--- derivatives allowed: derivatives are only allowed through 1)
--- derivativesAttribution: indifferent
--- derivativesApproval: verify the ones that have it
--- derivativesReciprocal: see 1)
--- derivativesRevShare: execute all, but it should be case 1)
--- Territories: same logic as Commercializers
--- Distribution Channels: same logic as Commercializers
--- Content Restrictions: same logic as Commercializers
+2) NonReciprocal
+1.1) All licenses have the same reciprocal policy -> OK, result has 1 Policy
+1.2) Different policies, but at least 1 reciprocal -> Fail
+
+
+| Parameter               | Multi parent eval                                   | Reason                                                                                                            |
+|-------------------------|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| Attribution             | Indifferent                                         | Holder of all licenses must attribute the ones demanding it. Disputable                                           |
+| Transferable            | Indifferent                                         | Property of the license, not the IP                                                                               |
+| Commercial use          | Equal or revert                                     | One would infringe the other                                                                                      |
+| Commercial attribution  | Indifferent                                         | Holder of all licenses must attribute the ones demanding it. Disputable                                           |
+| Commercializers         | Indifferent                                         | OK if verification checks for all licenses succeed                                                                |
+| Commercial Rev Share    | Indifferent                                         | Licensing proccess must set all. Verifications must pass                                                          |
+| Derivatives             | Equal or revert                                     | One would infringe the other                                                                                      |
+| Derivatives Attribution | Indifferent                                         | Holder of all licenses must attribute the ones demanding it. Disputable                                           |
+| Derivatives Approval    | Indifferent                                         | OK if verification checks for all licenses succeed                                                                |
+| Derivatives Reciprocal  | Equal or revert. If both true, policy must be equal | One would infringe the other                                                                                      |
+| Derivatives Rev Share   | Indifferent                                         | Licensing proccess must set all. Verifications must pass                                                          |
+| Territories             | All equal, or some empty and the rest equal         | All permissive is OK. Some permissive except some with same restrictions OK. Different restrictions is a conflict |
+| Distribution Channels   | Same as previous                                    | Same as previous                                                                                                  |
+| Content Restrictions    | Same as previous                                    | Same as previous                                                                                                  |
 
 
 # INTEGRATION
