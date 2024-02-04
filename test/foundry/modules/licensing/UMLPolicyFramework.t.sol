@@ -26,7 +26,6 @@ contract UMLPolicyFrameworkTest is TestHelper {
     address public ipId2;
     address public ipOwner = vm.addr(1);
     address public licenseHolder = address(0x101);
-    string[] public emptyStringArray = new string[](0);
 
     function setUp() public override {
         TestHelper.setUp();

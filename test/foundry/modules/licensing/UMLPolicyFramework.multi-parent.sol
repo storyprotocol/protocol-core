@@ -53,7 +53,6 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
             address(accessController),
             address(ipAccountRegistry),
             address(licenseRegistry),
-            address(royaltyModule),
             "UMLPolicyFrameworkManager",
             licenseUrl
         );

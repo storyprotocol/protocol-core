@@ -33,8 +33,8 @@ contract UMLPolicyFrameworkManager is
     ITransferParamVerifier,
     LicensorApprovalChecker
 {
-    IRoyaltyModule public immutable ROYALTY_MODULE;
-    bytes32 private constant _EMPTY_STRING_ARRAY_HASH = 0x569e75fc77c1a856f6daaf9e69d8a9566ca34aa47f9133711ce065a571af0cfd;
+    bytes32 private constant _EMPTY_STRING_ARRAY_HASH =
+        0x569e75fc77c1a856f6daaf9e69d8a9566ca34aa47f9133711ce065a571af0cfd;
 
     constructor(
         address accessController,
@@ -217,17 +217,29 @@ contract UMLPolicyFrameworkManager is
                     revert UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesValueMismatch();
                 }
 
-                bytes32 newHash = _verifyStringArray(agg.territoriesAcc, keccak256(abi.encode(newPolicy.territories)));
+                bytes32 newHash = _verifHashedParams(
+                    agg.territoriesAcc,
+                    keccak256(abi.encode(newPolicy.territories)),
+                    _EMPTY_STRING_ARRAY_HASH
+                );
                 if (newHash != agg.territoriesAcc) {
                     agg.territoriesAcc = newHash;
                     changedAgg = true;
                 }
-                newHash = _verifyStringArray(agg.distributionChannelsAcc, keccak256(abi.encode(newPolicy.distributionChannels)));
+                newHash = _verifHashedParams(
+                    agg.distributionChannelsAcc,
+                    keccak256(abi.encode(newPolicy.distributionChannels)),
+                    _EMPTY_STRING_ARRAY_HASH
+                );
                 if (newHash != agg.distributionChannelsAcc) {
                     agg.distributionChannelsAcc = newHash;
                     changedAgg = true;
                 }
-                newHash = _verifyStringArray(agg.contentRestrictionsAcc, keccak256(abi.encode(newPolicy.contentRestrictions)));
+                newHash = _verifHashedParams(
+                    agg.contentRestrictionsAcc,
+                    keccak256(abi.encode(newPolicy.contentRestrictions)),
+                    _EMPTY_STRING_ARRAY_HASH
+                );
                 if (newHash != agg.contentRestrictionsAcc) {
                     agg.contentRestrictionsAcc = newHash;
                     changedAgg = true;
@@ -384,9 +396,13 @@ contract UMLPolicyFrameworkManager is
     /// Verifies compatibility for params where the valid options are either permissive value, or equal params
     /// @param oldHash hash of the old param
     /// @param newHash hash of the new param
-    /// @param emptyHash hash of the most permissive param
+    /// @param permissive hash of the most permissive param
     /// @return result the hash that's different from the permissive hash
-    function _verifHashedParams(bytes32 oldHash, bytes32 newHash, bytes32 permissive) internal view returns(bytes32 result) {        
+    function _verifHashedParams(
+        bytes32 oldHash,
+        bytes32 newHash,
+        bytes32 permissive
+    ) internal view returns (bytes32 result) {
         if (oldHash == newHash) {
             return newHash;
         }
