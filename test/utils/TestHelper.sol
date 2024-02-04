@@ -64,7 +64,6 @@ contract TestHelper is Test, DeployHelper {
             address(accessController),
             address(ipAssetRegistry),
             address(licenseRegistry),
-            address(royaltyModule),
             "UML_MINT_PAYMENT",
             "license Url"
         );

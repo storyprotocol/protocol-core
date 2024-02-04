@@ -126,13 +126,18 @@ contract DeployHelper is Test {
             address(accessController),
             address(ipAccountImpl)
         );
-        licenseRegistry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
-        ipMetadataProvider = new IPMetadataProvider(address(moduleRegistry));
+        royaltyModule = new RoyaltyModule(address(governance));
         ipAssetRegistry = new IPAssetRegistry(
             address(accessController),
             address(erc6551Registry),
             address(ipAccountImpl)
         );
+        licenseRegistry = new LicenseRegistry(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(royaltyModule)
+        );
+        ipMetadataProvider = new IPMetadataProvider(address(moduleRegistry));
         ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry), address(licenseRegistry));
         registrationModule = new RegistrationModule(
             address(accessController),
@@ -141,7 +146,6 @@ contract DeployHelper is Test {
             address(ipResolver)
         );
         taggingModule = new TaggingModule();
-        royaltyModule = new RoyaltyModule(address(registrationModule), address(governance));
         disputeModule = new DisputeModule(
             address(accessController),
             address(ipAssetRegistry),
@@ -178,6 +182,7 @@ contract DeployHelper is Test {
     function _configDeployedContracts() internal {
         vm.startPrank(u.admin);
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
+        royaltyModule.initialize(address(registrationModule));
 
         moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));

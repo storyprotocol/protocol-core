@@ -58,7 +58,7 @@ interface ILicenseRegistry {
     /// @param caller The address that called the function
     /// @param ipId The id of the IP
     /// @param parentIpIds The ids of the parent IP
-    event IpIdLinkedToParents(address indexed caller, address indexed ipId, address[] indexed parentIpIds);
+    event IpIdLinkedToParents(address indexed caller, address indexed ipId, address[] parentIpIds);
 
     /// @notice Registers a policy framework manager into the contract, so it can add policy data for
     /// licenses.
@@ -94,7 +94,11 @@ interface ILicenseRegistry {
     /// @param licenseIds The id of the licenses to burn
     /// @param childIpId The id of the child IP to be linked
     /// @param holder The address that holds the license
-    function linkIpToParents(uint256[] calldata licenseIds, address childIpId, address holder) external;
+    function linkIpToParents(
+        uint256[] calldata licenseIds,
+        address childIpId,
+        address holder
+    ) external;
 
     ///
     /// Getters

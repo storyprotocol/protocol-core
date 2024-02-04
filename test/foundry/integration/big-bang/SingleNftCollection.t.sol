@@ -7,6 +7,7 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 // contract
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { IP } from "contracts/lib/IP.sol";
+import { Errors } from "contracts/lib/Errors.sol";
 
 // test
 import { BaseIntegration } from "test/foundry/integration/BaseIntegration.sol";
@@ -33,13 +34,6 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         );
 
         nft = erc721.cat;
-
-        nft.mintId(u.alice, 1);
-        nft.mintId(u.alice, 2);
-        nft.mintId(u.bob, 3);
-        nft.mintId(u.bob, 4);
-        nft.mintId(u.carl, 5);
-        nft.mintId(u.carl, 6);
     }
 
     function test_Integration_SingleNftCollection_DirectCallsByIPAccountOwners()
@@ -48,7 +42,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         withLFM_MintPayment(erc20, 1)
         withUMLPolicy_Commerical_Derivative(
             UMLPolicyGenericParams({
-                policyName: "cheap_flexible", // => com_deriv_cheap_flexible
+                policyName: "cheap_flexible", // => uml_com_deriv_cheap_flexible
                 attribution: false,
                 transferable: true,
                 territories: new string[](0),
@@ -69,7 +63,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         )
         withUMLPolicy_NonCommercial_Derivative(
             UMLPolicyGenericParams({
-                policyName: "reciprocal_derivative", // => noncom_deriv_reciprocal_derivative
+                policyName: "reciprocal_derivative", // => uml_noncom_derive_reciprocal_derivative
                 attribution: false,
                 transferable: true,
                 territories: new string[](0),
@@ -84,7 +78,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         )
         withUMLPolicy_NonCommercial_NonDerivative(
             UMLPolicyGenericParams({
-                policyName: "self", // => noncom_nonderiv_self
+                policyName: "self", // => uml_noncom_nonderiv_self
                 attribution: false,
                 transferable: false,
                 territories: new string[](0),
@@ -102,12 +96,19 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         // owner is the vm.pranker
 
         vm.startPrank(u.alice);
+        nft.mintId(u.alice, 1);
+        nft.mintId(u.alice, 100);
         ipAcct[1] = registerIpAccount(nft, 1, u.alice);
+        ipAcct[100] = registerIpAccount(nft, 100, u.alice);
 
         vm.startPrank(u.bob);
+        nft.mintId(u.bob, 3);
+        nft.mintId(u.bob, 300);
         ipAcct[3] = registerIpAccount(nft, 3, u.bob);
+        ipAcct[300] = registerIpAccount(nft, 300, u.bob);
 
         vm.startPrank(u.carl);
+        nft.mintId(u.carl, 5);
         ipAcct[5] = registerIpAccount(nft, 5, u.carl);
 
         /*///////////////////////////////////////////////////////////////
@@ -116,18 +117,29 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
 
         vm.startPrank(u.alice);
         licenseRegistry.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_cheap_flexible"]);
+        licenseRegistry.addPolicyToIp(ipAcct[100], policyIds["uml_noncom_deriv_reciprocal_derivative"]);
 
-        // Alice sets royalty policy for her IPAccount (so other IPAccounts can use her policies that
-        // inits royalty policy on linking)
+        // Alice sets royalty policy for her root IPAccounts
+        // (so other IPAccounts can use her policies that inits royalty policy on linking)
         royaltyModule.setRoyaltyPolicy(
             ipAcct[1],
             address(royaltyPolicyLS),
             new address[](0), // no parent
-            abi.encode(50)
+            abi.encode(10)
         );
 
         vm.startPrank(u.bob);
         licenseRegistry.addPolicyToIp(ipAcct[3], policyIds["mint_payment_normal"]);
+        licenseRegistry.addPolicyToIp(ipAcct[300], policyIds["uml_com_deriv_cheap_flexible"]);
+
+        // Bob sets royalty policy for his root IPAccounts
+        // (so other IPAccounts can use his policies that inits royalty policy on linking)
+        royaltyModule.setRoyaltyPolicy(
+            ipAcct[300],
+            address(royaltyPolicyLS),
+            new address[](0), // no parent
+            abi.encode(10)
+        );
 
         vm.startPrank(u.bob);
         // NOTE: the two calls below achieve the same functionality
@@ -151,6 +163,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         // Carl activates the license on his NFT 6 IPAccount, linking as child to Alice's NFT 1 IPAccount
         {
             vm.startPrank(u.carl);
+            nft.mintId(u.carl, 6);
             uint256[] memory carl_license_from_root_alice = new uint256[](1);
             carl_license_from_root_alice[0] = licenseRegistry.mintLicense(
                 policyIds["uml_com_deriv_cheap_flexible"],
@@ -163,13 +176,14 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             linkIpToParents(carl_license_from_root_alice, ipAcct[6], u.carl);
         }
 
-        // Alice mints 2 license for policy "noncom_deriv_mint_payment" on Bob's NFT 3 IPAccount
+        // Alice mints 2 license for policy "mint_payment_normal" on Bob's NFT 3 IPAccount
         // Alice creates NFT 2 IPAccount
         // Alice activates one of the two licenses on her NFT 2 IPAccount, linking as child to Bob's NFT 3 IPAccount
         // Alice creates derivative NFT 3 directly using the other license
         // NOTE: since this policy has `MintPaymentPolicyFrameworkManager` attached, Alice must pay the mint payment
         {
             vm.startPrank(u.alice);
+            nft.mintId(u.alice, 2);
             uint256 mintAmount = 2;
             uint256 paymentPerMint = MintPaymentPolicyFrameworkManager(pfm["mint_payment"].addr).payment();
 
@@ -231,38 +245,65 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         {
             vm.startPrank(u.carl);
 
+            uint256 tokenId = 70000; // dummy number that shouldn't conflict with any other token IDs used in this test
+            nft.mintId(u.carl, tokenId);
+
             uint256 paymentPerMint = MintPaymentPolicyFrameworkManager(pfm["mint_payment"].addr).payment();
 
-            uint256 tokenId = 7;
-            nft.mintId(u.carl, tokenId);
+            IP.MetadataV1 memory metadata = IP.MetadataV1({
+                name: "IP NAME",
+                hash: bytes32("hash"),
+                registrationDate: uint64(block.timestamp),
+                registrant: u.carl, // caller
+                uri: "external URL"
+            });
 
             erc20.approve(pfm["mint_payment"].addr, 1 * paymentPerMint);
 
             uint256[] memory carl_licenses = new uint256[](2);
+            // Commercial license
             carl_licenses[0] = licenseRegistry.mintLicense(
                 policyIds["uml_com_deriv_cheap_flexible"], // ipAcct[1] has this policy attached
                 ipAcct[1],
-                1,
+                100, // mint 100 licenses
                 u.carl
             );
+
+            // Non-commercial license
             carl_licenses[1] = licenseRegistry.mintLicense(
-                policyIds["mint_payment_normal"], // ipAcct[3] has this policy attached
+                policyIds["uml_noncom_deriv_reciprocal_derivative"], // ipAcct[3] has this policy attached
                 ipAcct[3],
                 1,
                 u.carl
             );
 
-            registerDerivativeIps(
+            // This should revert since license[0] is commercial but license[1] is non-commercial
+            vm.expectRevert(Errors.LicenseRegistry__IncompatibleLicensorRoyaltyPolicy.selector);
+            // Call `registrationModule.registerDerivativeIps` directly because expecting revert on the 
+            // wrapper `registerDerivativeIps` fails due to the implementation of the wrapper function.
+            registrationModule.registerDerivativeIp(
                 carl_licenses,
                 address(nft),
                 tokenId,
-                IP.MetadataV1({
-                    name: "IP NAME",
-                    hash: bytes32("hash"),
-                    registrationDate: uint64(block.timestamp),
-                    registrant: u.carl, // caller
-                    uri: "external URL"
-                }),
+                metadata.name,
+                metadata.hash,
+                metadata.uri
+            );
+
+            // Modify license[1] to a Commercial license
+            carl_licenses[1] = licenseRegistry.mintLicense(
+                policyIds["uml_com_deriv_cheap_flexible"], // ipAcct[300] has this policy attached
+                ipAcct[300],
+                1,
+                u.carl
+            );
+
+            // This should succeed since both license[0] and license[1] are commercial
+            registerDerivativeIps(
+                carl_licenses, // ipAcct[1] and ipAcct[3] licenses
+                address(nft),
+                tokenId,
+                metadata,
                 u.carl // caller
             );
         }

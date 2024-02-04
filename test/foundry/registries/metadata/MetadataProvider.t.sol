@@ -20,6 +20,7 @@ import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProvid
 import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMetadataProvider.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 
 /// @title IP Metadata Provider Testing Contract
 /// @notice Contract for metadata provider settings.
@@ -116,18 +117,27 @@ contract MetadataProviderTest is BaseTest {
         Governance governance = new Governance(address(this));
         AccessController accessController = new AccessController(address(governance));
         ModuleRegistry moduleRegistry = new ModuleRegistry(address(governance));
+
+        ERC6551Registry erc6551Registry = new ERC6551Registry();
+        IPAccountImpl ipAccountImpl = new IPAccountImpl();
         IPAccountRegistry ipAccountRegistry = new IPAccountRegistry(
-            address(new ERC6551Registry()),
+            address(erc6551Registry),
             address(accessController),
-            address(new IPAccountImpl())
+            address(ipAccountImpl)
         );
-        accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-        LicenseRegistry licenseRegistry = new LicenseRegistry(address(accessController), address(ipAccountRegistry));
         vm.prank(bob);
         registry = new IPAssetRegistry(
             address(accessController),
-            address(new ERC6551Registry()),
-            address(new IPAccountImpl())
+            address(erc6551Registry),
+            address(ipAccountImpl)
+        );
+        RoyaltyModule royaltyModule = new RoyaltyModule(address(governance));
+
+        accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
+        LicenseRegistry licenseRegistry = new LicenseRegistry(
+            address(accessController),
+            address(registry),
+            address(royaltyModule)
         );
         MockERC721 erc721 = new MockERC721("MockERC721");
         uint256 tokenId = erc721.mintId(alice, 99);

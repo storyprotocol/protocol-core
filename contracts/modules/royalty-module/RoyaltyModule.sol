@@ -14,7 +14,7 @@ import { Errors } from "contracts/lib/Errors.sol";
 ///         and pay royalties as a derivative ip.
 contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
     /// @notice registration module address
-    address public immutable REGISTRATION_MODULE;
+    address public REGISTRATION_MODULE;
 
     /// @notice Indicates if a royalty policy is whitelisted
     mapping(address royaltyPolicy => bool allowed) public isWhitelistedRoyaltyPolicy;
@@ -32,11 +32,11 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
     }
 
     /// @notice Constructor
-    /// @param _registrationModule The address of the registration module
     /// @param _governance The address of the governance contract
-    constructor(address _registrationModule, address _governance) Governable(_governance) {
-        if (_registrationModule == address(0)) revert Errors.RoyaltyModule__ZeroLicensingModule();
+    constructor(address _governance) Governable(_governance) {}
 
+    function initialize(address _registrationModule) external onlyProtocolAdmin {
+        if (_registrationModule == address(0)) revert Errors.RoyaltyModule__ZeroLicensingModule();
         REGISTRATION_MODULE = _registrationModule;
     }
 

@@ -19,10 +19,7 @@ import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransfer
 import { IUMLPolicyFrameworkManager, UMLPolicy, UMLRights } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
-import { IRoyaltyModule } from "contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
-import { IRoyaltyPolicy } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
 import { LicensorApprovalChecker } from "contracts/modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
-
 
 /// @title UMLPolicyFrameworkManager
 /// @notice This is the UML Policy Framework Manager, which implements the UML Policy Framework
@@ -36,21 +33,16 @@ contract UMLPolicyFrameworkManager is
     ITransferParamVerifier,
     LicensorApprovalChecker
 {
-    IRoyaltyModule public immutable ROYALTY_MODULE;
-
     constructor(
         address accessController,
         address ipAccountRegistry,
         address licRegistry,
-        address royaltyModule,
         string memory name_,
         string memory licenseUrl_
     )
         BasePolicyFrameworkManager(licRegistry, name_, licenseUrl_)
         LicensorApprovalChecker(accessController, ipAccountRegistry)
-    {
-        ROYALTY_MODULE = IRoyaltyModule(royaltyModule);
-    }
+    {}
 
     function licenseRegistry()
         external
@@ -80,11 +72,17 @@ contract UMLPolicyFrameworkManager is
         uint256 licenseId,
         address, // caller
         address ipId,
-        address parentIpId,
+        address, // parentIpId
         bytes calldata policyData
-    ) external override onlyLicenseRegistry returns (bool) {
+    ) external override onlyLicenseRegistry returns (ILinkParamVerifier.VerifyLinkResponse memory) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
-        bool linkingOK = true;
+        ILinkParamVerifier.VerifyLinkResponse memory response = ILinkParamVerifier.VerifyLinkResponse({
+            isLinkingAllowed: true, // If you successfully mint and now hold a license, you have the right to link.
+            isRoyaltyRequired: false,
+            royaltyPolicy: address(0),
+            royaltyDerivativeRevShare: 0
+        });
+
         // If the policy defines commercial revenue sharing, call the royalty module
         // to set it for the licensor
         if (policy.commercialRevShare > 0) {
@@ -94,22 +92,17 @@ contract UMLPolicyFrameworkManager is
         // to set it for the licensor in future derivatives
         if (policy.derivativesRevShare > 0) {
             // RoyaltyModule.setRevShareForDerivatives()
-            address[] memory parentIpIds = new address[](1);
-            parentIpIds[0] = parentIpId;
-
-            ROYALTY_MODULE.setRoyaltyPolicy(
-                ipId,
-                policy.royaltyPolicy,
-                parentIpIds,
-                abi.encode(policy.derivativesRevShare) // uint32
-            );
+            response.isRoyaltyRequired = true;
+            response.royaltyPolicy = policy.royaltyPolicy;
+            response.royaltyDerivativeRevShare = policy.derivativesRevShare;
         }
         // If the policy defines the licensor must approve derivatives, check if the
         // derivative is approved by the licensor
         if (policy.derivativesApproval) {
-            linkingOK = linkingOK && isDerivativeApproved(licenseId, ipId);
+            response.isLinkingAllowed = response.isLinkingAllowed && isDerivativeApproved(licenseId, ipId);
         }
-        return linkingOK;
+
+        return response;
     }
 
     /// Called by licenseRegistry to verify policy parameters for minting a license

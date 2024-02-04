@@ -31,14 +31,18 @@ contract TestRoyaltyModule is TestHelper {
     }
 
     function test_RoyaltyModule_constructor_revert_ZeroRegistrationModule() public {
+        RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(governance));
         vm.expectRevert(Errors.RoyaltyModule__ZeroLicensingModule.selector);
-        RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(0), address(1));
+        vm.prank(u.admin);
+        testRoyaltyModule.initialize(address(0));
     }
 
     function test_RoyaltyModule_constructor() public {
-        RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(registrationModule), address(1));
+        RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(governance));
+        vm.prank(u.admin);
+        testRoyaltyModule.initialize(address(registrationModule));
         assertEq(testRoyaltyModule.REGISTRATION_MODULE(), address(registrationModule));
-        assertEq(testRoyaltyModule.governance(), address(1));
+        assertEq(testRoyaltyModule.governance(), address(governance));
     }
 
     function test_RoyaltyModule_whitelistRoyaltyPolicy_revert_ZeroRoyaltyToken() public {
