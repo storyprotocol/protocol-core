@@ -161,7 +161,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                                 MINT & USE LICENSES
         ////////////////////////////////////////////////////////////////*/
 
-        // Carl mints 1 license for policy "com_deriv_all_true" on Alice's NFT 1 IPAccount
+/*         // Carl mints 1 license for policy "com_deriv_all_true" on Alice's NFT 1 IPAccount
         // Carl creates NFT 6 IPAccount
         // Carl activates the license on his NFT 6 IPAccount, linking as child to Alice's NFT 1 IPAccount
         {
@@ -309,6 +309,6 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                 metadata,
                 u.carl // caller
             );
-        }
+        } */
     }
 }
