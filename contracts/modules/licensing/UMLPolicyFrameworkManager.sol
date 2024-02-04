@@ -20,6 +20,7 @@ import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator } from "contracts/
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 import { LicensorApprovalChecker } from "contracts/modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
+import { ICommercializerChecker } from "contracts/interfaces/licensing/ICommercializerChecker.sol";
 
 /// @title UMLPolicyFrameworkManager
 /// @notice This is the UML Policy Framework Manager, which implements the UML Policy Framework
@@ -279,22 +280,18 @@ contract UMLPolicyFrameworkManager is
                 '{"trait_type": "commercialRevShare", "value": ',
                 Strings.toString(policy.commercialRevShare),
                 "},"
-                '{"trait_type": "commercializers", "value": ['
+                '{"trait_type": "commercializers", "value": ',
+                policy.commercializerChecker == address(0) ?
+                    "unrestricted" :
+                    ICommercializerChecker(policy.commercializerChecker).description(policy.commercializerData),
+                "},"
+
             )
         );
 
-        uint256 commercializerCount = policy.commercializers.length;
-        for (uint256 i = 0; i < commercializerCount; ++i) {
-            json = string(abi.encodePacked(json, '"', policy.commercializers[i], '"'));
-            if (i != commercializerCount - 1) {
-                json = string(abi.encodePacked(json, ","));
-            }
-        }
-
         json = string(
             abi.encodePacked(
-                json,
-                ']}, {"trait_type": "derivativesAllowed", "value": "',
+                '{"trait_type": "derivativesAllowed", "value": "',
                 policy.derivativesAllowed ? "true" : "false",
                 '"},',
                 '{"trait_type": "derivativesAttribution", "value": "',
@@ -354,7 +351,7 @@ contract UMLPolicyFrameworkManager is
             if (policy.commercialAttribution) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddAttribution();
             }
-            if (policy.commercializers.length > 0) {
+            if (policy.commercializerChecker != address(0)) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddCommercializers();
             }
             if (policy.commercialRevShare > 0) {

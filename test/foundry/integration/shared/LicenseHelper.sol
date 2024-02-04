@@ -39,7 +39,8 @@ struct UMLPolicyGenericParams {
 
 struct UMLPolicyCommercialParams {
     bool commercialAttribution;
-    string[] commercializers;
+    address commercializerChecker;
+    bytes commercializerData;
     uint32 commercialRevShare;
     address royaltyPolicy;
 }
@@ -158,7 +159,8 @@ contract Integration_Shared_LicensingHelper {
                 transferable: gparams.transferable,
                 commercialUse: true,
                 commercialAttribution: cparams.commercialAttribution,
-                commercializers: cparams.commercializers,
+                commercializerChecker: cparams.commercializerChecker,
+                commercializerData: cparams.commercializerData,
                 commercialRevShare: cparams.commercialRevShare,
                 derivativesAllowed: true,
                 derivativesAttribution: dparams.derivativesAttribution,
@@ -187,7 +189,8 @@ contract Integration_Shared_LicensingHelper {
                 transferable: gparams.transferable,
                 commercialUse: true,
                 commercialAttribution: cparams.commercialAttribution,
-                commercializers: cparams.commercializers,
+                commercializerChecker: cparams.commercializerChecker,
+                commercializerData: cparams.commercializerData,
                 commercialRevShare: cparams.commercialRevShare,
                 derivativesAllowed: false,
                 derivativesAttribution: false,
@@ -216,7 +219,8 @@ contract Integration_Shared_LicensingHelper {
                 transferable: gparams.transferable,
                 commercialUse: false,
                 commercialAttribution: false,
-                commercializers: new string[](0),
+                commercializerChecker: address(0),
+                commercializerData: bytes(""),
                 commercialRevShare: 0,
                 derivativesAllowed: true,
                 derivativesAttribution: dparams.derivativesAttribution,
@@ -242,7 +246,8 @@ contract Integration_Shared_LicensingHelper {
                 transferable: gparams.transferable,
                 commercialUse: false,
                 commercialAttribution: false,
-                commercializers: new string[](0),
+                commercializerChecker: address(0),
+                commercializerData: bytes(""),
                 commercialRevShare: 0,
                 derivativesAllowed: false,
                 derivativesAttribution: false,

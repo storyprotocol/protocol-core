@@ -58,7 +58,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
             transferable: false,
             commercialUse: true,
             commercialAttribution: true,
-            commercializers: emptyStringArray,
+            commercializerChecker: address(0),
+            commercializerData: "",
             commercialRevShare: 0,
             derivativesAllowed: false, // If false, derivativesRevShare should revert
             derivativesAttribution: false,
@@ -86,7 +87,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
             transferable: false,
             commercialUse: false,
             commercialAttribution: true,
-            commercializers: emptyStringArray,
+            commercializerChecker: address(0),
+            commercializerData: "",
             commercialRevShare: 0,
             derivativesAllowed: false,
             derivativesAttribution: false,
@@ -103,12 +105,11 @@ contract UMLPolicyFrameworkTest is TestHelper {
         umlFramework.registerPolicy(umlPolicy);
         // Non empty commercializers should revert
         umlPolicy.commercialAttribution = false;
-        umlPolicy.commercializers = new string[](1);
-        umlPolicy.commercializers[0] = "test";
+        umlPolicy.commercializerChecker = address(0xbeef);
         vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddCommercializers.selector);
         umlFramework.registerPolicy(umlPolicy);
         // No rev share should be set; revert
-        umlPolicy.commercializers = new string[](0);
+        umlPolicy.commercializerChecker = address(0);
         umlPolicy.commercialRevShare = 1;
         vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddRevShare.selector);
         umlFramework.registerPolicy(umlPolicy);
@@ -120,15 +121,13 @@ contract UMLPolicyFrameworkTest is TestHelper {
     }
 
     function test_UMLPolicyFrameworkManager__commercialUse_valuesSetCorrectly() public {
-        string[] memory commercializers = new string[](2);
-        commercializers[0] = "test1";
-        commercializers[1] = "test2";
         UMLPolicy memory umlPolicy = UMLPolicy({
             attribution: false,
             transferable: false,
             commercialUse: true,
             commercialAttribution: true,
-            commercializers: commercializers,
+            commercializerChecker: address(0),
+            commercializerData: "",
             commercialRevShare: 123123,
             derivativesAllowed: true, // If false, derivativesRevShare should revert
             derivativesAttribution: false,
@@ -152,7 +151,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
             transferable: false,
             commercialUse: true, // So derivativesRevShare doesn't revert for this
             commercialAttribution: false,
-            commercializers: emptyStringArray,
+            commercializerChecker: address(0),
+            commercializerData: "",
             commercialRevShare: 0,
             derivativesAllowed: false,
             derivativesAttribution: true,
@@ -190,7 +190,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
             transferable: false,
             commercialUse: true, // If false, derivativesRevShare should revert
             commercialAttribution: true,
-            commercializers: emptyStringArray,
+            commercializerChecker: address(0),
+            commercializerData: "",
             commercialRevShare: 0,
             derivativesAllowed: true, // If false, derivativesRevShare should revert
             derivativesAttribution: true,
@@ -218,7 +219,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
                 transferable: false,
                 commercialUse: false,
                 commercialAttribution: false,
-                commercializers: emptyStringArray,
+                commercializerChecker: address(0),
+                commercializerData: "",
                 commercialRevShare: 0,
                 derivativesAllowed: true,
                 derivativesAttribution: false,
@@ -256,7 +258,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
                 transferable: false,
                 commercialUse: false,
                 commercialAttribution: false,
-                commercializers: emptyStringArray,
+                commercializerChecker: address(0),
+                commercializerData: "",
                 commercialRevShare: 0,
                 derivativesAllowed: true,
                 derivativesAttribution: false,
@@ -297,7 +300,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
             transferable: true,
             commercialUse: false,
             commercialAttribution: false,
-            commercializers: emptyStringArray,
+            commercializerChecker: address(0),
+            commercializerData: "",
             commercialRevShare: 0,
             derivativesAllowed: false, // If false, derivativesRevShare should revert
             derivativesAttribution: false,
@@ -327,7 +331,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
             transferable: false,
             commercialUse: false,
             commercialAttribution: false,
-            commercializers: emptyStringArray,
+            commercializerChecker: address(0),
+            commercializerData: "",
             commercialRevShare: 0,
             derivativesAllowed: false, // If false, derivativesRevShare should revert
             derivativesAttribution: false,

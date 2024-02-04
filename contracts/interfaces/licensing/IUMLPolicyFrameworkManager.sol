@@ -10,8 +10,8 @@ import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyF
 /// @param transferable Whether or not the license is transferable
 /// @param commercialUse Whether or not the work can be used commercially
 /// @param commercialAttribution Whether or not attribution is required when reproducing the work commercially
-/// @param commercializers List of commericializers that are allowed to commercially exploit the work. If empty
-/// then no restrictions.
+/// @param commercializerChecker the address of ICommercializersChecker
+/// @param commercializerData the data to be used for the check
 /// @param commercialRevShare Percentage of revenue that must be shared with the licensor
 /// @param derivativesAllowed Whether or not the licensee can create derivatives of his work
 /// @param derivativesAttribution Whether or not attribution is required for derivatives of the work
@@ -27,7 +27,8 @@ struct UMLPolicy {
     bool transferable;
     bool commercialUse;
     bool commercialAttribution;
-    string[] commercializers;
+    address commercializerChecker;
+    bytes commercializerData;
     uint32 commercialRevShare;
     bool derivativesAllowed;
     bool derivativesAttribution;

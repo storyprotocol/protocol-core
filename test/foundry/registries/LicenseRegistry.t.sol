@@ -406,7 +406,8 @@ contract LicenseRegistryTest is Test {
             transferable: true,
             commercialUse: true,
             commercialAttribution: true,
-            commercializers: new string[](2),
+            commercializerChecker: address(0),
+            commercializerData: "",
             commercialRevShare: 0,
             derivativesAllowed: true,
             derivativesAttribution: true,
@@ -419,8 +420,7 @@ contract LicenseRegistryTest is Test {
             royaltyPolicy: address(0xbeef) // TODO: mock royaltyPolicyLS
         });
 
-        policyData.commercializers[0] = "commercializer1";
-        policyData.commercializers[1] = "commercializer2";
+        policyData.commercializerChecker = address(0);
         policyData.territories[0] = "territory1";
         policyData.distributionChannels[0] = "distributionChannel1";
 
