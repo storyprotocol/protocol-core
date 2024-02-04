@@ -13,9 +13,6 @@ import { Errors } from "contracts/lib/Errors.sol";
 /// @notice The Story Protocol royalty module allows to set royalty policies an ipId
 ///         and pay royalties as a derivative ip.
 contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
-    /// @notice Registration module address
-    address public REGISTRATION_MODULE;
-
     /// @notice License registry address
     address public LICENSE_REGISTRY;
 
@@ -35,14 +32,11 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
     /// @param _governance The address of the governance contract
     constructor(address _governance) Governable(_governance) {}
 
-    /// @notice Sets the registration module and the license registry as allowed callers
-    /// @param _registrationModule The address of the registration module
+    /// @notice Sets the license registry
     /// @param _licenseRegistry The address of the license registry
-    function setAllowedCallers(address _registrationModule, address _licenseRegistry) external onlyProtocolAdmin {
-        if (_registrationModule == address(0)) revert Errors.RoyaltyModule__ZeroLicensingModule();
+    function setLicenseRegistry(address _licenseRegistry) external onlyProtocolAdmin {
         if (_licenseRegistry == address(0)) revert Errors.RoyaltyModule__ZeroLicenseRegistry();
 
-        REGISTRATION_MODULE = _registrationModule;
         LICENSE_REGISTRY = _licenseRegistry;
     }
 
@@ -80,7 +74,7 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
         address[] calldata _parentIpIds,
         bytes calldata _data
     ) external nonReentrant {
-        if (msg.sender != REGISTRATION_MODULE && msg.sender != LICENSE_REGISTRY) revert Errors.RoyaltyModule__NotAllowedCaller();
+        if (msg.sender != LICENSE_REGISTRY) revert Errors.RoyaltyModule__NotAllowedCaller();
         if (isRoyaltyPolicyImmutable[_ipId]) revert Errors.RoyaltyModule__AlreadySetRoyaltyPolicy();
         if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
 

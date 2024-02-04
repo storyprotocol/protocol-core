@@ -30,26 +30,18 @@ contract TestRoyaltyModule is TestHelper {
         vm.stopPrank();
     }
 
-    function test_RoyaltyModule_setAllowedCallers_revert_ZeroRegistrationModule() public {
-        RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(governance));
-        vm.expectRevert(Errors.RoyaltyModule__ZeroLicensingModule.selector);
-        vm.prank(u.admin);
-        testRoyaltyModule.setAllowedCallers(address(0), address(licenseRegistry));
-    }
-
-    function test_RoyaltyModule_setAllowedCallers_revert_ZeroLicenseRegistry() public {
+    function test_RoyaltyModule_setLicenseRegistry_revert_ZeroLicenseRegistry() public {
         RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(governance));
         vm.expectRevert(Errors.RoyaltyModule__ZeroLicenseRegistry.selector);
         vm.prank(u.admin);
-        testRoyaltyModule.setAllowedCallers(address(registrationModule), address(0));
+        testRoyaltyModule.setLicenseRegistry(address(0));
     }
 
-    function test_RoyaltyModule_setAllowedCallers() public {
+    function test_RoyaltyModule_setLicenseRegistry() public {
         vm.startPrank(u.admin);
         RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(governance));
-        testRoyaltyModule.setAllowedCallers(address(registrationModule), address(licenseRegistry));
+        testRoyaltyModule.setLicenseRegistry(address(licenseRegistry));
 
-        assertEq(testRoyaltyModule.REGISTRATION_MODULE(), address(registrationModule));
         assertEq(testRoyaltyModule.LICENSE_REGISTRY(), address(licenseRegistry));
     }
 
@@ -105,7 +97,7 @@ contract TestRoyaltyModule is TestHelper {
         uint32 minRoyaltyIpAccount1 = 100; // 10%
         bytes memory data1 = abi.encode(minRoyaltyIpAccount1);
 
-        vm.startPrank(address(registrationModule));
+        vm.startPrank(address(licenseRegistry));
         royaltyModule.setRoyaltyPolicy(ipAccount1, address(royaltyPolicyLS), parentIpIds1, data1);
 
         address[] memory parentIpIds2 = new address[](1);
@@ -127,7 +119,7 @@ contract TestRoyaltyModule is TestHelper {
         uint32 minRoyaltyIpAccount1 = 100; // 10%
         bytes memory data = abi.encode(minRoyaltyIpAccount1);
 
-        vm.startPrank(address(registrationModule));
+        vm.startPrank(address(licenseRegistry));
         vm.expectRevert(Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy.selector);
         royaltyModule.setRoyaltyPolicy(ipAccount1, address(1), parentIpIds1, data);
     }
@@ -137,7 +129,7 @@ contract TestRoyaltyModule is TestHelper {
         uint32 minRoyaltyIpAccount1 = 100; // 10%
         bytes memory data1 = abi.encode(minRoyaltyIpAccount1);
 
-        vm.startPrank(address(registrationModule));
+        vm.startPrank(address(licenseRegistry));
         royaltyModule.setRoyaltyPolicy(ipAccount1, address(royaltyPolicyLS), parentIpIds1, data1);
         vm.stopPrank();
 
@@ -150,7 +142,7 @@ contract TestRoyaltyModule is TestHelper {
         royaltyModule.whitelistRoyaltyPolicy(address(1), true);
         vm.stopPrank();
 
-        vm.startPrank(address(registrationModule));
+        vm.startPrank(address(licenseRegistry));
         vm.expectRevert(Errors.RoyaltyModule__IncompatibleRoyaltyPolicy.selector);
         royaltyModule.setRoyaltyPolicy(ipAccount2, address(1), parentIpIds2, data2);
     }
@@ -163,7 +155,7 @@ contract TestRoyaltyModule is TestHelper {
         vm.expectEmit(true, true, true, true, address(royaltyModule));
         emit RoyaltyPolicySet(ipAccount1, address(royaltyPolicyLS), data);
 
-        vm.startPrank(address(registrationModule));
+        vm.startPrank(address(licenseRegistry));
         royaltyModule.setRoyaltyPolicy(ipAccount1, address(royaltyPolicyLS), parentIpIds1, data);
 
         assertEq(royaltyModule.royaltyPolicies(ipAccount1), address(royaltyPolicyLS));
@@ -180,7 +172,7 @@ contract TestRoyaltyModule is TestHelper {
         uint32 minRoyaltyIpAccount1 = 100; // 10%
         bytes memory data = abi.encode(minRoyaltyIpAccount1);
 
-        vm.startPrank(address(registrationModule));
+        vm.startPrank(address(licenseRegistry));
         royaltyModule.setRoyaltyPolicy(ipAccount1, address(royaltyPolicyLS), parentIpIds1, data);
         vm.stopPrank();
 
@@ -193,7 +185,7 @@ contract TestRoyaltyModule is TestHelper {
         uint32 minRoyaltyIpAccount1 = 100; // 10%
         bytes memory data = abi.encode(minRoyaltyIpAccount1);
 
-        vm.startPrank(address(registrationModule));
+        vm.startPrank(address(licenseRegistry));
         royaltyModule.setRoyaltyPolicy(ipAccount1, address(royaltyPolicyLS), parentIpIds1, data);
         vm.stopPrank();
 
@@ -211,7 +203,7 @@ contract TestRoyaltyModule is TestHelper {
         uint32 minRoyaltyIpAccount1 = 100; // 10%
         bytes memory data1 = abi.encode(minRoyaltyIpAccount1);
 
-        vm.startPrank(address(registrationModule));
+        vm.startPrank(address(licenseRegistry));
         royaltyModule.setRoyaltyPolicy(ipAccount1, address(royaltyPolicyLS), parentIpIds1, data1);
 
         address[] memory parentIpIds2 = new address[](0);
