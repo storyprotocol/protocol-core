@@ -181,8 +181,9 @@ library Errors {
     error RoyaltyModule__NotWhitelistedRoyaltyToken();
     error RoyaltyModule__NoRoyaltyPolicySet();
     error RoyaltyModule__IncompatibleRoyaltyPolicy();
-    error RoyaltyModule__NotRegistrationModule();
+    error RoyaltyModule__NotAllowedCaller();
     error RoyaltyModule__ZeroLicensingModule();
+    error RoyaltyModule__ZeroLicenseRegistry();
 
     error RoyaltyPolicyLS__ZeroRoyaltyModule();
     error RoyaltyPolicyLS__ZeroLiquidSplitFactory();
