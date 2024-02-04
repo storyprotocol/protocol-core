@@ -68,7 +68,6 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
         LIQUID_SPLIT_MAIN = _liquidSplitMain;
     }
 
-    // TODO: Ensure that parentsIds should be correctly passed in through the licensing contract, otherwise we must call parents() on licenseRegistry directly
     /// @notice Initializes the royalty policy
     /// @param _ipId The ipId
     /// @param _parentIpIds The parent ipIds
