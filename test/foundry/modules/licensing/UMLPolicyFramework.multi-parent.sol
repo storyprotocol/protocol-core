@@ -16,6 +16,8 @@ import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { TestHelper } from "test/utils/TestHelper.sol";
 
+import "forge-std/console2.sol";
+
 contract UMLPolicyFrameworkMultiParentTest is TestHelper {
 
     UMLPolicyFrameworkManager internal umlFramework;
@@ -29,11 +31,7 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
 
     uint256[] internal licenses;
 
-    string[] internal emptyStringArray = new string[](0);
-    mapping(string => UMLPolicy) internal policies;
-    mapping(string => uint256) internal policyIDs;
     mapping(address => address) internal ipIdToOwner;
-    address mockRoyaltyPolicy = address(0x555);
 
     modifier withUMLPolicySimple(string memory name, bool commercial, bool derivatives, bool reciprocal) {
         _mapUMLPolicySimple(name, commercial, derivatives, reciprocal);
@@ -42,8 +40,9 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
     }
 
     modifier withLicense(string memory policyName, address ipId, address owner) {
+        uint256 policyId = _getUmlPolicyId(policyName);
         vm.prank(ipIdToOwner[ipId]);
-        uint256 licenseId = licenseRegistry.mintLicense(policyIDs[policyName], ipId, 1, owner);
+        uint256 licenseId = licenseRegistry.mintLicense(policyId, ipId, 1, owner);
         licenses.push(licenseId);
         _;
     }
@@ -100,12 +99,12 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         }
         assertEq(licenseRegistry.totalPoliciesForIp(false, ipId4), 0);
         assertEq(licenseRegistry.totalPoliciesForIp(true, ipId4), 1);
-        assertTrue(licenseRegistry.isPolicyIdSetForIp(true, ipId4, policyIDs["reciprocal"]));
+        assertTrue(licenseRegistry.isPolicyIdSetForIp(true, ipId4, _getUmlPolicyId("reciprocal")));
     }
 
     function test_UMLPolicyFramework_multiParent_revert_AliceSets3Parents_OneNonReciprocal()
-        withPolicy("reciprocal", true, true, true)
-        withPolicy("non_reciprocal", true, true, false)
+        withUMLPolicySimple("reciprocal", true, true, true)
+        withUMLPolicySimple("non_reciprocal", true, true, false)
         withLicense("reciprocal", ipId1, alice)
         withLicense("non_reciprocal", ipId2, alice)
         withLicense("reciprocal", ipId3, alice)
@@ -118,46 +117,21 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
     }
 
     function test_UMLPolicyFramework_multiParent_revert_AliceSets3Parents_3ReciprocalButDifferent()
-        withPolicy("reciprocal", true, true, true)
+        withUMLPolicySimple("reciprocal", true, true, true)
         withLicense("reciprocal", ipId1, alice)
         withLicense("reciprocal", ipId2, alice)
         public {
         // Save a new policy (change some value to change the policyId)
-        _savePolicyInMapping("other", true, true, true);
-        policies["other"].attribution = !policies["other"].attribution;
-        policyIDs["other"] = umlFramework.registerPolicy(policies["other"]);
+        _mapUMLPolicySimple("other", true, true, true);
+        _getMappedUmlPolicy("other").attribution = !_getMappedUmlPolicy("other").attribution;
+        _addUMLPolicyFromMapping("other", address(umlFramework));
         vm.prank(ipId3);
-        licenses.push(licenseRegistry.mintLicense(policyIDs["other"], ipId3, 1, alice));
+        licenses.push(licenseRegistry.mintLicense(_getUmlPolicyId("other"), ipId3, 1, alice));
         vm.expectRevert(
             UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalButDifferentPolicyIds.selector
         );
         vm.prank(alice);
         licenseRegistry.linkIpToParents(licenses, ipId4, alice);
-    }
-
-
-    function _savePolicyInMapping(
-        string memory name,
-        bool commercial,
-        bool derivatives,
-        bool reciprocal
-    ) internal {
-        policies[name] = UMLPolicy({
-            attribution: true,
-            transferable: true,
-            commercialUse: commercial,
-            commercialAttribution: false,
-            commercializers: emptyStringArray,
-            commercialRevShare: 0,
-            derivativesAllowed: derivatives,
-            derivativesAttribution: false,
-            derivativesApproval: false,
-            derivativesReciprocal: reciprocal,
-            derivativesRevShare: 0,
-            territories: emptyStringArray,
-            distributionChannels: emptyStringArray,
-            royaltyPolicy: mockRoyaltyPolicy
-        });
     }
 
 }

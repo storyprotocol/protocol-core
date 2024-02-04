@@ -43,20 +43,6 @@ Alice burns L1, P1 is set in IP2
 2.3) Alice tries to set P2 in IP2 -> Fails, reciprocal means no different policies allowed, 
 and you cannot add the same policy twice ✅
 
-# Commercial (Since derivatives cannot add policies, this is already supported)
-~~Bob owns IP1~~
-~~Bob creates a license L1 with P1~~
-~~Alice owns IP2~~
-~~Alice burns L1, P1 is set in IP2~~
-
-~~1) P1 is Non Commercial (assume derivatives allowed)~~
-~~1.1) Alice tries to mint a commercial license -> fail~~
-~~1.2) Alice tries to add a commercial policy -> fail~~
-
-~~1) P1 is Commercial (assume derivatives allowed)~~
-~~1.1) Alice tries to mint a non commercial license -> OK? (if the only derivatives of derivatives are reciprocal, this fails)~~
-~~1.2) Alice tries to add a commercial policy -> OK? (if the only derivatives of derivatives are reciprocal, this fails)~~
-
 
 # Setting multiple parents
 Bob owns IP1, IP2 and IP3
