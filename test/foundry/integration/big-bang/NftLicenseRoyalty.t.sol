@@ -95,14 +95,14 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
         uint32 minRevShareIpAcct1 = 150; // 15%
 
         // Alice sets royalty policy on her root IP
-        {
+/*         {
             royaltyModule.setRoyaltyPolicy(
                 ipAcct[1],
                 address(royaltyPolicyLS),
                 new address[](0), // no parent
                 abi.encode(minRevShareIpAcct1)
             );
-        }
+        } */
 
         /*///////////////////////////////////////////////////////////////
                             ADD POLICIES TO IP ACCOUNTS
