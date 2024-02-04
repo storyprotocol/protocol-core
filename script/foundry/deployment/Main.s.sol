@@ -8,6 +8,7 @@ import { Script } from "forge-std/Script.sol";
 import { stdJson } from "forge-std/StdJson.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.sol";
+
 // contracts
 import { AccessController } from "contracts/AccessController.sol";
 import { Governance } from "contracts/governance/Governance.sol";
@@ -23,6 +24,7 @@ import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { IPAssetRenderer } from "contracts/registries/metadata/IPAssetRenderer.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
+import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
@@ -63,6 +65,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     RoyaltyModule public royaltyModule;
     RoyaltyPolicyLS public royaltyPolicyLS;
     DisputeModule public disputeModule;
+    LicensingModule public licensingModule;
     IPResolver public ipResolver;
 
     mapping(uint256 => uint256) internal nftIds;
@@ -138,12 +141,18 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "LicenseRegistry";
         _predeploy(contractKey);
-        licenseRegistry = new LicenseRegistry(
+        licenseRegistry = new LicenseRegistry();
+        _postdeploy(contractKey, address(licenseRegistry));
+
+        contractKey = "LicensingModule";
+        _predeploy(contractKey);
+        licensingModule = new LicensingModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(royaltyModule)
+            address(royaltyModule),
+            address(licenseRegistry)
         );
-        _postdeploy(contractKey, address(licenseRegistry));
+        _postdeploy(contractKey, address(licensingModule));
 
         contractKey = "IPResolver";
         _predeploy(contractKey);
@@ -155,7 +164,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry),
+            address(licensingModule),
             address(ipResolver)
         );
         _postdeploy(contractKey, address(registrationModule));
@@ -306,19 +315,19 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         UMLPolicyFrameworkManager umlAllTrue = new UMLPolicyFrameworkManager(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry),
+            address(licensingModule),
             "UML_ALL_TRUE",
             "https://very-nice-verifier-license.com/{id}.json"
         );
-        licenseRegistry.registerPolicyFrameworkManager(address(umlAllTrue));
+        licensingModule.registerPolicyFrameworkManager(address(umlAllTrue));
         UMLPolicyFrameworkManager umlMintPayment = new UMLPolicyFrameworkManager(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry),
+            address(licensingModule),
             "UML_MINT_PAYMENT",
             "https://expensive-minting-license.com/{id}.json"
         );
-        licenseRegistry.registerPolicyFrameworkManager(address(umlMintPayment));
+        licensingModule.registerPolicyFrameworkManager(address(umlMintPayment));
         frameworkIds["all_true"] = address(umlAllTrue);
         frameworkIds["mint_payment"] = address(umlMintPayment);
 
@@ -370,15 +379,15 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         //                     ADD POLICIES TO IPACCOUNTS
         // ////////////////////////////////////////////////////////////////*/
 
-        licenseRegistry.addPolicyToIp(getIpId(mockNft, nftIds[1]), policyIds["test_true"]);
-        licenseRegistry.addPolicyToIp(getIpId(mockNft, nftIds[2]), policyIds["expensive_mint"]);
+        licensingModule.addPolicyToIp(getIpId(mockNft, nftIds[1]), policyIds["test_true"]);
+        licensingModule.addPolicyToIp(getIpId(mockNft, nftIds[2]), policyIds["expensive_mint"]);
 
         // /*///////////////////////////////////////////////////////////////
         //                     MINT LICENSES ON POLICIES
         // ////////////////////////////////////////////////////////////////*/
 
         // Mints 1 license for policy "test_true" on NFT id 1 IPAccount
-        uint256 licenseId1 = licenseRegistry.mintLicense(
+        uint256 licenseId1 = licensingModule.mintLicense(
             policyIds["test_true"],
             getIpId(mockNft, nftIds[1]),
             2,
@@ -400,7 +409,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         //             LINK IPACCOUNTS TO PARENTS USING LICENSES
         // ////////////////////////////////////////////////////////////////*/
 
-        licenseRegistry.linkIpToParents(licenseIds, getIpId(mockNft, nftIds[4]), deployer);
+        licensingModule.linkIpToParents(licenseIds, getIpId(mockNft, nftIds[4]), deployer);
     }
 
     function getIpId(MockERC721 mnft, uint256 tokenId) public view returns (address ipId) {
