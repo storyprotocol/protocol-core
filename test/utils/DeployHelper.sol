@@ -182,7 +182,7 @@ contract DeployHelper is Test {
     function _configDeployedContracts() internal {
         vm.startPrank(u.admin);
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-        royaltyModule.setAllowedCallers(address(registrationModule), address(licenseRegistry));
+        royaltyModule.setLicenseRegistry(address(licenseRegistry));
 
         moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));

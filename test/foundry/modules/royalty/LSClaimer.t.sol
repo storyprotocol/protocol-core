@@ -101,15 +101,15 @@ contract TestLSClaimer is TestHelper {
         );
         vm.label(ipAddr, string(abi.encodePacked("IPAccount", Strings.toString(nftIds[0]))));
         vm.stopPrank();
-        // User sets royalty policy for her IPAccount (so other IPAccounts can use her policies that 
-        // inits royalty policy on linking)
-        vm.startPrank(address(registrationModule));
+        vm.startPrank(address(licenseRegistry));
+
         royaltyModule.setRoyaltyPolicy(
             ipAddr,
             address(royaltyPolicyLS),
             new address[](0), // no parent
             abi.encode(10)
         );
+        
         vm.stopPrank();
         vm.startPrank(deployer);
         uint256[] memory licenseId = new uint256[](1);
