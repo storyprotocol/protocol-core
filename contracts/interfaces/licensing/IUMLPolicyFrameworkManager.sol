@@ -59,13 +59,6 @@ struct UMLAggregator {
     bytes32 contentRestrictionsAcc;
 }
 
-struct UMLInheritedPolicyAggregator {
-    bool commercialUse;
-    bool derivativesReciprocal;
-    uint256 lastPolicyId;
-}
-
-
 /// @title IUMLPolicyFrameworkManager
 /// @notice Defines the interface for a Policy Framework Manager compliant with the UML standard
 interface IUMLPolicyFrameworkManager is IPolicyFrameworkManager {
