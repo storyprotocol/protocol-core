@@ -6,20 +6,17 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC165, IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 // contracts
-import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
-import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
-import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
-import { IPolicyVerifier } from "contracts/interfaces/licensing/IPolicyVerifier.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
+import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 
 struct MintPaymentPolicy {
     bool mustBeTrue;
 }
 
-contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintParamVerifier {
+contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager {
     IERC20 public token;
     uint256 public payment;
 
@@ -36,26 +33,17 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintP
         payment = _payment;
     }
 
-    function supportsInterface(
-        bytes4 interfaceId
-    ) public view virtual override(IERC165, BasePolicyFrameworkManager) returns (bool) {
-        // support only mint param verifier
-        return
-            interfaceId == type(IPolicyVerifier).interfaceId ||
-            interfaceId == type(IMintParamVerifier).interfaceId ||
-            super.supportsInterface(interfaceId);
-    }
-
     function registerPolicy(MintPaymentPolicy calldata mmpol) external returns (uint256 policyId) {
         emit MintPaymentPolicyAdded(policyId, mmpol);
         return LICENSE_REGISTRY.registerPolicy(abi.encode(mmpol));
     }
 
     function processInheritedPolicies(
-        bytes memory, // ipRights
+        bytes memory, // aggregator
+        uint256, // policyId
         bytes memory // policy
-    ) external view override returns (bool changedRights, bytes memory newRights) {
-        return (false, newRights);
+    ) external pure override returns (bool changedAgg, bytes memory newAggregator) {
+        return (false, newAggregator);
     }
 
     /// @dev Mock verifies the param by decoding it as a bool. If you want the verifier
@@ -76,7 +64,33 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintP
         return mmpol.mustBeTrue;
     }
 
-    function policyToJson(bytes memory policyData) public view returns (string memory) {
+    function verifyLink(
+        uint256, // licenseId
+        address, // caller
+        address, // ipId
+        address, // parentIpId
+        bytes calldata // policyData
+    ) external pure returns (IPolicyFrameworkManager.VerifyLinkResponse memory) {
+        return IPolicyFrameworkManager.VerifyLinkResponse({
+            isLinkingAllowed: true,
+            isRoyaltyRequired: false,
+            royaltyPolicy: address(0),
+            royaltyDerivativeRevShare: 0
+        });
+    }
+
+    function verifyTransfer(
+        uint256, // licenseId
+        address, // from
+        address, // to
+        uint256, // amount
+        bytes memory // policyData
+    ) external returns (bool) {
+        return true;
+    }
+
+
+    function policyToJson(bytes memory policyData) public pure returns (string memory) {
         return "MintPaymentPolicyFrameworkManager";
     }
 }

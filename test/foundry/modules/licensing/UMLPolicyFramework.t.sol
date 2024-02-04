@@ -26,7 +26,6 @@ contract UMLPolicyFrameworkTest is TestHelper {
     address public ipId2;
     address public ipOwner = vm.addr(1);
     address public licenseHolder = address(0x101);
-    string[] public emptyStringArray = new string[](0);
 
     function setUp() public override {
         TestHelper.setUp();
@@ -48,7 +47,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
         ipId2 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 2);
     }
 
-    function test_UMLPolicyFrameworkManager_valuesSetCorrectly() public {
+    function test_UMLPolicyFrameworkManager__valuesSetCorrectly() public {
         string[] memory territories = new string[](2);
         territories[0] = "test1";
         territories[1] = "test2";
@@ -68,6 +67,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             derivativesRevShare: 0,
             territories: territories,
             distributionChannels: distributionChannels,
+            contentRestrictions: emptyStringArray,
             royaltyPolicy: address(0xbeef)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
@@ -75,9 +75,11 @@ contract UMLPolicyFrameworkTest is TestHelper {
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(umlPolicy)));
     }
 
-    // COMMERCIAL USE TERMS
+    /////////////////////////////////////////////////////////////
+    //////              COMMERCIAL USE TERMS               ////// 
+    /////////////////////////////////////////////////////////////
 
-    function test_UMLPolicyFrameworkManager_commercialUse_disallowed_revert_settingIncompatibleTerms() public {
+    function test_UMLPolicyFrameworkManager__commercialUse_disallowed_revert_settingIncompatibleTerms() public {
         // If no commercial values allowed
         UMLPolicy memory umlPolicy = UMLPolicy({
             attribution: false,
@@ -93,30 +95,31 @@ contract UMLPolicyFrameworkTest is TestHelper {
             derivativesRevShare: 0,
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray,
             royaltyPolicy: address(0)
         });
         // commercialAttribution = true should revert
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddAttribution.selector);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddAttribution.selector);
         umlFramework.registerPolicy(umlPolicy);
         // Non empty commercializers should revert
         umlPolicy.commercialAttribution = false;
         umlPolicy.commercializers = new string[](1);
         umlPolicy.commercializers[0] = "test";
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddCommercializers.selector);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddCommercializers.selector);
         umlFramework.registerPolicy(umlPolicy);
         // No rev share should be set; revert
         umlPolicy.commercializers = new string[](0);
         umlPolicy.commercialRevShare = 1;
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddRevShare.selector);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddRevShare.selector);
         umlFramework.registerPolicy(umlPolicy);
         // No rev share should be set for derivatives either; revert
         umlPolicy.commercialRevShare = 0;
         umlPolicy.derivativesRevShare = 1;
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_CommecialDisabled_CantAddDerivRevShare.selector);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddDerivRevShare.selector);
         umlFramework.registerPolicy(umlPolicy);
     }
 
-    function test_UMLPolicyFrameworkManager_commercialUse_valuesSetCorrectly() public {
+    function test_UMLPolicyFrameworkManager__commercialUse_valuesSetCorrectly() public {
         string[] memory commercializers = new string[](2);
         commercializers[0] = "test1";
         commercializers[1] = "test2";
@@ -134,6 +137,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             derivativesRevShare: 1,
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray,
             royaltyPolicy: address(0xbeef)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
@@ -141,14 +145,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(umlPolicy)));
     }
 
-    function test_UMLPolicyFrameworkManager_commercialUse_revenueShareSetOnLinking() public {
-        // TODO
-    }
-
-    // DERIVATIVE TERMS
-    function test_UMLPolicyFrameworkManager_derivatives_notAllowed_revert_creating2ndDerivative() public {}
-
-    function test_UMLPolicyFrameworkManager_derivatives_notAllowed_revert_settingIncompatibleTerms() public {
+    function test_UMLPolicyFrameworkManager__derivatives_notAllowed_revert_settingIncompatibleTerms() public {
         // If no derivative values allowed
         UMLPolicy memory umlPolicy = UMLPolicy({
             attribution: false,
@@ -164,29 +161,30 @@ contract UMLPolicyFrameworkTest is TestHelper {
             derivativesRevShare: 0,
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray,
             royaltyPolicy: address(0xbeef)
         });
         // derivativesAttribution = true should revert
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddAttribution.selector);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddAttribution.selector);
         umlFramework.registerPolicy(umlPolicy);
         // Requesting approval for derivatives should revert
         umlPolicy.derivativesAttribution = false;
         umlPolicy.derivativesApproval = true;
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddApproval.selector);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddApproval.selector);
         umlFramework.registerPolicy(umlPolicy);
         // Setting reciprocal license should revert
         umlPolicy.derivativesApproval = false;
         umlPolicy.derivativesReciprocal = true;
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddReciprocal.selector);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddReciprocal.selector);
         umlFramework.registerPolicy(umlPolicy);
         // No rev share should be set for derivatives either; revert
         umlPolicy.derivativesReciprocal = false;
         umlPolicy.derivativesRevShare = 1;
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddRevShare.selector);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddRevShare.selector);
         umlFramework.registerPolicy(umlPolicy);
     }
 
-    function test_UMLPolicyFrameworkManager_derivatives_valuesSetCorrectly() public {
+    function test_UMLPolicyFrameworkManager__derivatives_valuesSetCorrectly() public {
         UMLPolicy memory umlPolicy = UMLPolicy({
             attribution: false,
             transferable: false,
@@ -201,6 +199,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             derivativesRevShare: 123,
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray,
             royaltyPolicy: address(0xbeef)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
@@ -208,11 +207,9 @@ contract UMLPolicyFrameworkTest is TestHelper {
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(umlPolicy)));
     }
 
-    function test_UMLPolicyFrameworkManager_derivatives_setRevenueShareWhenLinking2ndDerivative() public {
-        // TODO
-    }
-
-    // APPROVAL TERMS
+    /////////////////////////////////////////////////////////////
+    //////                  APPROVAL TERMS                 ////// 
+    /////////////////////////////////////////////////////////////
 
     function test_UMLPolicyFrameworkManager_derivatives_withApproval_revert_linkNotApproved() public {
         uint256 policyId = umlFramework.registerPolicy(
@@ -230,6 +227,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
                 derivativesRevShare: 0,
                 territories: emptyStringArray,
                 distributionChannels: emptyStringArray,
+                contentRestrictions: emptyStringArray,
                 royaltyPolicy: address(0)
             })
         );
@@ -251,7 +249,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
         licenseRegistry.linkIpToParents(licenseIds, ipId2, licenseHolder);
     }
 
-    function test_UMLPolicyFrameworkManager_derivatives_withApproval_linkApprovedIpId() public {
+    function test_UMLPolicyFrameworkManager__derivatives_withApproval_linkApprovedIpId() public {
         uint256 policyId = umlFramework.registerPolicy(
             UMLPolicy({
                 attribution: false,
@@ -267,6 +265,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
                 derivativesRevShare: 0,
                 territories: emptyStringArray,
                 distributionChannels: emptyStringArray,
+                contentRestrictions: emptyStringArray,
                 royaltyPolicy: address(0)
             })
         );
@@ -288,13 +287,11 @@ contract UMLPolicyFrameworkTest is TestHelper {
         assertTrue(licenseRegistry.isParent(ipId1, ipId2));
     }
 
-    function test_UMLPolicyFrameworkManager_derivatives_withApproval_revert_approverNotLicensor() public {
-        // TODO: ACL
-    }
+    /////////////////////////////////////////////////////////////
+    //////                  TRANSFER TERMS                 ////// 
+    /////////////////////////////////////////////////////////////
 
-    // TRANSFER TERMS
-
-    function test_UMLPolicyFrameworkManager_transferrable() public {
+    function test_UMLPolicyFrameworkManager__transferrable() public {
         UMLPolicy memory umlPolicy = UMLPolicy({
             attribution: false,
             transferable: true,
@@ -309,6 +306,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             derivativesRevShare: 0,
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray,
             royaltyPolicy: address(0)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
@@ -323,7 +321,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
         assertEq(licenseRegistry.balanceOf(licenseHolder2, licenseId), 1);
     }
 
-    function test_UMLPolicyFrameworkManager_nonTransferrable_revertIfTransferExceptFromLicensor() public {
+    function test_UMLPolicyFrameworkManager__nonTransferrable_revertIfTransferExceptFromLicensor() public {
         UMLPolicy memory umlPolicy = UMLPolicy({
             attribution: false,
             transferable: false,
@@ -338,6 +336,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             derivativesRevShare: 0,
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray,
             royaltyPolicy: address(0)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
@@ -352,11 +351,4 @@ contract UMLPolicyFrameworkTest is TestHelper {
         vm.stopPrank();
     }
 
-    function test_UMLPolicyFrameworkManager_mintFee() public {
-        // TODO
-    }
-
-    function test_tokenUri() public {
-        // TODO
-    }
 }

@@ -36,13 +36,27 @@ struct UMLPolicy {
     uint32 derivativesRevShare;
     string[] territories;
     string[] distributionChannels;
+    string[] contentRestrictions;
     address royaltyPolicy;
 }
 
-struct UMLRights {
+/// @notice Struct that accumulates values of inherited policies
+/// so we can verify compatibility when inheriting new policies
+/// @param commercial Whether or not there is a policy that allows commercial use
+/// @param derivatives Whether or not there is a policy that allows derivatives
+/// @param derivativesReciprocal Whether or not there is a policy that requires derivatives to be licensed under the same terms
+/// @param lastPolicyId The last policy ID that was added to the IP
+/// @param territoriesAcc The last hash of the territories array
+/// @param distributionChannelsAcc The last hash of the distributionChannels array
+/// @param contentRestrictionsAcc The last hash of the contentRestrictions array
+struct UMLAggregator {
     bool commercial;
-    bool derivable;
-    bool reciprocalSet;
+    bool derivatives;
+    bool derivativesReciprocal;
+    uint256 lastPolicyId;
+    bytes32 territoriesAcc;
+    bytes32 distributionChannelsAcc;
+    bytes32 contentRestrictionsAcc;
 }
 
 
@@ -58,5 +72,6 @@ interface IUMLPolicyFrameworkManager is IPolicyFrameworkManager {
     /// @return policy The UMLPolicy struct
     function getPolicy(uint256 policyId) external view returns (UMLPolicy memory policy);
     
-    function getRights(address ipId) external view returns (UMLRights memory rights);
+    /// @notice gets the aggregation data for inherited policies.
+    function getAggregator(address ipId) external view returns (UMLAggregator memory rights);
 }

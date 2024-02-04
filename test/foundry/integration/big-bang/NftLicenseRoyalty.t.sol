@@ -61,7 +61,8 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
                 attribution: false,
                 transferable: false,
                 territories: new string[](0),
-                distributionChannels: new string[](0)
+                distributionChannels: new string[](0),
+                contentRestrictions: new string[](0)
             }),
             UMLPolicyCommercialParams({
                 commercialAttribution: true,

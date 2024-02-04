@@ -24,8 +24,6 @@ interface ILicenseRegistry {
     /// @param policy The encoded policy data
     event PolicyRegistered(address indexed policyFrameworkManager, uint256 indexed policyId, bytes policy);
 
-    event IPRightsUpdated(address indexed ipId, bytes rights);
-
     /// @notice Emitted when a policy is added to an IP
     /// @param caller The address that called the function
     /// @param ipId The id of the IP
@@ -145,7 +143,7 @@ interface ILicenseRegistry {
         uint256 policyId
     ) external view returns (uint256 index, bool isInherited, bool active);
 
-    function rightsData(address framework, address ipId) external view returns (bytes memory);
+    function policyAggregatorData(address framework, address ipId) external view returns (bytes memory);
 
     /// @notice True if holder is the licensee for the license (owner of the license NFT), or derivative IP owner if
     /// the license was added to the IP by linking (burning a license)

@@ -34,6 +34,7 @@ struct UMLPolicyGenericParams {
     bool transferable;
     string[] territories;
     string[] distributionChannels;
+    string[] contentRestrictions;
 }
 
 struct UMLPolicyCommercialParams {
@@ -165,6 +166,7 @@ contract Integration_Shared_LicensingHelper {
                 derivativesReciprocal: dparams.derivativesReciprocal,
                 derivativesRevShare: dparams.derivativesRevShare,
                 territories: gparams.territories,
+                contentRestrictions: gparams.contentRestrictions,
                 distributionChannels: gparams.distributionChannels,
                 royaltyPolicy: cparams.royaltyPolicy
             })
@@ -193,6 +195,7 @@ contract Integration_Shared_LicensingHelper {
                 derivativesReciprocal: false,
                 derivativesRevShare: 0,
                 territories: gparams.territories,
+                contentRestrictions: gparams.contentRestrictions,
                 distributionChannels: gparams.distributionChannels,
                 royaltyPolicy: cparams.royaltyPolicy
             })
@@ -222,6 +225,7 @@ contract Integration_Shared_LicensingHelper {
                 derivativesRevShare: dparams.derivativesRevShare,
                 territories: gparams.territories,
                 distributionChannels: gparams.distributionChannels,
+                contentRestrictions: gparams.contentRestrictions,
                 royaltyPolicy: address(0)
             })
         );
@@ -246,6 +250,7 @@ contract Integration_Shared_LicensingHelper {
                 derivativesReciprocal: false,
                 derivativesRevShare: 0,
                 territories: gparams.territories,
+                contentRestrictions: gparams.contentRestrictions,
                 distributionChannels: gparams.distributionChannels,
                 royaltyPolicy: address(0)
             })
