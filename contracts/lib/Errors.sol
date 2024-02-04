@@ -182,7 +182,6 @@ library Errors {
     error RoyaltyModule__NoRoyaltyPolicySet();
     error RoyaltyModule__IncompatibleRoyaltyPolicy();
     error RoyaltyModule__NotAllowedCaller();
-    error RoyaltyModule__ZeroLicensingModule();
     error RoyaltyModule__ZeroLicenseRegistry();
 
     error RoyaltyPolicyLS__ZeroRoyaltyModule();
@@ -199,14 +198,11 @@ library Errors {
     error LSClaimer__InvalidPathFirstPosition();
     error LSClaimer__InvalidPathLastPosition();
     error LSClaimer__AlreadyClaimed();
-    error LSClaimer__ZeroRNFT();
-    error LSClaimer__RNFTAlreadySet();
     error LSClaimer__ETHBalanceNotZero();
     error LSClaimer__ERC20BalanceNotZero();
     error LSClaimer__ZeroIpId();
     error LSClaimer__ZeroLicenseRegistry();
     error LSClaimer__ZeroRoyaltyPolicyLS();
-    error LSClaimer__NotRoyaltyPolicyLS();
 
     ////////////////////////////////////////////////////////////////////////////
     //                             ModuleRegistry                             //
