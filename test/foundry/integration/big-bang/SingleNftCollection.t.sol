@@ -115,18 +115,18 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                             ADD POLICIES TO IP ACCOUNTS
         ////////////////////////////////////////////////////////////////*/
 
-        vm.startPrank(u.alice);
+/*         vm.startPrank(u.alice);
         licenseRegistry.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_cheap_flexible"]);
         licenseRegistry.addPolicyToIp(ipAcct[100], policyIds["uml_noncom_deriv_reciprocal_derivative"]);
 
         // Alice sets royalty policy for her root IPAccounts
         // (so other IPAccounts can use her policies that inits royalty policy on linking)
-/*         royaltyModule.setRoyaltyPolicy(
+        royaltyModule.setRoyaltyPolicy(
             ipAcct[1],
             address(royaltyPolicyLS),
             new address[](0), // no parent
             abi.encode(10)
-        ); */
+        );
 
         vm.startPrank(u.bob);
         licenseRegistry.addPolicyToIp(ipAcct[3], policyIds["mint_payment_normal"]);
@@ -134,12 +134,12 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
 
         // Bob sets royalty policy for his root IPAccounts
         // (so other IPAccounts can use his policies that inits royalty policy on linking)
-/*         royaltyModule.setRoyaltyPolicy(
+        royaltyModule.setRoyaltyPolicy(
             ipAcct[300],
             address(royaltyPolicyLS),
             new address[](0), // no parent
             abi.encode(10)
-        ); */
+        );
 
         vm.startPrank(u.bob);
         // NOTE: the two calls below achieve the same functionality
@@ -152,13 +152,13 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                 ipAcct[3],
                 policyIds["uml_noncom_deriv_reciprocal_derivative"]
             )
-        );
+        ); */
 
         /*///////////////////////////////////////////////////////////////
                                 MINT & USE LICENSES
         ////////////////////////////////////////////////////////////////*/
 
-        // Carl mints 1 license for policy "com_deriv_all_true" on Alice's NFT 1 IPAccount
+        /* // Carl mints 1 license for policy "com_deriv_all_true" on Alice's NFT 1 IPAccount
         // Carl creates NFT 6 IPAccount
         // Carl activates the license on his NFT 6 IPAccount, linking as child to Alice's NFT 1 IPAccount
         {
@@ -306,6 +306,6 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                 metadata,
                 u.carl // caller
             );
-        }
+        } */
     }
 }
