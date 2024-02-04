@@ -30,24 +30,24 @@ contract TestRoyaltyModule is TestHelper {
         vm.stopPrank();
     }
 
-    function test_RoyaltyModule_initialize_revert_ZeroRegistrationModule() public {
+    function test_RoyaltyModule_setAllowedCallers_revert_ZeroRegistrationModule() public {
         RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(governance));
         vm.expectRevert(Errors.RoyaltyModule__ZeroLicensingModule.selector);
         vm.prank(u.admin);
-        testRoyaltyModule.initialize(address(0), address(licenseRegistry));
+        testRoyaltyModule.setAllowedCallers(address(0), address(licenseRegistry));
     }
 
-    function test_RoyaltyModule_initialize_revert_ZeroLicenseRegistry() public {
+    function test_RoyaltyModule_setAllowedCallers_revert_ZeroLicenseRegistry() public {
         RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(governance));
         vm.expectRevert(Errors.RoyaltyModule__ZeroLicenseRegistry.selector);
         vm.prank(u.admin);
-        testRoyaltyModule.initialize(address(registrationModule), address(0));
+        testRoyaltyModule.setAllowedCallers(address(registrationModule), address(0));
     }
 
-    function test_RoyaltyModule_initialize() public {
+    function test_RoyaltyModule_setAllowedCallers() public {
         vm.startPrank(u.admin);
         RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(governance));
-        testRoyaltyModule.initialize(address(registrationModule), address(licenseRegistry));
+        testRoyaltyModule.setAllowedCallers(address(registrationModule), address(licenseRegistry));
 
         assertEq(testRoyaltyModule.REGISTRATION_MODULE(), address(registrationModule));
         assertEq(testRoyaltyModule.LICENSE_REGISTRY(), address(licenseRegistry));

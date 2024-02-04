@@ -38,7 +38,7 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
     /// @notice Sets the registration module and the license registry as allowed callers
     /// @param _registrationModule The address of the registration module
     /// @param _licenseRegistry The address of the license registry
-    function initialize(address _registrationModule, address _licenseRegistry) external onlyProtocolAdmin {
+    function setAllowedCallers(address _registrationModule, address _licenseRegistry) external onlyProtocolAdmin {
         if (_registrationModule == address(0)) revert Errors.RoyaltyModule__ZeroLicensingModule();
         if (_licenseRegistry == address(0)) revert Errors.RoyaltyModule__ZeroLicenseRegistry();
 

@@ -30,7 +30,7 @@ interface IRoyaltyModule {
     /// @notice Sets the registration module and the license registry as allowed callers
     /// @param registrationModule The address of the registration module
     /// @param licenseRegistry The address of the license registry
-    function initialize(address registrationModule, address licenseRegistry) external;
+    function setAllowedCallers(address registrationModule, address licenseRegistry) external;
 
     /// @notice Whitelist a royalty policy
     /// @param royaltyPolicy The address of the royalty policy
