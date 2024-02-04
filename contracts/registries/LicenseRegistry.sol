@@ -465,7 +465,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         return index;
     }
 
-    function _verifyCanAddPolicy(uint256 policyId, address ipId, bool isInherited) private returns (bool skipAdding) {
+    function _verifyCanAddPolicy(uint256 policyId, address ipId, bool isInherited) private {
         bool ipIdIsDerivative = _policySetPerIpId(true, ipId).length() > 0;
         if (
             // Original work, owner is setting policies
@@ -473,7 +473,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
             (!ipIdIsDerivative && !isInherited)
         ) {
             // Can add policy
-            return false;
+            return;
         } else if (ipIdIsDerivative && !isInherited) {
             // Owner of derivative is trying to set policies
             revert Errors.LicenseRegistry__DerivativesCannotAddPolicy();
@@ -490,7 +490,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         if (aggregatorChanged) {
             _ipRights[pol.policyFramework][ipId] = newAggregator;
         }
-        return skip;
     }
 
     function _verifyRoyaltyRequired(bool) private {}
