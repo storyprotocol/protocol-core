@@ -67,7 +67,8 @@ contract TestDisputeModule is TestHelper {
                 attribution: false,
                 transferable: true,
                 territories: new string[](0),
-                distributionChannels: new string[](0)
+                distributionChannels: new string[](0),
+                contentRestrictions: new string[](0)
             }),
             UMLPolicyCommercialParams({
                 commercialAttribution: true,

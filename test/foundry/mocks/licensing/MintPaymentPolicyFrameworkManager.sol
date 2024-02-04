@@ -55,7 +55,7 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager, IMintP
         bytes memory, // aggregator
         uint256, // policyId
         bytes memory // policy
-    ) external view override returns (bool changedRights, bytes memory newAggregator) {
+    ) external view override returns (bool changedAgg, bytes memory newAggregator) {
         return (false, newAggregator);
     }
 

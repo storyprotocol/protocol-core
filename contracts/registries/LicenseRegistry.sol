@@ -23,8 +23,6 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 
-import "forge-std/console2.sol";
-
 // TODO: consider disabling operators/approvals on creation
 contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
     using IPAccountChecker for IIPAccountRegistry;
@@ -452,11 +450,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         if (
             // Original work, owner is setting policies
             // (ipIdIsDerivative false, adding isInherited false)
-            // or
-            // IpId is becoming a derivative.
-            // (ipIdIsDerivative false, adding isInherited true)
-            // Next time, ipIdIsDerivative will be true
-            (!ipIdIsDerivative)
+            (!ipIdIsDerivative && !isInherited)
         ) {
             // Can add policy
             return;
@@ -475,7 +469,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         );
         if (aggregatorChanged) {
             _ipRights[pol.policyFramework][ipId] = newAggregator;
-            emit InheritedPolicyAggregatorUpdated(ipId, newAggregator);
         }
     }
 

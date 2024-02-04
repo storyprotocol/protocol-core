@@ -99,6 +99,7 @@ contract TestHelper is Test, DeployHelper {
             derivativesRevShare: dparams.derivativesRevShare,
             territories: gparams.territories,
             distributionChannels: gparams.distributionChannels,
+            contentRestrictions: gparams.contentRestrictions,
             royaltyPolicy: cparams.royaltyPolicy
         });
         policyIds[pName] = UMLPolicyFrameworkManager(pfms["uml"].addr)
@@ -126,6 +127,7 @@ contract TestHelper is Test, DeployHelper {
             derivativesRevShare: 0,
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray,
             royaltyPolicy: mockRoyaltyPolicy
         });
     }

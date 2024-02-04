@@ -68,6 +68,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             derivativesRevShare: 0,
             territories: territories,
             distributionChannels: distributionChannels,
+            contentRestrictions: emptyStringArray,
             royaltyPolicy: address(0xbeef)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
@@ -95,6 +96,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             derivativesRevShare: 0,
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray,
             royaltyPolicy: address(0)
         });
         // commercialAttribution = true should revert
@@ -136,6 +138,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             derivativesRevShare: 1,
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray,
             royaltyPolicy: address(0xbeef)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
@@ -159,6 +162,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             derivativesRevShare: 0,
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray,
             royaltyPolicy: address(0xbeef)
         });
         // derivativesAttribution = true should revert
@@ -196,6 +200,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             derivativesRevShare: 123,
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray,
             royaltyPolicy: address(0xbeef)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
@@ -223,6 +228,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
                 derivativesRevShare: 0,
                 territories: emptyStringArray,
                 distributionChannels: emptyStringArray,
+                contentRestrictions: emptyStringArray,
                 royaltyPolicy: address(0)
             })
         );
@@ -260,6 +266,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
                 derivativesRevShare: 0,
                 territories: emptyStringArray,
                 distributionChannels: emptyStringArray,
+                contentRestrictions: emptyStringArray,
                 royaltyPolicy: address(0)
             })
         );
@@ -300,6 +307,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             derivativesRevShare: 0,
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray,
             royaltyPolicy: address(0)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
@@ -329,6 +337,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             derivativesRevShare: 0,
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray,
             royaltyPolicy: address(0)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);

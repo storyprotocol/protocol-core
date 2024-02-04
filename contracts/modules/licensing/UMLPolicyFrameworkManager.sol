@@ -16,7 +16,7 @@ import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
 import { ILinkParamVerifier } from "contracts/interfaces/licensing/ILinkParamVerifier.sol";
 import { IMintParamVerifier } from "contracts/interfaces/licensing/IMintParamVerifier.sol";
 import { ITransferParamVerifier } from "contracts/interfaces/licensing/ITransferParamVerifier.sol";
-import { IUMLPolicyFrameworkManager, UMLPolicy, UMLInheritedPolicyAggregator } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
+import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 import { LicensorApprovalChecker } from "contracts/modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
@@ -33,6 +33,9 @@ contract UMLPolicyFrameworkManager is
     ITransferParamVerifier,
     LicensorApprovalChecker
 {
+    IRoyaltyModule public immutable ROYALTY_MODULE;
+    bytes32 private constant _EMPTY_STRING_ARRAY_HASH = 0x569e75fc77c1a856f6daaf9e69d8a9566ca34aa47f9133711ce065a571af0cfd;
+
     constructor(
         address accessController,
         address ipAccountRegistry,
@@ -158,30 +161,36 @@ contract UMLPolicyFrameworkManager is
         policy = abi.decode(protocolPolicy.data, (UMLPolicy));
     }
 
-    function getAggregator(address ipId) external view returns (UMLInheritedPolicyAggregator memory rights) {
+    function getAggregator(address ipId) external view returns (UMLAggregator memory rights) {
         bytes memory policyAggregatorData = LICENSE_REGISTRY.policyAggregatorData(address(this), ipId);
         if (policyAggregatorData.length == 0) {
             revert UMLFrameworkErrors.UMLPolicyFrameworkManager__RightsNotFound();
         }
-        rights = abi.decode(policyAggregatorData, (UMLInheritedPolicyAggregator));
+        rights = abi.decode(policyAggregatorData, (UMLAggregator));
     }
 
     function processInheritedPolicies(
         bytes memory aggregator,
         uint256 policyId,
         bytes memory policy
-    ) external view onlyLicenseRegistry returns (bool changedRights, bytes memory newAggregator) {
-        UMLInheritedPolicyAggregator memory agg;
+    ) external view onlyLicenseRegistry returns (bool changedAgg, bytes memory newAggregator) {
+        UMLAggregator memory agg;
         UMLPolicy memory newPolicy = abi.decode(policy, (UMLPolicy));
         if (aggregator.length == 0) {
-            agg = UMLInheritedPolicyAggregator({
-                commercialUse: newPolicy.commercialUse,
+            // Initialize the aggregator
+            agg = UMLAggregator({
+                commercial: newPolicy.commercialUse,
+                derivatives: newPolicy.derivativesAllowed,
                 derivativesReciprocal: newPolicy.derivativesReciprocal,
-                lastPolicyId: policyId
+                lastPolicyId: policyId,
+                territoriesAcc: keccak256(abi.encode(newPolicy.territories)),
+                distributionChannelsAcc: keccak256(abi.encode(newPolicy.distributionChannels)),
+                contentRestrictionsAcc: keccak256(abi.encode(newPolicy.contentRestrictions))
             });
             return (true, abi.encode(agg));
         } else {
-            agg = abi.decode(aggregator, (UMLInheritedPolicyAggregator));
+            agg = abi.decode(aggregator, (UMLAggregator));
+
             // Either all are reciprocal or none are
             if (agg.derivativesReciprocal != newPolicy.derivativesReciprocal) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalValueMismatch();
@@ -191,9 +200,33 @@ contract UMLPolicyFrameworkManager is
                 if (agg.lastPolicyId != policyId) {
                     revert UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalButDifferentPolicyIds();
                 }
+            } else {
+                // Both non reciprocal
+                if (agg.commercial != newPolicy.commercialUse) {
+                    revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialValueMismatch();
+                }
+                if (agg.derivatives != newPolicy.derivativesAllowed) {
+                    revert UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesValueMismatch();
+                }
+
+                bytes32 newHash = _verifyStringArray(agg.territoriesAcc, keccak256(abi.encode(newPolicy.territories)));
+                if (newHash != agg.territoriesAcc) {
+                    agg.territoriesAcc = newHash;
+                    changedAgg = true;
+                }
+                newHash = _verifyStringArray(agg.distributionChannelsAcc, keccak256(abi.encode(newPolicy.distributionChannels)));
+                if (newHash != agg.distributionChannelsAcc) {
+                    agg.distributionChannelsAcc = newHash;
+                    changedAgg = true;
+                }
+                newHash = _verifyStringArray(agg.contentRestrictionsAcc, keccak256(abi.encode(newPolicy.contentRestrictions)));
+                if (newHash != agg.contentRestrictionsAcc) {
+                    agg.contentRestrictionsAcc = newHash;
+                    changedAgg = true;
+                }
             }
         }
-        return (false, abi.encode(agg));
+        return (changedAgg, abi.encode(agg));
     }
 
     function policyToJson(bytes memory policyData) public view returns (string memory) {
@@ -311,7 +344,7 @@ contract UMLPolicyFrameworkManager is
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddDerivRevShare();
             }
             if (policy.royaltyPolicy != address(0)) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddRoyaltyPolicy();
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddRoyaltyPolicy();
             }
         } else {
             // TODO: check for supportInterface instead
@@ -337,6 +370,21 @@ contract UMLPolicyFrameworkManager is
             if (policy.derivativesRevShare > 0) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddRevShare();
             }
+        }
+    }
+
+    function _verifyStringArray(bytes32 oldHash, bytes32 newHash) internal view returns(bytes32 result) {        
+        if (oldHash == newHash) {
+            return newHash;
+        }
+        if (oldHash != _EMPTY_STRING_ARRAY_HASH && newHash != _EMPTY_STRING_ARRAY_HASH) {
+            revert UMLFrameworkErrors.UMLPolicyFrameworkManager__StringArrayMismatch();
+        }
+        if (oldHash != _EMPTY_STRING_ARRAY_HASH) {
+            return oldHash;
+        }
+        if (newHash != _EMPTY_STRING_ARRAY_HASH) {
+            return newHash;
         }
     }
 }
