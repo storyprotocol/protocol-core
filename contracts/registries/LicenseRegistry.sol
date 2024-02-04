@@ -191,49 +191,16 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
             if (balanceOf(holder, licenseId) == 0) {
                 revert Errors.LicenseRegistry__NotLicensee();
             }
-
             Licensing.License memory licenseData = _licenses[licenseId];
             licensors[i] = licenseData.licensorIpId;
-            // TODO: check licensor not part of a branch tagged by disputer
-            if (licensors[i] == childIpId) {
-                revert Errors.LicenseRegistry__ParentIdEqualThanChild();
-            }
-            // Verify linking params
-            Licensing.Policy memory pol = policy(licenseData.policyId);
-            IPolicyFrameworkManager.VerifyLinkResponse memory response = IPolicyFrameworkManager(pol.policyFramework)
-                .verifyLink(licenseId, msg.sender, childIpId, licensors[i], pol.data);
-
-            if (!response.isLinkingAllowed) {
-                revert Errors.LicenseRegistry__LinkParentParamFailed();
-            }
-
-            // Compatibility check: If link says no royalty is required for license (licenseIds[i]) but
-            // another license requires royalty, revert.
-            if (!response.isRoyaltyRequired && royaltyPolicyAddress != address(0)) {
-                revert Errors.LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
-            }
-
-            // If link says royalty is required for license (licenseIds[i]) and no royalty policy is set, set it.
-            // But if the index is NOT 0, this is previous licenses didn't set the royalty policy because they don't
-            // require royalty payment. So, revert in this case.
-            if (response.isRoyaltyRequired && royaltyPolicyAddress == address(0)) {
-                if (i != 0) {
-                    revert Errors.LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
-                }
-                royaltyPolicyAddress = response.royaltyPolicy;
-                royaltyDerivativeRevShare = response.royaltyDerivativeRevShare;
-            }
-
-            // Add the policy of licenseIds[i] to the child. If the policy's already set from previous parents,
-            // then the addition will be skipped.
-            _addPolicyIdToIp({
-                ipId: childIpId,
-                policyId: licenseData.policyId,
-                isInherited: true,
-                skipIfDuplicate: true
-            });
-            // Set parent
-            _ipIdParents[childIpId].add(licensors[i]);
+            (royaltyPolicyAddress, royaltyDerivativeRevShare) = _linkIpToParent(
+                i,
+                licenseId,
+                licenseData,
+                licensors[i],
+                childIpId,
+                royaltyPolicyAddress
+            );
             values[i] = 1;
         }
         emit IpIdLinkedToParents(msg.sender, childIpId, licensors);
@@ -250,6 +217,52 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
 
         // Burn licenses
         _burnBatch(holder, licenseIds, values);
+    }
+
+    function _linkIpToParent(
+        uint256 iteration,
+        uint256 licenseId,
+        Licensing.License memory licenseData,
+        address licensor,
+        address childIpId,
+        address royaltyPolicyAddress
+    ) private returns (address nextRoyaltyPolicyAddress, uint32 royaltyDerivativeRevShare) {
+        // TODO: check licensor not part of a branch tagged by disputer
+        if (licensor == childIpId) {
+            revert Errors.LicenseRegistry__ParentIdEqualThanChild();
+        }
+        // Verify linking params
+        Licensing.Policy memory pol = policy(licenseData.policyId);
+        IPolicyFrameworkManager.VerifyLinkResponse memory response = IPolicyFrameworkManager(pol.policyFramework)
+            .verifyLink(licenseId, msg.sender, childIpId, licensor, pol.data);
+
+        if (!response.isLinkingAllowed) {
+            revert Errors.LicenseRegistry__LinkParentParamFailed();
+        }
+
+        // Compatibility check: If link says no royalty is required for license (licenseIds[i]) but
+        // another license requires royalty, revert.
+        if (!response.isRoyaltyRequired && royaltyPolicyAddress != address(0)) {
+            revert Errors.LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
+        }
+
+        // If link says royalty is required for license (licenseIds[i]) and no royalty policy is set, set it.
+        // But if the index is NOT 0, this is previous licenses didn't set the royalty policy because they don't
+        // require royalty payment. So, revert in this case.
+        if (response.isRoyaltyRequired && royaltyPolicyAddress == address(0)) {
+            if (iteration != 0) {
+                revert Errors.LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
+            }
+            royaltyPolicyAddress = response.royaltyPolicy;
+            royaltyDerivativeRevShare = response.royaltyDerivativeRevShare;
+        }
+
+        // Add the policy of licenseIds[i] to the child. If the policy's already set from previous parents,
+        // then the addition will be skipped.
+        _addPolicyIdToIp({ ipId: childIpId, policyId: licenseData.policyId, isInherited: true, skipIfDuplicate: true });
+        // Set parent
+        _ipIdParents[childIpId].add(licensor);
+        return (royaltyPolicyAddress, royaltyDerivativeRevShare);
     }
 
     /// @notice True if the framework address is registered in LicenseRegistry
@@ -456,6 +469,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
             _ipRights[pol.policyFramework][ipId] = newAggregator;
         }
     }
+
+    function _verifyRoyaltyRequired(bool) private {}
 
     /// Stores data without repetition, assigning an id to it if new or reusing existing one if already stored
     /// @param data raw bytes, abi.encode() a value to be hashed

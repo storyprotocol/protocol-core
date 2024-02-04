@@ -42,7 +42,7 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager {
         bytes memory, // aggregator
         uint256, // policyId
         bytes memory // policy
-    ) external view override returns (bool changedAgg, bytes memory newAggregator) {
+    ) external pure override returns (bool changedAgg, bytes memory newAggregator) {
         return (false, newAggregator);
     }
 
@@ -65,12 +65,12 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager {
     }
 
     function verifyLink(
-        uint256 licenseId,
-        address caller,
-        address ipId,
-        address parentIpId,
-        bytes calldata policyData
-    ) external returns (IPolicyFrameworkManager.VerifyLinkResponse memory) {
+        uint256, // licenseId
+        address, // caller
+        address, // ipId
+        address, // parentIpId
+        bytes calldata // policyData
+    ) external pure returns (IPolicyFrameworkManager.VerifyLinkResponse memory) {
         return IPolicyFrameworkManager.VerifyLinkResponse({
             isLinkingAllowed: true,
             isRoyaltyRequired: false,
@@ -80,17 +80,17 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager {
     }
 
     function verifyTransfer(
-        uint256 licenseId,
-        address from,
-        address to,
-        uint256 amount,
-        bytes memory policyData
+        uint256, // licenseId
+        address, // from
+        address, // to
+        uint256, // amount
+        bytes memory // policyData
     ) external returns (bool) {
         return true;
     }
 
 
-    function policyToJson(bytes memory policyData) public view returns (string memory) {
+    function policyToJson(bytes memory policyData) public pure returns (string memory) {
         return "MintPaymentPolicyFrameworkManager";
     }
 }
