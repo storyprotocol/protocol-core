@@ -27,6 +27,11 @@ interface IRoyaltyModule {
     /// @param amount The amount that is paid
     event RoyaltyPaid(address receiverIpId, address payerIpId, address sender, address token, uint256 amount);
 
+    /// @notice Sets the registration module and the license registry as allowed callers
+    /// @param registrationModule The address of the registration module
+    /// @param licenseRegistry The address of the license registry
+    function initialize(address registrationModule, address licenseRegistry) external;
+
     /// @notice Whitelist a royalty policy
     /// @param royaltyPolicy The address of the royalty policy
     /// @param allowed Indicates if the royalty policy is whitelisted or not
