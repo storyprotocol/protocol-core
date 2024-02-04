@@ -18,8 +18,6 @@ import { TestHelper } from "test/utils/TestHelper.sol";
 
 contract UMLPolicyFrameworkMultiParentTest is TestHelper {
 
-    LicenseRegistry internal registry;
-
     UMLPolicyFrameworkManager internal umlFramework;
     string internal licenseUrl = "https://example.com/license";
     address internal bob = address(0x111);
@@ -45,18 +43,13 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
 
     modifier withLicense(string memory policyName, address ipId, address owner) {
         vm.prank(ipIdToOwner[ipId]);
-        uint256 licenseId = registry.mintLicense(policyIDs[policyName], ipId, 1, owner);
+        uint256 licenseId = licenseRegistry.mintLicense(policyIDs[policyName], ipId, 1, owner);
         licenses.push(licenseId);
         _;
     }
 
     function setUp() public override {
         TestHelper.setUp();
-        ipAccountRegistry = new IPAccountRegistry(
-            address(new ERC6551Registry()),
-            address(accessController),
-            address(new IPAccountImpl())
-        );
         nft = erc721.ape;
 
         umlFramework = new UMLPolicyFrameworkManager(
@@ -107,8 +100,41 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         }
         assertEq(licenseRegistry.totalPoliciesForIp(false, ipId4), 0);
         assertEq(licenseRegistry.totalPoliciesForIp(true, ipId4), 1);
-        assertTrue(licenseRegistry.isPolicyIdSetForIp(true, ipId4, _getUmlPolicyId("reciprocal")));
+        assertTrue(licenseRegistry.isPolicyIdSetForIp(true, ipId4, policyIDs["reciprocal"]));
     }
+
+    function test_UMLPolicyFramework_multiParent_revert_AliceSets3Parents_OneNonReciprocal()
+        withPolicy("reciprocal", true, true, true)
+        withPolicy("non_reciprocal", true, true, false)
+        withLicense("reciprocal", ipId1, alice)
+        withLicense("non_reciprocal", ipId2, alice)
+        withLicense("reciprocal", ipId3, alice)
+        public {
+        vm.expectRevert(
+            UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalValueMismatch.selector
+        );
+        vm.prank(alice);
+        licenseRegistry.linkIpToParents(licenses, ipId4, alice);
+    }
+
+    function test_UMLPolicyFramework_multiParent_revert_AliceSets3Parents_3ReciprocalButDifferent()
+        withPolicy("reciprocal", true, true, true)
+        withLicense("reciprocal", ipId1, alice)
+        withLicense("reciprocal", ipId2, alice)
+        public {
+        // Save a new policy (change some value to change the policyId)
+        _savePolicyInMapping("other", true, true, true);
+        policies["other"].attribution = !policies["other"].attribution;
+        policyIDs["other"] = umlFramework.registerPolicy(policies["other"]);
+        vm.prank(ipId3);
+        licenses.push(licenseRegistry.mintLicense(policyIDs["other"], ipId3, 1, alice));
+        vm.expectRevert(
+            UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalButDifferentPolicyIds.selector
+        );
+        vm.prank(alice);
+        licenseRegistry.linkIpToParents(licenses, ipId4, alice);
+    }
+
 
     function _savePolicyInMapping(
         string memory name,

@@ -42,8 +42,8 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager {
         bytes memory, // aggregator
         uint256, // policyId
         bytes memory // policy
-    ) external view override returns (bool changedRights, bytes memory newAggregator, bool skipAdding) {
-        return (false, newAggregator, false);
+    ) external view override returns (bool changedRights, bytes memory newAggregator) {
+        return (false, newAggregator);
     }
 
     /// @dev Mock verifies the param by decoding it as a bool. If you want the verifier
