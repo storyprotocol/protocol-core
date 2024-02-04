@@ -37,6 +37,7 @@ import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.so
 import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
 import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
+import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
 
 // test
@@ -78,6 +79,7 @@ contract DeployHelper is Test {
     RoyaltyPolicyLS internal royaltyPolicyLS;
     LSClaimer internal lsClaimer;
     TaggingModule internal taggingModule;
+    LicensingModule internal licensingModule;
 
     // Misc.
     Governance internal governance;
@@ -132,9 +134,11 @@ contract DeployHelper is Test {
             address(erc6551Registry),
             address(ipAccountImpl)
         );
-        licenseRegistry = new LicenseRegistry(
+        licenseRegistry = new LicenseRegistry();
+        licensingModule = new LicensingModule(
             address(accessController),
             address(ipAssetRegistry),
+            address(licenseRegistry),
             address(royaltyModule)
         );
         ipMetadataProvider = new IPMetadataProvider(address(moduleRegistry));
@@ -142,7 +146,7 @@ contract DeployHelper is Test {
         registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry),
+            address(licensingModule),
             address(ipResolver)
         );
         taggingModule = new TaggingModule();
@@ -173,7 +177,7 @@ contract DeployHelper is Test {
         );
         royaltyPolicyLS = new RoyaltyPolicyLS(
             address(royaltyModule),
-            address(licenseRegistry),
+            address(licensingModule),
             LIQUID_SPLIT_FACTORY,
             LIQUID_SPLIT_MAIN
         );
@@ -186,7 +190,7 @@ contract DeployHelper is Test {
 
         moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));
-        moduleRegistry.registerModule("LICENSE_REGISTRY", address(licenseRegistry));
+        moduleRegistry.registerModule("LICENSING_MODULE", address(licensingModule));
         moduleRegistry.registerModule(DISPUTE_MODULE_KEY, address(disputeModule));
 
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
@@ -218,15 +222,15 @@ contract DeployHelper is Test {
 
         accessController.setGlobalPermission(
             address(registrationModule),
-            address(licenseRegistry),
-            bytes4(licenseRegistry.linkIpToParents.selector),
+            address(licensingModule),
+            bytes4(licensingModule.linkIpToParents.selector),
             1 // AccessPermission.ALLOW
         );
 
         accessController.setGlobalPermission(
             address(registrationModule),
-            address(licenseRegistry),
-            bytes4(licenseRegistry.addPolicyToIp.selector),
+            address(licensingModule),
+            bytes4(licensingModule.addPolicyToIp.selector),
             1 // AccessPermission.ALLOW
         );
 

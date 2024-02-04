@@ -29,7 +29,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         Integration_Shared_LicensingHelper.initLicenseFrameworkAndPolicy(
             accessController,
             ipAssetRegistry,
-            licenseRegistry,
+            licensingModule,
             royaltyModule
         );
 
@@ -119,8 +119,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         ////////////////////////////////////////////////////////////////*/
 
         vm.startPrank(u.alice);
-        licenseRegistry.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_cheap_flexible"]);
-        licenseRegistry.addPolicyToIp(ipAcct[100], policyIds["uml_noncom_deriv_reciprocal_derivative"]);
+        licensingModule.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_cheap_flexible"]);
+        licensingModule.addPolicyToIp(ipAcct[100], policyIds["uml_noncom_deriv_reciprocal_derivative"]);
 
         // Alice sets royalty policy for her root IPAccounts
         // (so other IPAccounts can use her policies that inits royalty policy on linking)
@@ -132,8 +132,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         );
 
         vm.startPrank(u.bob);
-        licenseRegistry.addPolicyToIp(ipAcct[3], policyIds["mint_payment_normal"]);
-        licenseRegistry.addPolicyToIp(ipAcct[300], policyIds["uml_com_deriv_cheap_flexible"]);
+        licensingModule.addPolicyToIp(ipAcct[3], policyIds["mint_payment_normal"]);
+        licensingModule.addPolicyToIp(ipAcct[300], policyIds["uml_com_deriv_cheap_flexible"]);
 
         // Bob sets royalty policy for his root IPAccounts
         // (so other IPAccounts can use his policies that inits royalty policy on linking)
@@ -146,9 +146,9 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
 
         vm.startPrank(u.bob);
         // NOTE: the two calls below achieve the same functionality
-        // licenseRegistry.addPolicyToIp(ipAcct[3], policyIds["uml_noncom_deriv_reciprocal_derivative"]);
+        // licensingModule.addPolicyToIp(ipAcct[3], policyIds["uml_noncom_deriv_reciprocal_derivative"]);
         IIPAccount(payable(ipAcct[3])).execute(
-            address(licenseRegistry),
+            address(licensingModule),
             0,
             abi.encodeWithSignature(
                 "addPolicyToIp(address,uint256)",
@@ -168,7 +168,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             vm.startPrank(u.carl);
             nft.mintId(u.carl, 6);
             uint256[] memory carl_license_from_root_alice = new uint256[](1);
-            carl_license_from_root_alice[0] = licenseRegistry.mintLicense(
+            carl_license_from_root_alice[0] = licensingModule.mintLicense(
                 policyIds["uml_com_deriv_cheap_flexible"],
                 ipAcct[1],
                 1,
@@ -196,7 +196,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             uint256 pfmTokenBalance = erc20.balanceOf(pfm["mint_payment"].addr);
 
             uint256[] memory alice_license_from_root_bob = new uint256[](1);
-            alice_license_from_root_bob[0] = licenseRegistry.mintLicense(
+            alice_license_from_root_bob[0] = licensingModule.mintLicense(
                 policyIds["mint_payment_normal"],
                 ipAcct[3],
                 mintAmount,
@@ -265,7 +265,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
 
             uint256[] memory carl_licenses = new uint256[](2);
             // Commercial license
-            carl_licenses[0] = licenseRegistry.mintLicense(
+            carl_licenses[0] = licensingModule.mintLicense(
                 policyIds["uml_com_deriv_cheap_flexible"], // ipAcct[1] has this policy attached
                 ipAcct[1],
                 100, // mint 100 licenses
@@ -273,7 +273,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             );
 
             // Non-commercial license
-            carl_licenses[1] = licenseRegistry.mintLicense(
+            carl_licenses[1] = licensingModule.mintLicense(
                 policyIds["uml_noncom_deriv_reciprocal_derivative"], // ipAcct[3] has this policy attached
                 ipAcct[3],
                 1,
@@ -294,7 +294,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             );
 
             // Modify license[1] to a Commercial license
-            carl_licenses[1] = licenseRegistry.mintLicense(
+            carl_licenses[1] = licensingModule.mintLicense(
                 policyIds["uml_com_deriv_cheap_flexible"], // ipAcct[300] has this policy attached
                 ipAcct[300],
                 1,

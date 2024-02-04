@@ -103,11 +103,7 @@ contract IPAssetRendererTest is BaseTest {
             address(ipAccountImpl)
         );
         RoyaltyModule royaltyModule = new RoyaltyModule(address(governance));
-        licenseRegistry = new LicenseRegistry(
-            address(accessController),
-            address(ipAssetRegistry),
-            address(royaltyModule)
-        );
+        licenseRegistry = new LicenseRegistry();
         resolver = new IPResolver(
             address(accessController),
             address(ipAssetRegistry),

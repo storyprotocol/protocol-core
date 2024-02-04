@@ -187,24 +187,24 @@ contract TestLSClaimer is TestHelper {
 
     function test_LSClaimer_constructor_revert_ZeroIpId() public {
         vm.expectRevert(Errors.LSClaimer__ZeroIpId.selector);
-        new LSClaimer(address(0), address(licenseRegistry), address(royaltyPolicyLS));
+        new LSClaimer(address(0), address(licensingModule), address(royaltyPolicyLS));
     }
 
-    function test_LSClaimer_constructor_revert_ZeroLicenseRegistry() public {
-        vm.expectRevert(Errors.LSClaimer__ZeroLicenseRegistry.selector);
+    function test_LSClaimer_constructor_revert_ZeroLicensingModule() public {
+        vm.expectRevert(Errors.LSClaimer__ZeroLicensingModule.selector);
         new LSClaimer(address(1), address(0), address(royaltyPolicyLS));
     }
 
     function test_LSClaimer_constructor_revert_ZeroRoyaltyPolicyLS() public {
         vm.expectRevert(Errors.LSClaimer__ZeroRoyaltyPolicyLS.selector);
-        new LSClaimer(address(1), address(licenseRegistry), address(0));
+        new LSClaimer(address(1), address(licensingModule), address(0));
     }
 
     function test_LSClaimer_constructor() public {
-        LSClaimer testLsClaimer = new LSClaimer(address(1), address(licenseRegistry), address(royaltyPolicyLS));
+        LSClaimer testLsClaimer = new LSClaimer(address(1), address(licensingModule), address(royaltyPolicyLS));
 
         assertEq(address(testLsClaimer.IP_ID()), address(1));
-        assertEq(address(testLsClaimer.ILICENSE_REGISTRY()), address(licenseRegistry));
+        assertEq(address(testLsClaimer.LICENSING_MODULE()), address(licensingModule));
         assertEq(address(testLsClaimer.IROYALTY_POLICY_LS()), address(royaltyPolicyLS));
     }
 

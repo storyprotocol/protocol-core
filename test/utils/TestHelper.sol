@@ -68,11 +68,11 @@ contract TestHelper is Test, DeployHelper {
         UMLPolicyFrameworkManager umlPfm = new UMLPolicyFrameworkManager(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry),
+            address(licensingModule),
             "UML_MINT_PAYMENT",
             "license Url"
         );
-        licenseRegistry.registerPolicyFrameworkManager(address(umlPfm));
+        licensingModule.registerPolicyFrameworkManager(address(umlPfm));
 
         pfms["uml"] = PolicyFrameworkManagerData({ name: "uml", addr: address(umlPfm) });
     }

@@ -17,7 +17,7 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
-import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
+import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 
@@ -26,14 +26,14 @@ import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy } fro
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 
-contract LicenseRegistryTest is Test {
+contract LicensingModuleTest is Test {
     using Strings for *;
-    using ShortStrings for *;
 
     MockAccessController internal accessController = new MockAccessController();
     IPAccountRegistry internal ipAccountRegistry;
 
-    LicenseRegistry internal registry;
+    LicenseRegistry internal licenseRegistry;
+    LicensingModule internal licensingModule;
 
     MockPolicyFrameworkManager internal module1;
     UMLPolicyFrameworkManager internal umlManager;
@@ -70,16 +70,18 @@ contract LicenseRegistryTest is Test {
             address(ipAccountImpl)
         );
         royaltyModule = new RoyaltyModule(address(governance));
-        registry = new LicenseRegistry(
+        licenseRegistry = new LicenseRegistry();
+        licensingModule = new LicensingModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(royaltyModule)
+            address(royaltyModule),
+            address(licenseRegistry)
         );
 
         // Setup Framework Managers (don't register PFM here, do in each test case)
         module1 = new MockPolicyFrameworkManager(
             MockPolicyFrameworkConfig({
-                licenseRegistry: address(registry),
+                licensingModule: address(licensingModule),
                 name: "MockPolicyFrameworkManager",
                 licenseUrl: licenseUrl,
                 supportVerifyLink: true,
@@ -90,7 +92,7 @@ contract LicenseRegistryTest is Test {
         umlManager = new UMLPolicyFrameworkManager(
             address(accessController),
             address(ipAccountRegistry),
-            address(registry),
+            address(licensingModule),
             "UMLPolicyFrameworkManager",
             licenseUrl
         );
@@ -109,85 +111,85 @@ contract LicenseRegistryTest is Test {
         return abi.encode(MockPolicy({ returnVerifyLink: true, returnVerifyMint: true, returnVerifyTransfer: true }));
     }
 
-    function test_LicenseRegistry_registerLicenseFramework() public {
-        registry.registerPolicyFrameworkManager(address(module1));
-        assertTrue(registry.isFrameworkRegistered(address(module1)), "framework not registered");
+    function test_LicensingModule_registerLicenseFramework() public {
+        licensingModule.registerPolicyFrameworkManager(address(module1));
+        assertTrue(licensingModule.isFrameworkRegistered(address(module1)), "framework not registered");
     }
 
-    function test_LicenseRegistry_registerPolicy() public {
-        registry.registerPolicyFrameworkManager(address(module1));
+    function test_LicensingModule_registerPolicy() public {
+        licensingModule.registerPolicyFrameworkManager(address(module1));
         vm.prank(address(module1));
-        uint256 polId = registry.registerPolicy(_createPolicy());
+        uint256 polId = licensingModule.registerPolicy(_createPolicy());
         assertEq(polId, 1, "polId not 1");
     }
 
-    function test_LicenseRegistry_registerPolicy_revert_policyAlreadyAdded() public {
-        registry.registerPolicyFrameworkManager(address(module1));
+    function test_LicensingModule_registerPolicy_revert_policyAlreadyAdded() public {
+        licensingModule.registerPolicyFrameworkManager(address(module1));
         vm.startPrank(address(module1));
-        registry.registerPolicy(_createPolicy());
+        licensingModule.registerPolicy(_createPolicy());
         vm.expectRevert(Errors.LicenseRegistry__PolicyAlreadyAdded.selector);
-        registry.registerPolicy(_createPolicy());
+        licensingModule.registerPolicy(_createPolicy());
         vm.stopPrank();
     }
 
-    function test_LicenseRegistry_registerPolicy_revert_frameworkNotFound() public {
+    function test_LicensingModule_registerPolicy_revert_frameworkNotFound() public {
         bytes memory policy = _createPolicy();
         vm.expectRevert(Errors.LicenseRegistry__FrameworkNotFound.selector);
         vm.prank(address(module1));
-        registry.registerPolicy(policy);
+        licensingModule.registerPolicy(policy);
     }
 
-    function test_LicenseRegistry_addPolicyToIpId() public {
-        registry.registerPolicyFrameworkManager(address(module1));
+    function test_LicensingModule_addPolicyToIpId() public {
+        licensingModule.registerPolicyFrameworkManager(address(module1));
         bytes memory policy = _createPolicy();
         vm.prank(address(module1));
-        uint256 policyId = registry.registerPolicy(policy);
+        uint256 policyId = licensingModule.registerPolicy(policy);
         vm.prank(ipOwner);
-        uint256 indexOnIpId = registry.addPolicyToIp(ipId1, policyId);
+        uint256 indexOnIpId = licensingModule.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1, "policyId not 1");
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
-        assertFalse(registry.isPolicyInherited(ipId1, policyId));
-        Licensing.Policy memory storedPolicy = registry.policy(policyId);
+        assertFalse(licensingModule.isPolicyInherited(ipId1, policyId));
+        Licensing.Policy memory storedPolicy = licensingModule.policy(policyId);
         assertEq(storedPolicy.policyFramework, address(module1), "policyFramework not stored properly");
         assertEq(keccak256(storedPolicy.data), keccak256(policy), "policy not stored properly");
     }
 
-    function test_LicenseRegistry_addSamePolicyReusesPolicyId() public {
-        registry.registerPolicyFrameworkManager(address(module1));
+    function test_LicensingModule_addSamePolicyReusesPolicyId() public {
+        licensingModule.registerPolicyFrameworkManager(address(module1));
         bytes memory policy = _createPolicy();
         vm.prank(address(module1));
-        uint256 policyId = registry.registerPolicy(policy);
+        uint256 policyId = licensingModule.registerPolicy(policy);
 
         vm.prank(ipOwner);
-        uint256 indexOnIpId = registry.addPolicyToIp(ipId1, policyId);
+        uint256 indexOnIpId = licensingModule.addPolicyToIp(ipId1, policyId);
         assertEq(indexOnIpId, 0);
-        assertFalse(registry.isPolicyInherited(ipId1, policyId));
+        assertFalse(licensingModule.isPolicyInherited(ipId1, policyId));
 
         vm.prank(ipOwner);
-        uint256 indexOnIpId2 = registry.addPolicyToIp(ipId2, policyId);
+        uint256 indexOnIpId2 = licensingModule.addPolicyToIp(ipId2, policyId);
         assertEq(indexOnIpId2, 0);
-        assertFalse(registry.isPolicyInherited(ipId2, policyId));
+        assertFalse(licensingModule.isPolicyInherited(ipId2, policyId));
     }
 
-    //function test_LicenseRegistry_revert_policyAlreadyAddedToIpId()
+    //function test_LicensingModule_revert_policyAlreadyAddedToIpId()
 
-    function test_LicenseRegistry_add2PoliciesToIpId() public {
-        registry.registerPolicyFrameworkManager(address(module1));
-        assertEq(registry.totalPolicies(), 0);
-        assertEq(registry.totalPoliciesForIp(false, ipId1), 0);
+    function test_LicensingModule_add2PoliciesToIpId() public {
+        licensingModule.registerPolicyFrameworkManager(address(module1));
+        assertEq(licensingModule.totalPolicies(), 0);
+        assertEq(licensingModule.totalPoliciesForIp(false, ipId1), 0);
         bytes memory policy = _createPolicy();
 
         // First time adding a policy
         vm.prank(address(module1));
-        uint256 policyId = registry.registerPolicy(policy);
+        uint256 policyId = licensingModule.registerPolicy(policy);
         vm.prank(ipOwner);
-        uint256 indexOnIpId = registry.addPolicyToIp(ipId1, policyId);
+        uint256 indexOnIpId = licensingModule.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1, "policyId not 1");
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
-        assertEq(registry.totalPolicies(), 1, "totalPolicies not incremented");
-        assertEq(registry.totalPoliciesForIp(false, ipId1), 1, "totalPoliciesForIp not incremented");
-        assertEq(registry.policyIdForIpAtIndex(false, ipId1, 0), 1, "policyIdForIpAtIndex not 1");
-        (uint256 index, bool isInherited, bool active) = registry.policyStatus(ipId1, policyId);
+        assertEq(licensingModule.totalPolicies(), 1, "totalPolicies not incremented");
+        assertEq(licensingModule.totalPoliciesForIp(false, ipId1), 1, "totalPoliciesForIp not incremented");
+        assertEq(licensingModule.policyIdForIpAtIndex(false, ipId1, 0), 1, "policyIdForIpAtIndex not 1");
+        (uint256 index, bool isInherited, bool active) = licensingModule.policyStatus(ipId1, policyId);
         assertFalse(isInherited);
 
         // Adding different policy to same ipId
@@ -195,69 +197,69 @@ contract LicenseRegistryTest is Test {
             MockPolicy({ returnVerifyLink: true, returnVerifyMint: true, returnVerifyTransfer: false })
         );
         vm.prank(address(module1));
-        uint256 policyId2 = registry.registerPolicy(policy);
+        uint256 policyId2 = licensingModule.registerPolicy(policy);
         vm.prank(ipOwner);
-        uint256 indexOnIpId2 = registry.addPolicyToIp(ipId1, policyId2);
+        uint256 indexOnIpId2 = licensingModule.addPolicyToIp(ipId1, policyId2);
         assertEq(policyId2, 2, "policyId not 2");
         assertEq(indexOnIpId2, 1, "indexOnIpId not 1");
-        assertEq(registry.totalPolicies(), 2, "totalPolicies not incremented");
-        assertEq(registry.totalPoliciesForIp(false, ipId1), 2, "totalPoliciesForIp not incremented");
-        assertEq(registry.policyIdForIpAtIndex(false, ipId1, 1), 2, "policyIdForIpAtIndex not 2");
-        (index, isInherited, active) = registry.policyStatus(ipId1, policyId2);
+        assertEq(licensingModule.totalPolicies(), 2, "totalPolicies not incremented");
+        assertEq(licensingModule.totalPoliciesForIp(false, ipId1), 2, "totalPoliciesForIp not incremented");
+        assertEq(licensingModule.policyIdForIpAtIndex(false, ipId1, 1), 2, "policyIdForIpAtIndex not 2");
+        (index, isInherited, active) = licensingModule.policyStatus(ipId1, policyId2);
         assertFalse(isInherited);
     }
 
-    function test_LicenseRegistry_mintLicense() public returns (uint256 licenseId) {
-        registry.registerPolicyFrameworkManager(address(module1));
+    function test_LicensingModule_mintLicense() public returns (uint256 licenseId) {
+        licensingModule.registerPolicyFrameworkManager(address(module1));
         bytes memory policy = _createPolicy();
         vm.prank(address(module1));
-        uint256 policyId = registry.registerPolicy(policy);
+        uint256 policyId = licensingModule.registerPolicy(policy);
         vm.prank(ipOwner);
-        uint256 indexOnIpId = registry.addPolicyToIp(ipId1, policyId);
+        uint256 indexOnIpId = licensingModule.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1);
 
-        assertTrue(registry.isPolicyIdSetForIp(false, ipId1, policyId));
-        uint256[] memory policyIds = registry.policyIdsForIp(false, ipId1);
+        assertTrue(licensingModule.isPolicyIdSetForIp(false, ipId1, policyId));
+        uint256[] memory policyIds = licensingModule.policyIdsForIp(false, ipId1);
         assertEq(policyIds.length, 1);
         assertEq(policyIds[indexOnIpId], policyId);
 
-        licenseId = registry.mintLicense(policyId, ipId1, 2, licenseHolder);
+        licenseId = licenseRegistry.mintLicense(policyId, ipId1, 2, licenseHolder);
         assertEq(licenseId, 1);
-        Licensing.License memory license = registry.license(licenseId);
-        assertEq(registry.balanceOf(licenseHolder, licenseId), 2);
-        assertEq(registry.isLicensee(licenseId, licenseHolder), true);
+        Licensing.License memory license = licenseRegistry.license(licenseId);
+        assertEq(licenseRegistry.balanceOf(licenseHolder, licenseId), 2);
+        assertEq(licenseRegistry.isLicensee(licenseId, licenseHolder), true);
         assertEq(license.policyId, policyId);
         assertEq(license.licensorIpId, ipId1);
         return licenseId;
     }
 
-    function test_LicenseRegistry_mintLicense_revert_licensorNotRegistered() public {
-        registry.registerPolicyFrameworkManager(address(module1));
+    function test_LicensingModule_mintLicense_revert_licensorNotRegistered() public {
+        licensingModule.registerPolicyFrameworkManager(address(module1));
 
         bytes memory policy = _createPolicy();
 
         vm.prank(address(module1));
-        uint256 policyId = registry.registerPolicy(policy);
+        uint256 policyId = licensingModule.registerPolicy(policy);
 
         vm.prank(ipOwner);
-        registry.addPolicyToIp(ipId1, policyId);
+        licensingModule.addPolicyToIp(ipId1, policyId);
 
         vm.expectRevert(Errors.LicenseRegistry__LicensorNotRegistered.selector);
-        registry.mintLicense(policyId, address(0), 2, licenseHolder);
+        licensingModule.mintLicense(policyId, address(0), 2, licenseHolder);
     }
 
-    function test_LicenseRegistry_mintLicense_revert_callerNotLicensorAndIpIdHasNoPolicy() public {
-        registry.registerPolicyFrameworkManager(address(module1));
+    function test_LicensingModule_mintLicense_revert_callerNotLicensorAndIpIdHasNoPolicy() public {
+        licensingModule.registerPolicyFrameworkManager(address(module1));
 
         bytes memory policy = _createPolicy();
         IPAccountImpl ipAccount1 = IPAccountImpl(payable(ipId1));
 
         vm.prank(address(module1));
-        uint256 policyId = registry.registerPolicy(policy);
+        uint256 policyId = licensingModule.registerPolicy(policy);
 
         // Anyone (this contract, in this case) calls
         vm.expectRevert(Errors.LicenseRegistry__CallerNotLicensorAndPolicyNotSet.selector);
-        registry.mintLicense(policyId, ipId1, 2, licenseHolder);
+        licensingModule.mintLicense(policyId, ipId1, 2, licenseHolder);
 
         // Anyone, but call with permission (still fails)
         address signer = address(0x999);
@@ -270,19 +272,19 @@ contract LicenseRegistryTest is Test {
                 "setPermission(address,address,address,bytes4,uint8)",
                 address(ipAccount1),
                 signer,
-                address(registry),
-                registry.mintLicense.selector,
+                address(licensingModule),
+                licensingModule.mintLicense.selector,
                 AccessPermission.ALLOW
             )
         );
 
         vm.expectRevert(Errors.LicenseRegistry__CallerNotLicensorAndPolicyNotSet.selector);
         vm.prank(signer);
-        registry.mintLicense(policyId, ipId1, 1, licenseHolder);
+        licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder);
     }
 
-    function test_LicenseRegistry_mintLicense_ipIdHasNoPolicyButCallerIsLicensor() public {
-        registry.registerPolicyFrameworkManager(address(module1));
+    function test_LicensingModule_mintLicense_ipIdHasNoPolicyButCallerIsLicensor() public {
+        licensingModule.registerPolicyFrameworkManager(address(module1));
 
         bytes memory policy = _createPolicy();
         bytes memory policy2 = abi.encode(
@@ -291,13 +293,13 @@ contract LicenseRegistryTest is Test {
         IPAccountImpl ipAccount1 = IPAccountImpl(payable(ipId1));
 
         vm.startPrank(address(module1));
-        uint256 policyId1 = registry.registerPolicy(policy);
-        uint256 policyId2 = registry.registerPolicy(policy2);
+        uint256 policyId1 = licensingModule.registerPolicy(policy);
+        uint256 policyId2 = licensingModule.registerPolicy(policy2);
         vm.stopPrank();
 
         // Licensor (IP Account owner) calls directly
         vm.prank(ipAccount1.owner());
-        uint256 licenseId = registry.mintLicense(policyId1, ipId1, 1, licenseHolder);
+        uint256 licenseId = licensingModule.mintLicense(policyId1, ipId1, 1, licenseHolder);
         assertEq(licenseId, 1);
 
         // Licensor (IP Account owner) calls via IP Account execute
@@ -305,7 +307,7 @@ contract LicenseRegistryTest is Test {
         // license, but rather minting an existing one (existing ID, minted above).
         vm.prank(ipAccount1.owner());
         bytes memory result = ipAccount1.execute(
-            address(registry),
+            address(licensingModule),
             0,
             abi.encodeWithSignature("mintLicense(uint256,address,uint256,address)", policyId1, ipId1, 1, licenseHolder)
         );
@@ -313,93 +315,93 @@ contract LicenseRegistryTest is Test {
 
         // IP Account calls directly
         vm.prank(ipId1);
-        licenseId = registry.mintLicense(policyId2, ipId1, 1, licenseHolder);
+        licenseId = licensingModule.mintLicense(policyId2, ipId1, 1, licenseHolder);
         assertEq(licenseId, 2); // new license ID as this is the first mint on a different policy
     }
 
-    function test_LicenseRegistry_linkIpToParents_single_parent() public {
-        uint256 licenseId = test_LicenseRegistry_mintLicense();
+    function test_LicensingModule_linkIpToParents_single_parent() public {
+        uint256 licenseId = test_LicensingModule_mintLicense();
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
         vm.prank(ipOwner);
-        registry.linkIpToParents(licenseIds, ipId2, licenseHolder);
-        assertEq(registry.balanceOf(licenseHolder, licenseId), 1, "not burnt");
-        assertEq(registry.isParent(ipId1, ipId2), true, "not parent");
+        licensingModule.linkIpToParents(licenseIds, ipId2, licenseHolder);
+        assertEq(licenseRegistry.balanceOf(licenseHolder, licenseId), 1, "not burnt");
+        assertEq(licensingModule.isParent(ipId1, ipId2), true, "not parent");
         assertEq(
-            keccak256(abi.encode(registry.policyForIpAtIndex(true, ipId2, 0))),
-            keccak256(abi.encode(registry.policyForIpAtIndex(false, ipId1, 0))),
+            keccak256(abi.encode(licensingModule.policyForIpAtIndex(true, ipId2, 0))),
+            keccak256(abi.encode(licensingModule.policyForIpAtIndex(false, ipId1, 0))),
             "policy not copied"
         );
-        assertEq(registry.policyIdForIpAtIndex(true, ipId2, 0), 1);
-        (uint256 index, bool isInherited, bool active) = registry.policyStatus(ipId2, 1);
+        assertEq(licensingModule.policyIdForIpAtIndex(true, ipId2, 0), 1);
+        (uint256 index, bool isInherited, bool active) = licensingModule.policyStatus(ipId2, 1);
         assertEq(index, 0, "index not 0");
         assertEq(isInherited, true, "not inherited");
         assertEq(active, true, "not active");
 
-        address[] memory parents = registry.parentIpIds(ipId2);
+        address[] memory parents = licensingModule.parentIpIds(ipId2);
         assertEq(parents.length, 1, "not 1 parent");
         assertEq(
             parents.length,
-            registry.totalParentsForIpId(ipId2),
+            licensingModule.totalParentsForIpId(ipId2),
             "parents.length and totalParentsForIpId mismatch"
         );
         assertEq(parents[0], ipId1, "parent not ipId1");
     }
 
-    function test_LicenseRegistry_singleTransfer_paramVerifyTrue() public {
-        registry.registerPolicyFrameworkManager(address(module1));
+    function test_LicensingModule_singleTransfer_paramVerifyTrue() public {
+        licensingModule.registerPolicyFrameworkManager(address(module1));
         bytes memory policy = _createPolicy();
         vm.prank(address(module1));
-        uint256 policyId = registry.registerPolicy(policy);
+        uint256 policyId = licensingModule.registerPolicy(policy);
         vm.prank(ipOwner);
-        registry.addPolicyToIp(ipId1, policyId);
+        licensingModule.addPolicyToIp(ipId1, policyId);
 
-        uint256 licenseId = registry.mintLicense(policyId, ipId1, 2, licenseHolder);
+        uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 2, licenseHolder);
         address licenseHolder2 = address(0x102);
         vm.prank(licenseHolder);
-        registry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
-        assertEq(registry.balanceOf(licenseHolder, licenseId), 1, "not burnt");
+        licenseRegistry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
+        assertEq(licenseRegistry.balanceOf(licenseHolder, licenseId), 1, "not burnt");
     }
 
-    function test_LicenseRegistry_singleTransfer_verifyOk() public {
-        registry.registerPolicyFrameworkManager(address(module1));
+    function test_LicensingModule_singleTransfer_verifyOk() public {
+        licensingModule.registerPolicyFrameworkManager(address(module1));
         bytes memory policy = _createPolicy();
         vm.prank(address(module1));
-        uint256 policyId = registry.registerPolicy(policy);
+        uint256 policyId = licensingModule.registerPolicy(policy);
         vm.prank(ipOwner);
-        registry.addPolicyToIp(ipId1, policyId);
+        licensingModule.addPolicyToIp(ipId1, policyId);
 
-        uint256 licenseId = registry.mintLicense(policyId, ipId1, 2, licenseHolder);
+        uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 2, licenseHolder);
 
         address licenseHolder2 = address(0x102);
-        assertEq(registry.balanceOf(licenseHolder, licenseId), 2);
-        assertEq(registry.balanceOf(licenseHolder2, licenseId), 0);
+        assertEq(licenseRegistry.balanceOf(licenseHolder, licenseId), 2);
+        assertEq(licenseRegistry.balanceOf(licenseHolder2, licenseId), 0);
         vm.prank(licenseHolder);
-        registry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
-        assertEq(registry.balanceOf(licenseHolder, licenseId), 1, "not burnt");
-        assertEq(registry.balanceOf(licenseHolder2, licenseId), 1, "not minted");
+        licenseRegistry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
+        assertEq(licenseRegistry.balanceOf(licenseHolder, licenseId), 1, "not burnt");
+        assertEq(licenseRegistry.balanceOf(licenseHolder2, licenseId), 1, "not minted");
     }
 
-    function test_LicenseRegistry_singleTransfer_revert_verifyFalse() public {
-        registry.registerPolicyFrameworkManager(address(module1));
+    function test_LicensingModule_singleTransfer_revert_verifyFalse() public {
+        licensingModule.registerPolicyFrameworkManager(address(module1));
         bytes memory policy = abi.encode(
             MockPolicy({ returnVerifyLink: true, returnVerifyMint: true, returnVerifyTransfer: false })
         );
         vm.prank(address(module1));
-        uint256 policyId = registry.registerPolicy(policy);
+        uint256 policyId = licensingModule.registerPolicy(policy);
         vm.prank(ipOwner);
-        registry.addPolicyToIp(ipId1, policyId);
+        licensingModule.addPolicyToIp(ipId1, policyId);
 
-        uint256 licenseId = registry.mintLicense(policyId, ipId1, 2, licenseHolder);
+        uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 2, licenseHolder);
 
         address licenseHolder2 = address(0x102);
         vm.expectRevert(Errors.LicenseRegistry__TransferParamFailed.selector);
         vm.prank(licenseHolder);
-        registry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
+        licenseRegistry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
     }
 
-    function test_LicenseRegistry_licenseUri() public {
-        registry.registerPolicyFrameworkManager(address(umlManager));
+    function test_LicensingModule_licenseUri() public {
+        licensingModule.registerPolicyFrameworkManager(address(umlManager));
 
         UMLPolicy memory policyData = UMLPolicy({
             attribution: true,
@@ -427,11 +429,11 @@ contract LicenseRegistryTest is Test {
         uint256 policyId = umlManager.registerPolicy(policyData);
 
         vm.prank(ipOwner);
-        registry.addPolicyToIp(ipId1, policyId);
+        licensingModule.addPolicyToIp(ipId1, policyId);
 
-        uint256 licenseId = registry.mintLicense(policyId, ipId1, 1, licenseHolder);
+        uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder);
 
-        string memory actualUri = registry.uri(licenseId);
+        string memory actualUri = licenseRegistry.uri(licenseId);
 
         /* solhint-disable */
         // NOTE: In STRING version, no spacing between key and value (eg. "value":"true" instead of "value": "true")
