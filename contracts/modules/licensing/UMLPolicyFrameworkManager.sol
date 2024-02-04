@@ -163,6 +163,13 @@ contract UMLPolicyFrameworkManager is
         rights = abi.decode(policyAggregatorData, (UMLInheritedPolicyAggregator));
     }
 
+    /// Called by licenseRegistry to verify compatibility when inheriting from a parent IP
+    /// The objective is to verify compatibility of multiple policies.
+    /// @param aggregator common state of the policies for the IP
+    /// @param policyId the ID of the policy being inherited
+    /// @param policy the policy to inherit
+    /// @return changedAgg  true if the aggregator was changed
+    /// @return newAggregator the new aggregator
     function processInheritedPolicies(
         bytes memory aggregator,
         uint256 policyId,
@@ -358,17 +365,22 @@ contract UMLPolicyFrameworkManager is
         }
     }
 
-    function _verifyStringArray(bytes32 oldHash, bytes32 newHash) internal view returns(bytes32 result) {        
+    /// Verifies compatibility for params where the valid options are either permissive value, or equal params
+    /// @param oldHash hash of the old param
+    /// @param newHash hash of the new param
+    /// @param emptyHash hash of the most permissive param
+    /// @return result the hash that's different from the permissive hash
+    function _verifHashedParams(bytes32 oldHash, bytes32 newHash, bytes32 permissive) internal view returns(bytes32 result) {        
         if (oldHash == newHash) {
             return newHash;
         }
-        if (oldHash != _EMPTY_STRING_ARRAY_HASH && newHash != _EMPTY_STRING_ARRAY_HASH) {
+        if (oldHash != permissive && newHash != permissive) {
             revert UMLFrameworkErrors.UMLPolicyFrameworkManager__StringArrayMismatch();
         }
-        if (oldHash != _EMPTY_STRING_ARRAY_HASH) {
+        if (oldHash != permissive) {
             return oldHash;
         }
-        if (newHash != _EMPTY_STRING_ARRAY_HASH) {
+        if (newHash != permissive) {
             return newHash;
         }
     }
