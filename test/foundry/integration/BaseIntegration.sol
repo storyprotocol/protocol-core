@@ -165,7 +165,7 @@ contract BaseIntegration is Test {
         );
         royaltyPolicyLS = new RoyaltyPolicyLS(
             address(royaltyModule),
-            address(licenseRegistry),
+            address(licensingModule),
             LIQUID_SPLIT_FACTORY,
             LIQUID_SPLIT_MAIN
         );
@@ -400,6 +400,10 @@ contract BaseIntegration is Test {
             parentIpIds: parentIpIds
         });
 
+        // TODO: check event emit of RoyaltyPolicySet
+        // vm.expectEmit();
+        // emit RoyaltyPolicySet();
+
         if (licenseIds.length == 1) {
             vm.expectEmit();
             emit IERC1155.TransferSingle({
@@ -417,7 +421,7 @@ contract BaseIntegration is Test {
 
             vm.expectEmit();
             emit IERC1155.TransferBatch({
-                operator: address(registrationModule),
+                operator: address(licensingModule),
                 from: caller,
                 to: address(0), // burn addr
                 ids: licenseIds,

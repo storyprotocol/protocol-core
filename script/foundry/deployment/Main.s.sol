@@ -179,7 +179,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         _predeploy(contractKey);
         royaltyPolicyLS = new RoyaltyPolicyLS(
             address(royaltyModule),
-            address(licenseRegistry),
+            address(licensingModule),
             LIQUID_SPLIT_FACTORY,
             LIQUID_SPLIT_MAIN
         );

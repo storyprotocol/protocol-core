@@ -228,8 +228,8 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
 
             address[] memory accounts = new address[](2);
             // order matters, otherwise error: InvalidSplit__AccountsOutOfOrder
-            accounts[0] = ipAcct_Dan;
-            accounts[1] = danClaimer;
+            accounts[1] = ipAcct_Dan;
+            accounts[0] = danClaimer;
 
             // TODO: check events
             // NOTE: need to use assertApproxEqRel(left, right, 0.0001e18) since decimal calc loses precision oddly
