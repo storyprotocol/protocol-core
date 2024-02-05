@@ -29,6 +29,9 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { Governance } from "contracts/governance/Governance.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
+
+import "forge-std/console2.sol";
 
 /// @title IP Asset Renderer Test Contract
 /// @notice Tests IP asset rendering functionality.
@@ -78,6 +81,8 @@ contract IPAssetRendererTest is BaseTest {
 
     Governance public governance;
 
+    LicensingModule public licensingModule;
+
     /// @notice Initializes the base token contract for testing.
     function setUp() public virtual override(BaseTest) {
         BaseTest.setUp();
@@ -103,11 +108,15 @@ contract IPAssetRendererTest is BaseTest {
             address(ipAccountImpl)
         );
         RoyaltyModule royaltyModule = new RoyaltyModule(address(governance));
-        licenseRegistry = new LicenseRegistry(
+        uint i;
+        licenseRegistry = new LicenseRegistry();
+        licensingModule = new LicensingModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(royaltyModule)
+            address(royaltyModule),
+            address(licenseRegistry)
         );
+        licenseRegistry.setLicensingModule(address(licensingModule));
         resolver = new IPResolver(
             address(accessController),
             address(ipAssetRegistry),
@@ -123,15 +132,14 @@ contract IPAssetRendererTest is BaseTest {
             address(accessController),
             address(ipAssetRegistry),
             address(licenseRegistry),
+            address(licensingModule),
             address(resolver)
         );
-
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
         royaltyModule.setLicenseRegistry(address(licenseRegistry));
 
         vm.prank(alice);
         uint256 tokenId = erc721.mintId(alice, 99);
-
         bytes memory metadata = abi.encode(
             IP.MetadataV1({
                 name: IP_NAME,

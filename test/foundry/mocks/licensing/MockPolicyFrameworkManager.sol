@@ -7,22 +7,19 @@ import { ERC165, IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
-import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
-import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
+import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 
 struct MockPolicyFrameworkConfig {
-    address licenseRegistry;
+    address licensingModule;
     string name;
     string licenseUrl;
     bool supportVerifyLink;
     bool supportVerifyMint;
-    bool supportVerifyTransfer;
 }
 
 struct MockPolicy {
     bool returnVerifyLink;
     bool returnVerifyMint;
-    bool returnVerifyTransfer;
 }
 
 contract MockPolicyFrameworkManager is BasePolicyFrameworkManager {
@@ -32,13 +29,13 @@ contract MockPolicyFrameworkManager is BasePolicyFrameworkManager {
 
     constructor(
         MockPolicyFrameworkConfig memory conf
-    ) BasePolicyFrameworkManager(conf.licenseRegistry, conf.name, conf.licenseUrl) {
+    ) BasePolicyFrameworkManager(conf.licensingModule, conf.name, conf.licenseUrl) {
         config = conf;
     }
 
     function registerPolicy(MockPolicy calldata mockPolicy) external returns (uint256 policyId) {
         emit MockPolicyAdded(policyId, mockPolicy);
-        return LICENSE_REGISTRY.registerPolicy(abi.encode(mockPolicy));
+        return LICENSING_MODULE.registerPolicy(true, abi.encode(mockPolicy));
     }
 
     function verifyMint(address, bool, address, address, uint256, bytes memory data) external pure returns (bool) {
@@ -61,17 +58,6 @@ contract MockPolicyFrameworkManager is BasePolicyFrameworkManager {
                 royaltyPolicy: address(0),
                 royaltyDerivativeRevShare: 0
             });
-    }
-
-    function verifyTransfer(
-        uint256,
-        address,
-        address,
-        uint256,
-        bytes memory data
-    ) external pure override returns (bool) {
-        MockPolicy memory policy = abi.decode(data, (MockPolicy));
-        return policy.returnVerifyTransfer;
     }
 
     function policyToJson(bytes memory policyData) public pure returns (string memory) {

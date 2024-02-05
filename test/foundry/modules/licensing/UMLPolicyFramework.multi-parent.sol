@@ -7,7 +7,7 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
-import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
+import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator } from "contracts/interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
@@ -40,25 +40,25 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
     modifier withLicense(string memory policyName, address ipId, address owner) {
         uint256 policyId = _getUmlPolicyId(policyName);
         vm.prank(ipIdToOwner[ipId]);
-        uint256 licenseId = licenseRegistry.mintLicense(policyId, ipId, 1, owner);
+        uint256 licenseId = licensingModule.mintLicense(policyId, ipId, 1, owner);
         licenses.push(licenseId);
         _;
     }
 
     function setUp() public override {
-        TestHelper.setUp();
+        super.setUp();
+        
         nft = erc721.ape;
 
         umlFramework = new UMLPolicyFrameworkManager(
             address(accessController),
             address(ipAccountRegistry),
-            address(licenseRegistry),
-            address(royaltyModule),
+            address(licensingModule),
             "UMLPolicyFrameworkManager",
             licenseUrl
         );
 
-        licenseRegistry.registerPolicyFrameworkManager(address(umlFramework));
+        licensingModule.registerPolicyFrameworkManager(address(umlFramework));
 
         nft.mintId(bob, 1);
         nft.mintId(bob, 2);
@@ -79,6 +79,7 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         vm.label(ipId2, "IP2");
         vm.label(ipId3, "IP3");
         vm.label(ipId4, "IP4");
+        
     }
 
     function test_UMLPolicyFramework_multiParent_AliceSets3Parents_SamePolicyReciprocal()
@@ -88,16 +89,16 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         withLicense("reciprocal", ipId3, alice)
         public {
         vm.prank(alice);
-        licenseRegistry.linkIpToParents(licenses, ipId4, alice);
-        assertEq(licenseRegistry.totalParentsForIpId(ipId4), 3);
-        address[] memory parents = licenseRegistry.parentIpIds(ipId4);
+        licensingModule.linkIpToParents(licenses, ipId4, alice);
+        assertEq(licensingModule.totalParentsForIpId(ipId4), 3);
+        address[] memory parents = licensingModule.parentIpIds(ipId4);
         for (uint256 i = 0; i < licenses.length; i++) {
             Licensing.License memory license = licenseRegistry.license(licenses[i]);
             assertEq(parents[i], license.licensorIpId);
         }
-        assertEq(licenseRegistry.totalPoliciesForIp(false, ipId4), 0);
-        assertEq(licenseRegistry.totalPoliciesForIp(true, ipId4), 1);
-        assertTrue(licenseRegistry.isPolicyIdSetForIp(true, ipId4, _getUmlPolicyId("reciprocal")));
+        assertEq(licensingModule.totalPoliciesForIp(false, ipId4), 0);
+        assertEq(licensingModule.totalPoliciesForIp(true, ipId4), 1);
+        assertTrue(licensingModule.isPolicyIdSetForIp(true, ipId4, _getUmlPolicyId("reciprocal")));
     }
 
     function test_UMLPolicyFramework_multiParent_revert_AliceSets3Parents_OneNonReciprocal()
@@ -111,7 +112,7 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
             UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalValueMismatch.selector
         );
         vm.prank(alice);
-        licenseRegistry.linkIpToParents(licenses, ipId4, alice);
+        licensingModule.linkIpToParents(licenses, ipId4, alice);
     }
 
     function test_UMLPolicyFramework_multiParent_revert_AliceSets3Parents_3ReciprocalButDifferent()
@@ -124,12 +125,12 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         _getMappedUmlPolicy("other").attribution = !_getMappedUmlPolicy("other").attribution;
         _addUMLPolicyFromMapping("other", address(umlFramework));
         vm.prank(ipId3);
-        licenses.push(licenseRegistry.mintLicense(_getUmlPolicyId("other"), ipId3, 1, alice));
+        licenses.push(licensingModule.mintLicense(_getUmlPolicyId("other"), ipId3, 1, alice));
         vm.expectRevert(
             UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalButDifferentPolicyIds.selector
         );
         vm.prank(alice);
-        licenseRegistry.linkIpToParents(licenses, ipId4, alice);
+        licensingModule.linkIpToParents(licenses, ipId4, alice);
     }
 
     function test_UMLPolicyFramework_multiParent_NonReciprocalCommercial() public {
@@ -331,35 +332,35 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
     function _testRevertCompat(UMLPolicy memory polA, UMLPolicy memory polB, bytes4 errorSelector) internal {
         uint256 polAId = umlFramework.registerPolicy(polA);
         vm.prank(ipId1);
-        licenses.push(licenseRegistry.mintLicense(polAId, ipId1, 1, alice));
+        licenses.push(licensingModule.mintLicense(polAId, ipId1, 1, alice));
         uint256 polBId = umlFramework.registerPolicy(polB);
         vm.prank(ipId2);
-        licenses.push(licenseRegistry.mintLicense(polBId, ipId2, 1, alice));
+        licenses.push(licensingModule.mintLicense(polBId, ipId2, 1, alice));
         vm.expectRevert(errorSelector);
         vm.prank(alice);
-        licenseRegistry.linkIpToParents(licenses, ipId4, alice);
+        licensingModule.linkIpToParents(licenses, ipId4, alice);
         licenses = new uint256[](0); 
     }
 
     function _testSuccessCompat(UMLPolicy memory polA, UMLPolicy memory polB, uint256 expectedPolicies) internal {
         uint256 polAId = umlFramework.registerPolicy(polA);
         vm.prank(ipId1);
-        licenses.push(licenseRegistry.mintLicense(polAId, ipId1, 1, alice));
+        licenses.push(licensingModule.mintLicense(polAId, ipId1, 1, alice));
         uint256 polBId = umlFramework.registerPolicy(polB);
         vm.prank(ipId2);
-        licenses.push(licenseRegistry.mintLicense(polBId, ipId2, 1, alice));
+        licenses.push(licensingModule.mintLicense(polBId, ipId2, 1, alice));
         vm.prank(alice);
-        licenseRegistry.linkIpToParents(licenses, ipId4, alice);
-        assertEq(licenseRegistry.totalParentsForIpId(ipId4), 2);
-        address[] memory parents = licenseRegistry.parentIpIds(ipId4);
+        licensingModule.linkIpToParents(licenses, ipId4, alice);
+        assertEq(licensingModule.totalParentsForIpId(ipId4), 2);
+        address[] memory parents = licensingModule.parentIpIds(ipId4);
         for (uint256 i = 0; i < licenses.length; i++) {
             Licensing.License memory license = licenseRegistry.license(licenses[i]);
             assertEq(parents[i], license.licensorIpId);
         }
-        assertEq(licenseRegistry.totalPoliciesForIp(false, ipId4), 0);
-        assertEq(licenseRegistry.totalPoliciesForIp(true, ipId4), expectedPolicies);
-        assertTrue(licenseRegistry.isPolicyIdSetForIp(true, ipId4, polAId));
-        assertTrue(licenseRegistry.isPolicyIdSetForIp(true, ipId4, polBId));
+        assertEq(licensingModule.totalPoliciesForIp(false, ipId4), 0);
+        assertEq(licensingModule.totalPoliciesForIp(true, ipId4), expectedPolicies);
+        assertTrue(licensingModule.isPolicyIdSetForIp(true, ipId4, polAId));
+        assertTrue(licensingModule.isPolicyIdSetForIp(true, ipId4, polBId));
         licenses = new uint256[](0); // To call this function multiple times
     }
 

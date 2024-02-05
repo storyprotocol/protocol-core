@@ -9,9 +9,11 @@ library Licensing {
     /// @notice A particular configuration (flavor) of a Policy Framework, setting values for the licensing
     /// terms (parameters) of the framework.
     /// @param policyFramework address of the IPolicyFrameworkManager this policy is based on
+    /// @param isLicenseTransferable Whether or not the license is transferable
     /// @param data Encoded data for the policy, specific to the policy framework
     struct Policy {
         address policyFramework;
+        bool isLicenseTransferable;
         bytes data;
     }
 
@@ -22,5 +24,7 @@ library Licensing {
     struct License {
         uint256 policyId;
         address licensorIpId;
+        bool transferable;
+        // TODO: support for transfer hooks
     }
 }

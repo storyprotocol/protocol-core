@@ -3,14 +3,14 @@
 pragma solidity ^0.8.23;
 
 import { Errors } from "contracts/lib/Errors.sol";
-import { LicenseRegistryAware } from "contracts/modules/licensing/LicenseRegistryAware.sol";
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 import { AccessControlled } from "contracts/access/AccessControlled.sol";
+import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
 
 /// @title LicensorApprovalChecker
 /// @notice Manages the approval of derivative IP accounts by the licensor. Used to verify
 /// licensing terms like "Derivatives With Approval" in UML.
-abstract contract LicensorApprovalChecker is LicenseRegistryAware, AccessControlled {
+abstract contract LicensorApprovalChecker is AccessControlled {
     /// Emits when a derivative IP account is approved by the licensor.
     /// @param licenseId id of the license waiting for approval
     /// @param ipId id of the derivative IP to be approved
@@ -18,14 +18,20 @@ abstract contract LicensorApprovalChecker is LicenseRegistryAware, AccessControl
     /// @param approved result of the approval
     event DerivativeApproved(uint256 indexed licenseId, address indexed ipId, address indexed caller, bool approved);
 
+    /// @notice License registry
+    ILicenseRegistry public immutable LICENSE_REGISTRY;
+
     /// @notice Approvals for derivative IP.
     /// @dev License Id => licensor => childIpId => approved
     mapping(uint256 => mapping(address => mapping(address => bool))) private _approvals;
 
     constructor(
         address accessController,
-        address ipAccountRegistry
-    ) AccessControlled(accessController, ipAccountRegistry) {}
+        address ipAccountRegistry,
+        address licenseRegistry
+    ) AccessControlled(accessController, ipAccountRegistry) {
+        LICENSE_REGISTRY = ILicenseRegistry(licenseRegistry);
+    }
 
     /// @notice Approves or disapproves a derivative IP account.
     /// @param licenseId id of the license waiting for approval
