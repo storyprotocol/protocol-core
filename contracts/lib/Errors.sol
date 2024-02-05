@@ -132,8 +132,8 @@ library Errors {
     error LicenseRegistry__DerivativesCannotAddPolicy();
     error LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
     error LicenseRegistry__DerivativeRevShareSumExceedsMaxRNFTSupply();
-    error LicenseRegistry__CallerNotLicenseModule();
-    error LicenseRegistry__ZeroLicenseModule();
+    error LicenseRegistry__CallerNotLicensingModule();
+    error LicenseRegistry__ZeroLicensingModule();
     error LicensingModule__CallerNotLicenseRegistry();
     /// @notice emitted when trying to transfer a license that is not transferable (by policy)
     error LicenseRegistry__NotTransferable();
@@ -192,7 +192,7 @@ library Errors {
     error RoyaltyModule__NoRoyaltyPolicySet();
     error RoyaltyModule__IncompatibleRoyaltyPolicy();
     error RoyaltyModule__NotAllowedCaller();
-    error RoyaltyModule__ZeroLicenseRegistry();
+    error RoyaltyModule__ZeroLicensingModule();
 
     error RoyaltyPolicyLS__ZeroRoyaltyModule();
     error RoyaltyPolicyLS__ZeroLiquidSplitFactory();

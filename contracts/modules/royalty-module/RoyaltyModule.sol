@@ -14,7 +14,7 @@ import { Errors } from "contracts/lib/Errors.sol";
 ///         and pay royalties as a derivative ip.
 contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
     /// @notice License registry address
-    address public LICENSE_REGISTRY;
+    address public LICENSE_MODULE;
 
     /// @notice Indicates if a royalty policy is whitelisted
     mapping(address royaltyPolicy => bool allowed) public isWhitelistedRoyaltyPolicy;
@@ -34,10 +34,10 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
 
     /// @notice Sets the license registry
     /// @param _licenseRegistry The address of the license registry
-    function setLicenseRegistry(address _licenseRegistry) external onlyProtocolAdmin {
-        if (_licenseRegistry == address(0)) revert Errors.RoyaltyModule__ZeroLicenseRegistry();
+    function setLicensingModule(address _licenseRegistry) external onlyProtocolAdmin {
+        if (_licenseRegistry == address(0)) revert Errors.RoyaltyModule__ZeroLicensingModule();
 
-        LICENSE_REGISTRY = _licenseRegistry;
+        LICENSE_MODULE = _licenseRegistry;
     }
 
     /// @notice Whitelist a royalty policy
@@ -74,7 +74,7 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
         address[] calldata _parentIpIds,
         bytes calldata _data
     ) external nonReentrant {
-        if (msg.sender != LICENSE_REGISTRY) revert Errors.RoyaltyModule__NotAllowedCaller();
+        if (msg.sender != LICENSE_MODULE) revert Errors.RoyaltyModule__NotAllowedCaller();
         if (isRoyaltyPolicyImmutable[_ipId]) revert Errors.RoyaltyModule__AlreadySetRoyaltyPolicy();
         if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
 

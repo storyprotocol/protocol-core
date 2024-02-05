@@ -135,7 +135,7 @@ contract UMLPolicyFrameworkManager is
         if (policyAggregatorData.length == 0) {
             revert UMLFrameworkErrors.UMLPolicyFrameworkManager__RightsNotFound();
         }
-        rights = abi.decode(policyAggregatorData, (UMLInheritedPolicyAggregator));
+        rights = abi.decode(policyAggregatorData, (UMLAggregator));
     }
 
     /// Called by licenseRegistry to verify compatibility when inheriting from a parent IP
@@ -347,7 +347,7 @@ contract UMLPolicyFrameworkManager is
             }
             if (policy.derivativesRevShare > 0) {
                 // additional !policy.commecialUse is already checked in `_verifyComercialUse`
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager_DerivativesDisabled_CantAddRevShare();
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddRevShare();
             }
         }
     }

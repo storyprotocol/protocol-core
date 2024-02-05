@@ -245,7 +245,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
     function _configInitialize() private {
         accessController.initialize(address(ipAssetRegistry), address(moduleRegistry));
-        royaltyModule.setLicenseRegistry(address(licenseRegistry));
+        royaltyModule.setLicensingModule(address(licensingModule));
     }
 
     function _configureModuleRegistry() private {

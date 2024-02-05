@@ -23,9 +23,9 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// This tracks the number of licenses registered in the protocol, it will not decrease when a license is burnt.
     uint256 private _mintedLicenses;
 
-    modifier onlyLicenseModule() {
+    modifier onlyLicensingModule() {
         if (msg.sender != address(_licensingModule)) {
-            revert Errors.LicenseRegistry__CallerNotLicenseModule();
+            revert Errors.LicenseRegistry__CallerNotLicensingModule();
         }
         _;
     }
@@ -34,7 +34,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
     function setLicensingModule(address newLicensingModule) external {
         if (newLicensingModule == address(0)) {
-            revert Errors.LicenseRegistry__ZeroLicenseModule();
+            revert Errors.LicenseRegistry__ZeroLicensingModule();
         }
         _licensingModule = ILicensingModule(newLicensingModule);
     }
@@ -48,7 +48,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// If this is the first combination of policy and licensors, a new licenseId
     /// will be created.
     /// If not, the license is fungible and an id will be reused.
-    /// Only callable by the LicenseModule.
+    /// Only callable by the LicensingModule.
     /// @param policyId id of the policy to be minted
     /// @param licensorIp IP Id granting the license
     /// @param transferable True if the license is transferable
@@ -61,7 +61,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         bool transferable,
         uint256 amount, // mint amount
         address receiver
-    ) external onlyLicenseModule returns (uint256 licenseId) {
+    ) external onlyLicensingModule returns (uint256 licenseId) {
         Licensing.License memory licenseData = Licensing.License({
             policyId: policyId,
             licensorIpId: licensorIp,
@@ -82,7 +82,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         return licenseId;
     }
 
-    function burnLicenses(address holder, uint256[] calldata licenseIds) external onlyLicenseModule {
+    function burnLicenses(address holder, uint256[] calldata licenseIds) external onlyLicensingModule {
         uint256[] memory values = new uint256[](licenseIds.length);
         for (uint256 i = 0; i < licenseIds.length; i++) {
             values[i] = 1;

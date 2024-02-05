@@ -102,7 +102,7 @@ contract TestLSClaimer is TestHelper {
         );
         vm.label(ipAddr, string(abi.encodePacked("IPAccount", Strings.toString(nftIds[0]))));
         vm.stopPrank();
-        vm.startPrank(address(licenseRegistry));
+        vm.startPrank(address(licensingModule));
         royaltyModule.setRoyaltyPolicy(
             ipAddr,
             address(royaltyPolicyLS),
@@ -148,7 +148,7 @@ contract TestLSClaimer is TestHelper {
 
         testRoyaltyPolicyLS = new RoyaltyPolicyLS(
             address(1),
-            address(licenseRegistry),
+            address(licensingModule),
             LIQUID_SPLIT_FACTORY,
             LIQUID_SPLIT_MAIN
         );

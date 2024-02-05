@@ -30,14 +30,15 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
     address internal alice = address(0x222);
     address internal ipId2;
     address internal don = address(0x333);
-    string[] internal emptyStringArray = new string[](0);
-    mapping(string => UMLPolicy) internal policies;
-    mapping(string => uint256) internal policyIDs;
-    address mockRoyaltyPolicyLS = address(0x555);
 
-    modifier withPolicy(string memory name, bool commercial, bool derivatives, bool reciprocal) {
-        _savePolicyInMapping(name, commercial, derivatives, reciprocal);
-        policyIDs[name] = umlFramework.registerPolicy(policies[name]);
+    modifier withUMLPolicySimple(
+        string memory name,
+        bool commercial,
+        bool derivatives,
+        bool reciprocal
+    ) {
+        _mapUMLPolicySimple(name, commercial, derivatives, reciprocal);
+        _addUMLPolicyFromMapping(name, address(umlFramework));
         _;
     }
 
@@ -186,7 +187,6 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
         vm.prank(don);
         uint256 licenseId = licensingModule.mintLicense(_getUmlPolicyId("comm_reciprocal"), ipId2, 1, don);
         assertEq(licenseRegistry.balanceOf(don, licenseId), 1, "Don doesn't have license");
-
     }
 
     function test_UMLPolicyFramework_reciprocal_AliceMintsLicenseForP1inIP2()

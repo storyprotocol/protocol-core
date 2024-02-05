@@ -20,8 +20,6 @@ import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol"
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { AccessControlled } from "contracts/access/AccessControlled.sol";
 
-import "forge-std/console2.sol";
-
 // TODO: consider disabling operators/approvals on creation
 contract LicensingModule is AccessControlled, ILicensingModule {
     using IPAccountChecker for IIPAccountRegistry;

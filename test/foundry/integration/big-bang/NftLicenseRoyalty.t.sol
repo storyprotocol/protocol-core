@@ -98,7 +98,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
         // Alice sets royalty policy on her root IP
         {
             // TODO: setRoyaltyPolicy should be called through mintLicense or addPolicyToIp, not directly by user
-            vm.startPrank(address(licenseRegistry));
+            vm.startPrank(address(licensingModule));
             royaltyModule.setRoyaltyPolicy(
                 ipAcct[1],
                 address(royaltyPolicyLS),

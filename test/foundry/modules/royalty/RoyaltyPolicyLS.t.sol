@@ -56,7 +56,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_RoyaltyPolicyLS_initPolicy_NotRoyalModule() public {
-        vm.startPrank(address(licenseRegistry));
+        vm.startPrank(address(licensingModule));
         address[] memory parentIpIds = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; 
         bytes memory data = abi.encode(minRoyaltyIpAccount1);
@@ -66,7 +66,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_RoyaltyPolicyLS_initPolicy_revert_InvalidMinRoyalty() public {
-        vm.startPrank(address(licenseRegistry));
+        vm.startPrank(address(licensingModule));
         // set root parent royalty policy
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; 
@@ -84,7 +84,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_RoyaltyPolicyLS_initPolicy_revert_ZeroMinRoyalty() public {
-        vm.startPrank(address(licenseRegistry));
+        vm.startPrank(address(licensingModule));
         // set root parent royalty policy
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; 
@@ -102,7 +102,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_RoyaltyPolicyLS_initPolicy_revert_InvalidRoyaltyStack() public {
-        vm.startPrank(address(licenseRegistry));
+        vm.startPrank(address(licensingModule));
         address[] memory parentIpIds = new address[](0);
         uint32 minRoyaltyIpAccount3 = 1010; // 100.1%
         bytes memory data = abi.encode(minRoyaltyIpAccount3);
@@ -116,7 +116,7 @@ contract TestLSClaimer is TestHelper {
         uint32 minRoyaltyIpAccount1 = 0; 
         bytes memory data = abi.encode(minRoyaltyIpAccount1);
 
-        vm.startPrank(address(licenseRegistry));
+        vm.startPrank(address(licensingModule));
         royaltyModule.setRoyaltyPolicy(ipAccount1, address(royaltyPolicyLS), parentIpIds, data);
 
         (address splitClone, address claimer, uint32 royaltyStack, uint32 minRoyalty) = royaltyPolicyLS.royaltyData(ipAccount1);
@@ -128,7 +128,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_RoyaltyPolicyLS_initPolicy_derivativeIPA() public {
-        vm.startPrank(address(licenseRegistry));
+        vm.startPrank(address(licensingModule));
         // set root parent royalty policy
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; 
@@ -158,7 +158,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_RoyaltyPolicyLS_onRoyaltyPayment() public {
-        vm.startPrank(address(licenseRegistry));
+        vm.startPrank(address(licensingModule));
         // set root parent royalty policy
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; 
@@ -188,7 +188,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_RoyaltyPolicyLS_distributeFunds() public {
-        vm.startPrank(address(licenseRegistry));
+        vm.startPrank(address(licensingModule));
         // set root parent royalty policy
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; 
@@ -224,7 +224,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_RoyaltyPolicyLS_claimRoyalties() public{
-        vm.startPrank(address(licenseRegistry));
+        vm.startPrank(address(licensingModule));
         // set root parent royalty policy
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; 

@@ -125,7 +125,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         // Alice sets royalty policy for her root IPAccounts
         // (so other IPAccounts can use her policies that inits royalty policy on linking)
         // TODO: setRoyaltyPolicy should be called through mintLicense or addPolicyToIp, not directly by user
-        vm.startPrank(address(licenseRegistry));
+        vm.startPrank(address(licensingModule));
         royaltyModule.setRoyaltyPolicy(
             ipAcct[1],
             address(royaltyPolicyLS),
@@ -140,7 +140,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         // Bob sets royalty policy for his root IPAccounts
         // (so other IPAccounts can use his policies that inits royalty policy on linking)
         // TODO: setRoyaltyPolicy should be called through mintLicense or addPolicyToIp, not directly by user
-        vm.startPrank(address(licenseRegistry));
+        vm.startPrank(address(licensingModule));
         royaltyModule.setRoyaltyPolicy(
             ipAcct[300],
             address(royaltyPolicyLS),
