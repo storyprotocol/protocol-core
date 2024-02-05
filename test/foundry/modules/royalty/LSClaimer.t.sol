@@ -138,7 +138,8 @@ contract TestLSClaimer is TestHelper {
                 nftIds[i + 1],
                 ipAcctName,
                 bytes32("ipAccount hash"),
-                "ipAccount External URL"
+                "ipAccount External URL",
+                0 // gets overridden by the `derivativesRevShare` value of the linking licenses
             );
         }
 

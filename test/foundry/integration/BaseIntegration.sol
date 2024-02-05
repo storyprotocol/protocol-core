@@ -42,6 +42,7 @@ import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/A
 // test
 import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { MockRoyaltyPolicyLS } from "test/foundry/mocks/MockRoyaltyPolicyLS.sol";
 import { MockUSDC } from "test/foundry/mocks/MockUSDC.sol";
 import { Users, UsersLib } from "test/foundry/utils/Users.sol";
 
@@ -81,6 +82,7 @@ contract BaseIntegration is Test {
     MockERC20 internal erc20;
     MockERC721s internal erc721;
     MockUSDC internal USDC;
+    MockRoyaltyPolicyLS internal mockRoyaltyPolicyLS;
 
     // Helpers
     Users internal u;
@@ -172,6 +174,8 @@ contract BaseIntegration is Test {
 
         vm.label(LIQUID_SPLIT_FACTORY, "LIQUID_SPLIT_FACTORY");
         vm.label(LIQUID_SPLIT_MAIN, "LIQUID_SPLIT_MAIN");
+
+        mockRoyaltyPolicyLS = new MockRoyaltyPolicyLS(address(royaltyModule));
     }
 
     function _configDeployedContracts() internal {
@@ -185,8 +189,10 @@ contract BaseIntegration is Test {
 
         // whitelist royalty policy
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
+        royaltyModule.whitelistRoyaltyPolicy(address(mockRoyaltyPolicyLS), true);
         // whitelist royalty token
         royaltyModule.whitelistRoyaltyToken(address(USDC), true);
+        royaltyModule.whitelistRoyaltyToken(address(erc20), true);
 
         vm.stopPrank();
     }
@@ -318,7 +324,8 @@ contract BaseIntegration is Test {
         address nft,
         uint256 tokenId,
         IP.MetadataV1 memory metadata,
-        address caller
+        address caller,
+        uint32 minRoyalty
     ) internal returns (address) {
         address expectedAddr = ERC6551AccountLib.computeAddress(
             address(erc6551Registry),
@@ -433,7 +440,15 @@ contract BaseIntegration is Test {
         emit IRegistrationModule.DerivativeIPRegistered({ caller: caller, ipId: expectedAddr, licenseIds: licenseIds });
 
         vm.startPrank(caller);
-        registrationModule.registerDerivativeIp(licenseIds, nft, tokenId, metadata.name, metadata.hash, metadata.uri);
+        registrationModule.registerDerivativeIp(
+            licenseIds,
+            nft,
+            tokenId,
+            metadata.name,
+            metadata.hash,
+            metadata.uri,
+            minRoyalty
+        );
         return expectedAddr;
     }
 
@@ -442,14 +457,15 @@ contract BaseIntegration is Test {
         address nft,
         uint256 tokenId,
         IP.MetadataV1 memory metadata,
-        address caller
+        address caller,
+        uint32 minRoyalty
     ) internal returns (address) {
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
-        return registerDerivativeIps(licenseIds, nft, tokenId, metadata, caller);
+        return registerDerivativeIps(licenseIds, nft, tokenId, metadata, caller, minRoyalty);
     }
 
-    function linkIpToParents(uint256[] memory licenseIds, address ipId, address caller) internal {
+    function linkIpToParents(uint256[] memory licenseIds, address ipId, address caller, uint32 minRoyalty) internal {
         uint256[] memory policyIds = new uint256[](licenseIds.length);
         address[] memory parentIpIds = new address[](licenseIds.length);
         uint256[] memory prevLicenseAmounts = new uint256[](licenseIds.length);
@@ -494,7 +510,7 @@ contract BaseIntegration is Test {
         }
 
         vm.startPrank(caller);
-        licensingModule.linkIpToParents(licenseIds, ipId, caller);
+        licensingModule.linkIpToParents(licenseIds, ipId, caller, minRoyalty);
 
         for (uint256 i = 0; i < licenseIds.length; i++) {
             assertEq(
@@ -512,9 +528,9 @@ contract BaseIntegration is Test {
         }
     }
 
-    function linkIpToParent(uint256 licenseId, address ipId, address caller) internal {
+    function linkIpToParent(uint256 licenseId, address ipId, address caller, uint32 minRoyalty) internal {
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
-        linkIpToParents(licenseIds, ipId, caller);
+        linkIpToParents(licenseIds, ipId, caller, minRoyalty);
     }
 }

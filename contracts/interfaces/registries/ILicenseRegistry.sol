@@ -20,8 +20,11 @@ interface ILicenseRegistry {
         Licensing.License licenseData
     );
 
+    /// @notice Set the licensing module
+    /// @param newLicensingModule The address of the licensing module
     function setLicensingModule(address newLicensingModule) external;
 
+    /// @notice Returns the address of the licensing module
     function licensingModule() external view returns (address);
 
     /// @notice Mints a license to create derivative IP
@@ -38,6 +41,9 @@ interface ILicenseRegistry {
         address receiver
     ) external returns (uint256 licenseId);
 
+    /// @notice Burns licenses
+    /// @param holder The address that holds the licenses
+    /// @param licenseIds The ids of the licenses to burn
     function burnLicenses(address holder, uint256[] calldata licenseIds) external;
 
     ///

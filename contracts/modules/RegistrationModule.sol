@@ -102,7 +102,8 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         uint256 tokenId,
         string memory ipName,
         bytes32 contentHash,
-        string calldata externalURL
+        string calldata externalURL,
+        uint32 minRoyalty
     ) external {
         // Check that the caller is authorized to perform the registration.
         // TODO: Perform additional registration authorization logic, allowing
@@ -130,7 +131,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         );
 
         // Perform core IP derivative licensing - the license must be owned by the caller.
-        _LICENSING_MODULE.linkIpToParents(licenseIds, ipId, msg.sender);
+        _LICENSING_MODULE.linkIpToParents(licenseIds, ipId, msg.sender, minRoyalty);
 
         emit DerivativeIPRegistered(msg.sender, ipId, licenseIds);
     }

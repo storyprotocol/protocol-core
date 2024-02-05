@@ -30,7 +30,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             accessController,
             ipAssetRegistry,
             licensingModule,
-            royaltyModule
+            royaltyModule,
+            mockRoyaltyPolicyLS // mock for MintPaymentPFM
         );
 
         nft = erc721.cat;
@@ -134,6 +135,11 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         );
 
         vm.startPrank(u.bob);
+        // For the next addPolicyToIp, we set policy to be true for commercial in this mock PFM.
+        MintPaymentPolicyFrameworkManager(pfm["mint_payment"].addr).setPolicyCommercial(
+            policyIds["mint_payment_normal"],
+            true
+        );
         licensingModule.addPolicyToIp(ipAcct[3], policyIds["mint_payment_normal"]);
         licensingModule.addPolicyToIp(ipAcct[300], policyIds["uml_com_deriv_cheap_flexible"]);
 
@@ -180,7 +186,27 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             );
 
             ipAcct[6] = registerIpAccount(nft, 6, u.carl);
-            linkIpToParents(carl_license_from_root_alice, ipAcct[6], u.carl);
+            // minRoyalty = 0 gets overridden by the `derivativesRevShare` value of the linking licenses
+            linkIpToParents(carl_license_from_root_alice, ipAcct[6], u.carl, 0);
+        }
+
+        // Carl mints 2 license for policy "uml_noncom_deriv_reciprocal_derivative" on Bob's NFT 3 IPAccount
+        // Carl creates NFT 7 IPAccount
+        // Carl activates one of the two licenses on his NFT 7 IPAccount, linking as child to Bob's NFT 3 IPAccount
+        {
+            vm.startPrank(u.carl);
+            nft.mintId(u.carl, 7);
+            uint256[] memory carl_license_from_root_bob = new uint256[](1);
+            carl_license_from_root_bob[0] = licensingModule.mintLicense(
+                policyIds["uml_noncom_deriv_reciprocal_derivative"],
+                ipAcct[3],
+                1,
+                u.carl
+            );
+
+            ipAcct[7] = registerIpAccount(nft, 7, u.carl);
+            // minRoyalty = 0 gets overridden by the `derivativesRevShare` value of the linking licenses
+            linkIpToParents(carl_license_from_root_bob, ipAcct[7], u.carl, 0);
         }
 
         // Alice mints 2 license for policy "mint_payment_normal" on Bob's NFT 3 IPAccount
@@ -219,7 +245,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             );
 
             ipAcct[2] = registerIpAccount(nft, 2, u.alice);
-            linkIpToParents(alice_license_from_root_bob, ipAcct[2], u.alice);
+            linkIpToParents(alice_license_from_root_bob, ipAcct[2], u.alice, 0);
 
             uint256 tokenId = 99999999;
             nft.mintId(u.alice, tokenId);
@@ -235,7 +261,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                     registrant: u.alice, // caller
                     uri: "external URL"
                 }),
-                u.alice // caller
+                u.alice, // caller
+                0
             );
         }
 
@@ -294,7 +321,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                 tokenId,
                 metadata.name,
                 metadata.hash,
-                metadata.uri
+                metadata.uri,
+                10
             );
 
             // Modify license[1] to a Commercial license
@@ -311,7 +339,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                 address(nft),
                 tokenId,
                 metadata,
-                u.carl // caller
+                u.carl, // caller
+                0 // gets overridden by the `derivativesRevShare` value of the linking licenses
             );
         }
     }
