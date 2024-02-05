@@ -28,4 +28,6 @@ contract MockAccessController is IAccessController {
             revert Errors.AccessController__PermissionDenied(ipAccount, signer, to, func);
         }
     }
+
+    function setBatchPermissions(AccessPermission.Permission[] memory permissions) external {}
 }

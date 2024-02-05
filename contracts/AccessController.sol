@@ -44,6 +44,20 @@ contract AccessController is IAccessController, Governable {
         MODULE_REGISTRY = moduleRegistry;
     }
 
+    /// @inheritdoc IAccessController
+    function setBatchPermissions(AccessPermission.Permission[] memory permissions) external whenNotPaused {
+        for (uint256 i = 0; i < permissions.length;) {
+            setPermission(
+                permissions[i].ipAccount,
+                permissions[i].signer,
+                permissions[i].to,
+                permissions[i].func,
+                permissions[i].permission
+            );
+            unchecked { i += 1; }
+        }
+    }
+
     /// @notice Sets the permission for all IPAccounts
     function setGlobalPermission(
         address signer_,
@@ -80,7 +94,7 @@ contract AccessController is IAccessController, Governable {
         address to_,
         bytes4 func_,
         uint8 permission_
-    ) external whenNotPaused {
+    ) public whenNotPaused {
         // IPAccount and signer does not support wildcard permission
         if (ipAccount_ == address(0)) {
             revert Errors.AccessController__IPAccountIsZeroAddress();
@@ -101,33 +115,6 @@ contract AccessController is IAccessController, Governable {
         _setPermission(ipAccount_, signer_, to_, func_, permission_);
 
         emit PermissionSet(ipAccount_, signer_, to_, func_, permission_);
-    }
-
-    function setBatchPermission(
-        address[] ipAccount,
-        address[] signer,
-        address[] to,
-        bytes4[] func,
-        uint8[] permission
-    ) external {
-        if (ipAccount.length == 0) {
-            revert Errors.AccessController__IPAccountIsEmpty();
-        }
-        if (ipAccount.length != signer.length) {
-            revert Errors.AccessController__SignerLengthMismatch();
-        }
-        if (ipAccount.length != to.length) {
-            revert Errors.AccessController__ToLengthMismatch();
-        }
-        if (ipAccount.length != func.length) {
-            revert Errors.AccessController__FuncLengthMismatch();
-        }
-        if (ipAccount.length != permission.length) {
-            revert Errors.AccessController__PermissionLengthMismatch();
-        }
-        for (uint256 i = 0; i < ipAccount.length; i++) {
-            setPermission(ipAccount[i], signer[i], to[i], func[i], permission[i]);
-        }
     }
 
     /// @notice Checks if a specific function call is allowed.

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
+import "contracts/lib/AccessPermission.sol";
 
 interface IAccessController {
     event PermissionSet(
@@ -13,8 +14,8 @@ interface IAccessController {
 
     /// @notice Sets the permission for a specific function call
     /// @dev Each policy is represented as a mapping from an IP account address to a signer address to a recipient
-    ///// address to a function selector to a permission level.
-    ///// The permission level can be 0 (ABSTAIN), 1 (ALLOW), or 2 (DENY).
+    /// address to a function selector to a permission level.
+    /// The permission level can be 0 (ABSTAIN), 1 (ALLOW), or 2 (DENY).
     /// @param ipAccount_ The account that owns the IP
     /// @param signer_ The account that signs the transaction
     /// @param to_ The recipient(modules) of the transaction
@@ -22,13 +23,10 @@ interface IAccessController {
     /// @param permission_ The permission level
     function setPermission(address ipAccount_, address signer_, address to_, bytes4 func_, uint8 permission_) external;
 
-    function setBatchPermission(
-        address[] ipAccount,
-        address[] signer,
-        address[] to,
-        bytes4[] func,
-        uint8[] permission
-    ) external;
+    /// @notice Sets a batch of permissions in a single transaction
+    /// @dev This function allows setting multiple permissions at once.
+    /// @param permissions An array of `Permission` structs, each representing the permission to be set.
+    function setBatchPermissions(AccessPermission.Permission[] memory permissions) external;
 
     /// @notice Sets the permission for all IPAccounts
     /// @dev Only the protocol admin can set the global permission
