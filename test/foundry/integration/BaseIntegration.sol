@@ -181,7 +181,7 @@ contract BaseIntegration is Test {
 
         moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));
-        moduleRegistry.registerModule("LICENSE_REGISTRY", address(licenseRegistry));
+        moduleRegistry.registerModule("LICENSING_MODULE", address(licensingModule));
 
         // whitelist royalty policy
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);

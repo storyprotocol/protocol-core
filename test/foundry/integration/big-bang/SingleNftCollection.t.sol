@@ -25,7 +25,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
     mapping(string name => uint256 licenseId) internal licenseIds;
 
     function setUp() public override {
-        BaseIntegration.setUp();
+        super.setUp();
         Integration_Shared_LicensingHelper.initLicenseFrameworkAndPolicy(
             accessController,
             ipAssetRegistry,
