@@ -95,7 +95,21 @@ contract LicensingModule is AccessControlled, ILicensingModule {
         if (!isPolicyDefined(polId)) {
             revert Errors.LicenseRegistry__PolicyNotFound();
         }
-        return _addPolicyIdToIp({ ipId: ipId, policyId: polId, isInherited: false, skipIfDuplicate: false });
+
+        indexOnIpId = _addPolicyIdToIp({ ipId: ipId, policyId: polId, isInherited: false, skipIfDuplicate: false });
+
+        IPolicyFrameworkManager pfm = IPolicyFrameworkManager(policy(polId).policyFramework);
+        bool isPolicyCommercial = pfm.isPolicyCommercial(polId);
+
+        // As long as the IPAccount has no parent or a child, it has a mutable royal policy setting.
+        // In that case, additionally, IF the newly added policy is commercial, the IPAccount can 
+        // change its royalty policy when adding this new policy.
+        if (isPolicyCommercial && !ROYALTY_MODULE.isRoyaltyPolicyImmutable(ipId)) {
+            address newRoyaltyPolicy = pfm.getRoyaltyPolicy(polId);
+            uint32 minRoyalty = pfm.getCommercialRevenueShare(polId);
+
+            ROYALTY_MODULE.setRoyaltyPolicy(ipId, newRoyaltyPolicy, new address[](0), abi.encode(minRoyalty));
+        }
     }
 
     /// @notice Registers a policy into the contract. MUST be called by a registered
@@ -181,13 +195,15 @@ contract LicensingModule is AccessControlled, ILicensingModule {
     /// @param licenseIds The id of the licenses to burn
     /// @param childIpId The id of the child IP to be linked
     /// @param holder The address that holds the license
+    /// @param minRoyalty The minimum derivative rev share that the child wants from its descendants. The value is
+    /// overriden by the `derivativesRevShare` value of the linking licenses.
     function linkIpToParents(
         uint256[] calldata licenseIds,
         address childIpId,
-        address holder
+        address holder,
+        uint32 minRoyalty
     ) external verifyPermission(childIpId) {
         address[] memory licensors = new address[](licenseIds.length);
-        uint256[] memory values = new uint256[](licenseIds.length);
         // If royalty policy address is address(0), this means no royalty policy to set.
         address royaltyPolicyAddress = address(0);
         uint32 royaltyDerivativeRevShare = 0;
@@ -208,22 +224,23 @@ contract LicensingModule is AccessControlled, ILicensingModule {
                 licensors[i],
                 childIpId,
                 royaltyPolicyAddress,
+                royaltyDerivativeRevShare,
                 derivativeRevShareSum
             );
-
-            values[i] = 1;
         }
         emit IpIdLinkedToParents(msg.sender, childIpId, licensors);
 
         // Licenses unanimously require royalty.
-        // NOTE: Currently, `royaltyDerivativeRevShare` is the derivative rev share value of the last license.
-        // This is because we enforce a child to link via licenses with the same derivativeRevShare.
+        // TODO: currently, `royaltyDerivativeRevShare` is the derivative rev share value of the last license.
         if (royaltyPolicyAddress != address(0)) {
+            // If the parent licenses specify the `derivativeRevShare` value to non-zero, use the value.
+            // Otherwise, the child IPAccount has the freedom to set the value.
+            uint256 dRevShare = royaltyDerivativeRevShare > 0 ? royaltyDerivativeRevShare : minRoyalty;
             ROYALTY_MODULE.setRoyaltyPolicy(
                 childIpId,
                 royaltyPolicyAddress,
                 licensors,
-                abi.encode(royaltyDerivativeRevShare)
+                abi.encode(dRevShare)
             );
         }
 
@@ -238,6 +255,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
         address licensor,
         address childIpId,
         address royaltyPolicyAddress,
+        uint32 royaltyDerivativeRevShare,
         uint32 derivativeRevShareSum
     ) private returns (
         address nextRoyaltyPolicyAddress,
@@ -274,6 +292,13 @@ contract LicensingModule is AccessControlled, ILicensingModule {
                 // - royaltyPolicyAddress == address(0), revert. Previous licenses didn't set RP.
                 // - royaltyPolicyAddress != response.royaltyPolicy, revert. Previous licenses set different RP.
                 // ==> this can be considered as royaltyPolicyAddress != response.royaltyPolicy
+                revert Errors.LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
+            }
+
+            // TODO: Unit test.
+            // If the previous license's derivativeRevShare is different from that of the current license, revert.
+            // For iteration == 0, this check is skipped as `royaltyDerivativeRevShare` param is at 0.
+            if (iteration > 0 && royaltyDerivativeRevShare != response.royaltyDerivativeRevShare) {
                 revert Errors.LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
             }
 
