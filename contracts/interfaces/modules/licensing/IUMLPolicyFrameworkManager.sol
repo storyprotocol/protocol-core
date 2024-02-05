@@ -3,11 +3,11 @@
 pragma solidity ^0.8.23;
 
 import { Licensing } from "contracts/lib/Licensing.sol";
-import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
+import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 
 /// @notice Licensing parameters for the UML standard
-/// @param attribution Whether or not attribution is required when reproducing the work
 /// @param transferable Whether or not the license is transferable
+/// @param attribution Whether or not attribution is required when reproducing the work
 /// @param commercialUse Whether or not the work can be used commercially
 /// @param commercialAttribution Whether or not attribution is required when reproducing the work commercially
 /// @param commercializers List of commericializers that are allowed to commercially exploit the work. If empty
@@ -23,8 +23,8 @@ import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyF
 /// @param distributionChannels List of distribution channels where the license is valid. Empty if no restrictions.
 /// @param royaltyPolicy Address of a royalty policy contract (e.g. RoyaltyPolicyLS) that will handle royalty payments
 struct UMLPolicy {
-    bool attribution;
     bool transferable;
+    bool attribution;
     bool commercialUse;
     bool commercialAttribution;
     string[] commercializers;
@@ -58,7 +58,6 @@ struct UMLAggregator {
     bytes32 distributionChannelsAcc;
     bytes32 contentRestrictionsAcc;
 }
-
 
 /// @title IUMLPolicyFrameworkManager
 /// @notice Defines the interface for a Policy Framework Manager compliant with the UML standard

@@ -40,7 +40,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
         Integration_Shared_LicensingHelper.initLicenseFrameworkAndPolicy(
             accessController,
             ipAccountRegistry,
-            licenseRegistry,
+            licensingModule,
             royaltyModule
         );
 
@@ -98,7 +98,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
         // Alice sets royalty policy on her root IP
         {
             // TODO: setRoyaltyPolicy should be called through mintLicense or addPolicyToIp, not directly by user
-            vm.startPrank(address(licenseRegistry));
+            vm.startPrank(address(licensingModule));
             royaltyModule.setRoyaltyPolicy(
                 ipAcct[1],
                 address(royaltyPolicyLS),
@@ -114,7 +114,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
         // Alice attaches the UML Commercial Derivative Reciprocal policy to NFT 1 IPAccount
 
         vm.startPrank(u.alice);
-        licenseRegistry.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_reciprocal"]);
+        licensingModule.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_reciprocal"]);
 
         /*///////////////////////////////////////////////////////////////
                                 MINT & USE LICENSES
@@ -123,7 +123,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
         // Bob mints 1 license from Alice's NFT 1 IPAccount, registers NFT 2 IPAccount, and links using the license
         {
             vm.startPrank(u.bob);
-            uint256 bob_license_from_root_alice = licenseRegistry.mintLicense(
+            uint256 bob_license_from_root_alice = licensingModule.mintLicense(
                 policyIds["uml_com_deriv_reciprocal"],
                 ipAcct[1], // Alice's IPAccount
                 1,
@@ -140,7 +140,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
         // Carl mints 1 license from Bob's NFT 2 IPAccount, registers NFT 3 IPAccount, and links using the license
         {
             vm.startPrank(u.carl);
-            uint256 carl_license_from_bob = licenseRegistry.mintLicense(
+            uint256 carl_license_from_bob = licensingModule.mintLicense(
                 policyIds["uml_com_deriv_reciprocal"],
                 ipAcct[2], // Bob's IPAccount
                 1,
@@ -168,7 +168,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
         // Dan mints 1 license from Carl's NFT 3 IPAccount, registers NFT 4 IPAccount, and links using the license
         {
             vm.startPrank(u.dan);
-            uint256 dan_license_from_carl = licenseRegistry.mintLicense(
+            uint256 dan_license_from_carl = licensingModule.mintLicense(
                 policyIds["uml_com_deriv_reciprocal"],
                 ipAcct[3], // Carl's IPAccount
                 1,
@@ -228,8 +228,8 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
 
             address[] memory accounts = new address[](2);
             // order matters, otherwise error: InvalidSplit__AccountsOutOfOrder
-            accounts[0] = ipAcct_Dan;
-            accounts[1] = danClaimer;
+            accounts[1] = ipAcct_Dan;
+            accounts[0] = danClaimer;
 
             // TODO: check events
             // NOTE: need to use assertApproxEqRel(left, right, 0.0001e18) since decimal calc loses precision oddly

@@ -132,12 +132,21 @@ library Errors {
     error LicenseRegistry__DerivativesCannotAddPolicy();
     error LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
     error LicenseRegistry__DerivativeRevShareSumExceedsMaxRNFTSupply();
+    error LicenseRegistry__CallerNotLicensingModule();
+    error LicenseRegistry__ZeroLicensingModule();
+    error LicensingModule__CallerNotLicenseRegistry();
+    /// @notice emitted when trying to transfer a license that is not transferable (by policy)
+    error LicenseRegistry__NotTransferable();
 
     ////////////////////////////////////////////////////////////////////////////
-    //                        LicenseRegistryAware                            //
+    //                            LicensingModule                             //
     ////////////////////////////////////////////////////////////////////////////
 
-    error LicenseRegistryAware__CallerNotLicenseRegistry();
+    ////////////////////////////////////////////////////////////////////////////
+    //                        LicensingModuleAware                            //
+    ////////////////////////////////////////////////////////////////////////////
+
+    error LicensingModuleAware__CallerNotLicensingModule();
 
     ////////////////////////////////////////////////////////////////////////////
     //                         PolicyFrameworkManager                         //
@@ -183,7 +192,7 @@ library Errors {
     error RoyaltyModule__NoRoyaltyPolicySet();
     error RoyaltyModule__IncompatibleRoyaltyPolicy();
     error RoyaltyModule__NotAllowedCaller();
-    error RoyaltyModule__ZeroLicenseRegistry();
+    error RoyaltyModule__ZeroLicensingModule();
 
     error RoyaltyPolicyLS__ZeroRoyaltyModule();
     error RoyaltyPolicyLS__ZeroLiquidSplitFactory();
@@ -193,7 +202,7 @@ library Errors {
     error RoyaltyPolicyLS__InvalidMinRoyalty();
     error RoyaltyPolicyLS__InvalidRoyaltyStack();
     error RoyaltyPolicyLS__ZeroMinRoyalty();
-    error RoyaltyPolicyLS__ZeroLicenseRegistry();
+    error RoyaltyPolicyLS__ZeroLicensingModule();
 
     error LSClaimer__InvalidPath();
     error LSClaimer__InvalidPathFirstPosition();
@@ -202,7 +211,7 @@ library Errors {
     error LSClaimer__ETHBalanceNotZero();
     error LSClaimer__ERC20BalanceNotZero();
     error LSClaimer__ZeroIpId();
-    error LSClaimer__ZeroLicenseRegistry();
+    error LSClaimer__ZeroLicensingModule();
     error LSClaimer__ZeroRoyaltyPolicyLS();
 
     ////////////////////////////////////////////////////////////////////////////

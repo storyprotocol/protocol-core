@@ -27,9 +27,9 @@ interface IRoyaltyModule {
     /// @param amount The amount that is paid
     event RoyaltyPaid(address receiverIpId, address payerIpId, address sender, address token, uint256 amount);
 
-    /// @notice Sets the license registry
-    /// @param licenseRegistry The address of the license registry
-    function setLicenseRegistry(address licenseRegistry) external;
+    /// @notice Sets the licensing module
+    /// @param licensingModule The address of the licensing module
+    function setLicensingModule(address licensingModule) external;
 
     /// @notice Whitelist a royalty policy
     /// @param royaltyPolicy The address of the royalty policy

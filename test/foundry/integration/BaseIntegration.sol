@@ -19,6 +19,7 @@ import { IRegistrationModule } from "contracts/interfaces/modules/IRegistrationM
 import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
 import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
 import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
+import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
@@ -30,6 +31,7 @@ import { IPAssetRenderer } from "contracts/registries/metadata/IPAssetRenderer.s
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
+import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
@@ -67,6 +69,7 @@ contract BaseIntegration is Test {
     RoyaltyModule internal royaltyModule;
     RoyaltyPolicyLS internal royaltyPolicyLS;
     TaggingModule internal taggingModule;
+    LicensingModule internal licensingModule;
 
     // Misc.
     Governance internal governance;
@@ -123,17 +126,21 @@ contract BaseIntegration is Test {
             address(erc6551Registry),
             address(ipAccountImpl)
         );
-        licenseRegistry = new LicenseRegistry(
+        licenseRegistry = new LicenseRegistry();
+        licensingModule = new LicensingModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(royaltyModule)
+            address(royaltyModule),
+            address(licenseRegistry)
         );
+        licenseRegistry.setLicensingModule(address(licensingModule));
         ipMetadataProvider = new IPMetadataProvider(address(moduleRegistry));
         ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry), address(licenseRegistry));
         registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
             address(licenseRegistry),
+            address(licensingModule),
             address(ipResolver)
         );
         taggingModule = new TaggingModule();
@@ -158,7 +165,7 @@ contract BaseIntegration is Test {
         );
         royaltyPolicyLS = new RoyaltyPolicyLS(
             address(royaltyModule),
-            address(licenseRegistry),
+            address(licensingModule),
             LIQUID_SPLIT_FACTORY,
             LIQUID_SPLIT_MAIN
         );
@@ -170,11 +177,11 @@ contract BaseIntegration is Test {
     function _configDeployedContracts() internal {
         vm.startPrank(u.admin);
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-        royaltyModule.setLicenseRegistry(address(licenseRegistry));
+        royaltyModule.setLicensingModule(address(licensingModule));
 
         moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));
-        moduleRegistry.registerModule("LICENSE_REGISTRY", address(licenseRegistry));
+        moduleRegistry.registerModule("LICENSING_MODULE", address(licensingModule));
 
         // whitelist royalty policy
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
@@ -208,13 +215,13 @@ contract BaseIntegration is Test {
 
         accessController.setGlobalPermission(
             address(registrationModule),
-            address(licenseRegistry),
-            bytes4(licenseRegistry.linkIpToParents.selector),
+            address(licensingModule),
+            bytes4(licensingModule.linkIpToParents.selector),
             1 // AccessPermission.ALLOW
         );
 
         accessController.setGlobalPermission(
-            address(licenseRegistry),
+            address(licensingModule),
             address(royaltyModule),
             bytes4(royaltyModule.setRoyaltyPolicy.selector),
             1 // AccessPermission.ALLOW
@@ -387,16 +394,20 @@ contract BaseIntegration is Test {
         // }
 
         vm.expectEmit();
-        emit ILicenseRegistry.IpIdLinkedToParents({
+        emit ILicensingModule.IpIdLinkedToParents({
             caller: address(registrationModule),
             ipId: expectedAddr,
             parentIpIds: parentIpIds
         });
 
+        // TODO: check event emit of RoyaltyPolicySet
+        // vm.expectEmit();
+        // emit RoyaltyPolicySet();
+
         if (licenseIds.length == 1) {
             vm.expectEmit();
             emit IERC1155.TransferSingle({
-                operator: address(registrationModule),
+                operator: address(licensingModule),
                 from: caller,
                 to: address(0), // burn addr
                 id: licenseIds[0],
@@ -410,7 +421,7 @@ contract BaseIntegration is Test {
 
             vm.expectEmit();
             emit IERC1155.TransferBatch({
-                operator: address(registrationModule),
+                operator: address(licensingModule),
                 from: caller,
                 to: address(0), // burn addr
                 ids: licenseIds,
@@ -450,7 +461,7 @@ contract BaseIntegration is Test {
             prevLicenseAmounts[i] = licenseRegistry.balanceOf(caller, licenseIds[i]);
             values[i] = 1;
             vm.expectEmit();
-            emit ILicenseRegistry.PolicyAddedToIpId({
+            emit ILicensingModule.PolicyAddedToIpId({
                 caller: caller,
                 ipId: ipId,
                 policyId: policyIds[i],
@@ -460,12 +471,12 @@ contract BaseIntegration is Test {
         }
 
         vm.expectEmit();
-        emit ILicenseRegistry.IpIdLinkedToParents({ caller: caller, ipId: ipId, parentIpIds: parentIpIds });
+        emit ILicensingModule.IpIdLinkedToParents({ caller: caller, ipId: ipId, parentIpIds: parentIpIds });
 
         if (licenseIds.length == 1) {
             vm.expectEmit();
             emit IERC1155.TransferSingle({
-                operator: caller,
+                operator: address(licensingModule),
                 from: caller,
                 to: address(0), // burn addr
                 id: licenseIds[0],
@@ -483,7 +494,7 @@ contract BaseIntegration is Test {
         }
 
         vm.startPrank(caller);
-        licenseRegistry.linkIpToParents(licenseIds, ipId, caller);
+        licensingModule.linkIpToParents(licenseIds, ipId, caller);
 
         for (uint256 i = 0; i < licenseIds.length; i++) {
             assertEq(
@@ -491,11 +502,11 @@ contract BaseIntegration is Test {
                 prevLicenseAmounts[i] - 1,
                 "license not burnt on linking"
             );
-            assertTrue(licenseRegistry.isParent(parentIpIds[i], ipId), "parent IP account is not parent");
-            (uint256 index, bool isInherited, bool active) = licenseRegistry.policyStatus(parentIpIds[i], policyIds[i]);
+            assertTrue(licensingModule.isParent(parentIpIds[i], ipId), "parent IP account is not parent");
+            (uint256 index, bool isInherited, bool active) = licensingModule.policyStatus(parentIpIds[i], policyIds[i]);
             assertEq(
-                keccak256(abi.encode(licenseRegistry.policyForIpAtIndex(isInherited, parentIpIds[i], index))),
-                keccak256(abi.encode(licenseRegistry.policyForIpAtIndex(true, ipId, i))),
+                keccak256(abi.encode(licensingModule.policyForIpAtIndex(isInherited, parentIpIds[i], index))),
+                keccak256(abi.encode(licensingModule.policyForIpAtIndex(true, ipId, i))),
                 "policy not the same in parent to child"
             );
         }
