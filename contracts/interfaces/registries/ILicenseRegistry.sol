@@ -6,7 +6,6 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 /// @title ILicenseRegistry
 
 interface ILicenseRegistry {
-
     /// @notice Emitted when a license is minted
     /// @param creator The address that created the license
     /// @param receiver The address that received the license
@@ -58,5 +57,4 @@ interface ILicenseRegistry {
 
     /// @notice License data (licensor, policy...) for the license id
     function license(uint256 licenseId) external view returns (Licensing.License memory);
-
 }

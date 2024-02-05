@@ -3,7 +3,6 @@ pragma solidity ^0.8.23;
 
 // external
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
@@ -11,7 +10,6 @@ import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC16
 import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
 import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
-import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { DataUniqueness } from "contracts/lib/DataUniqueness.sol";
@@ -51,8 +49,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
     mapping(address framework => mapping(address ipId => bytes policyAggregatorData)) private _ipRights;
 
     modifier onlyLicenseRegistry() {
-        if (msg.sender == address(LICENSE_REGISTRY))
-            revert Errors.LicensingModule__CallerNotLicenseRegistry();
+        if (msg.sender == address(LICENSE_REGISTRY)) revert Errors.LicensingModule__CallerNotLicenseRegistry();
         _;
     }
 
@@ -113,7 +110,12 @@ contract LicensingModule is AccessControlled, ILicensingModule {
             policyFramework: msg.sender,
             data: data
         });
-        (uint256 polId, bool newPol) = DataUniqueness.addIdOrGetExisting(abi.encode(pol), _hashedPolicies, _totalPolicies);
+        (uint256 polId, bool newPol) = DataUniqueness.addIdOrGetExisting(
+            abi.encode(pol),
+            _hashedPolicies,
+            _totalPolicies
+        );
+
         if (!newPol) {
             revert Errors.LicenseRegistry__PolicyAlreadyAdded();
         } else {
@@ -121,6 +123,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
             _policies[polId] = pol;
             emit PolicyRegistered(msg.sender, polId, data);
         }
+
         return polId;
     }
 
@@ -236,7 +239,11 @@ contract LicensingModule is AccessControlled, ILicensingModule {
         address childIpId,
         address royaltyPolicyAddress,
         uint32 derivativeRevShareSum
-    ) private returns (address nextRoyaltyPolicyAddress, uint32 nextRoyaltyDerivativeRevShare, uint32 nextDerivativeRevShareSum) {
+    ) private returns (
+        address nextRoyaltyPolicyAddress,
+        uint32 nextRoyaltyDerivativeRevShare,
+        uint32 nextDerivativeRevShareSum
+    ) {
         // TODO: check licensor not part of a branch tagged by disputer
         if (licensor == childIpId) {
             revert Errors.LicenseRegistry__ParentIdEqualThanChild();

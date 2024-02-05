@@ -23,6 +23,9 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// This tracks the number of licenses registered in the protocol, it will not decrease when a license is burnt.
     uint256 private _mintedLicenses;
 
+    /// @dev We have to implement this modifier instead of inheriting `LicensingModuleAware` because LicensingModule
+    /// constructor requires the licenseRegistry address, which would create a circular dependency. Thus, we use the
+    /// function `setLicensingModule` to set the licensing module address after deploying the module.
     modifier onlyLicensingModule() {
         if (msg.sender != address(_licensingModule)) {
             revert Errors.LicenseRegistry__CallerNotLicensingModule();

@@ -13,8 +13,8 @@ import { Errors } from "contracts/lib/Errors.sol";
 /// @notice The Story Protocol royalty module allows to set royalty policies an ipId
 ///         and pay royalties as a derivative ip.
 contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
-    /// @notice License registry address
-    address public LICENSE_MODULE;
+    /// @notice Licensing module address
+    address public LICENSING_MODULE;
 
     /// @notice Indicates if a royalty policy is whitelisted
     mapping(address royaltyPolicy => bool allowed) public isWhitelistedRoyaltyPolicy;
@@ -33,11 +33,11 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
     constructor(address _governance) Governable(_governance) {}
 
     /// @notice Sets the license registry
-    /// @param _licenseRegistry The address of the license registry
-    function setLicensingModule(address _licenseRegistry) external onlyProtocolAdmin {
-        if (_licenseRegistry == address(0)) revert Errors.RoyaltyModule__ZeroLicensingModule();
+    /// @param _licensingModule The address of the license registry
+    function setLicensingModule(address _licensingModule) external onlyProtocolAdmin {
+        if (_licensingModule == address(0)) revert Errors.RoyaltyModule__ZeroLicensingModule();
 
-        LICENSE_MODULE = _licenseRegistry;
+        LICENSING_MODULE = _licensingModule;
     }
 
     /// @notice Whitelist a royalty policy
@@ -74,7 +74,7 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
         address[] calldata _parentIpIds,
         bytes calldata _data
     ) external nonReentrant {
-        if (msg.sender != LICENSE_MODULE) revert Errors.RoyaltyModule__NotAllowedCaller();
+        if (msg.sender != LICENSING_MODULE) revert Errors.RoyaltyModule__NotAllowedCaller();
         if (isRoyaltyPolicyImmutable[_ipId]) revert Errors.RoyaltyModule__AlreadySetRoyaltyPolicy();
         if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
 

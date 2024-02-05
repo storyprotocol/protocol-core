@@ -17,6 +17,7 @@ interface ILicensingModule {
     /// @param framework The address of the IPolicyFrameworkManager
     /// @param framework The policy framework data
     event PolicyFrameworkRegistered(address indexed framework, string name, string licenseTextUrl);
+
     /// @notice Emitted when a policy is added to the contract
     /// @param policyFrameworkManager The address that created the policy
     /// @param policyId The id of the policy
@@ -36,12 +37,14 @@ interface ILicensingModule {
         uint256 index,
         bool isInherited
     );
+
     /// @notice Emitted when an IP is linked to its parent by burning a license
     /// @param caller The address that called the function
     /// @param ipId The id of the IP
     /// @param parentIpIds The ids of the parent IP
     event IpIdLinkedToParents(address indexed caller, address indexed ipId, address[] parentIpIds);
 
+    /// @notice Returns the address of the LicenseRegistry
     function licenseRegistry() external view returns (address);
     /// @notice Registers a policy framework manager into the contract, so it can add policy data for
     /// licenses.
