@@ -59,6 +59,8 @@ struct MockERC721s {
     MockERC721 dog;
 }
 
+import "forge-std/console2.sol";
+
 contract DeployHelper is Test {
     ERC6551Registry internal erc6551Registry;
     IPAccountImpl internal ipAccountImpl;
@@ -117,7 +119,7 @@ contract DeployHelper is Test {
 
     function _deployContracts() internal {
         governance = new Governance(u.admin);
-
+        
         accessController = new AccessController(address(governance));
         erc6551Registry = new ERC6551Registry();
         ipAccountImpl = new IPAccountImpl();
@@ -138,14 +140,16 @@ contract DeployHelper is Test {
         licensingModule = new LicensingModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry),
-            address(royaltyModule)
+            address(royaltyModule),
+            address(licenseRegistry)
         );
+        licenseRegistry.setLicensingModule(address(licensingModule));
         ipMetadataProvider = new IPMetadataProvider(address(moduleRegistry));
         ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry), address(licenseRegistry));
         registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
+            address(licenseRegistry),
             address(licensingModule),
             address(ipResolver)
         );

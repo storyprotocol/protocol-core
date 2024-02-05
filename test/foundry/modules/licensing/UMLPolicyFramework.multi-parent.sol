@@ -46,7 +46,8 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
     }
 
     function setUp() public override {
-        TestHelper.setUp();
+        super.setUp();
+        
         nft = erc721.ape;
 
         umlFramework = new UMLPolicyFrameworkManager(
@@ -78,6 +79,7 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         vm.label(ipId2, "IP2");
         vm.label(ipId3, "IP3");
         vm.label(ipId4, "IP4");
+        
     }
 
     function test_UMLPolicyFramework_multiParent_AliceSets3Parents_SamePolicyReciprocal()
@@ -330,7 +332,7 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
     function _testRevertCompat(UMLPolicy memory polA, UMLPolicy memory polB, bytes4 errorSelector) internal {
         uint256 polAId = umlFramework.registerPolicy(polA);
         vm.prank(ipId1);
-        licenses.push(licenseRegistry.mintLicense(polAId, ipId1, 1, alice));
+        licenses.push(licensingModule.mintLicense(polAId, ipId1, 1, alice));
         uint256 polBId = umlFramework.registerPolicy(polB);
         vm.prank(ipId2);
         licenses.push(licensingModule.mintLicense(polBId, ipId2, 1, alice));

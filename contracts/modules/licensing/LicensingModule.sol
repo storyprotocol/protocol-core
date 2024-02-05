@@ -20,6 +20,8 @@ import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol"
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { AccessControlled } from "contracts/access/AccessControlled.sol";
 
+import "forge-std/console2.sol";
+
 // TODO: consider disabling operators/approvals on creation
 contract LicensingModule is AccessControlled, ILicensingModule {
     using IPAccountChecker for IIPAccountRegistry;
@@ -104,10 +106,15 @@ contract LicensingModule is AccessControlled, ILicensingModule {
     /// @notice Registers a policy into the contract. MUST be called by a registered
     /// framework or it will revert. The policy data and its integrity must be
     /// verified by the policy framework manager.
+    /// @param isLicenseTransferable True if the license is transferable
     /// @param data The policy data
-    function registerPolicy(bytes memory data) external returns (uint256 policyId) {
+    function registerPolicy(bool isLicenseTransferable, bytes memory data) external returns (uint256 policyId) {
         _verifyRegisteredFramework(address(msg.sender));
-        Licensing.Policy memory pol = Licensing.Policy({ policyFramework: msg.sender, data: data });
+        Licensing.Policy memory pol = Licensing.Policy({
+            isLicenseTransferable: isLicenseTransferable,
+            policyFramework: msg.sender,
+            data: data
+        });
         (uint256 polId, bool newPol) = DataUniqueness.addIdOrGetExisting(abi.encode(pol), _hashedPolicies, _totalPolicies);
         if (!newPol) {
             revert Errors.LicenseRegistry__PolicyAlreadyAdded();
@@ -165,7 +172,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
             revert Errors.LicenseRegistry__MintLicenseParamFailed();
         }
 
-        return LICENSE_REGISTRY.mintLicense(policyId, licensorIp, amount, receiver);
+        return LICENSE_REGISTRY.mintLicense(policyId, licensorIp, pol.isLicenseTransferable, amount, receiver);
     }
 
     /// @notice Links an IP to the licensors (parent IP IDs) listed in the License NFTs, if their policies allow it,

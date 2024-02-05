@@ -28,11 +28,13 @@ interface ILicenseRegistry {
     /// @notice Mints a license to create derivative IP
     /// @param policyId The id of the policy with the licensing parameters
     /// @param licensorIpId The id of the licensor IP
+    /// @param transferable True if the license is transferable
     /// @param amount The amount of licenses to mint
     /// @param receiver The address that will receive the license
     function mintLicense(
         uint256 policyId,
         address licensorIpId,
+        bool transferable,
         uint256 amount,
         address receiver
     ) external returns (uint256 licenseId);

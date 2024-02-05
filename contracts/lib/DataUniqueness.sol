@@ -3,7 +3,8 @@
 pragma solidity ^0.8.23;
 
 /// @title DataUniqueness
-/// @notice Library to store data without repetition, assigning an id to it if new or reusing existing one if already stored
+/// @notice Library to store data without repetition, assigning an id to it if new or reusing existing one
+/// if already stored
 library DataUniqueness {
     /// Stores data without repetition, assigning an id to it if new or reusing existing one if already stored
     /// @param data raw bytes, abi.encode() a value to be hashed

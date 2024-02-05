@@ -115,7 +115,7 @@ contract TestLSClaimer is TestHelper {
         vm.startPrank(deployer);
         uint256[] memory licenseId = new uint256[](1);
         for (uint256 i = 0; i < 99; i++) {
-            licenseId[0] = licenseRegistry.mintLicense(
+            licenseId[0] = licensingModule.mintLicense(
                 policyIds["uml_cheap_flexible"],
                 _getIpId(nft, nftIds[i]),
                 2,

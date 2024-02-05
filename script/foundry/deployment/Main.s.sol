@@ -164,6 +164,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
+            address(licenseRegistry),
             address(licensingModule),
             address(ipResolver)
         );

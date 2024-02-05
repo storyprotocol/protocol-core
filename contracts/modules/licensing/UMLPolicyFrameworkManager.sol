@@ -50,7 +50,8 @@ contract UMLPolicyFrameworkManager is
         _verifyComercialUse(umlPolicy);
         _verifyDerivatives(umlPolicy);
         // No need to emit here, as the LicensingModule will emit the event
-        return LICENSING_MODULE.registerPolicy(abi.encode(umlPolicy));
+
+        return LICENSING_MODULE.registerPolicy(umlPolicy.transferable, abi.encode(umlPolicy));
     }
 
     /// Called by licenseRegistry to verify policy parameters for linking an IP
@@ -115,27 +116,6 @@ contract UMLPolicyFrameworkManager is
         return true;
     }
 
-    /// Called by licenseRegistry to verify policy parameters for transferring a license
-    /// @param licenseId the ID of the license being transferred
-    /// @param from address of the sender
-    /// @param policyData the licensing policy to verify
-    function verifyTransfer(
-        uint256 licenseId,
-        address from,
-        address,
-        uint256,
-        bytes memory policyData
-    ) external onlyLicensingModule returns (bool) {
-        UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
-        // If license is non-transferable, only the licensor can transfer out a license
-        // (or be directly minted to someone else)
-        if (!policy.transferable) {
-            // True if from == licensor
-            // TODO: Move to LicenseRegistry
-            return from == LICENSE_REGISTRY.licensorIpId(licenseId);
-        }
-        return true;
-    }
 
     /// @notice Fetchs a policy from the registry, decoding the raw bytes into a UMLPolicy struct
     /// @param policyId  The ID of the policy to fetch

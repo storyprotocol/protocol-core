@@ -214,8 +214,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
     function test_UMLPolicyFrameworkManager_derivatives_withApproval_revert_linkNotApproved() public {
         uint256 policyId = umlFramework.registerPolicy(
             UMLPolicy({
-                attribution: false,
                 transferable: false,
+                attribution: false,
                 commercialUse: false,
                 commercialAttribution: false,
                 commercializers: emptyStringArray,
@@ -252,8 +252,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
     function test_UMLPolicyFrameworkManager__derivatives_withApproval_linkApprovedIpId() public {
         uint256 policyId = umlFramework.registerPolicy(
             UMLPolicy({
-                attribution: false,
                 transferable: false,
+                attribution: false,
                 commercialUse: false,
                 commercialAttribution: false,
                 commercializers: emptyStringArray,
@@ -271,7 +271,6 @@ contract UMLPolicyFrameworkTest is TestHelper {
         );
         vm.prank(ipOwner);
         licensingModule.addPolicyToIp(ipId1, policyId);
-
         uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder);
         assertFalse(umlFramework.isDerivativeApproved(licenseId, ipId2));
         
@@ -346,9 +345,10 @@ contract UMLPolicyFrameworkTest is TestHelper {
         assertEq(licenseRegistry.balanceOf(licenseHolder, licenseId), 1);
         address licenseHolder2 = address(0x222);
         vm.startPrank(licenseHolder);
-        vm.expectRevert(Errors.LicenseRegistry__TransferParamFailed.selector);
+        vm.expectRevert(Errors.LicenseRegistry__NotTransferable.selector);
         licenseRegistry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
         vm.stopPrank();
     }
+
 
 }

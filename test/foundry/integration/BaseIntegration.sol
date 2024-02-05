@@ -133,11 +133,13 @@ contract BaseIntegration is Test {
             address(royaltyModule),
             address(licenseRegistry)
         );
+        licenseRegistry.setLicensingModule(address(licensingModule));
         ipMetadataProvider = new IPMetadataProvider(address(moduleRegistry));
         ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry), address(licenseRegistry));
         registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
+            address(licenseRegistry),
             address(licensingModule),
             address(ipResolver)
         );

@@ -34,7 +34,7 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager {
 
     function registerPolicy(MintPaymentPolicy calldata mmpol) external returns (uint256 policyId) {
         emit MintPaymentPolicyAdded(policyId, mmpol);
-        return LICENSING_MODULE.registerPolicy(abi.encode(mmpol));
+        return LICENSING_MODULE.registerPolicy(true, abi.encode(mmpol));
     }
 
     function processInheritedPolicies(
@@ -76,16 +76,6 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager {
             royaltyPolicy: address(0),
             royaltyDerivativeRevShare: 0
         });
-    }
-
-    function verifyTransfer(
-        uint256, // licenseId
-        address, // from
-        address, // to
-        uint256, // amount
-        bytes memory // policyData
-    ) external returns (bool) {
-        return true;
     }
 
 

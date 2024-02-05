@@ -19,6 +19,8 @@ import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
 import { TestHelper } from "test/utils/TestHelper.sol";
 
+import "forge-std/console2.sol";
+
 contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
     UMLPolicyFrameworkManager internal umlFramework;
 
@@ -51,10 +53,10 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
     }
 
     function setUp() public override {
-        TestHelper.setUp();
+        super.setUp();
 
         nft = erc721.ape;
-
+        console2.log(address(accessController));
         umlFramework = new UMLPolicyFrameworkManager(
             address(accessController),
             address(ipAccountRegistry),

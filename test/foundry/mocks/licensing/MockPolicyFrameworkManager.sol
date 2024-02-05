@@ -15,13 +15,11 @@ struct MockPolicyFrameworkConfig {
     string licenseUrl;
     bool supportVerifyLink;
     bool supportVerifyMint;
-    bool supportVerifyTransfer;
 }
 
 struct MockPolicy {
     bool returnVerifyLink;
     bool returnVerifyMint;
-    bool returnVerifyTransfer;
 }
 
 contract MockPolicyFrameworkManager is BasePolicyFrameworkManager {
@@ -37,7 +35,7 @@ contract MockPolicyFrameworkManager is BasePolicyFrameworkManager {
 
     function registerPolicy(MockPolicy calldata mockPolicy) external returns (uint256 policyId) {
         emit MockPolicyAdded(policyId, mockPolicy);
-        return LICENSING_MODULE.registerPolicy(abi.encode(mockPolicy));
+        return LICENSING_MODULE.registerPolicy(true, abi.encode(mockPolicy));
     }
 
     function verifyMint(address, bool, address, address, uint256, bytes memory data) external pure returns (bool) {
@@ -60,17 +58,6 @@ contract MockPolicyFrameworkManager is BasePolicyFrameworkManager {
                 royaltyPolicy: address(0),
                 royaltyDerivativeRevShare: 0
             });
-    }
-
-    function verifyTransfer(
-        uint256,
-        address,
-        address,
-        uint256,
-        bytes memory data
-    ) external pure override returns (bool) {
-        MockPolicy memory policy = abi.decode(data, (MockPolicy));
-        return policy.returnVerifyTransfer;
     }
 
     function policyToJson(bytes memory policyData) public pure returns (string memory) {

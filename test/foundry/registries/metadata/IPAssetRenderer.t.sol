@@ -29,6 +29,9 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { Governance } from "contracts/governance/Governance.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
+
+import "forge-std/console2.sol";
 
 /// @title IP Asset Renderer Test Contract
 /// @notice Tests IP asset rendering functionality.
@@ -78,6 +81,8 @@ contract IPAssetRendererTest is BaseTest {
 
     Governance public governance;
 
+    LicensingModule public licensingModule;
+
     /// @notice Initializes the base token contract for testing.
     function setUp() public virtual override(BaseTest) {
         BaseTest.setUp();
@@ -103,31 +108,47 @@ contract IPAssetRendererTest is BaseTest {
             address(ipAccountImpl)
         );
         RoyaltyModule royaltyModule = new RoyaltyModule(address(governance));
+        uint i;
+        console2.log("lol", i);
         licenseRegistry = new LicenseRegistry();
+        console2.log("lol", i);
+        licensingModule = new LicensingModule(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(royaltyModule),
+            address(licenseRegistry)
+        );
+        console2.log("lol", i);
+        licenseRegistry.setLicensingModule(address(licensingModule));
+        console2.log("lol", i);
         resolver = new IPResolver(
             address(accessController),
             address(ipAssetRegistry),
             address(licenseRegistry)
         );
+        console2.log("lol", i);
         renderer = new IPAssetRenderer(
             address(ipAssetRegistry),
             address(licenseRegistry),
             taggingModule,
             address(royaltyModule)
         );
+        console2.log("lol", i);
         registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
             address(licenseRegistry),
+            address(licensingModule),
             address(resolver)
         );
-
+        console2.log("lol", i);
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
+        console2.log("lol", i);
         royaltyModule.initialize(address(registrationModule));
-
+        console2.log("lol", i);
         vm.prank(alice);
         uint256 tokenId = erc721.mintId(alice, 99);
-
+        console2.log("lol", i);
         bytes memory metadata = abi.encode(
             IP.MetadataV1({
                 name: IP_NAME,
@@ -138,6 +159,7 @@ contract IPAssetRendererTest is BaseTest {
 
             })
         );
+        console2.log("lol", i);
         vm.prank(address(registrationModule));
         ipId = ipAssetRegistry.register(
             block.chainid,
@@ -147,6 +169,7 @@ contract IPAssetRendererTest is BaseTest {
             true,
             metadata
         );
+        console2.log("lol", i);
     }
 
     /// @notice Tests that the constructor works as expected.

@@ -73,6 +73,7 @@ abstract contract ModuleBaseTest is BaseTest {
             address(licenseRegistry),
             address(royaltyModule)
         ); 
+        licenseRegistry.setLicensingModule(address(licensingModule));
         IPResolver ipResolver = new IPResolver(
             address(accessController),
             address(ipAssetRegistry),
@@ -81,6 +82,7 @@ abstract contract ModuleBaseTest is BaseTest {
         RegistrationModule registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
+            address(licenseRegistry),
             address(licensingModule),
             address(ipResolver)
         );

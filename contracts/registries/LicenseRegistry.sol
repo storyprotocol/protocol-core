@@ -15,7 +15,6 @@ import { DataUniqueness } from "contracts/lib/DataUniqueness.sol";
 /// @title LicenseRegistry aka LNFT
 /// @notice Registry of License NFTs, which represent licenses granted by IP ID licensors to create derivative IPs.
 contract LicenseRegistry is ERC1155, ILicenseRegistry {
-
     // TODO: deploy with CREATE2 to make this immutable
     ILicensingModule private _licensingModule;
 
@@ -24,7 +23,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// This tracks the number of licenses registered in the protocol, it will not decrease when a license is burnt.
     uint256 private _mintedLicenses;
 
-    modifier onlyLicenseModule {
+    modifier onlyLicenseModule() {
         if (msg.sender != address(_licensingModule)) {
             revert Errors.LicenseRegistry__CallerNotLicenseModule();
         }
@@ -52,18 +51,28 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     /// Only callable by the LicenseModule.
     /// @param policyId id of the policy to be minted
     /// @param licensorIp IP Id granting the license
+    /// @param transferable True if the license is transferable
     /// @param amount of licenses to be minted. License NFT is fungible for same policy and same licensors
     /// @param receiver of the License NFT(s).
     /// @return licenseId of the NFT(s).
     function mintLicense(
         uint256 policyId,
         address licensorIp,
+        bool transferable,
         uint256 amount, // mint amount
         address receiver
     ) external onlyLicenseModule returns (uint256 licenseId) {
-        Licensing.License memory licenseData = Licensing.License({ policyId: policyId, licensorIpId: licensorIp });
+        Licensing.License memory licenseData = Licensing.License({
+            policyId: policyId,
+            licensorIpId: licensorIp,
+            transferable: transferable
+        });
         bool isNew;
-        (licenseId, isNew) = DataUniqueness.addIdOrGetExisting(abi.encode(licenseData), _hashedLicenses, _mintedLicenses);
+        (licenseId, isNew) = DataUniqueness.addIdOrGetExisting(
+            abi.encode(licenseData),
+            _hashedLicenses,
+            _mintedLicenses
+        );
         if (isNew) {
             _mintedLicenses = licenseId;
             _licenses[licenseId] = licenseData;
@@ -72,8 +81,8 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         _mint(receiver, licenseId, amount, "");
         return licenseId;
     }
-    
-    function burnLicenses(address holder,uint256[] calldata licenseIds) external onlyLicenseModule {
+
+    function burnLicenses(address holder, uint256[] calldata licenseIds) external onlyLicenseModule {
         uint256[] memory values = new uint256[](licenseIds.length);
         for (uint256 i = 0; i < licenseIds.length; i++) {
             values[i] = 1;
@@ -121,16 +130,16 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         // linkIpToParent in LicensingModule respectively
         if (from != address(0) && to != address(0)) {
             for (uint256 i = 0; i < ids.length; i++) {
-                // Verify transfer params
-                Licensing.Policy memory pol = _licensingModule.policy(_licenses[ids[i]].policyId);
-                if (
-                    !IPolicyFrameworkManager(pol.policyFramework).verifyTransfer(ids[i], from, to, values[i], pol.data)
-                ) {
-                    revert Errors.LicenseRegistry__TransferParamFailed();
+                Licensing.License memory lic = _licenses[ids[i]];
+                // TODO: Hook for verify transfer params
+                if (!lic.transferable) {
+                    // True if from == licensor
+                    if (from != lic.licensorIpId) {
+                        revert Errors.LicenseRegistry__NotTransferable();
+                    }
                 }
             }
         }
         super._update(from, to, ids, values);
     }
-
 }

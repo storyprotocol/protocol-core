@@ -10,9 +10,8 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 /// - Registering policies
 /// - Minting licenses
 /// - Linking IP to its parent
-/// - Verifying transfer parameters (through the ITransferParamVerifier interface implementation by the policy framework)
-/// - Verifying linking parameters (through the ILinkParamVerifier interface implementation by the policy framework)
-/// - Verifying policy parameters (through the IPolicyVerifier interface implementation by the policy framework)
+/// - Verifying linking parameters
+/// - Verifying policy parameters
 interface ILicensingModule {
     /// @notice Emitted when a policy framework is created by registering a policy framework manager
     /// @param framework The address of the IPolicyFrameworkManager
@@ -52,8 +51,9 @@ interface ILicensingModule {
     /// @notice Registers a policy into the contract. MUST be called by a registered
     /// framework or it will revert. The policy data and its integrity must be
     /// verified by the policy framework manager.
+    /// @param isLicenseTransferable True if the license is transferable
     /// @param data The policy data
-    function registerPolicy(bytes memory data) external returns (uint256 policyId);
+    function registerPolicy(bool isLicenseTransferable, bytes memory data) external returns (uint256 policyId);
 
     /// @notice Adds a policy to an IP policy list
     /// @param ipId The id of the IP

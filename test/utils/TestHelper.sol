@@ -47,6 +47,7 @@ contract TestHelper is Test, DeployHelper {
 
 
     function setUp() public virtual {
+        console2.log("TestHelper.setUp");
         deployer = vm.addr(accountA);
         arbitrationRelayer = vm.addr(accountC);
         ipAccount1 = vm.addr(accountD);
@@ -56,12 +57,12 @@ contract TestHelper is Test, DeployHelper {
 
         deploy();
 
-        vm.label(deployer, "deployer");
-        vm.label(arbitrationRelayer, "arbitrationRelayer");
-        vm.label(ipAccount1, "ipAccount1");
-        vm.label(ipAccount2, "ipAccount2");
-        vm.label(ipAccount3, "ipAccount3");
-        vm.label(ipAccount4, "ipAccount4");
+        // vm.label(deployer, "deployer");
+        // vm.label(arbitrationRelayer, "arbitrationRelayer");
+        // vm.label(ipAccount1, "ipAccount1");
+        // vm.label(ipAccount2, "ipAccount2");
+        // vm.label(ipAccount3, "ipAccount3");
+        // vm.label(ipAccount4, "ipAccount4");
     }
 
     function _setUMLPolicyFrameworkManager() internal {
@@ -86,8 +87,8 @@ contract TestHelper is Test, DeployHelper {
     ) internal {
         string memory pName = string(abi.encodePacked("uml_", gparams.policyName));
         policies[pName] = UMLPolicy({
-            attribution: gparams.attribution,
             transferable: gparams.transferable,
+            attribution: gparams.attribution,
             commercialUse: commercialUse,
             commercialAttribution: cparams.commercialAttribution,
             commercializers: cparams.commercializers,
@@ -114,8 +115,8 @@ contract TestHelper is Test, DeployHelper {
     ) internal {
         string memory pName = string(abi.encodePacked("uml_", name));
         policies[pName] = UMLPolicy({
-            attribution: true,
             transferable: true,
+            attribution: true,
             commercialUse: commercial,
             commercialAttribution: false,
             commercializers: emptyStringArray,

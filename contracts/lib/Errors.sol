@@ -134,6 +134,12 @@ library Errors {
     error LicenseRegistry__CallerNotLicenseModule();
     error LicenseRegistry__ZeroLicenseModule();
     error LicensingModule__CallerNotLicenseRegistry();
+    /// @notice emitted when trying to transfer a license that is not transferable (by policy)
+    error LicenseRegistry__NotTransferable();
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                            LicensingModule                             //
+    ////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////
     //                        LicensingModuleAware                            //

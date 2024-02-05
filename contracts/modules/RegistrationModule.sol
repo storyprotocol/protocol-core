@@ -11,6 +11,7 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { BaseModule } from "contracts/modules/BaseModule.sol";
 import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
+import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
 
 /// @title Registration Module
 /// @notice The registration module is responsible for registration of IP into
@@ -30,10 +31,11 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         address controller,
         address assetRegistry,
         address licenseRegistry,
+        address licensingModule,
         address resolverAddr
     ) BaseModule(controller, assetRegistry, licenseRegistry) {
         resolver = IPResolver(resolverAddr);
-        _LICENSING_MODULE = ILicensingModule(LICENSE_REGISTRY.licensingModule());
+        _LICENSING_MODULE = ILicensingModule(licensingModule);
     }
 
     /// @notice Registers a root-level IP into the protocol. Root-level IPs can

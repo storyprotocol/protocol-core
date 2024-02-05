@@ -112,28 +112,28 @@ contract Integration_Shared_LicensingHelper {
     }
 
     modifier withLFM_MockOnAll() {
-        BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(true, true, true);
+        BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(true, true);
         licensingModule.registerPolicyFrameworkManager(address(_pfm));
         pfm["mock_on_all"] = PFMData({ pfmType: PFMType.MockGeneric, addr: address(_pfm) });
         _;
     }
 
     modifier withLFM_MockOnLink() {
-        BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(true, false, false);
+        BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(true, false);
         licensingModule.registerPolicyFrameworkManager(address(_pfm));
         pfm["mock_on_link"] = PFMData({ pfmType: PFMType.MockGeneric, addr: address(_pfm) });
         _;
     }
 
     modifier withLFM_MockOnMint() {
-        BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(false, true, false);
+        BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(false, true);
         licensingModule.registerPolicyFrameworkManager(address(_pfm));
         pfm["mock_on_mint"] = PFMData({ pfmType: PFMType.MockGeneric, addr: address(_pfm) });
         _;
     }
 
     modifier withLFM_MockOnTransfer() {
-        BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(false, false, true);
+        BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(false, false);
         licensingModule.registerPolicyFrameworkManager(address(_pfm));
         pfm["mock_on_transfer"] = PFMData({ pfmType: PFMType.MockGeneric, addr: address(_pfm) });
         _;
@@ -153,8 +153,8 @@ contract Integration_Shared_LicensingHelper {
         string memory pName = string(abi.encodePacked("uml_com_deriv_", gparams.policyName));
         policyIds[pName] = _pfm.registerPolicy(
             UMLPolicy({
-                attribution: gparams.attribution,
                 transferable: gparams.transferable,
+                attribution: gparams.attribution,
                 commercialUse: true,
                 commercialAttribution: cparams.commercialAttribution,
                 commercializers: cparams.commercializers,
@@ -182,8 +182,8 @@ contract Integration_Shared_LicensingHelper {
         string memory pName = string(abi.encodePacked("uml_com_nonderiv_", gparams.policyName));
         policyIds[pName] = _pfm.registerPolicy(
             UMLPolicy({
-                attribution: gparams.attribution,
                 transferable: gparams.transferable,
+                attribution: gparams.attribution,
                 commercialUse: true,
                 commercialAttribution: cparams.commercialAttribution,
                 commercializers: cparams.commercializers,
@@ -211,8 +211,8 @@ contract Integration_Shared_LicensingHelper {
         string memory pName = string(abi.encodePacked("uml_noncom_deriv_", gparams.policyName));
         policyIds[pName] = _pfm.registerPolicy(
             UMLPolicy({
-                attribution: gparams.attribution,
                 transferable: gparams.transferable,
+                attribution: gparams.attribution,
                 commercialUse: false,
                 commercialAttribution: false,
                 commercializers: new string[](0),
@@ -237,8 +237,8 @@ contract Integration_Shared_LicensingHelper {
         string memory pName = string(abi.encodePacked("uml_noncom_nonderiv_", gparams.policyName));
         policyIds[pName] = _pfm.registerPolicy(
             UMLPolicy({
-                attribution: gparams.attribution,
                 transferable: gparams.transferable,
+                attribution: gparams.attribution,
                 commercialUse: false,
                 commercialAttribution: false,
                 commercializers: new string[](0),
@@ -273,8 +273,7 @@ contract Integration_Shared_LicensingHelper {
 
     function _createMockPolicyFrameworkManager(
         bool supportVerifyLink,
-        bool supportVerifyMint,
-        bool supportVerifyTransfer
+        bool supportVerifyMint
     ) private returns (BasePolicyFrameworkManager) {
         return
             BasePolicyFrameworkManager(
@@ -284,8 +283,7 @@ contract Integration_Shared_LicensingHelper {
                         name: "mock",
                         licenseUrl: "license url",
                         supportVerifyLink: supportVerifyLink,
-                        supportVerifyMint: supportVerifyMint,
-                        supportVerifyTransfer: supportVerifyTransfer
+                        supportVerifyMint: supportVerifyMint
                     })
                 )
             );

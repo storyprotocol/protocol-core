@@ -49,12 +49,4 @@ interface IPolicyFrameworkManager is IERC165 {
         address parentIpId,
         bytes calldata policyData
     ) external returns (VerifyLinkResponse memory);
-
-    function verifyTransfer(
-        uint256 licenseId,
-        address from,
-        address to,
-        uint256 amount,
-        bytes memory policyData
-    ) external returns (bool);
 }
