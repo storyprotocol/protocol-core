@@ -103,7 +103,6 @@ contract TestLSClaimer is TestHelper {
         vm.label(ipAddr, string(abi.encodePacked("IPAccount", Strings.toString(nftIds[0]))));
         vm.stopPrank();
         vm.startPrank(address(licenseRegistry));
-
         royaltyModule.setRoyaltyPolicy(
             ipAddr,
             address(royaltyPolicyLS),

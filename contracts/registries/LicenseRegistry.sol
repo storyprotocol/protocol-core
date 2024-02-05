@@ -185,6 +185,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         // When a child passes in a royalty policy
         address royaltyPolicyAddress = address(0);
         uint32 royaltyDerivativeRevShare = 0;
+        uint32 derivativeRevShareSum = 0;
 
         for (uint256 i = 0; i < licenseIds.length; i++) {
             uint256 licenseId = licenseIds[i];
@@ -193,19 +194,23 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
             }
             Licensing.License memory licenseData = _licenses[licenseId];
             licensors[i] = licenseData.licensorIpId;
-            (royaltyPolicyAddress, royaltyDerivativeRevShare) = _linkIpToParent(
+
+            (royaltyPolicyAddress, royaltyDerivativeRevShare, derivativeRevShareSum) = _linkIpToParent(
                 i,
                 licenseId,
                 licenseData,
                 licensors[i],
                 childIpId,
-                royaltyPolicyAddress
+                royaltyPolicyAddress,
+                derivativeRevShareSum
             );
+
             values[i] = 1;
         }
         emit IpIdLinkedToParents(msg.sender, childIpId, licensors);
 
         // Licenses unanimously require royalty.
+        // TODO: currently, `royaltyDerivativeRevShare` is the derivative rev share value of the last license.
         if (royaltyPolicyAddress != address(0)) {
             ROYALTY_MODULE.setRoyaltyPolicy(
                 childIpId,
@@ -225,8 +230,9 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         Licensing.License memory licenseData,
         address licensor,
         address childIpId,
-        address royaltyPolicyAddress
-    ) private returns (address nextRoyaltyPolicyAddress, uint32 royaltyDerivativeRevShare) {
+        address royaltyPolicyAddress,
+        uint32 derivativeRevShareSum
+    ) private returns (address nextRoyaltyPolicyAddress, uint32 nextRoyaltyDerivativeRevShare, uint32 nextDerivativeRevShareSum) {
         // TODO: check licensor not part of a branch tagged by disputer
         if (licensor == childIpId) {
             revert Errors.LicenseRegistry__ParentIdEqualThanChild();
@@ -248,13 +254,28 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
 
         // If link says royalty is required for license (licenseIds[i]) and no royalty policy is set, set it.
         // But if the index is NOT 0, this is previous licenses didn't set the royalty policy because they don't
-        // require royalty payment. So, revert in this case.
-        if (response.isRoyaltyRequired && royaltyPolicyAddress == address(0)) {
-            if (iteration != 0) {
+        // require royalty payment. So, revert in this case. Similarly, if the new royaltyPolicyAddress is different 
+        // from the previous one (in iteration > 0), revert. We currently restrict all licenses (parents) to have 
+        // the same royalty policy, so the child can inherit it.
+        if (response.isRoyaltyRequired) {
+            if (iteration > 0 && royaltyPolicyAddress != response.royaltyPolicy) {
+                // If iteration > 0 and
+                // - royaltyPolicyAddress == address(0), revert. Previous licenses didn't set RP.
+                // - royaltyPolicyAddress != response.royaltyPolicy, revert. Previous licenses set different RP.
+                // ==> this can be considered as royaltyPolicyAddress != response.royaltyPolicy
                 revert Errors.LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
             }
-            royaltyPolicyAddress = response.royaltyPolicy;
-            royaltyDerivativeRevShare = response.royaltyDerivativeRevShare;
+
+            // TODO: Read max RNFT supply instead of hardcoding the expected max supply
+            // TODO: Do we need safe check?
+            // TODO: Test this in unit test.
+            if (derivativeRevShareSum + response.royaltyDerivativeRevShare > 1000) {
+                revert Errors.LicenseRegistry__DerivativeRevShareSumExceedsMaxRNFTSupply();
+            }
+
+            nextRoyaltyPolicyAddress = response.royaltyPolicy;
+            nextRoyaltyDerivativeRevShare = response.royaltyDerivativeRevShare;
+            nextDerivativeRevShareSum = derivativeRevShareSum + response.royaltyDerivativeRevShare;
         }
 
         // Add the policy of licenseIds[i] to the child. If the policy's already set from previous parents,
@@ -262,7 +283,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, AccessControlled {
         _addPolicyIdToIp({ ipId: childIpId, policyId: licenseData.policyId, isInherited: true, skipIfDuplicate: true });
         // Set parent
         _ipIdParents[childIpId].add(licensor);
-        return (royaltyPolicyAddress, royaltyDerivativeRevShare);
     }
 
     /// @notice True if the framework address is registered in LicenseRegistry

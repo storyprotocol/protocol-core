@@ -131,6 +131,7 @@ library Errors {
     error LicenseRegistry__CallerNotLicensorAndPolicyNotSet();
     error LicenseRegistry__DerivativesCannotAddPolicy();
     error LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
+    error LicenseRegistry__DerivativeRevShareSumExceedsMaxRNFTSupply();
 
     ////////////////////////////////////////////////////////////////////////////
     //                        LicenseRegistryAware                            //
