@@ -186,9 +186,9 @@ contract LicensingModule is AccessControlled, ILicensingModule {
         address[] memory licensors = new address[](licenseIds.length);
         uint256[] memory values = new uint256[](licenseIds.length);
         // If royalty policy address is address(0), this means no royalty policy to set.
-        // When a child passes in a royalty policy
         address royaltyPolicyAddress = address(0);
         uint32 royaltyDerivativeRevShare = 0;
+        uint32 derivativeRevShareSum = 0;
 
         for (uint256 i = 0; i < licenseIds.length; i++) {
             uint256 licenseId = licenseIds[i];
@@ -197,19 +197,24 @@ contract LicensingModule is AccessControlled, ILicensingModule {
             }
             Licensing.License memory licenseData = LICENSE_REGISTRY.license(licenseId);
             licensors[i] = licenseData.licensorIpId;
-            (royaltyPolicyAddress, royaltyDerivativeRevShare) = _linkIpToParent(
+
+            (royaltyPolicyAddress, royaltyDerivativeRevShare, derivativeRevShareSum) = _linkIpToParent(
                 i,
                 licenseId,
                 licenseData.policyId,
                 licensors[i],
                 childIpId,
-                royaltyPolicyAddress
+                royaltyPolicyAddress,
+                derivativeRevShareSum
             );
+
             values[i] = 1;
         }
         emit IpIdLinkedToParents(msg.sender, childIpId, licensors);
 
         // Licenses unanimously require royalty.
+        // NOTE: Currently, `royaltyDerivativeRevShare` is the derivative rev share value of the last license.
+        // This is because we enforce a child to link via licenses with the same derivativeRevShare.
         if (royaltyPolicyAddress != address(0)) {
             ROYALTY_MODULE.setRoyaltyPolicy(
                 childIpId,
@@ -229,8 +234,9 @@ contract LicensingModule is AccessControlled, ILicensingModule {
         uint256 policyId,
         address licensor,
         address childIpId,
-        address royaltyPolicyAddress
-    ) private returns (address nextRoyaltyPolicyAddress, uint32 royaltyDerivativeRevShare) {
+        address royaltyPolicyAddress,
+        uint32 derivativeRevShareSum
+    ) private returns (address nextRoyaltyPolicyAddress, uint32 nextRoyaltyDerivativeRevShare, uint32 nextDerivativeRevShareSum) {
         // TODO: check licensor not part of a branch tagged by disputer
         if (licensor == childIpId) {
             revert Errors.LicenseRegistry__ParentIdEqualThanChild();
@@ -252,13 +258,28 @@ contract LicensingModule is AccessControlled, ILicensingModule {
 
         // If link says royalty is required for license (licenseIds[i]) and no royalty policy is set, set it.
         // But if the index is NOT 0, this is previous licenses didn't set the royalty policy because they don't
-        // require royalty payment. So, revert in this case.
-        if (response.isRoyaltyRequired && royaltyPolicyAddress == address(0)) {
-            if (iteration != 0) {
+        // require royalty payment. So, revert in this case. Similarly, if the new royaltyPolicyAddress is different 
+        // from the previous one (in iteration > 0), revert. We currently restrict all licenses (parents) to have 
+        // the same royalty policy, so the child can inherit it.
+        if (response.isRoyaltyRequired) {
+            if (iteration > 0 && royaltyPolicyAddress != response.royaltyPolicy) {
+                // If iteration > 0 and
+                // - royaltyPolicyAddress == address(0), revert. Previous licenses didn't set RP.
+                // - royaltyPolicyAddress != response.royaltyPolicy, revert. Previous licenses set different RP.
+                // ==> this can be considered as royaltyPolicyAddress != response.royaltyPolicy
                 revert Errors.LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
             }
-            royaltyPolicyAddress = response.royaltyPolicy;
-            royaltyDerivativeRevShare = response.royaltyDerivativeRevShare;
+
+            // TODO: Read max RNFT supply instead of hardcoding the expected max supply
+            // TODO: Do we need safe check?
+            // TODO: Test this in unit test.
+            if (derivativeRevShareSum + response.royaltyDerivativeRevShare > 1000) {
+                revert Errors.LicenseRegistry__DerivativeRevShareSumExceedsMaxRNFTSupply();
+            }
+
+            nextRoyaltyPolicyAddress = response.royaltyPolicy;
+            nextRoyaltyDerivativeRevShare = response.royaltyDerivativeRevShare;
+            nextDerivativeRevShareSum = derivativeRevShareSum + response.royaltyDerivativeRevShare;
         }
 
         // Add the policy of licenseIds[i] to the child. If the policy's already set from previous parents,
@@ -266,7 +287,6 @@ contract LicensingModule is AccessControlled, ILicensingModule {
         _addPolicyIdToIp({ ipId: childIpId, policyId: policyId, isInherited: true, skipIfDuplicate: true });
         // Set parent
         _ipIdParents[childIpId].add(licensor);
-        return (royaltyPolicyAddress, royaltyDerivativeRevShare);
     }
 
     /// @notice True if the framework address is registered in LicenseRegistry
