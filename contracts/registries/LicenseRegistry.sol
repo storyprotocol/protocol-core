@@ -74,7 +74,6 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     }
     
     function burnLicenses(address holder,uint256[] calldata licenseIds) external onlyLicenseModule {
-        address[] memory licensors = new address[](licenseIds.length);
         uint256[] memory values = new uint256[](licenseIds.length);
         for (uint256 i = 0; i < licenseIds.length; i++) {
             values[i] = 1;

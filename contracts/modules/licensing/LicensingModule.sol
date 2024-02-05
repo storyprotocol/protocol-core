@@ -50,11 +50,6 @@ contract LicensingModule is AccessControlled, ILicensingModule {
     mapping(address ipId => EnumerableSet.AddressSet parentIpIds) private _ipIdParents;
     mapping(address framework => mapping(address ipId => bytes policyAggregatorData)) private _ipRights;
 
-    mapping(bytes32 licenseHash => uint256 ids) private _hashedLicenses;
-    mapping(uint256 licenseIds => Licensing.License licenseData) private _licenses;
-    /// This tracks the number of licenses registered in the protocol, it will not decrease when a license is burnt.
-    uint256 private _totalLicenses;
-
     modifier onlyLicenseRegistry() {
         if (msg.sender == address(LICENSE_REGISTRY))
             revert Errors.LicensingModule__CallerNotLicenseRegistry();
@@ -69,7 +64,6 @@ contract LicensingModule is AccessControlled, ILicensingModule {
     ) AccessControlled(accessController, ipAccountRegistry) {
         ROYALTY_MODULE = RoyaltyModule(royaltyModule);
         LICENSE_REGISTRY = ILicenseRegistry(registry);
-        LICENSE_REGISTRY.setLicensingModule(address(this));
     }
 
     function licenseRegistry() external view returns (address) {
@@ -171,8 +165,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
             revert Errors.LicenseRegistry__MintLicenseParamFailed();
         }
 
-        LICENSE_REGISTRY.mintLicense(policyId, licensorIp, amount, receiver);
-        return licenseId;
+        return LICENSE_REGISTRY.mintLicense(policyId, licensorIp, amount, receiver);
     }
 
     /// @notice Links an IP to the licensors (parent IP IDs) listed in the License NFTs, if their policies allow it,
@@ -197,12 +190,12 @@ contract LicensingModule is AccessControlled, ILicensingModule {
             if (!LICENSE_REGISTRY.isLicensee(licenseId, holder)) {
                 revert Errors.LicenseRegistry__NotLicensee();
             }
-            Licensing.License memory licenseData = _licenses[licenseId];
+            Licensing.License memory licenseData = LICENSE_REGISTRY.license(licenseId);
             licensors[i] = licenseData.licensorIpId;
             (royaltyPolicyAddress, royaltyDerivativeRevShare) = _linkIpToParent(
                 i,
                 licenseId,
-                licenseData,
+                licenseData.policyId,
                 licensors[i],
                 childIpId,
                 royaltyPolicyAddress
@@ -228,7 +221,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
     function _linkIpToParent(
         uint256 iteration,
         uint256 licenseId,
-        Licensing.License memory licenseData,
+        uint256 policyId,
         address licensor,
         address childIpId,
         address royaltyPolicyAddress
@@ -238,7 +231,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
             revert Errors.LicenseRegistry__ParentIdEqualThanChild();
         }
         // Verify linking params
-        Licensing.Policy memory pol = policy(licenseData.policyId);
+        Licensing.Policy memory pol = policy(policyId);
         IPolicyFrameworkManager.VerifyLinkResponse memory response = IPolicyFrameworkManager(pol.policyFramework)
             .verifyLink(licenseId, msg.sender, childIpId, licensor, pol.data);
 
@@ -265,7 +258,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
 
         // Add the policy of licenseIds[i] to the child. If the policy's already set from previous parents,
         // then the addition will be skipped.
-        _addPolicyIdToIp({ ipId: childIpId, policyId: licenseData.policyId, isInherited: true, skipIfDuplicate: true });
+        _addPolicyIdToIp({ ipId: childIpId, policyId: policyId, isInherited: true, skipIfDuplicate: true });
         // Set parent
         _ipIdParents[childIpId].add(licensor);
         return (royaltyPolicyAddress, royaltyDerivativeRevShare);

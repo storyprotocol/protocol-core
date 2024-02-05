@@ -77,7 +77,7 @@ contract LicensingModuleTest is Test {
             address(royaltyModule),
             address(licenseRegistry)
         );
-
+        licenseRegistry.setLicensingModule(address(licensingModule));
         // Setup Framework Managers (don't register PFM here, do in each test case)
         module1 = new MockPolicyFrameworkManager(
             MockPolicyFrameworkConfig({
@@ -223,7 +223,7 @@ contract LicensingModuleTest is Test {
         assertEq(policyIds.length, 1);
         assertEq(policyIds[indexOnIpId], policyId);
 
-        licenseId = licenseRegistry.mintLicense(policyId, ipId1, 2, licenseHolder);
+        licenseId = licensingModule.mintLicense(policyId, ipId1, 2, licenseHolder);
         assertEq(licenseId, 1);
         Licensing.License memory license = licenseRegistry.license(licenseId);
         assertEq(licenseRegistry.balanceOf(licenseHolder, licenseId), 2);
