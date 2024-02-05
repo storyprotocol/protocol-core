@@ -134,11 +134,7 @@ contract MetadataProviderTest is BaseTest {
         RoyaltyModule royaltyModule = new RoyaltyModule(address(governance));
 
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-        LicenseRegistry licenseRegistry = new LicenseRegistry(
-            address(accessController),
-            address(registry),
-            address(royaltyModule)
-        );
+        LicenseRegistry licenseRegistry = new LicenseRegistry();
         MockERC721 erc721 = new MockERC721("MockERC721");
         uint256 tokenId = erc721.mintId(alice, 99);
         IPResolver resolver = new IPResolver(

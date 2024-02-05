@@ -29,6 +29,7 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { Governance } from "contracts/governance/Governance.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
 
 /// @title IP Asset Renderer Test Contract
 /// @notice Tests IP asset rendering functionality.
@@ -78,6 +79,8 @@ contract IPAssetRendererTest is BaseTest {
 
     Governance public governance;
 
+    LicensingModule public licensingModule;
+
     /// @notice Initializes the base token contract for testing.
     function setUp() public virtual override(BaseTest) {
         BaseTest.setUp();
@@ -103,11 +106,15 @@ contract IPAssetRendererTest is BaseTest {
             address(ipAccountImpl)
         );
         RoyaltyModule royaltyModule = new RoyaltyModule(address(governance));
-        licenseRegistry = new LicenseRegistry(
+        uint i;
+        licenseRegistry = new LicenseRegistry();
+        licensingModule = new LicensingModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(royaltyModule)
+            address(royaltyModule),
+            address(licenseRegistry)
         );
+        licenseRegistry.setLicensingModule(address(licensingModule));
         resolver = new IPResolver(
             address(accessController),
             address(ipAssetRegistry),
@@ -123,15 +130,13 @@ contract IPAssetRendererTest is BaseTest {
             address(accessController),
             address(ipAssetRegistry),
             address(licenseRegistry),
+            address(licensingModule),
             address(resolver)
         );
-
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-        royaltyModule.setLicenseRegistry(address(licenseRegistry));
-
+        royaltyModule.initialize(address(registrationModule));
         vm.prank(alice);
         uint256 tokenId = erc721.mintId(alice, 99);
-
         bytes memory metadata = abi.encode(
             IP.MetadataV1({
                 name: IP_NAME,
@@ -142,6 +147,7 @@ contract IPAssetRendererTest is BaseTest {
 
             })
         );
+        console2.log("lol", i);
         vm.prank(address(registrationModule));
         ipId = ipAssetRegistry.register(
             block.chainid,
@@ -151,6 +157,7 @@ contract IPAssetRendererTest is BaseTest {
             true,
             metadata
         );
+        console2.log("lol", i);
     }
 
     /// @notice Tests that the constructor works as expected.

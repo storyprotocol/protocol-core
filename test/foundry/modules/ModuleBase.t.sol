@@ -4,6 +4,7 @@ pragma solidity ^0.8.23;
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { BaseTest } from "test/foundry/utils/BaseTest.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
+import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
 import { BaseModule } from "contracts/modules/BaseModule.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
@@ -30,6 +31,8 @@ import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 abstract contract ModuleBaseTest is BaseTest {
     /// @notice Gets the protocol-wide license registry.
     LicenseRegistry public licenseRegistry;
+
+    LicensingModule public licensingModule;
 
     /// @notice The access controller address.
     AccessController public accessController;
@@ -63,11 +66,14 @@ abstract contract ModuleBaseTest is BaseTest {
             address(new IPAccountImpl())
         );
         royaltyModule = new RoyaltyModule(address(governance));
-        licenseRegistry = new LicenseRegistry(
+        licenseRegistry = new LicenseRegistry();
+        licensingModule = new LicensingModule(
             address(accessController),
             address(ipAssetRegistry),
+            address(licenseRegistry),
             address(royaltyModule)
-        );
+        ); 
+        licenseRegistry.setLicensingModule(address(licensingModule));
         IPResolver ipResolver = new IPResolver(
             address(accessController),
             address(ipAssetRegistry),
@@ -77,6 +83,7 @@ abstract contract ModuleBaseTest is BaseTest {
             address(accessController),
             address(ipAssetRegistry),
             address(licenseRegistry),
+            address(licensingModule),
             address(ipResolver)
         );
         baseModule = IModule(_deployModule());

@@ -28,8 +28,8 @@ contract TestLSClaimer is TestHelper {
         testRoyaltyPolicyLS = new RoyaltyPolicyLS(address(0), address(1), LIQUID_SPLIT_FACTORY, LIQUID_SPLIT_MAIN);
     }
 
-    function test_RoyaltyPolicyLS_constructor_revert_ZeroLicenseRegistry() public {
-        vm.expectRevert(Errors.RoyaltyPolicyLS__ZeroLicenseRegistry.selector);
+    function test_RoyaltyPolicyLS_constructor_revert_ZeroLicensingModule() public {
+        vm.expectRevert(Errors.RoyaltyPolicyLS__ZeroLicensingModule.selector);
 
         testRoyaltyPolicyLS = new RoyaltyPolicyLS(address(royaltyModule), address(0), LIQUID_SPLIT_FACTORY, LIQUID_SPLIT_MAIN);
     }
@@ -50,7 +50,7 @@ contract TestLSClaimer is TestHelper {
         testRoyaltyPolicyLS = new RoyaltyPolicyLS(address(royaltyModule), address(1), LIQUID_SPLIT_FACTORY, LIQUID_SPLIT_MAIN);
 
         assertEq(testRoyaltyPolicyLS.ROYALTY_MODULE(), address(royaltyModule));
-        assertEq(testRoyaltyPolicyLS.LICENSE_REGISTRY(), address(1));
+        assertEq(testRoyaltyPolicyLS.LICENSING_MODULE(), address(1));
         assertEq(testRoyaltyPolicyLS.LIQUID_SPLIT_FACTORY(), LIQUID_SPLIT_FACTORY);
         assertEq(testRoyaltyPolicyLS.LIQUID_SPLIT_MAIN(), LIQUID_SPLIT_MAIN);  
     }

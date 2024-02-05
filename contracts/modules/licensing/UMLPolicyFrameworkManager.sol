@@ -9,12 +9,12 @@ import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol"
 
 // contracts
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
-import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
+import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
-import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator } from "contracts/interfaces/licensing/IUMLPolicyFrameworkManager.sol";
-import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyFrameworkManager.sol";
+import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator } from "contracts/interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
+import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 import { LicensorApprovalChecker } from "contracts/modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
 
@@ -33,31 +33,25 @@ contract UMLPolicyFrameworkManager is
     constructor(
         address accessController,
         address ipAccountRegistry,
-        address licRegistry,
+        address licensing,
         string memory name_,
         string memory licenseUrl_
     )
-        BasePolicyFrameworkManager(licRegistry, name_, licenseUrl_)
-        LicensorApprovalChecker(accessController, ipAccountRegistry)
-    {}
-
-    function licenseRegistry()
-        external
-        view
-        override(BasePolicyFrameworkManager, IPolicyFrameworkManager)
-        returns (address)
+        BasePolicyFrameworkManager(licensing, name_, licenseUrl_)
+        LicensorApprovalChecker(accessController, ipAccountRegistry, ILicensingModule(licensing).licenseRegistry())
     {
-        return address(LICENSE_REGISTRY);
     }
 
+
     /// @notice Re a new policy to the registry
-    /// @dev Must encode the policy into bytes to be stored in the LicenseRegistry
+    /// @dev Must encode the policy into bytes to be stored in the LicensingModule
     /// @param umlPolicy UMLPolicy compliant licensing term values
     function registerPolicy(UMLPolicy calldata umlPolicy) external returns (uint256 policyId) {
         _verifyComercialUse(umlPolicy);
         _verifyDerivatives(umlPolicy);
-        // No need to emit here, as the LicenseRegistry will emit the event
-        return LICENSE_REGISTRY.registerPolicy(abi.encode(umlPolicy));
+        // No need to emit here, as the LicensingModule will emit the event
+
+        return LICENSING_MODULE.registerPolicy(umlPolicy.transferable, abi.encode(umlPolicy));
     }
 
     /// Called by licenseRegistry to verify policy parameters for linking an IP
@@ -71,7 +65,7 @@ contract UMLPolicyFrameworkManager is
         address ipId,
         address, // parentIpId
         bytes calldata policyData
-    ) external override onlyLicenseRegistry returns (IPolicyFrameworkManager.VerifyLinkResponse memory) {
+    ) external override onlyLicensingModule returns (IPolicyFrameworkManager.VerifyLinkResponse memory) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
         IPolicyFrameworkManager.VerifyLinkResponse memory response = IPolicyFrameworkManager.VerifyLinkResponse({
             isLinkingAllowed: true, // If you successfully mint and now hold a license, you have the right to link.
@@ -112,7 +106,7 @@ contract UMLPolicyFrameworkManager is
         address,
         uint256,
         bytes memory policyData
-    ) external onlyLicenseRegistry returns (bool) {
+    ) external onlyLicensingModule returns (bool) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
         // If the policy defines no derivative is allowed, and policy was inherited,
         // we don't allow minting
@@ -122,32 +116,12 @@ contract UMLPolicyFrameworkManager is
         return true;
     }
 
-    /// Called by licenseRegistry to verify policy parameters for transferring a license
-    /// @param licenseId the ID of the license being transferred
-    /// @param from address of the sender
-    /// @param policyData the licensing policy to verify
-    function verifyTransfer(
-        uint256 licenseId,
-        address from,
-        address,
-        uint256,
-        bytes memory policyData
-    ) external onlyLicenseRegistry returns (bool) {
-        UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
-        // If license is non-transferable, only the licensor can transfer out a license
-        // (or be directly minted to someone else)
-        if (!policy.transferable) {
-            // True if from == licensor
-            return from == LICENSE_REGISTRY.licensorIpId(licenseId);
-        }
-        return true;
-    }
 
     /// @notice Fetchs a policy from the registry, decoding the raw bytes into a UMLPolicy struct
     /// @param policyId  The ID of the policy to fetch
     /// @return policy The UMLPolicy struct
     function getPolicy(uint256 policyId) public view returns (UMLPolicy memory policy) {
-        Licensing.Policy memory protocolPolicy = LICENSE_REGISTRY.policy(policyId);
+        Licensing.Policy memory protocolPolicy = LICENSING_MODULE.policy(policyId);
         if (protocolPolicy.policyFramework != address(this)) {
             // This should not happen.
             revert Errors.PolicyFrameworkManager__GettingPolicyWrongFramework();
@@ -157,7 +131,7 @@ contract UMLPolicyFrameworkManager is
 
     /// @notice gets the aggregation data for inherited policies, decoded for the framework
     function getAggregator(address ipId) external view returns (UMLAggregator memory rights) {
-        bytes memory policyAggregatorData = LICENSE_REGISTRY.policyAggregatorData(address(this), ipId);
+        bytes memory policyAggregatorData = LICENSING_MODULE.policyAggregatorData(address(this), ipId);
         if (policyAggregatorData.length == 0) {
             revert UMLFrameworkErrors.UMLPolicyFrameworkManager__RightsNotFound();
         }
@@ -175,7 +149,7 @@ contract UMLPolicyFrameworkManager is
         bytes memory aggregator,
         uint256 policyId,
         bytes memory policy
-    ) external view onlyLicenseRegistry returns (bool changedAgg, bytes memory newAggregator) {
+    ) external view onlyLicensingModule returns (bool changedAgg, bytes memory newAggregator) {
         UMLAggregator memory agg;
         UMLPolicy memory newPolicy = abi.decode(policy, (UMLPolicy));
         if (aggregator.length == 0) {

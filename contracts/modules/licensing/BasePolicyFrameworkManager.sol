@@ -7,7 +7,7 @@ import { IPolicyFrameworkManager } from "contracts/interfaces/licensing/IPolicyF
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { Errors } from "contracts/lib/Errors.sol";
-import { LicenseRegistryAware } from "contracts/modules/licensing/LicenseRegistryAware.sol";
+import { LicensingModuleAware } from "contracts/modules/licensing/LicensingModuleAware.sol";
 
 // external
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
@@ -15,14 +15,14 @@ import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol
 
 /// @title BasePolicyFrameworkManager
 /// @notice Base contract for policy framework managers.
-abstract contract BasePolicyFrameworkManager is IPolicyFrameworkManager, ERC165, LicenseRegistryAware {
+abstract contract BasePolicyFrameworkManager is IPolicyFrameworkManager, ERC165, LicensingModuleAware {
     
     string public override name;
     string public override licenseTextUrl;
 
     /// @notice Initializes the base contract.
-    /// @param registry The address of the license registry.
-    constructor(address registry, string memory name_, string memory licenseTextUrl_) LicenseRegistryAware(registry) {
+    /// @param licensing The address of the license LicensingModule.
+    constructor(address licensing, string memory name_, string memory licenseTextUrl_) LicensingModuleAware(licensing) {
         name = name_;
         licenseTextUrl = licenseTextUrl_;
     }
@@ -33,7 +33,7 @@ abstract contract BasePolicyFrameworkManager is IPolicyFrameworkManager, ERC165,
     }
 
     /// @notice returns the address of the license registry
-    function licenseRegistry() external view virtual override returns (address) {
-        return address(LICENSE_REGISTRY);
+    function licensingModule() external view virtual override returns (address) {
+        return address(LICENSING_MODULE);
     }
 }
