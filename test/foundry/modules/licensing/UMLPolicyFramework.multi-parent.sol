@@ -89,7 +89,7 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         withLicense("reciprocal", ipId3, alice)
         public {
         vm.prank(alice);
-        licensingModule.linkIpToParents(licenses, ipId4, alice);
+        licensingModule.linkIpToParents(licenses, ipId4, alice, 0);
         assertEq(licensingModule.totalParentsForIpId(ipId4), 3);
         address[] memory parents = licensingModule.parentIpIds(ipId4);
         for (uint256 i = 0; i < licenses.length; i++) {
@@ -112,7 +112,7 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
             UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalValueMismatch.selector
         );
         vm.prank(alice);
-        licensingModule.linkIpToParents(licenses, ipId4, alice);
+        licensingModule.linkIpToParents(licenses, ipId4, alice, 0);
     }
 
     function test_UMLPolicyFramework_multiParent_revert_AliceSets3Parents_3ReciprocalButDifferent()
@@ -130,7 +130,7 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
             UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalButDifferentPolicyIds.selector
         );
         vm.prank(alice);
-        licensingModule.linkIpToParents(licenses, ipId4, alice);
+        licensingModule.linkIpToParents(licenses, ipId4, alice, 0);
     }
 
     function test_UMLPolicyFramework_multiParent_NonReciprocalCommercial() public {
@@ -338,7 +338,7 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         licenses.push(licensingModule.mintLicense(polBId, ipId2, 1, alice));
         vm.expectRevert(errorSelector);
         vm.prank(alice);
-        licensingModule.linkIpToParents(licenses, ipId4, alice);
+        licensingModule.linkIpToParents(licenses, ipId4, alice, 0);
         licenses = new uint256[](0); 
     }
 
@@ -350,7 +350,7 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         vm.prank(ipId2);
         licenses.push(licensingModule.mintLicense(polBId, ipId2, 1, alice));
         vm.prank(alice);
-        licensingModule.linkIpToParents(licenses, ipId4, alice);
+        licensingModule.linkIpToParents(licenses, ipId4, alice, 0);
         assertEq(licensingModule.totalParentsForIpId(ipId4), 2);
         address[] memory parents = licensingModule.parentIpIds(ipId4);
         for (uint256 i = 0; i < licenses.length; i++) {

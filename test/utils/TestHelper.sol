@@ -43,8 +43,6 @@ contract TestHelper is Test, DeployHelper {
     mapping(string => UMLPolicy) internal policies;
 
     string[] internal emptyStringArray = new string[](0);
-    address mockRoyaltyPolicy = address(0x555);
-
 
     function setUp() public virtual {
         console2.log("TestHelper.setUp");
@@ -129,7 +127,7 @@ contract TestHelper is Test, DeployHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: mockRoyaltyPolicy
+            royaltyPolicy: address(mockRoyaltyPolicyLS) // TODO: should use mock or real royalty policy
         });
     }
 

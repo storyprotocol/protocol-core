@@ -27,6 +27,15 @@ interface IPolicyFrameworkManager is IERC165 {
     /// Must return ERC1155 OpenSea standard compliant metadata
     function policyToJson(bytes memory policyData) external view returns (string memory);
 
+    /// @notice Returns the royalty policy address of a policy ID belonging to the PFM
+    function getRoyaltyPolicy(uint256 policyId) external view returns (address royaltyPolicy);
+
+    /// @notice Returns the commercial revenue share of a policy ID belonging to the PFM
+    function getCommercialRevenueShare(uint256 policyId) external view returns (uint32 commercialRevenueShare);
+
+    /// @notice Returns whether the policy ID belonging to the PFM is commercial or non-commercial
+    function isPolicyCommercial(uint256 policyId) external view returns (bool);
+
     function processInheritedPolicies(
         bytes memory aggregator,
         uint256 policyId,

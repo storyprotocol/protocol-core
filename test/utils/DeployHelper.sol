@@ -34,6 +34,7 @@ import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { LSClaimer } from "contracts/modules/royalty-module/policies/LSClaimer.sol";
 import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
 import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
@@ -44,14 +45,10 @@ import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/A
 import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { MockModule } from "test/foundry/mocks/MockModule.sol";
+import { MockUSDC } from "test/foundry/mocks/MockUSDC.sol";
+import { MockRoyaltyPolicyLS } from "test/foundry/mocks/MockRoyaltyPolicyLS.sol";
 import { Users, UsersLib } from "test/foundry/utils/Users.sol";
 
-import { DisputeModule } from "../../contracts/modules/dispute-module/DisputeModule.sol";
-import { ArbitrationPolicySP } from "../../contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
-import { RoyaltyModule } from "../../contracts/modules/royalty-module/RoyaltyModule.sol";
-import { RoyaltyPolicyLS } from "../../contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
-import { LSClaimer } from "../../contracts/modules/royalty-module/policies/LSClaimer.sol";
-import { MockUSDC } from "../foundry/mocks/MockUSDC.sol";
 
 struct MockERC721s {
     MockERC721 ape;
@@ -93,6 +90,7 @@ contract DeployHelper is Test {
     MockERC20 internal erc20;
     MockERC721s internal erc721;
     MockUSDC internal USDC;
+    MockRoyaltyPolicyLS internal mockRoyaltyPolicyLS;
 
     // Helpers
     Users internal u;
@@ -179,12 +177,15 @@ contract DeployHelper is Test {
             ARBITRATION_PRICE,
             address(governance)
         );
+
         royaltyPolicyLS = new RoyaltyPolicyLS(
             address(royaltyModule),
             address(licensingModule),
             LIQUID_SPLIT_FACTORY,
             LIQUID_SPLIT_MAIN
         );
+
+        mockRoyaltyPolicyLS = new MockRoyaltyPolicyLS(address(royaltyModule));
     }
 
     function _configDeployedContracts() internal {
@@ -198,6 +199,7 @@ contract DeployHelper is Test {
         moduleRegistry.registerModule(DISPUTE_MODULE_KEY, address(disputeModule));
 
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
+        royaltyModule.whitelistRoyaltyPolicy(address(mockRoyaltyPolicyLS), true);
         royaltyModule.whitelistRoyaltyToken(address(USDC), true);
         vm.stopPrank();
     }

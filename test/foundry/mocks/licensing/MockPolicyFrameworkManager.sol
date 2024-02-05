@@ -15,6 +15,7 @@ struct MockPolicyFrameworkConfig {
     string licenseUrl;
     bool supportVerifyLink;
     bool supportVerifyMint;
+    address royaltyPolicy;
 }
 
 struct MockPolicy {
@@ -25,12 +26,15 @@ struct MockPolicy {
 contract MockPolicyFrameworkManager is BasePolicyFrameworkManager {
     MockPolicyFrameworkConfig internal config;
 
+    address internal royaltyPolicy;
+
     event MockPolicyAdded(uint256 indexed policyId, MockPolicy policy);
 
     constructor(
         MockPolicyFrameworkConfig memory conf
     ) BasePolicyFrameworkManager(conf.licensingModule, conf.name, conf.licenseUrl) {
         config = conf;
+        royaltyPolicy = conf.royaltyPolicy;
     }
 
     function registerPolicy(MockPolicy calldata mockPolicy) external returns (uint256 policyId) {
@@ -70,5 +74,17 @@ contract MockPolicyFrameworkManager is BasePolicyFrameworkManager {
         bytes memory // policy
     ) external pure override returns (bool changedAgg, bytes memory newAggregator) {
         return (false, aggregator);
+    }
+
+    function getRoyaltyPolicy(uint256) public view override returns (address) {
+        return address(royaltyPolicy);
+    }
+
+    function getCommercialRevenueShare(uint256) public pure override returns (uint32) {
+        return 0;
+    }
+
+    function isPolicyCommercial(uint256 policyId) external view returns (bool) {
+        return policyId % 2 == 0;
     }
 }

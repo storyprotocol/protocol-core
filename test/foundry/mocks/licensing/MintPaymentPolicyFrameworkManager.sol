@@ -19,10 +19,14 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager {
     IERC20 public token;
     uint256 public payment;
 
+    address public royaltyPolicy;
+    mapping(uint256 policyId => bool isCommercial) public _isPolicyCommercial;
+
     event MintPaymentPolicyAdded(uint256 indexed policyId, MintPaymentPolicy policy);
 
     constructor(
         address licensingModule,
+        address _royaltyPolicy,
         string memory name,
         string memory licenseUrl,
         address _token,
@@ -30,6 +34,7 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager {
     ) BasePolicyFrameworkManager(licensingModule, name, licenseUrl) {
         token = IERC20(_token);
         payment = _payment;
+        royaltyPolicy = _royaltyPolicy;
     }
 
     function registerPolicy(MintPaymentPolicy calldata mmpol) external returns (uint256 policyId) {
@@ -69,11 +74,11 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager {
         address, // ipId
         address, // parentIpId
         bytes calldata // policyData
-    ) external pure returns (IPolicyFrameworkManager.VerifyLinkResponse memory) {
+    ) external view returns (IPolicyFrameworkManager.VerifyLinkResponse memory) {
         return IPolicyFrameworkManager.VerifyLinkResponse({
             isLinkingAllowed: true,
             isRoyaltyRequired: false,
-            royaltyPolicy: address(0),
+            royaltyPolicy: royaltyPolicy,
             royaltyDerivativeRevShare: 0
         });
     }
@@ -88,8 +93,23 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager {
         return true;
     }
 
-
     function policyToJson(bytes memory policyData) public pure returns (string memory) {
         return "MintPaymentPolicyFrameworkManager";
+    }
+
+    function getRoyaltyPolicy(uint256) public view override returns (address) {
+        return royaltyPolicy;
+    }
+
+    function getCommercialRevenueShare(uint256) public pure override returns (uint32) {
+        return 0;
+    }
+
+    function setPolicyCommercial(uint256 policyId, bool val) public {
+        _isPolicyCommercial[policyId] = val;
+    }
+
+    function isPolicyCommercial(uint256 policyId) external view returns (bool) {
+        return _isPolicyCommercial[policyId];
     }
 }

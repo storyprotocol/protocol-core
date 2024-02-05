@@ -19,7 +19,7 @@ import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { TestHelper } from "test/utils/TestHelper.sol";
 
 contract UMLPolicyFrameworkTest is TestHelper {
-    UMLPolicyFrameworkManager public umlFramework;
+    UMLPolicyFrameworkManager internal umlFramework;
 
     string public licenseUrl = "https://example.com/license";
     address public ipId1;
@@ -39,6 +39,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             "UMLPolicyFrameworkManager",
             licenseUrl
         );
+
         licensingModule.registerPolicyFrameworkManager(address(umlFramework));
 
         nft.mintId(ipOwner, 1);
@@ -68,7 +69,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: territories,
             distributionChannels: distributionChannels,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(0xbeef)
+            royaltyPolicy: address(mockRoyaltyPolicyLS)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         UMLPolicy memory policy = umlFramework.getPolicy(policyId);
@@ -96,7 +97,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(0)
+            royaltyPolicy: address(0) // must be 0 because commercialUse = false
         });
         // commercialAttribution = true should revert
         vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddAttribution.selector);
@@ -138,7 +139,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(0xbeef)
+            royaltyPolicy: address(mockRoyaltyPolicyLS)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         UMLPolicy memory policy = umlFramework.getPolicy(policyId);
@@ -162,7 +163,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(0xbeef)
+            royaltyPolicy: address(mockRoyaltyPolicyLS)
         });
         // derivativesAttribution = true should revert
         vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddAttribution.selector);
@@ -200,7 +201,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(0xbeef)
+            royaltyPolicy: address(mockRoyaltyPolicyLS)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         UMLPolicy memory policy = umlFramework.getPolicy(policyId);
@@ -228,7 +229,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
                 territories: emptyStringArray,
                 distributionChannels: emptyStringArray,
                 contentRestrictions: emptyStringArray,
-                royaltyPolicy: address(0)
+                royaltyPolicy: address(0) // must be 0 because commercialUse = false
             })
         );
 
@@ -246,7 +247,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
 
         vm.expectRevert(Errors.LicenseRegistry__LinkParentParamFailed.selector);
         vm.prank(ipOwner);
-        licensingModule.linkIpToParents(licenseIds, ipId2, licenseHolder);
+        licensingModule.linkIpToParents(licenseIds, ipId2, licenseHolder, 0);
     }
 
     function test_UMLPolicyFrameworkManager__derivatives_withApproval_linkApprovedIpId() public {
@@ -266,7 +267,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
                 territories: emptyStringArray,
                 distributionChannels: emptyStringArray,
                 contentRestrictions: emptyStringArray,
-                royaltyPolicy: address(0)
+                royaltyPolicy: address(0) // must be 0 because commercialUse = false
             })
         );
         vm.prank(ipOwner);
@@ -282,7 +283,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
         licenseIds[0] = licenseId;
 
         vm.prank(ipOwner);
-        licensingModule.linkIpToParents(licenseIds, ipId2, licenseHolder);
+        licensingModule.linkIpToParents(licenseIds, ipId2, licenseHolder, 0);
         assertTrue(licensingModule.isParent(ipId1, ipId2));
     }
 
@@ -306,7 +307,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(0)
+            royaltyPolicy: address(0) // must be 0 because commercialUse = false
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         vm.prank(ipOwner);
@@ -336,7 +337,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(0)
+            royaltyPolicy: address(0) // must be 0 because commercialUse = false
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         vm.prank(ipOwner);
@@ -349,6 +350,4 @@ contract UMLPolicyFrameworkTest is TestHelper {
         licenseRegistry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
         vm.stopPrank();
     }
-
-
 }

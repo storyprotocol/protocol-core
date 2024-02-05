@@ -48,7 +48,7 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
         vm.prank(alice);
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
-        licensingModule.linkIpToParents(licenseIds, ipId2, alice);
+        licensingModule.linkIpToParents(licenseIds, ipId2, alice, 0);
         _;
     }
 

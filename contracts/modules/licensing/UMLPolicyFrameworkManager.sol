@@ -138,6 +138,18 @@ contract UMLPolicyFrameworkManager is
         rights = abi.decode(policyAggregatorData, (UMLAggregator));
     }
 
+    function getRoyaltyPolicy(uint256 policyId) external view returns (address) {
+        return getPolicy(policyId).royaltyPolicy;
+    }
+
+    function getCommercialRevenueShare(uint256 policyId) external view returns (uint32) {
+        return getPolicy(policyId).commercialRevShare;
+    }
+
+    function isPolicyCommercial(uint256 policyId) external view returns (bool) {
+        return getPolicy(policyId).commercialUse;
+    }
+
     /// Called by licenseRegistry to verify compatibility when inheriting from a parent IP
     /// The objective is to verify compatibility of multiple policies.
     /// @param aggregator common state of the policies for the IP
