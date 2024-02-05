@@ -124,6 +124,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
 
         // Alice sets royalty policy for her root IPAccounts
         // (so other IPAccounts can use her policies that inits royalty policy on linking)
+        // TODO: setRoyaltyPolicy should be called through mintLicense or addPolicyToIp, not directly by user
+        vm.startPrank(address(licenseRegistry));
         royaltyModule.setRoyaltyPolicy(
             ipAcct[1],
             address(royaltyPolicyLS),
@@ -137,6 +139,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
 
         // Bob sets royalty policy for his root IPAccounts
         // (so other IPAccounts can use his policies that inits royalty policy on linking)
+        // TODO: setRoyaltyPolicy should be called through mintLicense or addPolicyToIp, not directly by user
+        vm.startPrank(address(licenseRegistry));
         royaltyModule.setRoyaltyPolicy(
             ipAcct[300],
             address(royaltyPolicyLS),
@@ -161,7 +165,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                                 MINT & USE LICENSES
         ////////////////////////////////////////////////////////////////*/
 
-/*         // Carl mints 1 license for policy "com_deriv_all_true" on Alice's NFT 1 IPAccount
+        // Carl mints 1 license for policy "com_deriv_all_true" on Alice's NFT 1 IPAccount
         // Carl creates NFT 6 IPAccount
         // Carl activates the license on his NFT 6 IPAccount, linking as child to Alice's NFT 1 IPAccount
         {
@@ -309,6 +313,6 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                 metadata,
                 u.carl // caller
             );
-        } */
+        }
     }
 }

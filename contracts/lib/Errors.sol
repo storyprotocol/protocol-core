@@ -131,6 +131,7 @@ library Errors {
     error LicenseRegistry__CallerNotLicensorAndPolicyNotSet();
     error LicenseRegistry__DerivativesCannotAddPolicy();
     error LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
+    error LicenseRegistry__DerivativeRevShareSumExceedsMaxRNFTSupply();
 
     ////////////////////////////////////////////////////////////////////////////
     //                        LicenseRegistryAware                            //
@@ -181,8 +182,8 @@ library Errors {
     error RoyaltyModule__NotWhitelistedRoyaltyToken();
     error RoyaltyModule__NoRoyaltyPolicySet();
     error RoyaltyModule__IncompatibleRoyaltyPolicy();
-    error RoyaltyModule__NotRegistrationModule();
-    error RoyaltyModule__ZeroLicensingModule();
+    error RoyaltyModule__NotAllowedCaller();
+    error RoyaltyModule__ZeroLicenseRegistry();
 
     error RoyaltyPolicyLS__ZeroRoyaltyModule();
     error RoyaltyPolicyLS__ZeroLiquidSplitFactory();
@@ -198,14 +199,11 @@ library Errors {
     error LSClaimer__InvalidPathFirstPosition();
     error LSClaimer__InvalidPathLastPosition();
     error LSClaimer__AlreadyClaimed();
-    error LSClaimer__ZeroRNFT();
-    error LSClaimer__RNFTAlreadySet();
     error LSClaimer__ETHBalanceNotZero();
     error LSClaimer__ERC20BalanceNotZero();
     error LSClaimer__ZeroIpId();
     error LSClaimer__ZeroLicenseRegistry();
     error LSClaimer__ZeroRoyaltyPolicyLS();
-    error LSClaimer__NotRoyaltyPolicyLS();
 
     ////////////////////////////////////////////////////////////////////////////
     //                             ModuleRegistry                             //

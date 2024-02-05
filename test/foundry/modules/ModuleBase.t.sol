@@ -81,7 +81,7 @@ abstract contract ModuleBaseTest is BaseTest {
         );
         baseModule = IModule(_deployModule());
         accessController.initialize(address(ipAssetRegistry), address(moduleRegistry));
-        royaltyModule.initialize(address(registrationModule));
+        royaltyModule.setLicenseRegistry(address(licenseRegistry));
     }
 
     /// @notice Tests that the default resolver constructor runs successfully.

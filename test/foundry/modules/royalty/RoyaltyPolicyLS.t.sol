@@ -52,12 +52,21 @@ contract TestLSClaimer is TestHelper {
         assertEq(testRoyaltyPolicyLS.ROYALTY_MODULE(), address(royaltyModule));
         assertEq(testRoyaltyPolicyLS.LICENSE_REGISTRY(), address(1));
         assertEq(testRoyaltyPolicyLS.LIQUID_SPLIT_FACTORY(), LIQUID_SPLIT_FACTORY);
-        assertEq(testRoyaltyPolicyLS.LIQUID_SPLIT_MAIN(), LIQUID_SPLIT_MAIN);
-        
+        assertEq(testRoyaltyPolicyLS.LIQUID_SPLIT_MAIN(), LIQUID_SPLIT_MAIN);  
     }
 
-    function test_RoyaltyPolicyLS_revert_InvalidMinRoyalty() public {
-        vm.startPrank(address(registrationModule));
+    function test_RoyaltyPolicyLS_initPolicy_NotRoyalModule() public {
+        vm.startPrank(address(licenseRegistry));
+        address[] memory parentIpIds = new address[](0);
+        uint32 minRoyaltyIpAccount1 = 100; 
+        bytes memory data = abi.encode(minRoyaltyIpAccount1);
+
+        vm.expectRevert(Errors.RoyaltyPolicyLS__NotRoyaltyModule.selector);
+        royaltyPolicyLS.initPolicy(ipAccount1, parentIpIds, data);
+    }
+
+    function test_RoyaltyPolicyLS_initPolicy_revert_InvalidMinRoyalty() public {
+        vm.startPrank(address(licenseRegistry));
         // set root parent royalty policy
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; 
@@ -74,8 +83,8 @@ contract TestLSClaimer is TestHelper {
         royaltyModule.setRoyaltyPolicy(ipAccount2, address(royaltyPolicyLS), parentIpIds2, data2);
     }
 
-    function test_RoyaltyPolicyLS_revert_ZeroMinRoyalty() public {
-        vm.startPrank(address(registrationModule));
+    function test_RoyaltyPolicyLS_initPolicy_revert_ZeroMinRoyalty() public {
+        vm.startPrank(address(licenseRegistry));
         // set root parent royalty policy
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; 
@@ -92,8 +101,8 @@ contract TestLSClaimer is TestHelper {
         royaltyModule.setRoyaltyPolicy(ipAccount2, address(royaltyPolicyLS), parentIpIds2, data2);
     }
 
-    function test_RoyaltyPolicyLS_revert_InvalidRoyaltyStack() public {
-        vm.startPrank(address(registrationModule));
+    function test_RoyaltyPolicyLS_initPolicy_revert_InvalidRoyaltyStack() public {
+        vm.startPrank(address(licenseRegistry));
         address[] memory parentIpIds = new address[](0);
         uint32 minRoyaltyIpAccount3 = 1010; // 100.1%
         bytes memory data = abi.encode(minRoyaltyIpAccount3);
@@ -107,7 +116,7 @@ contract TestLSClaimer is TestHelper {
         uint32 minRoyaltyIpAccount1 = 0; 
         bytes memory data = abi.encode(minRoyaltyIpAccount1);
 
-        vm.startPrank(address(registrationModule));
+        vm.startPrank(address(licenseRegistry));
         royaltyModule.setRoyaltyPolicy(ipAccount1, address(royaltyPolicyLS), parentIpIds, data);
 
         (address splitClone, address claimer, uint32 royaltyStack, uint32 minRoyalty) = royaltyPolicyLS.royaltyData(ipAccount1);
@@ -119,7 +128,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_RoyaltyPolicyLS_initPolicy_derivativeIPA() public {
-        vm.startPrank(address(registrationModule));
+        vm.startPrank(address(licenseRegistry));
         // set root parent royalty policy
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; 
@@ -142,8 +151,44 @@ contract TestLSClaimer is TestHelper {
         assertEq(minRoyalty, minRoyaltyIpAccount2);
     }
 
+    function test_RoyaltyPolicyLS_onRoyaltyPayment_NotRoyaltyModule() public {
+        vm.expectRevert(Errors.RoyaltyPolicyLS__NotRoyaltyModule.selector);
+
+        royaltyPolicyLS.onRoyaltyPayment(address(1), ipAccount1, address(USDC), 1000 * 10 ** 6);
+    }
+
+    function test_RoyaltyPolicyLS_onRoyaltyPayment() public {
+        vm.startPrank(address(licenseRegistry));
+        // set root parent royalty policy
+        address[] memory parentIpIds1 = new address[](0);
+        uint32 minRoyaltyIpAccount1 = 100; 
+        bytes memory data1 = abi.encode(minRoyaltyIpAccount1);
+        royaltyModule.setRoyaltyPolicy(ipAccount1, address(royaltyPolicyLS), parentIpIds1, data1);
+        (address splitClone1, address claimer2,,) = royaltyPolicyLS.royaltyData(ipAccount1);
+        vm.stopPrank();
+
+        uint256 royaltyAmount = 1000 * 10 ** 6;
+        USDC.mint(address(1), royaltyAmount);
+        vm.startPrank(address(1));
+        USDC.approve(address(royaltyPolicyLS), royaltyAmount);
+        vm.stopPrank();
+
+        vm.startPrank(address(royaltyModule));
+
+        uint256 splitClone2USDCBalBefore = USDC.balanceOf(splitClone1);
+        uint256 splitMainUSDCBalBefore = USDC.balanceOf(address(1));
+
+        royaltyPolicyLS.onRoyaltyPayment(address(1), ipAccount1, address(USDC), royaltyAmount);
+
+        uint256 splitClone2USDCBalAfter = USDC.balanceOf(splitClone1);
+        uint256 splitMainUSDCBalAfter = USDC.balanceOf(address(1));
+
+        assertEq(splitClone2USDCBalAfter - splitClone2USDCBalBefore, royaltyAmount);
+        assertEq(splitMainUSDCBalBefore - splitMainUSDCBalAfter, royaltyAmount);
+    }
+
     function test_RoyaltyPolicyLS_distributeFunds() public {
-        vm.startPrank(address(registrationModule));
+        vm.startPrank(address(licenseRegistry));
         // set root parent royalty policy
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; 
@@ -179,7 +224,7 @@ contract TestLSClaimer is TestHelper {
     }
 
     function test_RoyaltyPolicyLS_claimRoyalties() public{
-        vm.startPrank(address(registrationModule));
+        vm.startPrank(address(licenseRegistry));
         // set root parent royalty policy
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; 

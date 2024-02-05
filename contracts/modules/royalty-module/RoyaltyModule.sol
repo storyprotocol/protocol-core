@@ -13,8 +13,8 @@ import { Errors } from "contracts/lib/Errors.sol";
 /// @notice The Story Protocol royalty module allows to set royalty policies an ipId
 ///         and pay royalties as a derivative ip.
 contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
-    /// @notice registration module address
-    address public REGISTRATION_MODULE;
+    /// @notice License registry address
+    address public LICENSE_REGISTRY;
 
     /// @notice Indicates if a royalty policy is whitelisted
     mapping(address royaltyPolicy => bool allowed) public isWhitelistedRoyaltyPolicy;
@@ -25,19 +25,19 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
     /// @notice Indicates the royalty policy for a given ipId
     mapping(address ipId => address royaltyPolicy) public royaltyPolicies;
 
-    /// @notice Restricts the calls to the license module
-    modifier onlyRegistrationModule() {
-        // TODO: if (msg.sender != REGISTRATION_MODULE) revert Errors.RoyaltyModule__NotRegistrationModule();
-        _;
-    }
+    /// @notice Indicates if a royalty policy is immutable
+    mapping(address ipId => bool) public isRoyaltyPolicyImmutable;    
 
     /// @notice Constructor
     /// @param _governance The address of the governance contract
     constructor(address _governance) Governable(_governance) {}
 
-    function initialize(address _registrationModule) external onlyProtocolAdmin {
-        if (_registrationModule == address(0)) revert Errors.RoyaltyModule__ZeroLicensingModule();
-        REGISTRATION_MODULE = _registrationModule;
+    /// @notice Sets the license registry
+    /// @param _licenseRegistry The address of the license registry
+    function setLicenseRegistry(address _licenseRegistry) external onlyProtocolAdmin {
+        if (_licenseRegistry == address(0)) revert Errors.RoyaltyModule__ZeroLicenseRegistry();
+
+        LICENSE_REGISTRY = _licenseRegistry;
     }
 
     /// @notice Whitelist a royalty policy
@@ -62,7 +62,6 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
         emit RoyaltyTokenWhitelistUpdated(_token, _allowed);
     }
 
-    // TODO: Ensure this function is called on ipId registration: root and derivatives registrations
     // TODO: Ensure that the ipId that is passed in from license cannot be manipulated - given ipId addresses are deterministic
     /// @notice Sets the royalty policy for an ipId
     /// @param _ipId The ipId
@@ -70,16 +69,21 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
     /// @param _parentIpIds The parent ipIds
     /// @param _data The data to initialize the policy
     function setRoyaltyPolicy(
-        address _ipId, 
+        address _ipId,
         address _royaltyPolicy,
         address[] calldata _parentIpIds,
         bytes calldata _data
-    ) external onlyRegistrationModule nonReentrant {
-        if (royaltyPolicies[_ipId] != address(0)) revert Errors.RoyaltyModule__AlreadySetRoyaltyPolicy();
+    ) external nonReentrant {
+        if (msg.sender != LICENSE_REGISTRY) revert Errors.RoyaltyModule__NotAllowedCaller();
+        if (isRoyaltyPolicyImmutable[_ipId]) revert Errors.RoyaltyModule__AlreadySetRoyaltyPolicy();
         if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
 
+        if (_parentIpIds.length > 0) isRoyaltyPolicyImmutable[_ipId] = true;
+
+        // the loop below is limited to 100 iterations
         for (uint32 i = 0; i < _parentIpIds.length; i++) {
             if (royaltyPolicies[_parentIpIds[i]] != _royaltyPolicy) revert Errors.RoyaltyModule__IncompatibleRoyaltyPolicy();
+            isRoyaltyPolicyImmutable[_parentIpIds[i]] = true;
         }
 
         royaltyPolicies[_ipId] = _royaltyPolicy;
