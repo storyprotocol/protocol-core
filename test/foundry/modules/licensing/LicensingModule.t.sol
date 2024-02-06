@@ -330,9 +330,14 @@ contract LicensingModuleTest is Test {
         uint256 licenseId = test_LicensingModule_mintLicense();
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
+
+        vm.prank(licenseHolder);
+        licenseRegistry.safeTransferFrom(licenseHolder, ipOwner, licenseId, 2, "");
+
         vm.prank(ipOwner);
-        licensingModule.linkIpToParents(licenseIds, ipId2, licenseHolder, 0);
-        assertEq(licenseRegistry.balanceOf(licenseHolder, licenseId), 1, "not burnt");
+        licensingModule.linkIpToParents(licenseIds, ipId2, 0);
+
+        assertEq(licenseRegistry.balanceOf(ipOwner, licenseId), 1, "not burnt");
         assertEq(licensingModule.isParent(ipId1, ipId2), true, "not parent");
         assertEq(
             keccak256(abi.encode(licensingModule.policyForIpAtIndex(true, ipId2, 0))),

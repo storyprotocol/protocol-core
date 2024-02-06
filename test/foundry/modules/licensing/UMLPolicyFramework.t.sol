@@ -235,7 +235,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
 
         vm.prank(ipOwner);
         licensingModule.addPolicyToIp(ipId1, policyId);
-        uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder);
+
+        uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, ipOwner);
         assertFalse(umlFramework.isDerivativeApproved(licenseId, ipId2));
         
         vm.prank(licenseRegistry.licensorIpId(licenseId));
@@ -247,7 +248,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
 
         vm.expectRevert(Errors.LicensingModule__LinkParentParamFailed.selector);
         vm.prank(ipOwner);
-        licensingModule.linkIpToParents(licenseIds, ipId2, licenseHolder, 0);
+        licensingModule.linkIpToParents(licenseIds, ipId2, 0);
     }
 
     function test_UMLPolicyFrameworkManager__derivatives_withApproval_linkApprovedIpId() public {
@@ -270,10 +271,16 @@ contract UMLPolicyFrameworkTest is TestHelper {
                 royaltyPolicy: address(0) // must be 0 because commercialUse = false
             })
         );
+
         vm.prank(ipOwner);
         licensingModule.addPolicyToIp(ipId1, policyId);
-        uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder);
+        
+        uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, ipOwner);
         assertFalse(umlFramework.isDerivativeApproved(licenseId, ipId2));
+
+        vm.expectRevert(Errors.LicenseRegistry__NotTransferable.selector);
+        vm.prank(ipOwner);
+        licenseRegistry.safeTransferFrom(ipOwner, licenseHolder, licenseId, 1, "");
         
         vm.prank(licenseRegistry.licensorIpId(licenseId));
         umlFramework.setApproval(licenseId, ipId2, true);
@@ -283,7 +290,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
         licenseIds[0] = licenseId;
 
         vm.prank(ipOwner);
-        licensingModule.linkIpToParents(licenseIds, ipId2, licenseHolder, 0);
+        licensingModule.linkIpToParents(licenseIds, ipId2, 0);
         assertTrue(licensingModule.isParent(ipId1, ipId2));
     }
 

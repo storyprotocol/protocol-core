@@ -510,7 +510,7 @@ contract BaseIntegration is Test {
         }
 
         vm.startPrank(caller);
-        licensingModule.linkIpToParents(licenseIds, ipId, caller, minRoyalty);
+        licensingModule.linkIpToParents(licenseIds, ipId, minRoyalty);
 
         for (uint256 i = 0; i < licenseIds.length; i++) {
             assertEq(

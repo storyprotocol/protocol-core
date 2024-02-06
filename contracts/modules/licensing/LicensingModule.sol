@@ -17,6 +17,7 @@ import { Licensing } from "contracts/lib/Licensing.sol";
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { AccessControlled } from "contracts/access/AccessControlled.sol";
+import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 
 // TODO: consider disabling operators/approvals on creation
 contract LicensingModule is AccessControlled, ILicensingModule {
@@ -248,15 +249,14 @@ contract LicensingModule is AccessControlled, ILicensingModule {
     /// burning the NFTs in the proccess. The caller must be the owner of the NFTs and the IP owner.
     /// @param licenseIds The id of the licenses to burn
     /// @param childIpId The id of the child IP to be linked
-    /// @param holder The address that holds the license
     /// @param minRoyalty The minimum derivative rev share that the child wants from its descendants. The value is
     /// overriden by the `derivativesRevShare` value of the linking licenses.
     function linkIpToParents(
         uint256[] calldata licenseIds,
         address childIpId,
-        address holder,
         uint32 minRoyalty
     ) external verifyPermission(childIpId) {
+        address holder = IIPAccount(payable(childIpId)).owner();
         address[] memory licensors = new address[](licenseIds.length);
         // If royalty policy address is address(0), this means no royalty policy to set.
         address royaltyPolicyAddress = address(0);

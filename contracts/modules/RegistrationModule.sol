@@ -131,7 +131,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         );
 
         // Perform core IP derivative licensing - the license must be owned by the caller.
-        _LICENSING_MODULE.linkIpToParents(licenseIds, ipId, msg.sender, minRoyalty);
+        _LICENSING_MODULE.linkIpToParents(licenseIds, ipId, minRoyalty);
 
         emit DerivativeIPRegistered(msg.sender, ipId, licenseIds);
     }

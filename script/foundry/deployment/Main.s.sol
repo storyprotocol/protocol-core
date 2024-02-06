@@ -411,7 +411,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         //             LINK IPACCOUNTS TO PARENTS USING LICENSES
         // ////////////////////////////////////////////////////////////////*/
 
-        licensingModule.linkIpToParents(licenseIds, getIpId(mockNft, nftIds[4]), deployer, 100);
+        licensingModule.linkIpToParents(licenseIds, getIpId(mockNft, nftIds[4]), 100);
     }
 
     function getIpId(MockERC721 mnft, uint256 tokenId) public view returns (address ipId) {
