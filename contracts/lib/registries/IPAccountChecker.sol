@@ -3,7 +3,7 @@
 pragma solidity ^0.8.23;
 
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
-import { IERC6551Account } from "@erc6551/interfaces/IERC6551Account.sol";
+import { IERC6551Account } from "erc6551/interfaces/IERC6551Account.sol";
 
 import { IIPAccountRegistry } from "../../interfaces/registries/IIPAccountRegistry.sol";
 import { IIPAccount } from "../..//interfaces/IIPAccount.sol";

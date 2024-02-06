@@ -115,7 +115,8 @@ contract DeployHelper is Test {
         ipAssetRegistry = new IPAssetRegistry(
             address(accessController),
             address(erc6551Registry),
-            address(ipAccountImpl)
+            address(ipAccountImpl),
+            address(moduleRegistry)
         );
         licenseRegistry = new LicenseRegistry();
         licensingModule = new LicensingModule(

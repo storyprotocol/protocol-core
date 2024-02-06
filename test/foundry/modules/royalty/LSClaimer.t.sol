@@ -80,6 +80,7 @@ contract TestLSClaimer is TestHelper {
         );
         vm.label(expectedAddr, string(abi.encodePacked("IPAccount", Strings.toString(nftIds[0]))));
 
+        ipAssetRegistry.setApprovalForAll(address(registrationModule), true);
         address ipAddr = registrationModule.registerRootIp(
             policyIds["uml_cheap_flexible"],
             address(nft),

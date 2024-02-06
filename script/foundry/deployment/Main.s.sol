@@ -164,7 +164,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "IPAssetRegistry";
         _predeploy(contractKey);
-        ipAssetRegistry = new IPAssetRegistry(address(accessController), ERC6551_REGISTRY, address(ipAccountImpl));
+        ipAssetRegistry = new IPAssetRegistry(address(accessController), ERC6551_REGISTRY, address(ipAccountImpl), address(moduleRegistry));
         _postdeploy(contractKey, address(ipAssetRegistry));
 
         contractKey = "MetadataProviderV1";
@@ -431,6 +431,20 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             "IPAccount2",
             bytes32("some of the best description"),
             "https://example.com/test-ip"
+        );
+
+        accessController.setGlobalPermission(
+            address(ipAssetRegistry),
+            address(licensingModule),
+            bytes4(0),
+            1
+        );
+
+        accessController.setGlobalPermission(
+            address(registrationModule),
+            address(licenseRegistry),
+            bytes4(0), // wildcard
+            1 // AccessPermission.ALLOW
         );
 
         // wildcard allow

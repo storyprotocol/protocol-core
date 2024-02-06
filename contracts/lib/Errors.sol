@@ -48,6 +48,9 @@ library Errors {
     /// @notice The IP asset has not yet been registered.
     error IPAssetRegistry__NotYetRegistered();
 
+    /// @notice The IP asset registrant is not authorized.
+    error IPAssetRegistry__RegistrantUnauthorized();
+
     /// @notice The specified IP resolver is not valid.
     error IPAssetRegistry__ResolverInvalid();
 

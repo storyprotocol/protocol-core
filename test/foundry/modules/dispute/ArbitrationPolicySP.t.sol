@@ -75,6 +75,7 @@ contract TestArbitrationPolicySP is TestHelper {
         vm.label(expectedAddr, string(abi.encodePacked("IPAccount", Strings.toString(0))));
 
         vm.startPrank(deployer);
+        ipAssetRegistry.setApprovalForAll(address(registrationModule), true);
         ipAddr = registrationModule.registerRootIp(
             policyIds["uml_cheap_flexible"],
             address(nft),

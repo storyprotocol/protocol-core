@@ -5,8 +5,11 @@ import { BaseTest } from "test/foundry/utils/BaseTest.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
+import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
+import { MockLicensingModule } from "test/foundry/mocks/licensing/MockLicensingModule.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
+import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { MockMetadataProviderV2 } from "test/foundry/mocks/MockMetadataProviderV2.sol";
@@ -109,6 +112,7 @@ contract MetadataProviderTest is BaseTest {
         Governance governance = new Governance(address(this));
         AccessController accessController = new AccessController(address(governance));
         ModuleRegistry moduleRegistry = new ModuleRegistry(address(governance));
+        MockLicensingModule licensingModule = new MockLicensingModule();
 
         ERC6551Registry erc6551Registry = new ERC6551Registry();
         IPAccountImpl ipAccountImpl = new IPAccountImpl();
@@ -118,13 +122,30 @@ contract MetadataProviderTest is BaseTest {
             address(ipAccountImpl)
         );
         vm.prank(bob);
-        registry = new IPAssetRegistry(address(accessController), address(erc6551Registry), address(ipAccountImpl));
+        registry = new IPAssetRegistry(
+            address(accessController),
+            address(erc6551Registry),
+            address(ipAccountImpl),
+            address(licensingModule)
+        );
+        RoyaltyModule royaltyModule = new RoyaltyModule(address(governance));
 
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
         MockERC721 erc721 = new MockERC721("MockERC721");
         uint256 tokenId = erc721.mintId(alice, 99);
-        IPResolver resolver = new IPResolver(address(accessController), address(registry));
-        ipId = registry.register(block.chainid, address(erc721), tokenId, address(resolver), true, v1Metadata);
+        IPResolver resolver = new IPResolver(
+            address(accessController),
+            address(registry)
+        );
+        vm.prank(alice);
+        ipId = registry.register(
+            block.chainid,
+            address(erc721),
+            tokenId,
+            address(resolver),
+            true,
+            v1Metadata
+        );
 
         metadataProvider = MetadataProviderV1(registry.metadataProvider());
         upgradedProvider = new MockMetadataProviderV2(address(registry));

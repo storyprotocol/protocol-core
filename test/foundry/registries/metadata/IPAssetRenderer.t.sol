@@ -94,7 +94,8 @@ contract IPAssetRendererTest is BaseTest {
         ipAssetRegistry = new IPAssetRegistry(
             address(accessController),
             address(erc6551Registry),
-            address(ipAccountImpl)
+            address(ipAccountImpl),
+            address(moduleRegistry)
         );
         RoyaltyModule royaltyModule = new RoyaltyModule(address(governance));
         licenseRegistry = new LicenseRegistry();
@@ -132,8 +133,15 @@ contract IPAssetRendererTest is BaseTest {
                 uri: IP_EXTERNAL_URL
             })
         );
-        vm.prank(address(registrationModule));
-        ipId = ipAssetRegistry.register(block.chainid, address(erc721), tokenId, address(resolver), true, metadata);
+        vm.prank(alice);
+        ipId = ipAssetRegistry.register(
+            block.chainid,
+            address(erc721),
+            tokenId,
+            address(resolver),
+            true,
+            metadata
+        );
     }
 
     /// @notice Tests that the constructor works as expected.

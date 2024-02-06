@@ -97,6 +97,7 @@ contract BaseIntegration is Test {
         _deployContracts();
         _configDeployedContracts();
         _mintMockAssets();
+        _approveRegistration();
         _configAccessControl();
     }
 
@@ -121,7 +122,8 @@ contract BaseIntegration is Test {
         ipAssetRegistry = new IPAssetRegistry(
             address(accessController),
             address(erc6551Registry),
-            address(ipAccountImpl)
+            address(ipAccountImpl),
+            address(moduleRegistry)
         );
         licenseRegistry = new LicenseRegistry();
         licensingModule = new LicensingModule(
@@ -190,6 +192,17 @@ contract BaseIntegration is Test {
         erc20 = new MockERC20();
         erc721 = MockERC721s({ ape: new MockERC721("Ape"), cat: new MockERC721("Cat"), dog: new MockERC721("Dog") });
         USDC = new MockUSDC();
+    }
+
+    function _approveRegistration() internal {
+        vm.prank(u.alice);
+        ipAssetRegistry.setApprovalForAll(address(registrationModule), true);
+        vm.prank(u.bob);
+        ipAssetRegistry.setApprovalForAll(address(registrationModule), true);
+        vm.prank(u.carl);
+        ipAssetRegistry.setApprovalForAll(address(registrationModule), true);
+        vm.prank(u.dan);
+        ipAssetRegistry.setApprovalForAll(address(registrationModule), true);
     }
 
     function _mintMockAssets() internal {

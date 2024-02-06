@@ -15,6 +15,7 @@ interface IIPAssetRegistry is IIPAccountRegistry {
     /// @param resolver The address of the resolver linked to the IP.
     /// @param provider The address of the metadata provider linked to the IP.
     /// @param metadata Canonical metadata that was linked to the IP.
+    /// TODO: Add support for optional licenseIds.
     event IPRegistered(
         address ipId,
         uint256 indexed chainId,
@@ -29,6 +30,16 @@ interface IIPAssetRegistry is IIPAccountRegistry {
     /// @param ipId The canonical identifier of the specified IP.
     /// @param resolver The address of the new resolver bound to the IP.
     event IPResolverSet(address ipId, address resolver);
+
+    /// @notice Emits when an operator is approved for IP registration for an NFT owner.
+    /// @param owner The address of the IP owner.
+    /// @param operator The address of the operator the owneris authorizing.
+    /// @param approved Whether or not to approve that operator for registration.
+    event ApprovalForAll(
+        address indexed owner,
+        address indexed operator,
+        bool approved
+    );
 
     /// @notice Emits when metadata is set for an IP asset.
     /// @param ipId The canonical identifier of the specified IP.
@@ -47,7 +58,6 @@ interface IIPAssetRegistry is IIPAccountRegistry {
     function setMetadataProvider(address metadataProvider) external;
 
     /// @notice Registers an NFT as IP, creating a corresponding IP record.
-    /// @dev This is only callable by an authorized registration module.
     /// @param chainId The chain identifier of where the IP resides.
     /// @param tokenContract The address of the IP.
     /// @param tokenId The token identifier of the IP.
@@ -75,6 +85,12 @@ interface IIPAssetRegistry is IIPAccountRegistry {
     /// @param tokenId The token identifier of the IP.
     /// @return The address of the associated IP account.
     function ipId(uint256 chainId, address tokenContract, uint256 tokenId) external view returns (address);
+
+    /// @notice Checks whether an operator is approved to register on behalf of an IP owner.
+    /// @param owner The address of the IP owner whose approval is being checked for.
+    /// @param operator The address of the operator the owner has approved for registration delgation.
+    /// @return Whether the operator is approved on behalf of the owner for registering.
+    function isApprovedForAll(address owner, address operator) external view returns (bool);
 
     /// @notice Checks whether an IP was registered based on its ID.
     /// @param id The canonical identifier for the IP.
