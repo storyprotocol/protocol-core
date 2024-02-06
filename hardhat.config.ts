@@ -14,22 +14,26 @@ import "hardhat-contract-sizer" // npx hardhat size-contracts
 
 require("dotenv").config()
 
-tdly.setup({
-  automaticVerifications: true,
-})
-
 //
 // NOTE:
 // To load the correct .env, you must run this at the root folder (where hardhat.config is located)
 //
 const MAINNET_URL = process.env.MAINNET_URL || "https://eth-mainnet"
 const MAINNET_PRIVATEKEY = process.env.MAINNET_PRIVATEKEY || "0xkey"
-const GOERLI_URL = process.env.GOERLI_URL || "https://eth-goerli"
-const GOERLI_PRIVATEKEY = process.env.GOERLI_PRIVATEKEY || "0xkey"
+const SEPOLIA_URL = process.env.SEPOLIA_URL || "https://eth-sepolia"
+const SEPOLIA_PRIVATEKEY = process.env.SEPOLIA_PRIVATEKEY || "0xkey"
+const TENDERLY_URL = process.env.TENDERLY_URL || "https://eth-tenderly"
+const TENDERLY_PRIVATEKEY = process.env.TENDERLY_PRIVATEKEY || "0xkey"
+const USE_TENDERLY = process.env.USE_TENDERLY === "true"
 
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "key"
-
 const COINMARKETCAP_API_KEY = process.env.COINMARKETCAP_API_KEY || "key"
+
+if (USE_TENDERLY) {
+  tdly.setup({
+    automaticVerifications: true,
+  })
+}
 
 /** @type import('hardhat/config').HardhatUserConfig */
 const config: HardhatUserConfig = {
@@ -61,16 +65,24 @@ const config: HardhatUserConfig = {
       chainId: 31337,
       url: "http://127.0.0.1:8545/",
     },
-    tenderly: {
-      url: MAINNET_URL || "",
+    mainnet: {
       chainId: 1,
+      url: MAINNET_URL || "",
       accounts: [MAINNET_PRIVATEKEY],
     },
-    goerli: {
-      chainId: 5,
-      url: GOERLI_URL || "",
-      accounts: [GOERLI_PRIVATEKEY],
-    },
+    ...(USE_TENDERLY? ({
+      tenderly: {
+        chainId: 11155111,
+        url: TENDERLY_URL || "",
+        accounts: [TENDERLY_PRIVATEKEY],
+      }
+    }) : ({
+      sepolia: {
+        chainId: 11155111,
+        url: SEPOLIA_URL || "",
+        accounts: [SEPOLIA_PRIVATEKEY],
+      }
+    })),
   },
   // @ts-ignore
   namedAccounts: {
@@ -91,12 +103,14 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: ETHERSCAN_API_KEY,
   },
-  tenderly: {
-    project: process.env.TENDERLY_PROJECT_SLUG || "",
-    username: process.env.TENDERLY_USERNAME || "",
-    forkNetwork: 1, // fork mainnet
-    privateVerification: process.env.TENDERLY_PRIVATE_VERIFICATION === "true",
-  },
+  ...(USE_TENDERLY? ({
+    tenderly: {
+      project: process.env.TENDERLY_PROJECT_SLUG || "",
+      username: process.env.TENDERLY_USERNAME || "",
+      forkNetwork: 1, // fork mainnet
+      privateVerification: process.env.TENDERLY_PRIVATE_VERIFICATION === "true",
+    },
+  }) : ({})),
   typechain: {
     outDir: "typechain",
     target: "ethers-v6",

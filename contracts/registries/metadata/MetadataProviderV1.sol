@@ -54,9 +54,9 @@ contract MetadataProviderV1 is MetadataProviderBase {
         if (decodedMetadata.hash == "") {
             revert Errors.MetadataProvider__HashInvalid();
         }
-        if (decodedMetadata.registrationDate != uint64(block.timestamp)) {
-            revert Errors.MetadataProvider__RegistrationDateInvalid();
-        }
+        // if (decodedMetadata.registrationDate != uint64(block.timestamp)) {
+        //     revert Errors.MetadataProvider__RegistrationDateInvalid();
+        // }
         if (decodedMetadata.registrant == address(0)) {
             revert Errors.MetadataProvider__RegistrantInvalid();
         }
