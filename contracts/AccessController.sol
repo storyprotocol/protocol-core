@@ -46,7 +46,7 @@ contract AccessController is IAccessController, Governable {
 
     /// @inheritdoc IAccessController
     function setBatchPermissions(AccessPermission.Permission[] memory permissions) external whenNotPaused {
-        for (uint256 i = 0; i < permissions.length; ) {
+        for (uint256 i = 0; i < permissions.length;) {
             setPermission(
                 permissions[i].ipAccount,
                 permissions[i].signer,
@@ -54,9 +54,7 @@ contract AccessController is IAccessController, Governable {
                 permissions[i].func,
                 permissions[i].permission
             );
-            unchecked {
-                i += 1;
-            }
+            unchecked { i += 1; }
         }
     }
 
