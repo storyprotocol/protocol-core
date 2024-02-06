@@ -10,15 +10,16 @@ import { ShortStringOps } from "../../utils/ShortStringOps.sol";
 import { Errors } from "../../lib/Errors.sol";
 import { IModule } from "../../interfaces/modules/base/IModule.sol";
 import { ITaggingModule } from "../../interfaces/modules/ITaggingModule.sol";
+import { TAGGING_MODULE_KEY } from "../../lib/modules/Module.sol";
 
-contract TaggingModule is IModule, ITaggingModule {
+contract TaggingModule is ITaggingModule {
     using ShortStrings for *;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.AddressSet;
 
     uint256 constant MAX_TAG_PERMISSIONS_AT_ONCE = 300;
 
-    string public name = "TaggingModule";
+    string public constant override name = TAGGING_MODULE_KEY;
 
     mapping(address => EnumerableSet.Bytes32Set) private _tagsForIpIds;
 

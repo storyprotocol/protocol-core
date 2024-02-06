@@ -27,7 +27,7 @@ contract TestArbitrationPolicySP is TestHelper {
 
         vm.startPrank(u.admin);
         // whitelist dispute tag
-        disputeModule.whitelistDisputeTags("PLAGIARISM", true);
+        disputeModule.whitelistDisputeTag("PLAGIARISM", true);
 
         // whitelist arbitration policy
         disputeModule.whitelistArbitrationPolicy(address(arbitrationPolicySP), true);

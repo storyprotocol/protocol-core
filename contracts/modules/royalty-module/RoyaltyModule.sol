@@ -7,11 +7,15 @@ import { Governable } from "../../governance/Governable.sol";
 import { IRoyaltyModule } from "../../interfaces/modules/royalty/IRoyaltyModule.sol";
 import { IRoyaltyPolicy } from "../../interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
 import { Errors } from "../../lib/Errors.sol";
+import { ROYALTY_MODULE_KEY } from "../../lib/modules/Module.sol";
 
 /// @title Story Protocol Royalty Module
 /// @notice The Story Protocol royalty module allows to set royalty policies an ipId
 ///         and pay royalties as a derivative ip.
 contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
+
+    string public constant override name = ROYALTY_MODULE_KEY;
+
     /// @notice Licensing module address
     address public LICENSING_MODULE;
 

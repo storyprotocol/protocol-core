@@ -21,7 +21,7 @@ interface IDisputeModule {
 
     /// @notice Event emitted when the base arbitration policy is set
     /// @param arbitrationPolicy The address of the arbitration policy
-    event DefaultArbitrationPolicySet(address arbitrationPolicy);
+    event DefaultArbitrationPolicyUpdated(address arbitrationPolicy);
     
     /// @notice Event emitted when an arbitration policy is set for an ipId
     /// @param ipId The ipId address
@@ -64,7 +64,7 @@ interface IDisputeModule {
     /// @notice Whitelists a dispute tag
     /// @param tag The dispute tag
     /// @param allowed Indicates if the dispute tag is whitelisted or not
-    function whitelistDisputeTags(bytes32 tag, bool allowed) external;
+    function whitelistDisputeTag(bytes32 tag, bool allowed) external;
 
     /// @notice Whitelists an arbitration policy
     /// @param arbitrationPolicy The address of the arbitration policy

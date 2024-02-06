@@ -32,7 +32,7 @@ contract TestDisputeModule is TestHelper {
     event DisputeJudgementSet(uint256 disputeId, bool decision, bytes data);
     event DisputeCancelled(uint256 disputeId, bytes data);
     event DisputeResolved(uint256 disputeId);
-    event DefaultArbitrationPolicySet(address arbitrationPolicy);
+    event DefaultArbitrationPolicyUpdated(address arbitrationPolicy);
     event ArbitrationPolicySet(address ipId, address arbitrationPolicy);
 
     address public ipAddr;
@@ -44,7 +44,7 @@ contract TestDisputeModule is TestHelper {
 
         vm.startPrank(u.admin);
         // whitelist dispute tag
-        disputeModule.whitelistDisputeTags("PLAGIARISM", true);
+        disputeModule.whitelistDisputeTag("PLAGIARISM", true);
 
         // whitelist arbitration policy
         disputeModule.whitelistArbitrationPolicy(address(arbitrationPolicySP), true);
@@ -120,18 +120,18 @@ contract TestDisputeModule is TestHelper {
         vm.stopPrank();
     }
 
-    function test_DisputeModule_whitelistDisputeTags_revert_ZeroDisputeTag() public {
+    function test_DisputeModule_whitelistDisputeTag_revert_ZeroDisputeTag() public {
         vm.startPrank(u.admin);
         vm.expectRevert(Errors.DisputeModule__ZeroDisputeTag.selector);
-        disputeModule.whitelistDisputeTags(bytes32(0), true);
+        disputeModule.whitelistDisputeTag(bytes32(0), true);
     }
 
-    function test_DisputeModule_whitelistDisputeTags() public {
+    function test_DisputeModule_whitelistDisputeTag() public {
         vm.startPrank(u.admin);
         vm.expectEmit(true, true, true, true, address(disputeModule));
         emit TagWhitelistUpdated(bytes32("INAPPROPRIATE_CONTENT"), true);
 
-        disputeModule.whitelistDisputeTags("INAPPROPRIATE_CONTENT", true);
+        disputeModule.whitelistDisputeTag("INAPPROPRIATE_CONTENT", true);
         assertEq(disputeModule.isWhitelistedDisputeTag("INAPPROPRIATE_CONTENT"), true);
     }
 
@@ -183,7 +183,7 @@ contract TestDisputeModule is TestHelper {
     function test_DisputeModule_setBaseArbitrationPolicy() public {
         vm.startPrank(u.admin);
         vm.expectEmit(true, true, true, true, address(disputeModule));
-        emit DefaultArbitrationPolicySet(address(arbitrationPolicySP2));
+        emit DefaultArbitrationPolicyUpdated(address(arbitrationPolicySP2));
 
         disputeModule.setBaseArbitrationPolicy(address(arbitrationPolicySP2));
 

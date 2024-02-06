@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
+import { IModule } from "../../modules/base/IModule.sol";
+
 /// @title RoyaltyModule interface
-interface IRoyaltyModule {
+interface IRoyaltyModule is IModule {
     /// @notice Event emitted when a royalty policy is whitelisted
     /// @param royaltyPolicy The address of the royalty policy
     /// @param allowed Indicates if the royalty policy is whitelisted or not
