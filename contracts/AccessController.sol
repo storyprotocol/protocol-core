@@ -44,6 +44,22 @@ contract AccessController is IAccessController, Governable {
         MODULE_REGISTRY = moduleRegistry;
     }
 
+    /// @inheritdoc IAccessController
+    function setBatchPermissions(AccessPermission.Permission[] memory permissions) external whenNotPaused {
+        for (uint256 i = 0; i < permissions.length; ) {
+            setPermission(
+                permissions[i].ipAccount,
+                permissions[i].signer,
+                permissions[i].to,
+                permissions[i].func,
+                permissions[i].permission
+            );
+            unchecked {
+                i += 1;
+            }
+        }
+    }
+
     /// @notice Sets the permission for all IPAccounts
     function setGlobalPermission(
         address signer_,
@@ -80,7 +96,7 @@ contract AccessController is IAccessController, Governable {
         address to_,
         bytes4 func_,
         uint8 permission_
-    ) external whenNotPaused {
+    ) public whenNotPaused {
         // IPAccount and signer does not support wildcard permission
         if (ipAccount_ == address(0)) {
             revert Errors.AccessController__IPAccountIsZeroAddress();

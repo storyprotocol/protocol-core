@@ -15,4 +15,18 @@ library AccessPermission {
 
     // DENY means the permission is denied to transaction signer to call the function.
     uint8 public constant DENY = 2;
+
+    /// @notice This struct is used to represent permissions in batch operations within the AccessController.
+    /// @param ipAccount The IPAccount address for which the permission is being set.
+    /// @param signer The address of the signer of the transaction.
+    /// @param to The address of the recipient of the transaction.
+    /// @param func The function selector for the transaction.
+    /// @param permission The permission level for the transaction (0 = ABSTAIN, 1 = ALLOW, 2 = DENY).
+    struct Permission {
+        address ipAccount;
+        address signer;
+        address to;
+        bytes4 func;
+        uint8 permission;
+    }
 }

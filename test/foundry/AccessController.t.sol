@@ -929,4 +929,376 @@ contract AccessControllerTest is Test {
         vm.prank(owner);
         mockOrchestratorModule.workflowPass(payable(address(ipAccount)));
     }
+
+    function test_AccessController_revert_setGlobalPermissionWithInvalidPermission() public {
+        vm.expectRevert(Errors.AccessController__PermissionIsNotValid.selector);
+        accessController.setGlobalPermission(
+            address(mockModule),
+            address(mockModule),
+            mockModule.executeNoReturn.selector,
+            3
+        );
+
+    }
+
+    function test_AccessController_revert_setGlobalPermissionWithZeroSignerAddress() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__SignerIsZeroAddress.selector
+            )
+        );
+        accessController.setGlobalPermission(
+            address(0),
+            address(mockModule),
+            mockModule.executeNoReturn.selector,
+            AccessPermission.ALLOW
+        );
+
+    }
+
+    function test_AccessController_ipAccountOwnerSetBatchPermissions() public {
+        moduleRegistry.registerModule("MockModule", address(mockModule));
+        address signer = vm.addr(2);
+
+        AccessPermission.Permission[] memory permissionList = new AccessPermission.Permission[](3);
+        permissionList[0] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: signer,
+            to: address(mockModule),
+            func: mockModule.executeSuccessfully.selector,
+            permission: AccessPermission.ALLOW
+        });
+        permissionList[1] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: signer,
+            to: address(mockModule),
+            func: mockModule.executeNoReturn.selector,
+            permission: AccessPermission.DENY
+        });
+        permissionList[2] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: signer,
+            to: address(mockModule),
+            func: mockModule.executeRevert.selector,
+            permission: AccessPermission.ALLOW
+        });
+
+        vm.prank(owner);
+        ipAccount.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
+                permissionList
+            )
+        );
+        assertEq(
+            accessController.getPermission(
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeSuccessfully.selector
+            ),
+            AccessPermission.ALLOW
+        );
+
+        assertEq(
+            accessController.getPermission(
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeNoReturn.selector
+            ),
+            AccessPermission.DENY
+        );
+
+        assertEq(
+            accessController.getPermission(
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeRevert.selector
+            ),
+            AccessPermission.ALLOW
+        );
+
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
+        );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeNoReturn.selector
+            )
+        );
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeNoReturn.selector
+        );
+
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeRevert.selector
+        );
+    }
+
+
+    function test_AccessController_revert_NonIpAccountOwnerSetBatchPermissions() public {
+        moduleRegistry.registerModule("MockModule", address(mockModule));
+        address signer = vm.addr(2);
+
+        AccessPermission.Permission[] memory permissionList = new AccessPermission.Permission[](3);
+        permissionList[0] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: signer,
+            to: address(mockModule),
+            func: mockModule.executeSuccessfully.selector,
+            permission: AccessPermission.ALLOW
+        });
+        permissionList[1] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: signer,
+            to: address(mockModule),
+            func: mockModule.executeNoReturn.selector,
+            permission: AccessPermission.DENY
+        });
+        permissionList[2] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: signer,
+            to: address(mockModule),
+            func: mockModule.executeRevert.selector,
+            permission: AccessPermission.ALLOW
+        });
+
+        address nonOwner = vm.addr(3);
+        vm.prank(nonOwner);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
+                address(ipAccount),
+                nonOwner,
+                address(accessController),
+                accessController.setBatchPermissions.selector
+            )
+        );
+        ipAccount.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
+                permissionList
+            )
+        );
+    }
+
+    function test_AccessController_revert_setBatchPermissionsWithZeroIPAccountAddress() public {
+        moduleRegistry.registerModule("MockModule", address(mockModule));
+        address signer = vm.addr(2);
+
+        AccessPermission.Permission[] memory permissionList = new AccessPermission.Permission[](3);
+        permissionList[0] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: signer,
+            to: address(mockModule),
+            func: mockModule.executeSuccessfully.selector,
+            permission: AccessPermission.ALLOW
+        });
+        permissionList[1] = AccessPermission.Permission({
+            ipAccount: address(0),
+            signer: signer,
+            to: address(mockModule),
+            func: mockModule.executeNoReturn.selector,
+            permission: AccessPermission.DENY
+        });
+        permissionList[2] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: signer,
+            to: address(mockModule),
+            func: mockModule.executeRevert.selector,
+            permission: AccessPermission.ALLOW
+        });
+
+        vm.prank(owner);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__IPAccountIsZeroAddress.selector
+            )
+        );
+        ipAccount.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
+                permissionList
+            )
+        );
+    }
+
+    function test_AccessController_revert_setBatchPermissionsWithZeroSignerAddress() public {
+        moduleRegistry.registerModule("MockModule", address(mockModule));
+        address signer = vm.addr(2);
+
+        AccessPermission.Permission[] memory permissionList = new AccessPermission.Permission[](3);
+        permissionList[0] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: signer,
+            to: address(mockModule),
+            func: mockModule.executeSuccessfully.selector,
+            permission: AccessPermission.ALLOW
+        });
+        permissionList[1] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: address(0),
+            to: address(mockModule),
+            func: mockModule.executeNoReturn.selector,
+            permission: AccessPermission.DENY
+        });
+        permissionList[2] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: signer,
+            to: address(mockModule),
+            func: mockModule.executeRevert.selector,
+            permission: AccessPermission.ALLOW
+        });
+
+        vm.prank(owner);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__SignerIsZeroAddress.selector
+            )
+        );
+        ipAccount.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
+                permissionList
+            )
+        );
+    }
+
+    function test_AccessController_revert_setBatchPermissionsWithInvalidIPAccount() public {
+        moduleRegistry.registerModule("MockModule", address(mockModule));
+        address signer = vm.addr(2);
+
+        AccessPermission.Permission[] memory permissionList = new AccessPermission.Permission[](3);
+        permissionList[0] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: signer,
+            to: address(mockModule),
+            func: mockModule.executeSuccessfully.selector,
+            permission: AccessPermission.ALLOW
+        });
+        // invalid ipaccount address
+        permissionList[1] = AccessPermission.Permission({
+            ipAccount: address(0xbeefbeef),
+            signer: address(signer),
+            to: address(mockModule),
+            func: mockModule.executeNoReturn.selector,
+            permission: AccessPermission.DENY
+        });
+        permissionList[2] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: signer,
+            to: address(mockModule),
+            func: mockModule.executeRevert.selector,
+            permission: AccessPermission.ALLOW
+        });
+
+        vm.prank(owner);
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.AccessController__IPAccountIsNotValid.selector, address(0xbeefbeef))
+        );
+        ipAccount.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
+                permissionList
+            )
+        );
+    }
+
+    function test_AccessController_revert_setBatchPermissionsWithInvalidPermission() public {
+        moduleRegistry.registerModule("MockModule", address(mockModule));
+        address signer = vm.addr(2);
+
+        AccessPermission.Permission[] memory permissionList = new AccessPermission.Permission[](3);
+        permissionList[0] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: signer,
+            to: address(mockModule),
+            func: mockModule.executeSuccessfully.selector,
+            permission: AccessPermission.ALLOW
+        });
+        // invalid ipaccount address
+        permissionList[1] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: address(signer),
+            to: address(mockModule),
+            func: mockModule.executeNoReturn.selector,
+            permission: 3
+        });
+        permissionList[2] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: signer,
+            to: address(mockModule),
+            func: mockModule.executeRevert.selector,
+            permission: AccessPermission.ALLOW
+        });
+
+        vm.prank(owner);
+        vm.expectRevert(Errors.AccessController__PermissionIsNotValid.selector);
+        ipAccount.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
+                permissionList
+            )
+        );
+    }
+
+    function test_AccessController_revert_setBatchPermissionsButCallerisNotIPAccount() public {
+        moduleRegistry.registerModule("MockModule", address(mockModule));
+        address signer = vm.addr(2);
+
+        AccessPermission.Permission[] memory permissionList = new AccessPermission.Permission[](3);
+        permissionList[0] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: signer,
+            to: address(mockModule),
+            func: mockModule.executeSuccessfully.selector,
+            permission: AccessPermission.ALLOW
+        });
+        // invalid ipaccount address
+        permissionList[1] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: address(signer),
+            to: address(mockModule),
+            func: mockModule.executeNoReturn.selector,
+            permission: 3
+        });
+        permissionList[2] = AccessPermission.Permission({
+            ipAccount: address(ipAccount),
+            signer: signer,
+            to: address(mockModule),
+            func: mockModule.executeRevert.selector,
+            permission: AccessPermission.ALLOW
+        });
+
+        vm.expectRevert(Errors.AccessController__CallerIsNotIPAccount.selector);
+        accessController.setBatchPermissions(permissionList);
+    }
 }
