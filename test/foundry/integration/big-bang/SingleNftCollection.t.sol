@@ -225,6 +225,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             uint256 aliceTokenBalance = erc20.balanceOf(u.alice);
             uint256 pfmTokenBalance = erc20.balanceOf(pfm["mint_payment"].addr);
 
+            mockRoyaltyPolicyLS.setMinRoyalty(ipAcct[3], 0);
+
             uint256[] memory alice_license_from_root_bob = new uint256[](1);
             alice_license_from_root_bob[0] = licensingModule.mintLicense(
                 policyIds["mint_payment_normal"],
@@ -312,7 +314,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             );
 
             // This should revert since license[0] is commercial but license[1] is non-commercial
-            vm.expectRevert(Errors.LicenseRegistry__IncompatibleLicensorRoyaltyPolicy.selector);
+            vm.expectRevert(Errors.LicensingModule__IncompatibleLicensorRoyaltyPolicy.selector);
             // Call `registrationModule.registerDerivativeIps` directly because expecting revert on the 
             // wrapper `registerDerivativeIps` fails due to the implementation of the wrapper function.
             registrationModule.registerDerivativeIp(

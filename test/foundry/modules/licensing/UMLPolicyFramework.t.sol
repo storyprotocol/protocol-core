@@ -245,7 +245,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
 
-        vm.expectRevert(Errors.LicenseRegistry__LinkParentParamFailed.selector);
+        vm.expectRevert(Errors.LicensingModule__LinkParentParamFailed.selector);
         vm.prank(ipOwner);
         licensingModule.linkIpToParents(licenseIds, ipId2, licenseHolder, 0);
     }

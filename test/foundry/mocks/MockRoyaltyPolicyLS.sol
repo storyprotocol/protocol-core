@@ -20,6 +20,8 @@ contract MockRoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
 
     mapping(address ipId => LSRoyaltyData) public royaltyData;
 
+    mapping(address ipId => uint32 minRoyalty) public minRoyalty;
+
     /// @notice Restricts the calls to the royalty module
     modifier onlyRoyaltyModule() {
         if (msg.sender != ROYALTY_MODULE) revert Errors.RoyaltyPolicyLS__NotRoyaltyModule();
@@ -47,6 +49,14 @@ contract MockRoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
         address _token,
         uint256 _amount
     ) external onlyRoyaltyModule {}
+
+    function minRoyaltyFromDescendants(address _ipId) external view returns (uint32) {
+        return minRoyalty[_ipId];
+    }
+
+    function setMinRoyalty(address _ipId, uint32 _minRoyalty) external {
+        minRoyalty[_ipId] = _minRoyalty;
+    }
 
     function distributeFunds(
         address _ipId,

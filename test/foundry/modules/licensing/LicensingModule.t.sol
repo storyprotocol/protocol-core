@@ -134,14 +134,14 @@ contract LicensingModuleTest is Test {
         licensingModule.registerPolicyFrameworkManager(address(module1));
         vm.startPrank(address(module1));
         licensingModule.registerPolicy(true, _createPolicy());
-        vm.expectRevert(Errors.LicenseRegistry__PolicyAlreadyAdded.selector);
+        vm.expectRevert(Errors.LicensingModule__PolicyAlreadyAdded.selector);
         licensingModule.registerPolicy(true, _createPolicy());
         vm.stopPrank();
     }
 
     function test_LicensingModule_registerPolicy_revert_frameworkNotFound() public {
         bytes memory policy = _createPolicy();
-        vm.expectRevert(Errors.LicenseRegistry__FrameworkNotFound.selector);
+        vm.expectRevert(Errors.LicensingModule__FrameworkNotFound.selector);
         vm.prank(address(module1));
         licensingModule.registerPolicy(true, policy);
     }
@@ -251,7 +251,7 @@ contract LicensingModuleTest is Test {
         vm.prank(ipOwner);
         licensingModule.addPolicyToIp(ipId1, policyId);
 
-        vm.expectRevert(Errors.LicenseRegistry__LicensorNotRegistered.selector);
+        vm.expectRevert(Errors.LicensingModule__LicensorNotRegistered.selector);
         licensingModule.mintLicense(policyId, address(0), 2, licenseHolder);
     }
 
@@ -265,7 +265,7 @@ contract LicensingModuleTest is Test {
         uint256 policyId = licensingModule.registerPolicy(true, policy);
 
         // Anyone (this contract, in this case) calls
-        vm.expectRevert(Errors.LicenseRegistry__CallerNotLicensorAndPolicyNotSet.selector);
+        vm.expectRevert(Errors.LicensingModule__CallerNotLicensorAndPolicyNotSet.selector);
         licensingModule.mintLicense(policyId, ipId1, 2, licenseHolder);
 
         // Anyone, but call with permission (still fails)
@@ -285,7 +285,7 @@ contract LicensingModuleTest is Test {
             )
         );
 
-        vm.expectRevert(Errors.LicenseRegistry__CallerNotLicensorAndPolicyNotSet.selector);
+        vm.expectRevert(Errors.LicensingModule__CallerNotLicensorAndPolicyNotSet.selector);
         vm.prank(signer);
         licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder);
     }
