@@ -10,12 +10,12 @@ export interface networkConfigInfo {
 }
 
 export const networkConfig: networkConfigInfo = {
-    5: {
-        name: "goerli",
-        blockConfirmations: 6,
-    },
     31337: {
         name: "hardhat",
+    },
+    11155111: {
+        name: "sepolia",
+        blockConfirmations: 6,
     },
 }
 

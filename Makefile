@@ -1,6 +1,6 @@
 -include .env
 
-.PHONY: all test clean coverage typechain deploy-main
+.PHONY: all test clean coverage typechain format abi
 
 all: clean install build
 
@@ -19,7 +19,7 @@ clean :; npx hardhat clean
 # Remove modules
 forge-remove :; rm -rf .gitmodules && rm -rf .git/modules/* && rm -rf lib && touch .gitmodules && git add . && git commit -m "modules"
 
-install :; npm install
+install :; yarn install
 
 # Update Dependencies
 forge-update :; forge update
@@ -37,9 +37,6 @@ slither :; slither ./contracts
 format:
 	npx prettier --write contracts/*.sol
 	npx prettier --write contracts/**/*.sol
-	npx prettier --write contracts/**/**/*.sol
-	npx prettier --write contracts/**/**/**/*.sol
-	npx prettier --write contracts/**/**/**/**/*.sol
 
 # generate forge coverage on pinned mainnet fork
 # process lcov file, ignore test, script, and contracts/mocks folders
@@ -53,19 +50,26 @@ coverage:
 abi:
 	mkdir -p abi
 	@$(call generate_abi,"AccessController",".")
+	@$(call generate_abi,"IPAccountImpl",".")
+	@$(call generate_abi,"Governance","./governance")
 	@$(call generate_abi,"DisputeModule","./modules/dispute-module")
+	@$(call generate_abi,"ArbitrationPolicySP","./modules/dispute-module/policies")
+	@$(call generate_abi,"LicensingModule","./modules/licensing")
+	@$(call generate_abi,"UMLPolicyFrameworkManager","./modules/licensing")
 	@$(call generate_abi,"RoyaltyModule","./modules/royalty-module")
+	@$(call generate_abi,"LSClaimer","./modules/royalty-module/policies")
+	@$(call generate_abi,"RoyaltyPolicyLS","./modules/royalty-module/policies")
 	@$(call generate_abi,"TaggingModule","./modules/tagging")
+	@$(call generate_abi,"RegistrationModule","./modules")
+	@$(call generate_abi,"IPAssetRenderer","./registries/metadata")
+	@$(call generate_abi,"IPMetadataProvider","./registries/metadata")
+	@$(call generate_abi,"MetadataProviderV1","./registries/metadata")
 	@$(call generate_abi,"IPAccountRegistry","./registries")
-	@$(call generate_abi,"IPRecordRegistry","./registries")
+	@$(call generate_abi,"IPAssetRegistry","./registries")
 	@$(call generate_abi,"LicenseRegistry","./registries")
-	@$(call generate_abi,"ModuleRegistry","./registries")
-	@$(call generate_abi,"IPMetadataResolver","./resolvers")
+	@$(call generate_abi,"IPResolver","./resolvers")
+	@$(call generate_abi,"KeyValueResolver","./resolvers")
 
-# typechain:
-# 	make abi
-# 	rm -rf ./types-typechain
-# 	npx typechain --target ethers-v6 ./abi/*.json --out-dir ./types-typechain
 typechain :; npx hardhat typechain
 
 # solhint should be installed globally
@@ -76,13 +80,3 @@ verify-goerli :; npx hardhat verify --network goerli ${contract}
 
 anvil :; anvil -m 'test test test test test test test test test test test junk'
 
-# run: RPC_URL=https://rpc.url make deploy-main
-deploy-main :; forge script script/foundry/deployment/Main.s.sol:Main --rpc-url ${RPC_URL} --broadcast --verify -vvvv
-
-deploy-main-hh:
-	npx hardhat run script/hardhat/deployment/00-deploy-main.ts --network ${NETWORK}
-
-deploy-tenderly:
-	rm -rf deployments/hardhat/*.json
-	npx hardhat run script/hardhat/post-deployment/99-revert-chain.ts --network tenderly
-	npx hardhat run script/hardhat/deployment/00-deploy-main.ts --network tenderly
