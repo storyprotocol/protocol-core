@@ -66,7 +66,7 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
     /// @notice Whitelists a dispute tag
     /// @param _tag The dispute tag
     /// @param _allowed Indicates if the dispute tag is whitelisted or not
-    function whitelistDisputeTags(bytes32 _tag, bool _allowed) external onlyProtocolAdmin {
+    function whitelistDisputeTag(bytes32 _tag, bool _allowed) external onlyProtocolAdmin {
         if (_tag == bytes32(0)) revert Errors.DisputeModule__ZeroDisputeTag();
 
         isWhitelistedDisputeTag[_tag] = _allowed;
@@ -108,7 +108,7 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
 
         baseArbitrationPolicy = _arbitrationPolicy;
 
-        emit DefaultArbitrationPolicySet(_arbitrationPolicy);
+        emit DefaultArbitrationPolicyUpdated(_arbitrationPolicy);
     }
 
     /// @notice Sets the arbitration policy for an ipId

@@ -17,6 +17,7 @@ import { Licensing } from "../../lib/Licensing.sol";
 import { IPAccountChecker } from "../../lib/registries/IPAccountChecker.sol";
 import { RoyaltyModule } from "../../modules/royalty-module/RoyaltyModule.sol";
 import { AccessControlled } from "../../access/AccessControlled.sol";
+import { LICENSING_MODULE_KEY } from "../../lib/modules/Module.sol";
 
 // TODO: consider disabling operators/approvals on creation
 contract LicensingModule is AccessControlled, ILicensingModule {
@@ -36,6 +37,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
     RoyaltyModule public immutable ROYALTY_MODULE;
     ILicenseRegistry public immutable LICENSE_REGISTRY;
 
+    string public constant override name = LICENSING_MODULE_KEY;
     mapping(address framework => bool registered) private _registeredFrameworkManagers;
     mapping(bytes32 policyHash => uint256 policyId) private _hashedPolicies;
     mapping(uint256 policyId => Licensing.Policy policyData) private _policies;
@@ -377,10 +379,6 @@ contract LicensingModule is AccessControlled, ILicensingModule {
     /// @notice True if the framework address is registered in LicenseRegistry
     function isFrameworkRegistered(address policyFramework) external view returns (bool) {
         return _registeredFrameworkManagers[policyFramework];
-    }
-
-    function name() external pure returns (string memory) {
-        return "LICENSING_MODULE";
     }
 
     /// Returns amount of distinct licensing policies in LicenseRegistry

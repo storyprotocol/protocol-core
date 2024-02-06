@@ -2,6 +2,7 @@
 pragma solidity ^0.8.23;
 
 import { Licensing } from "../../../lib/Licensing.sol";
+import { IModule } from "../../modules/base/IModule.sol";
 
 /// @title ILicensingModule
 /// @notice Interface for the LicensingModule contract, which is the main entry point for the licensing system.
@@ -12,7 +13,7 @@ import { Licensing } from "../../../lib/Licensing.sol";
 /// - Linking IP to its parent
 /// - Verifying linking parameters
 /// - Verifying policy parameters
-interface ILicensingModule {
+interface ILicensingModule is IModule {
     /// @notice Emitted when a policy framework is created by registering a policy framework manager
     /// @param framework The address of the IPolicyFrameworkManager
     /// @param framework The policy framework data
@@ -41,7 +42,7 @@ interface ILicensingModule {
     /// @notice Emitted when an IP is linked to its parent by burning a license
     /// @param caller The address that called the function
     /// @param ipId The id of the IP
-    /// @param parentIpIds The ids of the parent IP
+    /// @param parentIpIds The ids of the parent IPs
     event IpIdLinkedToParents(address indexed caller, address indexed ipId, address[] parentIpIds);
 
     /// @notice Returns the address of the LicenseRegistry
