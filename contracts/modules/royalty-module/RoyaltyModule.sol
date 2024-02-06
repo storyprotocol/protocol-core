@@ -15,8 +15,9 @@ import { ROYALTY_MODULE_KEY } from "../../lib/modules/Module.sol";
 contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
     string public constant override name = ROYALTY_MODULE_KEY;
 
+    // TODO: deploy with CREATE2 to make this immutable
     /// @notice Licensing module address
-    address public LICENSING_MODULE;
+    address public licensingModule;
 
     /// @notice Indicates if a royalty policy is whitelisted
     mapping(address royaltyPolicy => bool allowed) public isWhitelistedRoyaltyPolicy;
@@ -35,7 +36,7 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
     constructor(address _governance) Governable(_governance) {}
 
     modifier onlyLicensingModule() {
-        if (msg.sender != LICENSING_MODULE) revert Errors.RoyaltyModule__NotAllowedCaller();
+        if (msg.sender != licensingModule) revert Errors.RoyaltyModule__NotAllowedCaller();
         _;
     }
 
@@ -44,7 +45,7 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
     function setLicensingModule(address _licensingModule) external onlyProtocolAdmin {
         if (_licensingModule == address(0)) revert Errors.RoyaltyModule__ZeroLicensingModule();
 
-        LICENSING_MODULE = _licensingModule;
+        licensingModule = _licensingModule;
     }
 
     /// @notice Whitelist a royalty policy

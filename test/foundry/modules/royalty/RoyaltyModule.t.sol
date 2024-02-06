@@ -39,7 +39,7 @@ contract TestRoyaltyModule is TestHelper {
         RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(governance));
         testRoyaltyModule.setLicensingModule(address(licensingModule));
 
-        assertEq(testRoyaltyModule.LICENSING_MODULE(), address(licensingModule));
+        assertEq(testRoyaltyModule.licensingModule(), address(licensingModule));
     }
 
     function test_RoyaltyModule_whitelistRoyaltyPolicy_revert_ZeroRoyaltyToken() public {
