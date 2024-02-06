@@ -1,6 +1,6 @@
 -include .env
 
-.PHONY: all test clean coverage typechain deploy-main
+.PHONY: all test clean coverage typechain format abi
 
 all: clean install build
 
