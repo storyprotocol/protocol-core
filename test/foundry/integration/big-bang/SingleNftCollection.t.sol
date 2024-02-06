@@ -314,7 +314,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             );
 
             // This should revert since license[0] is commercial but license[1] is non-commercial
-            vm.expectRevert(Errors.LicensingModule__IncompatibleLicensorRoyaltyPolicy.selector);
+            vm.expectRevert(Errors.LicensingModule__IncompatibleLicensorCommercialPolicy.selector);
             // Call `registrationModule.registerDerivativeIps` directly because expecting revert on the 
             // wrapper `registerDerivativeIps` fails due to the implementation of the wrapper function.
             registrationModule.registerDerivativeIp(

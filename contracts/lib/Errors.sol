@@ -140,7 +140,9 @@ library Errors {
     error LicensingModule__LicensorNotRegistered();
     error LicensingModule__CallerNotLicensorAndPolicyNotSet();
     error LicensingModule__DerivativesCannotAddPolicy();
-    error LicensingModule__IncompatibleLicensorRoyaltyPolicy();
+    error LicensingModule__IncompatibleRoyaltyPolicyAddress();
+    error LicensingModule__IncompatibleRoyaltyPolicyDerivativeRevShare();
+    error LicensingModule__IncompatibleLicensorCommercialPolicy();
     error LicensingModule__IncompatibleLicensorRoyaltyDerivativeRevShare();
     error LicensingModule__DerivativeRevShareSumExceedsMaxRNFTSupply();
     error LicensingModule__MismatchBetweenCommercialRevenueShareAndMinRoyalty();

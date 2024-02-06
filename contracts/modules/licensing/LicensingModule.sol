@@ -332,7 +332,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
         // Compatibility check: If link says no royalty is required for license (licenseIds[i]) but
         // another license requires royalty, revert.
         if (!response.isRoyaltyRequired && royaltyPolicyAddress != address(0)) {
-            revert Errors.LicensingModule__IncompatibleLicensorRoyaltyPolicy();
+            revert Errors.LicensingModule__IncompatibleLicensorCommercialPolicy();
         }
 
         // If link says royalty is required for license (licenseIds[i]) and no royalty policy is set, set it.
@@ -346,14 +346,14 @@ contract LicensingModule is AccessControlled, ILicensingModule {
                 // - royaltyPolicyAddress == address(0), revert. Previous licenses didn't set RP.
                 // - royaltyPolicyAddress != response.royaltyPolicy, revert. Previous licenses set different RP.
                 // ==> this can be considered as royaltyPolicyAddress != response.royaltyPolicy
-                revert Errors.LicensingModule__IncompatibleLicensorRoyaltyPolicy();
+                revert Errors.LicensingModule__IncompatibleRoyaltyPolicyAddress();
             }
 
             // TODO: Unit test.
             // If the previous license's derivativeRevShare is different from that of the current license, revert.
             // For iteration == 0, this check is skipped as `royaltyDerivativeRevShare` param is at 0.
             if (iteration > 0 && royaltyDerivativeRevShare != response.royaltyDerivativeRevShare) {
-                revert Errors.LicensingModule__IncompatibleLicensorRoyaltyPolicy();
+                revert Errors.LicensingModule__IncompatibleRoyaltyPolicyDerivativeRevShare();
             }
 
             // TODO: Read max RNFT supply instead of hardcoding the expected max supply

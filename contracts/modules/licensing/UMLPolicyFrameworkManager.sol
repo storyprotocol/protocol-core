@@ -74,19 +74,12 @@ contract UMLPolicyFrameworkManager is
             royaltyDerivativeRevShare: 0
         });
 
-        // If the policy defines commercial revenue sharing, call the royalty module
-        // to set it for the licensor
-        if (policy.commercialRevShare > 0) {
-            // RoyaltyModule.setRevShare()
-        }
-        // If the policy defines derivative revenue sharing, call the royalty module
-        // to set it for the licensor in future derivatives
-        if (policy.derivativesRevShare > 0) {
-            // RoyaltyModule.setRevShareForDerivatives()
+        if (policy.commercialUse) {
             response.isRoyaltyRequired = true;
             response.royaltyPolicy = policy.royaltyPolicy;
             response.royaltyDerivativeRevShare = policy.derivativesRevShare;
         }
+
         // If the policy defines the licensor must approve derivatives, check if the
         // derivative is approved by the licensor
         if (policy.derivativesApproval) {
