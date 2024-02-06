@@ -3,10 +3,10 @@
 pragma solidity ^0.8.23;
 
 // contracts
-import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
-import { Licensing } from "contracts/lib/Licensing.sol";
-import { Errors } from "contracts/lib/Errors.sol";
-import { LicensingModuleAware } from "contracts/modules/licensing/LicensingModuleAware.sol";
+import { IPolicyFrameworkManager } from "../../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
+import { Licensing } from "../../lib/Licensing.sol";
+import { Errors } from "../../lib/Errors.sol";
+import { LicensingModuleAware } from "../../modules/licensing/LicensingModuleAware.sol";
 
 // external
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";

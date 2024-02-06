@@ -2,10 +2,11 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.21;
 
-import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
-import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.sol";
-import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
+import { IERC6551Account } from "@reference/src/interfaces/IERC6551Account.sol";
+
+import { IIPAccountRegistry } from "../../interfaces/registries/IIPAccountRegistry.sol";
+import { IIPAccount } from "../..//interfaces/IIPAccount.sol";
 
 /// @title IPAccountChecker
 /// @dev This library provides utility functions to check the registration and validity of IP Accounts.

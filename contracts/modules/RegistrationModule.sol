@@ -4,14 +4,14 @@ pragma solidity ^0.8.23;
 
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
-import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-import { IRegistrationModule } from "contracts/interfaces/modules/IRegistrationModule.sol";
-import { REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
-import { Errors } from "contracts/lib/Errors.sol";
-import { IP } from "contracts/lib/IP.sol";
-import { BaseModule } from "contracts/modules/BaseModule.sol";
-import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
-import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
+import { IPResolver } from "../resolvers/IPResolver.sol";
+import { IRegistrationModule } from "../interfaces/modules/IRegistrationModule.sol";
+import { REGISTRATION_MODULE_KEY } from "../lib/modules/Module.sol";
+import { Errors } from "../lib/Errors.sol";
+import { IP } from "../lib/IP.sol";
+import { BaseModule } from "../modules/BaseModule.sol";
+import { ILicensingModule } from "../interfaces/modules/licensing/ILicensingModule.sol";
+import { ILicenseRegistry } from "../interfaces/registries/ILicenseRegistry.sol";
 
 /// @title Registration Module
 /// @notice The registration module is responsible for registration of IP into

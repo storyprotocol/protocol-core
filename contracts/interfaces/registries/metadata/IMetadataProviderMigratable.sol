@@ -2,7 +2,7 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMetadataProvider.sol";
+import { IMetadataProvider } from "./IMetadataProvider.sol";
 
 /// @title Metadata Provider Interface
 interface IMetadataProviderMigratable is IMetadataProvider {

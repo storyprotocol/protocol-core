@@ -2,11 +2,12 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.21;
 
-import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
-import { Errors } from "contracts/lib/Errors.sol";
-import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import { Governable } from "contracts/governance/Governable.sol";
+
+import { IModuleRegistry } from "../interfaces/registries/IModuleRegistry.sol";
+import { Errors } from "../lib/Errors.sol";
+import { IModule } from "../interfaces/modules/base/IModule.sol";
+import { Governable } from "../governance/Governable.sol";
 
 /// @title ModuleRegistry
 contract ModuleRegistry is IModuleRegistry, Governable {

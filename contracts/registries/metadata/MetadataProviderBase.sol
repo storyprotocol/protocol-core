@@ -2,12 +2,12 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-import { IP } from "contracts/lib/IP.sol";
-import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMetadataProvider.sol";
-import { IMetadataProviderMigratable } from "contracts/interfaces/registries/metadata/IMetadataProviderMigratable.sol";
-import { Errors } from "contracts/lib/Errors.sol";
-import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
+import { IP } from "../../lib/IP.sol";
+import { IIPAccount } from "../../interfaces/IIPAccount.sol";
+import { IMetadataProvider } from "../../interfaces/registries/metadata/IMetadataProvider.sol";
+import { IMetadataProviderMigratable } from "../../interfaces/registries/metadata/IMetadataProviderMigratable.sol";
+import { Errors } from "../../lib/Errors.sol";
+import { IPAssetRegistry } from "../../registries/IPAssetRegistry.sol";
 
 /// @title IP Metadata Provider Base Contract
 /// @notice Metadata provider base contract for storing canonical IP metadata.

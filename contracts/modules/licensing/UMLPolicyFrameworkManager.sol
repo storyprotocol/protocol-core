@@ -8,15 +8,15 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 // contracts
-import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
-import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
-import { Licensing } from "contracts/lib/Licensing.sol";
-import { Errors } from "contracts/lib/Errors.sol";
-import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
-import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator } from "contracts/interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
-import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
-import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
-import { LicensorApprovalChecker } from "contracts/modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
+import { ShortStringOps } from "../../utils/ShortStringOps.sol";
+import { ILicensingModule } from "../../interfaces/modules/licensing/ILicensingModule.sol";
+import { Licensing } from "../../lib/Licensing.sol";
+import { Errors } from "../../lib/Errors.sol";
+import { UMLFrameworkErrors } from "../../lib/UMLFrameworkErrors.sol";
+import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator } from "../../interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
+import { IPolicyFrameworkManager } from "../../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
+import { BasePolicyFrameworkManager } from "../../modules/licensing/BasePolicyFrameworkManager.sol";
+import { LicensorApprovalChecker } from "../../modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
 
 /// @title UMLPolicyFrameworkManager
 /// @notice This is the UML Policy Framework Manager, which implements the UML Policy Framework

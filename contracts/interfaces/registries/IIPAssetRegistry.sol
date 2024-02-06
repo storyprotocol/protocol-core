@@ -2,8 +2,8 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
-import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMetadataProvider.sol";
+import { IIPAccountRegistry } from "./IIPAccountRegistry.sol";
+import { IMetadataProvider } from "./metadata/IMetadataProvider.sol";
 
 /// @title Interface for IP Account Registry
 /// @notice This interface manages the registration and tracking of IP Accounts

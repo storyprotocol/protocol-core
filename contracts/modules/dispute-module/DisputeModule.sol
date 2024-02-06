@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-// external
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-// contracts
-import { DISPUTE_MODULE_KEY } from "contracts/lib/modules/Module.sol";
-import { BaseModule } from "contracts/modules/BaseModule.sol";
-import { Governable } from "contracts/governance/Governable.sol";
-import { IDisputeModule } from "contracts/interfaces/modules/dispute/IDisputeModule.sol";
-import { IArbitrationPolicy } from "contracts/interfaces/modules/dispute/policies/IArbitrationPolicy.sol";
-import { Errors } from "contracts/lib/Errors.sol";
-import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
+
+import { DISPUTE_MODULE_KEY } from "../../lib/modules/Module.sol";
+import { BaseModule } from "../../modules/BaseModule.sol";
+import { Governable } from "../../governance/Governable.sol";
+import { IDisputeModule } from "../../interfaces/modules/dispute/IDisputeModule.sol";
+import { IArbitrationPolicy } from "../../interfaces/modules/dispute/policies/IArbitrationPolicy.sol";
+import { Errors } from "../../lib/Errors.sol";
+import { ShortStringOps } from "../../utils/ShortStringOps.sol";
 
 /// @title Story Protocol Dispute Module
 /// @notice The Story Protocol dispute module acts as an enforcement layer for

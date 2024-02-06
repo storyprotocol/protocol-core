@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-// external
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-// contracts
-import { Governable } from "contracts/governance/Governable.sol";
-import { IDisputeModule } from "contracts/interfaces/modules/dispute/IDisputeModule.sol";
-import { IArbitrationPolicy } from "contracts/interfaces/modules/dispute/policies/IArbitrationPolicy.sol";
-import { Errors } from "contracts/lib/Errors.sol";
+
+import { Governable } from "../../../governance/Governable.sol";
+import { IDisputeModule } from "../../../interfaces/modules/dispute/IDisputeModule.sol";
+import { IArbitrationPolicy } from "../../../interfaces/modules/dispute/policies/IArbitrationPolicy.sol";
+import { Errors } from "../../../lib/Errors.sol";
 
 /// @title Story Protocol Arbitration Policy
 /// @notice The Story Protocol arbitration policy is a simple policy that

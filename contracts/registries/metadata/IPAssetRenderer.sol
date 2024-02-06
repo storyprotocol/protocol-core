@@ -4,13 +4,13 @@ pragma solidity ^0.8.23;
 
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
-import { IP } from "contracts/lib/IP.sol";
-import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
-import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMetadataProvider.sol";
-import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
-import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
-import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { IP } from "../../lib/IP.sol";
+import { IIPAccount } from "../../interfaces/IIPAccount.sol";
+import { IPAssetRegistry } from "../../registries/IPAssetRegistry.sol";
+import { IMetadataProvider } from "../../interfaces/registries/metadata/IMetadataProvider.sol";
+import { LicenseRegistry } from "../../registries/LicenseRegistry.sol";
+import { TaggingModule } from "../../modules/tagging/TaggingModule.sol";
+import { RoyaltyModule } from "../../modules/royalty-module/RoyaltyModule.sol";
 
 /// @title IP Asset Renderer
 /// @notice The IP asset renderer is responsible for rendering canonical

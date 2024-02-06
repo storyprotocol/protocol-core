@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-// external
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-// contracts
-import { Governable } from "contracts/governance/Governable.sol";
-import { IRoyaltyModule } from "contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
-import { IRoyaltyPolicy } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
-import { Errors } from "contracts/lib/Errors.sol";
+
+import { Governable } from "../../governance/Governable.sol";
+import { IRoyaltyModule } from "../../interfaces/modules/royalty/IRoyaltyModule.sol";
+import { IRoyaltyPolicy } from "../../interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
+import { Errors } from "../../lib/Errors.sol";
 
 /// @title Story Protocol Royalty Module
 /// @notice The Story Protocol royalty module allows to set royalty policies an ipId

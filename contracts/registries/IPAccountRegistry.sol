@@ -2,9 +2,10 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
-import { IERC6551Registry } from "lib/reference/src/interfaces/IERC6551Registry.sol";
-import { Errors } from "contracts/lib/Errors.sol";
+import { IERC6551Registry } from "@reference/src/interfaces/IERC6551Registry.sol";
+
+import { IIPAccountRegistry } from "../interfaces/registries/IIPAccountRegistry.sol";
+import { Errors } from "../lib/Errors.sol";
 
 /// @title IPAccountRegistry
 /// @notice This contract is responsible for managing the registration and tracking of IP Accounts.

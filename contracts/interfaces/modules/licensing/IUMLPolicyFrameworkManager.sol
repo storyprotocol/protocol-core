@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.23;
 
-import { Licensing } from "contracts/lib/Licensing.sol";
-import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
+import { Licensing } from "../../../lib/Licensing.sol";
+import { IPolicyFrameworkManager } from "../../../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 
 /// @notice Licensing parameters for the UML standard
 /// @param transferable Whether or not the license is transferable

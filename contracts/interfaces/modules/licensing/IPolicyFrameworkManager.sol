@@ -2,8 +2,9 @@
 
 pragma solidity ^0.8.23;
 
-import { Licensing } from "contracts/lib/Licensing.sol";
 import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
+
+import { Licensing } from "../../../lib/Licensing.sol";
 
 /// @title IPolicyFrameworkManager
 /// @notice Interface to define a policy framework contract, that will

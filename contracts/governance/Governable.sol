@@ -2,11 +2,12 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-import { Errors } from "contracts/lib/Errors.sol";
-import { IGovernance } from "contracts/interfaces/governance/IGovernance.sol";
-import { IGovernable } from "../interfaces/governance/IGovernable.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
-import { GovernanceLib } from "contracts/lib/GovernanceLib.sol";
+
+import { Errors } from "../lib/Errors.sol";
+import { IGovernance } from "../interfaces/governance/IGovernance.sol";
+import { IGovernable } from "../interfaces/governance/IGovernable.sol";
+import { GovernanceLib } from "../lib/GovernanceLib.sol";
 
 /// @title Governable
 /// @dev All contracts managed by governance should inherit from this contract.
