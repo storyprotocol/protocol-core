@@ -43,8 +43,6 @@ contract TestHelper is Test, DeployHelper {
     mapping(string => UMLPolicy) internal policies;
 
     string[] internal emptyStringArray = new string[](0);
-    address mockRoyaltyPolicy = address(0x555);
-
 
     function setUp() public virtual {
         console2.log("TestHelper.setUp");
@@ -111,7 +109,9 @@ contract TestHelper is Test, DeployHelper {
         string memory name,
         bool commercial,
         bool derivatives,
-        bool reciprocal
+        bool reciprocal,
+        uint32 commercialRevShare,
+        uint32 derivativesRevShare
     ) internal {
         string memory pName = string(abi.encodePacked("uml_", name));
         policies[pName] = UMLPolicy({
@@ -120,16 +120,16 @@ contract TestHelper is Test, DeployHelper {
             commercialUse: commercial,
             commercialAttribution: false,
             commercializers: emptyStringArray,
-            commercialRevShare: 0,
+            commercialRevShare: commercial ? commercialRevShare : 0,
             derivativesAllowed: derivatives,
             derivativesAttribution: false,
             derivativesApproval: false,
             derivativesReciprocal: reciprocal,
-            derivativesRevShare: 0,
+            derivativesRevShare: derivatives ? derivativesRevShare : 0,
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: mockRoyaltyPolicy
+            royaltyPolicy: address(mockRoyaltyPolicyLS) // TODO: should use mock or real royalty policy
         });
     }
 

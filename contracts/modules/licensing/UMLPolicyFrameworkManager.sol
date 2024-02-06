@@ -74,19 +74,12 @@ contract UMLPolicyFrameworkManager is
             royaltyDerivativeRevShare: 0
         });
 
-        // If the policy defines commercial revenue sharing, call the royalty module
-        // to set it for the licensor
-        if (policy.commercialRevShare > 0) {
-            // RoyaltyModule.setRevShare()
-        }
-        // If the policy defines derivative revenue sharing, call the royalty module
-        // to set it for the licensor in future derivatives
-        if (policy.derivativesRevShare > 0) {
-            // RoyaltyModule.setRevShareForDerivatives()
+        if (policy.commercialUse) {
             response.isRoyaltyRequired = true;
             response.royaltyPolicy = policy.royaltyPolicy;
             response.royaltyDerivativeRevShare = policy.derivativesRevShare;
         }
+
         // If the policy defines the licensor must approve derivatives, check if the
         // derivative is approved by the licensor
         if (policy.derivativesApproval) {
@@ -136,6 +129,18 @@ contract UMLPolicyFrameworkManager is
             revert UMLFrameworkErrors.UMLPolicyFrameworkManager__RightsNotFound();
         }
         rights = abi.decode(policyAggregatorData, (UMLAggregator));
+    }
+
+    function getRoyaltyPolicy(uint256 policyId) external view returns (address) {
+        return getPolicy(policyId).royaltyPolicy;
+    }
+
+    function getCommercialRevenueShare(uint256 policyId) external view returns (uint32) {
+        return getPolicy(policyId).commercialRevShare;
+    }
+
+    function isPolicyCommercial(uint256 policyId) external view returns (bool) {
+        return getPolicy(policyId).commercialUse;
     }
 
     /// Called by licenseRegistry to verify compatibility when inheriting from a parent IP

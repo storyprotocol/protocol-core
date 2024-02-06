@@ -403,14 +403,15 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             nftIds[3],
             "best derivative ip",
             bytes32("some of the best description"),
-            "https://example.com/best-derivative-ip"
+            "https://example.com/best-derivative-ip",
+            0
         );
 
         // /*///////////////////////////////////////////////////////////////
         //             LINK IPACCOUNTS TO PARENTS USING LICENSES
         // ////////////////////////////////////////////////////////////////*/
 
-        licensingModule.linkIpToParents(licenseIds, getIpId(mockNft, nftIds[4]), deployer);
+        licensingModule.linkIpToParents(licenseIds, getIpId(mockNft, nftIds[4]), 100);
     }
 
     function getIpId(MockERC721 mnft, uint256 tokenId) public view returns (address ipId) {

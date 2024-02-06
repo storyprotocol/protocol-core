@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.23;
 
 // external
-import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
-import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Test } from "forge-std/Test.sol";
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
@@ -25,6 +23,7 @@ import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy } from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { MockRoyaltyPolicyLS } from "test/foundry/mocks/MockRoyaltyPolicyLS.sol";
 
 contract LicensingModuleTest is Test {
     using Strings for *;
@@ -47,6 +46,8 @@ contract LicensingModuleTest is Test {
     RoyaltyModule internal royaltyModule;
 
     IPAssetRegistry internal ipAssetRegistry;
+
+    MockRoyaltyPolicyLS internal mockRoyaltyPolicyLS;
 
     string public licenseUrl = "https://example.com/license";
     address public ipId1;
@@ -77,6 +78,8 @@ contract LicensingModuleTest is Test {
             address(royaltyModule),
             address(licenseRegistry)
         );
+        mockRoyaltyPolicyLS = new MockRoyaltyPolicyLS(address(royaltyModule));
+
         licenseRegistry.setLicensingModule(address(licensingModule));
         // Setup Framework Managers (don't register PFM here, do in each test case)
         module1 = new MockPolicyFrameworkManager(
@@ -85,7 +88,8 @@ contract LicensingModuleTest is Test {
                 name: "MockPolicyFrameworkManager",
                 licenseUrl: licenseUrl,
                 supportVerifyLink: true,
-                supportVerifyMint: true
+                supportVerifyMint: true,
+                royaltyPolicy: address(mockRoyaltyPolicyLS)
             })
         );
         umlManager = new UMLPolicyFrameworkManager(
@@ -95,6 +99,10 @@ contract LicensingModuleTest is Test {
             "UMLPolicyFrameworkManager",
             licenseUrl
         );
+
+        // Set licensing module in royalty module
+        royaltyModule.setLicensingModule(address(licensingModule));
+        royaltyModule.whitelistRoyaltyPolicy(address(mockRoyaltyPolicyLS), true);
 
         // Create IPAccounts
         nft.mintId(ipOwner, 1);
@@ -126,14 +134,14 @@ contract LicensingModuleTest is Test {
         licensingModule.registerPolicyFrameworkManager(address(module1));
         vm.startPrank(address(module1));
         licensingModule.registerPolicy(true, _createPolicy());
-        vm.expectRevert(Errors.LicenseRegistry__PolicyAlreadyAdded.selector);
+        vm.expectRevert(Errors.LicensingModule__PolicyAlreadyAdded.selector);
         licensingModule.registerPolicy(true, _createPolicy());
         vm.stopPrank();
     }
 
     function test_LicensingModule_registerPolicy_revert_frameworkNotFound() public {
         bytes memory policy = _createPolicy();
-        vm.expectRevert(Errors.LicenseRegistry__FrameworkNotFound.selector);
+        vm.expectRevert(Errors.LicensingModule__FrameworkNotFound.selector);
         vm.prank(address(module1));
         licensingModule.registerPolicy(true, policy);
     }
@@ -243,7 +251,7 @@ contract LicensingModuleTest is Test {
         vm.prank(ipOwner);
         licensingModule.addPolicyToIp(ipId1, policyId);
 
-        vm.expectRevert(Errors.LicenseRegistry__LicensorNotRegistered.selector);
+        vm.expectRevert(Errors.LicensingModule__LicensorNotRegistered.selector);
         licensingModule.mintLicense(policyId, address(0), 2, licenseHolder);
     }
 
@@ -257,7 +265,7 @@ contract LicensingModuleTest is Test {
         uint256 policyId = licensingModule.registerPolicy(true, policy);
 
         // Anyone (this contract, in this case) calls
-        vm.expectRevert(Errors.LicenseRegistry__CallerNotLicensorAndPolicyNotSet.selector);
+        vm.expectRevert(Errors.LicensingModule__CallerNotLicensorAndPolicyNotSet.selector);
         licensingModule.mintLicense(policyId, ipId1, 2, licenseHolder);
 
         // Anyone, but call with permission (still fails)
@@ -277,7 +285,7 @@ contract LicensingModuleTest is Test {
             )
         );
 
-        vm.expectRevert(Errors.LicenseRegistry__CallerNotLicensorAndPolicyNotSet.selector);
+        vm.expectRevert(Errors.LicensingModule__CallerNotLicensorAndPolicyNotSet.selector);
         vm.prank(signer);
         licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder);
     }
@@ -322,9 +330,14 @@ contract LicensingModuleTest is Test {
         uint256 licenseId = test_LicensingModule_mintLicense();
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
+
+        vm.prank(licenseHolder);
+        licenseRegistry.safeTransferFrom(licenseHolder, ipOwner, licenseId, 2, "");
+
         vm.prank(ipOwner);
-        licensingModule.linkIpToParents(licenseIds, ipId2, licenseHolder);
-        assertEq(licenseRegistry.balanceOf(licenseHolder, licenseId), 1, "not burnt");
+        licensingModule.linkIpToParents(licenseIds, ipId2, 0);
+
+        assertEq(licenseRegistry.balanceOf(ipOwner, licenseId), 1, "not burnt");
         assertEq(licensingModule.isParent(ipId1, ipId2), true, "not parent");
         assertEq(
             keccak256(abi.encode(licensingModule.policyForIpAtIndex(true, ipId2, 0))),
@@ -417,7 +430,7 @@ contract LicensingModuleTest is Test {
             territories: new string[](1),
             distributionChannels: new string[](1),
             contentRestrictions: new string[](0),
-            royaltyPolicy: address(0xbeef) // TODO: mock royaltyPolicyLS
+            royaltyPolicy: address(mockRoyaltyPolicyLS)
         });
 
         policyData.commercializers[0] = "commercializer1";

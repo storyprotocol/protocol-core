@@ -41,7 +41,8 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
             accessController,
             ipAccountRegistry,
             licensingModule,
-            royaltyModule
+            royaltyModule,
+            mockRoyaltyPolicyLS // mock for MintPaymentPFM
         );
 
         nft = erc721.cat;
@@ -87,26 +88,6 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
         vm.startPrank(u.alice);
         ipAcct[1] = registerIpAccount(nft, 1, u.alice);
 
-        //
-        // NOTE: This 150 overrides UML's `derivativesRevShare` of 250, when used below in `setRoyaltyPolicy`.
-        //       But the derivatives will have the 250. Is this possible in reciprocal license (specifid above)?
-        //       The derivatives are inheriting all traits, including `derivativesRevShare = 250`, which is
-        //       different from ipAcct[1] due to the custom `minRevShareIpAcct1` set below.
-        //
-        uint32 minRevShareIpAcct1 = 150; // 15%
-
-        // Alice sets royalty policy on her root IP
-        {
-            // TODO: setRoyaltyPolicy should be called through mintLicense or addPolicyToIp, not directly by user
-            vm.startPrank(address(licensingModule));
-            royaltyModule.setRoyaltyPolicy(
-                ipAcct[1],
-                address(royaltyPolicyLS),
-                new address[](0), // no parent
-                abi.encode(minRevShareIpAcct1)
-            );
-        }
-
         /*///////////////////////////////////////////////////////////////
                             ADD POLICIES TO IP ACCOUNTS
         ////////////////////////////////////////////////////////////////*/
@@ -131,7 +112,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
             );
 
             ipAcct[2] = registerIpAccount(nft, 2, u.bob);
-            linkIpToParent(bob_license_from_root_alice, ipAcct[2], u.bob);
+            linkIpToParent(bob_license_from_root_alice, ipAcct[2], u.bob, 0);
 
             (, , , uint256 minRoyalty) = royaltyPolicyLS.royaltyData(ipAcct[2]);
             assertEq(minRoyalty, minRevShare);
@@ -158,7 +139,8 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
                     registrant: u.carl, // caller
                     uri: "external URL"
                 }),
-                u.carl // caller
+                u.carl, // caller
+                0 // gets overriden by license
             );
 
             (, , , uint256 minRoyalty) = royaltyPolicyLS.royaltyData(ipAcct[3]);
@@ -186,7 +168,8 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
                     registrant: u.dan, // caller
                     uri: "external URL"
                 }),
-                u.dan // caller
+                u.dan, // caller
+                0 // gets overriden by license
             );
 
             (, , , uint256 minRoyalty) = royaltyPolicyLS.royaltyData(ipAcct[4]);
@@ -262,7 +245,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
             // Dan is paying 65% of 1000 USDC royalty to parents (stored in Dan's Claimer).
             // The other 35% of 1000 USDC royalty goes directly to Dan's IPAccount.
             vm.expectEmit(address(USDC));
-            emit IERC20.Transfer(LIQUID_SPLIT_MAIN, address(danClaimer), 649999998);
+            emit IERC20.Transfer(LIQUID_SPLIT_MAIN, address(danClaimer), 749999998); 
             royaltyPolicyLS.claimRoyalties({ _account: danClaimer, _withdrawETH: 0, _tokens: tokens });
 
             // Alice calls the claim her portion of rNFTs and tokens. She can only call `claim` once.
@@ -274,11 +257,11 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
                 from: address(danClaimer),
                 to: aliceSplitClone,
                 id: 0,
-                value: minRevShareIpAcct1
+                value: 250
             });
 
             vm.expectEmit(address(USDC));
-            emit IERC20.Transfer(address(danClaimer), aliceSplitClone, 149999999); // alice should get 15% of 1000 USDC
+            emit IERC20.Transfer(address(danClaimer), aliceSplitClone, 249999999); // alice should get 25% of 1000 USDC
 
             vm.expectEmit(address(danClaimer));
             emit ILSClaimer.Claimed({

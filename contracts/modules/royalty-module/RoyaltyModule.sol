@@ -32,6 +32,11 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
     /// @param _governance The address of the governance contract
     constructor(address _governance) Governable(_governance) {}
 
+    modifier onlyLicensingModule() {
+        if (msg.sender != LICENSING_MODULE) revert Errors.RoyaltyModule__NotAllowedCaller();
+        _;
+    }
+
     /// @notice Sets the license registry
     /// @param _licensingModule The address of the license registry
     function setLicensingModule(address _licensingModule) external onlyProtocolAdmin {
@@ -73,8 +78,7 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
         address _royaltyPolicy,
         address[] calldata _parentIpIds,
         bytes calldata _data
-    ) external nonReentrant {
-        if (msg.sender != LICENSING_MODULE) revert Errors.RoyaltyModule__NotAllowedCaller();
+    ) external nonReentrant onlyLicensingModule {
         if (isRoyaltyPolicyImmutable[_ipId]) revert Errors.RoyaltyModule__AlreadySetRoyaltyPolicy();
         if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
 
@@ -91,6 +95,17 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
         IRoyaltyPolicy(_royaltyPolicy).initPolicy(_ipId, _parentIpIds, _data);
 
         emit RoyaltyPolicySet(_ipId, _royaltyPolicy, _data);
+    }
+
+    function setRoyaltyPolicyImmutable(address _ipId) external onlyLicensingModule {
+        isRoyaltyPolicyImmutable[_ipId] = true;
+    }
+
+    function minRoyaltyFromDescendants(address _ipId) external view returns (uint256) {
+        address royaltyPolicy = royaltyPolicies[_ipId];
+        if (royaltyPolicy == address(0)) revert Errors.RoyaltyModule__NoRoyaltyPolicySet();
+
+        return IRoyaltyPolicy(royaltyPolicy).minRoyaltyFromDescendants(_ipId);
     }
 
     /// @notice Allows a sender to to pay royalties on behalf of an ipId

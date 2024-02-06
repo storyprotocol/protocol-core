@@ -108,30 +108,6 @@ library Errors {
     //                            LicenseRegistry                             //
     ////////////////////////////////////////////////////////////////////////////
 
-    error LicenseRegistry__PolicyAlreadySetForIpId();
-    error LicenseRegistry__FrameworkNotFound();
-    error LicenseRegistry__EmptyLicenseUrl();
-    error LicenseRegistry__InvalidPolicyFramework();
-    error LicenseRegistry__PolicyAlreadyAdded();
-    error LicenseRegistry__ParamVerifierLengthMismatch();
-    error LicenseRegistry__PolicyNotFound();
-    error LicenseRegistry__NotLicensee();
-    error LicenseRegistry__ParentIdEqualThanChild();
-    error LicenseRegistry__LicensorDoesntHaveThisPolicy();
-    error LicenseRegistry__MintLicenseParamFailed();
-    error LicenseRegistry__LinkParentParamFailed();
-    error LicenseRegistry__TransferParamFailed();
-    error LicenseRegistry__InvalidLicensor();
-    error LicenseRegistry__ParamVerifierAlreadySet();
-    error LicenseRegistry__CommercialTermInNonCommercialPolicy();
-    error LicenseRegistry__EmptyParamName();
-    error LicenseRegistry__UnregisteredFrameworkAddingPolicy();
-    error LicenseRegistry__UnauthorizedAccess();
-    error LicenseRegistry__LicensorNotRegistered();
-    error LicenseRegistry__CallerNotLicensorAndPolicyNotSet();
-    error LicenseRegistry__DerivativesCannotAddPolicy();
-    error LicenseRegistry__IncompatibleLicensorRoyaltyPolicy();
-    error LicenseRegistry__DerivativeRevShareSumExceedsMaxRNFTSupply();
     error LicenseRegistry__CallerNotLicensingModule();
     error LicenseRegistry__ZeroLicensingModule();
     error LicensingModule__CallerNotLicenseRegistry();
@@ -141,6 +117,36 @@ library Errors {
     ////////////////////////////////////////////////////////////////////////////
     //                            LicensingModule                             //
     ////////////////////////////////////////////////////////////////////////////
+
+    error LicensingModule__PolicyAlreadySetForIpId();
+    error LicensingModule__FrameworkNotFound();
+    error LicensingModule__EmptyLicenseUrl();
+    error LicensingModule__InvalidPolicyFramework();
+    error LicensingModule__PolicyAlreadyAdded();
+    error LicensingModule__ParamVerifierLengthMismatch();
+    error LicensingModule__PolicyNotFound();
+    error LicensingModule__NotLicensee();
+    error LicensingModule__ParentIdEqualThanChild();
+    error LicensingModule__LicensorDoesntHaveThisPolicy();
+    error LicensingModule__MintLicenseParamFailed();
+    error LicensingModule__LinkParentParamFailed();
+    error LicensingModule__TransferParamFailed();
+    error LicensingModule__InvalidLicensor();
+    error LicensingModule__ParamVerifierAlreadySet();
+    error LicensingModule__CommercialTermInNonCommercialPolicy();
+    error LicensingModule__EmptyParamName();
+    error LicensingModule__UnregisteredFrameworkAddingPolicy();
+    error LicensingModule__UnauthorizedAccess();
+    error LicensingModule__LicensorNotRegistered();
+    error LicensingModule__CallerNotLicensorAndPolicyNotSet();
+    error LicensingModule__DerivativesCannotAddPolicy();
+    error LicensingModule__IncompatibleRoyaltyPolicyAddress();
+    error LicensingModule__IncompatibleRoyaltyPolicyDerivativeRevShare();
+    error LicensingModule__IncompatibleLicensorCommercialPolicy();
+    error LicensingModule__IncompatibleLicensorRoyaltyDerivativeRevShare();
+    error LicensingModule__DerivativeRevShareSumExceedsMaxRNFTSupply();
+    error LicensingModule__MismatchBetweenCommercialRevenueShareAndMinRoyalty();
+    error LicensingModule__MismatchBetweenRoyaltyPolicy();
 
     ////////////////////////////////////////////////////////////////////////////
     //                        LicensingModuleAware                            //

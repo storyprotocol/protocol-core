@@ -113,6 +113,12 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
         IERC20(_token).safeTransferFrom(_caller, destination, _amount);
     }
 
+    /// @notice Returns the minimum royalty the IPAccount expects from descendants
+    /// @param _ipId The ipId
+    function minRoyaltyFromDescendants(address _ipId) external view override returns (uint32) {
+        return royaltyData[_ipId].minRoyalty;
+    }
+
     /// @notice Distributes funds to the accounts in the LiquidSplitClone contract
     /// @param _ipId The ipId
     /// @param _token The token to distribute

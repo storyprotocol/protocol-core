@@ -16,6 +16,7 @@ import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 // test
 import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy } from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
 import { MintPaymentPolicyFrameworkManager, MintPaymentPolicy } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
+import { MockRoyaltyPolicyLS } from "test/foundry/mocks/MockRoyaltyPolicyLS.sol";
 
 enum PFMType {
     UML,
@@ -59,22 +60,27 @@ contract Integration_Shared_LicensingHelper {
     mapping(string policyFrameworkManagerName => PFMData) internal pfm;
 
     LicensingModule private licensingModule; // keep private to avoid collision with `BaseIntegration`
+
     AccessController private accessController; // keep private to avoid collision with `BaseIntegration`
 
     IPAccountRegistry private ipAccountRegistry; // keep private to avoid collision with `BaseIntegration`
 
     RoyaltyModule private royaltyModule; // keep private to avoid collision with `BaseIntegration`
 
+    MockRoyaltyPolicyLS private mockRoyaltyPolicyLS; // keep private to avoid collision with `BaseIntegration`
+
     function initLicenseFrameworkAndPolicy(
         AccessController accessController_,
         IPAccountRegistry ipAccountRegistry_,
         LicensingModule licensingModule_,
-        RoyaltyModule royaltyModule_
+        RoyaltyModule royaltyModule_,
+        MockRoyaltyPolicyLS mockRoyaltyPolicyLS_
     ) public {
         accessController = accessController_;
         ipAccountRegistry = ipAccountRegistry_;
         licensingModule = licensingModule_;
         royaltyModule = royaltyModule_;
+        mockRoyaltyPolicyLS = mockRoyaltyPolicyLS_;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -100,6 +106,7 @@ contract Integration_Shared_LicensingHelper {
         BasePolicyFrameworkManager _pfm = BasePolicyFrameworkManager(
             new MintPaymentPolicyFrameworkManager(
                 address(licensingModule),
+                address(mockRoyaltyPolicyLS),
                 "mint_payment",
                 "license url",
                 address(erc20),
@@ -283,7 +290,8 @@ contract Integration_Shared_LicensingHelper {
                         name: "mock",
                         licenseUrl: "license url",
                         supportVerifyLink: supportVerifyLink,
-                        supportVerifyMint: supportVerifyMint
+                        supportVerifyMint: supportVerifyMint,
+                        royaltyPolicy: address(0xdeadbeef)
                     })
                 )
             );
