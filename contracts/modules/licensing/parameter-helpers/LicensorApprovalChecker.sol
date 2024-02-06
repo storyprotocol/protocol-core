@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.23;
 
-import { Errors } from "contracts/lib/Errors.sol";
-import { IAccessController } from "contracts/interfaces/IAccessController.sol";
-import { AccessControlled } from "contracts/access/AccessControlled.sol";
-import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
+import { Errors } from "../../../lib/Errors.sol";
+import { IAccessController } from "../../../interfaces/IAccessController.sol";
+import { AccessControlled } from "../../../access/AccessControlled.sol";
+import { ILicenseRegistry } from "../../../interfaces/registries/ILicenseRegistry.sol";
 
 /// @title LicensorApprovalChecker
 /// @notice Manages the approval of derivative IP accounts by the licensor. Used to verify

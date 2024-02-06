@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-import { Licensing } from "contracts/lib/Licensing.sol";
+import { Licensing } from "../../lib/Licensing.sol";
 
 /// @title ILicenseRegistry
 

@@ -3,7 +3,8 @@
 pragma solidity ^0.8.23;
 
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
-import { GovernanceLib } from "contracts/lib/GovernanceLib.sol";
+
+import { GovernanceLib } from "../../lib/GovernanceLib.sol";
 
 /// @title IGovernance
 /// @dev This interface defines the governance functionality for the protocol.

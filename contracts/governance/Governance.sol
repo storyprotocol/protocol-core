@@ -2,10 +2,11 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-import { Errors } from "contracts/lib/Errors.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { IGovernance } from "contracts/interfaces/governance/IGovernance.sol";
-import { GovernanceLib } from "contracts/lib/GovernanceLib.sol";
+
+import { Errors } from "../lib/Errors.sol";
+import { IGovernance } from "../interfaces/governance/IGovernance.sol";
+import { GovernanceLib } from "../lib/GovernanceLib.sol";
 
 /// @title Governance
 /// @dev This contract is used for governance of the protocol.

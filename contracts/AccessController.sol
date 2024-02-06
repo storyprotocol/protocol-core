@@ -2,15 +2,15 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.21;
 
-import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
-import { IAccessController } from "contracts/interfaces/IAccessController.sol";
-import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
-import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
-import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
-import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { AccessPermission } from "contracts/lib/AccessPermission.sol";
-import { Errors } from "contracts/lib/Errors.sol";
-import { Governable } from "contracts/governance/Governable.sol";
+import { IModuleRegistry } from "./interfaces/registries/IModuleRegistry.sol";
+import { IAccessController } from "./interfaces/IAccessController.sol";
+import { IIPAccountRegistry } from "./interfaces/registries/IIPAccountRegistry.sol";
+import { IModuleRegistry } from "./interfaces/registries/IModuleRegistry.sol";
+import { IPAccountChecker } from "./lib/registries/IPAccountChecker.sol";
+import { IIPAccount } from "./interfaces/IIPAccount.sol";
+import { AccessPermission } from "./lib/AccessPermission.sol";
+import { Errors } from "./lib/Errors.sol";
+import { Governable } from "./governance/Governable.sol";
 
 /// @title AccessController
 /// @dev This contract is used to control access permissions for different function calls in the protocol.

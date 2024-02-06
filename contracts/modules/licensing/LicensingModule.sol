@@ -6,18 +6,17 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
-// contracts
-import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
-import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
-import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
-import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
-import { Errors } from "contracts/lib/Errors.sol";
-import { DataUniqueness } from "contracts/lib/DataUniqueness.sol";
-import { Licensing } from "contracts/lib/Licensing.sol";
-import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
-import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
-import { AccessControlled } from "contracts/access/AccessControlled.sol";
-import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
+import { IIPAccount } from "../..//interfaces/IIPAccount.sol";
+import { IPolicyFrameworkManager } from "../../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
+import { ILicenseRegistry } from "../../interfaces/registries/ILicenseRegistry.sol";
+import { ILicensingModule } from "../../interfaces/modules/licensing/ILicensingModule.sol";
+import { IIPAccountRegistry } from "../../interfaces/registries/IIPAccountRegistry.sol";
+import { Errors } from "../../lib/Errors.sol";
+import { DataUniqueness } from "../../lib/DataUniqueness.sol";
+import { Licensing } from "../../lib/Licensing.sol";
+import { IPAccountChecker } from "../../lib/registries/IPAccountChecker.sol";
+import { RoyaltyModule } from "../../modules/royalty-module/RoyaltyModule.sol";
+import { AccessControlled } from "../../access/AccessControlled.sol";
 
 // TODO: consider disabling operators/approvals on creation
 contract LicensingModule is AccessControlled, ILicensingModule {

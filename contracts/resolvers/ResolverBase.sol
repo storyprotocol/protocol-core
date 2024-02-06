@@ -2,8 +2,8 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-import { BaseModule } from "contracts/modules/BaseModule.sol";
-import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
+import { BaseModule } from "../modules/BaseModule.sol";
+import { IResolver } from "../interfaces/resolvers/IResolver.sol";
 
 /// @notice IP Resolver Base Contract
 abstract contract ResolverBase is IResolver, BaseModule {

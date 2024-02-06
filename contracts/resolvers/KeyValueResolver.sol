@@ -2,8 +2,8 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-import { IKeyValueResolver } from "contracts/interfaces/resolvers/IKeyValueResolver.sol";
-import { ResolverBase } from "contracts/resolvers/ResolverBase.sol";
+import { IKeyValueResolver } from "../interfaces/resolvers/IKeyValueResolver.sol";
+import { ResolverBase } from "../resolvers/ResolverBase.sol";
 
 /// @title Key Value Resolver
 /// @notice Resolver used for returning values associated with keys. This is the

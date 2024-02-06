@@ -2,10 +2,10 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-import { IAccessController } from "contracts/interfaces/IAccessController.sol";
-import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
-import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
-import { Errors } from "contracts/lib/Errors.sol";
+import { IAccessController } from "../interfaces/IAccessController.sol";
+import { IPAccountChecker } from "../lib/registries/IPAccountChecker.sol";
+import { IIPAccountRegistry } from "../interfaces/registries/IIPAccountRegistry.sol";
+import { Errors } from "../lib/Errors.sol";
 
 /// @title AccessControlled
 /// @notice Provides a base contract for access control functionalities.

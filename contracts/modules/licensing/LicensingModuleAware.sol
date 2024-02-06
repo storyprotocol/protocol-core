@@ -3,8 +3,8 @@
 pragma solidity ^0.8.23;
 
 // contracts
-import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
-import { Errors } from "contracts/lib/Errors.sol";
+import { ILicensingModule } from "../../interfaces/modules/licensing/ILicensingModule.sol";
+import { Errors } from "../../lib/Errors.sol";
 
 /// @title LicensingModuleAware
 /// @notice Base contract to be inherited by modules that need to access the license registry.

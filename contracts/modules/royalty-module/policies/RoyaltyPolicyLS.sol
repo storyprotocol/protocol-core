@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-// external
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ERC1155Holder } from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
-// contracts
-import { LSClaimer } from "contracts/modules/royalty-module/policies/LSClaimer.sol";
-import { ILiquidSplitClone } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
-import { ILiquidSplitFactory } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitFactory.sol";
-import { ILiquidSplitMain } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitMain.sol";
-import { IRoyaltyPolicyLS } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLS.sol";
-import { Errors } from "contracts/lib/Errors.sol";
+
+import { LSClaimer } from "../../../modules/royalty-module/policies/LSClaimer.sol";
+import { ILiquidSplitClone } from "../../../interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
+import { ILiquidSplitFactory } from "../../../interfaces/modules/royalty/policies/ILiquidSplitFactory.sol";
+import { ILiquidSplitMain } from "../../../interfaces/modules/royalty/policies/ILiquidSplitMain.sol";
+import { IRoyaltyPolicyLS } from "../../../interfaces/modules/royalty/policies/IRoyaltyPolicyLS.sol";
+import { Errors } from "../../../lib/Errors.sol";
 
 /// @title Liquid Split Royalty Policy
 /// @notice The LiquidSplit royalty policy splits royalties in accordance with

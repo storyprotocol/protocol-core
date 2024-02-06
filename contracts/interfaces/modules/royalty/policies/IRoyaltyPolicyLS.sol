@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import { IRoyaltyPolicy } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
+import { IRoyaltyPolicy } from "../../../../interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
 
 /// @title RoyaltyPolicy interface
 interface IRoyaltyPolicyLS is IRoyaltyPolicy {

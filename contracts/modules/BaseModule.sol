@@ -2,13 +2,13 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
-import { IAccessController } from "contracts/interfaces/IAccessController.sol";
-import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
-import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
-import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
-import { Errors } from "contracts/lib/Errors.sol";
+import { IModule } from "../interfaces/modules/base/IModule.sol";
+import { IAccessController } from "../interfaces/IAccessController.sol";
+import { IPAssetRegistry } from "../registries/IPAssetRegistry.sol";
+import { IPAccountRegistry } from "../registries/IPAccountRegistry.sol";
+import { LicenseRegistry } from "../registries/LicenseRegistry.sol";
+import { IResolver } from "../interfaces/resolvers/IResolver.sol";
+import { Errors } from "../lib/Errors.sol";
 
 /// @title BaseModule
 /// @notice Base implementation for all modules in Story Protocol. This is to

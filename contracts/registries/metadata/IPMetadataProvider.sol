@@ -2,10 +2,10 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-import { REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
-import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMetadataProvider.sol";
-import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
-import { Errors } from "contracts/lib/Errors.sol";
+import { REGISTRATION_MODULE_KEY } from "../../lib/modules/Module.sol";
+import { IMetadataProvider } from "../../interfaces/registries/metadata/IMetadataProvider.sol";
+import { IModuleRegistry } from "../../interfaces/registries/IModuleRegistry.sol";
+import { Errors } from "../../lib/Errors.sol";
 
 /// @title IP Metadata Provider Contract
 /// @notice Base contract used for customization of canonical IP metadata.

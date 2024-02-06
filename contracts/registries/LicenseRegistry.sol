@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-// external
 import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 
-// contracts
-import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
-import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
-import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
-import { Errors } from "contracts/lib/Errors.sol";
-import { Licensing } from "contracts/lib/Licensing.sol";
-import { DataUniqueness } from "contracts/lib/DataUniqueness.sol";
+import { IPolicyFrameworkManager } from "../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
+import { ILicenseRegistry } from "../interfaces/registries/ILicenseRegistry.sol";
+import { ILicensingModule } from "../interfaces/modules/licensing/ILicensingModule.sol";
+import { Errors } from "../lib/Errors.sol";
+import { Licensing } from "../lib/Licensing.sol";
+import { DataUniqueness } from "../lib/DataUniqueness.sol";
 
 /// @title LicenseRegistry aka LNFT
 /// @notice Registry of License NFTs, which represent licenses granted by IP ID licensors to create derivative IPs.

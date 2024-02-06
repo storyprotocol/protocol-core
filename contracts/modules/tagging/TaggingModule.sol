@@ -4,11 +4,12 @@
 pragma solidity ^0.8.23;
 
 import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
-import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { Errors } from "contracts/lib/Errors.sol";
-import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
-import { ITaggingModule } from "contracts/interfaces/modules/ITaggingModule.sol";
+
+import { ShortStringOps } from "../../utils/ShortStringOps.sol";
+import { Errors } from "../../lib/Errors.sol";
+import { IModule } from "../../interfaces/modules/base/IModule.sol";
+import { ITaggingModule } from "../../interfaces/modules/ITaggingModule.sol";
 
 contract TaggingModule is IModule, ITaggingModule {
     using ShortStrings for *;
