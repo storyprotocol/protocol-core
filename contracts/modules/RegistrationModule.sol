@@ -48,11 +48,16 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
     /// @param policyId The policy that identifies the licensing terms of the IP.
     /// @param tokenContract The address of the NFT bound to the root-level IP.
     /// @param tokenId The token id of the NFT bound to the root-level IP.
+    /// @param ipName The name assigned to the new IP.
+    /// @param contentHash The content hash of the IP being registered.
+    /// @param externalURL An external URI to link to the IP.
     function registerRootIp(
         uint256 policyId,
         address tokenContract,
         uint256 tokenId,
-        bytes calldata metadata
+        string memory ipName,
+        bytes32 contentHash,
+        string calldata externalURL
     ) external returns (address) {
         // Perform registrant authorization.
         // Check that the caller is authorized to perform the registration.
@@ -61,6 +66,16 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         if (IERC721(tokenContract).ownerOf(tokenId) != msg.sender) {
             revert Errors.RegistrationModule__InvalidOwner();
         }
+
+        bytes memory metadata = abi.encode(
+            IP.MetadataV1({
+                name: ipName,
+                hash: contentHash,
+                registrationDate: uint64(block.timestamp),
+                registrant: msg.sender,
+                uri: externalURL
+            })
+        );
 
         // Perform core IP registration and IP account creation.
         address ipId = IP_ASSET_REGISTRY.register(

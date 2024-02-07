@@ -102,15 +102,9 @@ contract TestDisputeModule is TestHelper {
             policyIds["uml_cheap_flexible"],
             address(nft),
             0,
-            abi.encode(
-                IP.MetadataV1({
-                    name: "IPAccount1",
-                    hash: bytes32("some of the best description"),
-                    registrationDate: uint64(block.timestamp),
-                    registrant: deployer,
-                    uri: "https://example.com/test-ip"
-                })
-            )
+            "IPAccount1",
+            bytes32("some of the best description"),
+            "https://example.com/test-ip"
         );
         vm.label(ipAddr, string(abi.encodePacked("IPAccount", Strings.toString(0))));
 

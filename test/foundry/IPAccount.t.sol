@@ -4,7 +4,6 @@ pragma solidity ^0.8.21;
 import "forge-std/Test.sol";
 
 import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
-import "lib/reference/src/interfaces/IERC6551Account.sol";
 
 import "contracts/IPAccountImpl.sol";
 import "contracts/interfaces/IIPAccount.sol";

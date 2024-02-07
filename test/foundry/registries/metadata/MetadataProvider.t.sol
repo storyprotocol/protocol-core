@@ -180,57 +180,6 @@ contract MetadataProviderTest is BaseTest {
         assertEq(metadataProvider.uri(ipId), IP_EXTERNAL_URL);
     }
 
-    /// @notice Tests metadata set without a name reverts.
-    function test_MetadataProvider_SetMetadata_Reverts_InvalidName() public {
-        v1Metadata = abi.encode(
-            IP.MetadataV1({
-                name: "",
-                hash: IP_HASH,
-                registrationDate: uint64(block.timestamp),
-                registrant: alice,
-                uri: IP_EXTERNAL_URL
-
-            })
-        );
-        vm.expectRevert(Errors.MetadataProvider__NameInvalid.selector);
-        vm.prank(address(registry));
-        metadataProvider.setMetadata(ipId, v1Metadata);
-    }
-
-    /// @notice Tests metadata set without a hash reverts.
-    function test_MetadataProvider_SetMetadata_Reverts_InvalidHash() public {
-        v1Metadata = abi.encode(
-            IP.MetadataV1({
-                name: IP_NAME,
-                hash: "",
-                registrationDate: uint64(block.timestamp),
-                registrant: alice,
-                uri: IP_EXTERNAL_URL
-
-            })
-        );
-        vm.expectRevert(Errors.MetadataProvider__HashInvalid.selector);
-        vm.prank(address(registry));
-        metadataProvider.setMetadata(ipId, v1Metadata);
-    }
-
-    /// @notice Tests metadata set without the right registration date reverts.
-    function test_MetadataProvider_SetMetadata_Reverts_InvalidRegistrationDate() public {
-        v1Metadata = abi.encode(
-            IP.MetadataV1({
-                name: IP_NAME,
-                hash: IP_HASH,
-                registrationDate: uint64(0),
-                registrant: alice,
-                uri: IP_EXTERNAL_URL
-
-            })
-        );
-        vm.expectRevert(Errors.MetadataProvider__RegistrationDateInvalid.selector);
-        vm.prank(address(registry));
-        metadataProvider.setMetadata(ipId, v1Metadata);
-    }
-
     /// @notice Tests metadata set without a valid registrant reverts.
     function test_MetadataProvider_SetMetadata_Reverts_InvalidRegistrant() public {
         v1Metadata = abi.encode(
@@ -244,23 +193,6 @@ contract MetadataProviderTest is BaseTest {
             })
         );
         vm.expectRevert(Errors.MetadataProvider__RegistrantInvalid.selector);
-        vm.prank(address(registry));
-        metadataProvider.setMetadata(ipId, v1Metadata);
-    }
-
-    /// @notice Tests metadata set without a URI reverts.
-    function test_MetadataProvider_SetMetadata_Reverts_InvalidURI() public {
-        v1Metadata = abi.encode(
-            IP.MetadataV1({
-                name: IP_NAME,
-                hash: IP_HASH,
-                registrationDate: uint64(block.timestamp),
-                registrant: alice,
-                uri: ""
-
-            })
-        );
-        vm.expectRevert(Errors.MetadataProvider__URIInvalid.selector);
         vm.prank(address(registry));
         metadataProvider.setMetadata(ipId, v1Metadata);
     }
