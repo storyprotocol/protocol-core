@@ -119,8 +119,7 @@ contract IPAssetRendererTest is BaseTest {
         licenseRegistry.setLicensingModule(address(licensingModule));
         resolver = new IPResolver(
             address(accessController),
-            address(ipAssetRegistry),
-            address(licenseRegistry)
+            address(ipAssetRegistry)
         );
         renderer = new IPAssetRenderer(
             address(ipAssetRegistry),

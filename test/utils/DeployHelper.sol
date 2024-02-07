@@ -143,7 +143,7 @@ contract DeployHelper is Test {
         );
         licenseRegistry.setLicensingModule(address(licensingModule));
         ipMetadataProvider = new IPMetadataProvider(address(moduleRegistry));
-        ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry), address(licenseRegistry));
+        ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry));
         registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
@@ -155,7 +155,6 @@ contract DeployHelper is Test {
         disputeModule = new DisputeModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry),
             address(governance)
         );
         ipAssetRenderer = new IPAssetRenderer(

@@ -32,7 +32,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         address licenseRegistry,
         address licensingModule,
         address resolverAddr
-    ) BaseModule(controller, assetRegistry, licenseRegistry) {
+    ) BaseModule(controller, assetRegistry) {
         resolver = IPResolver(resolverAddr);
         _LICENSING_MODULE = ILicensingModule(licensingModule);
     }

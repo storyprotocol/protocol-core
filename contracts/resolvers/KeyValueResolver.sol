@@ -17,7 +17,7 @@ abstract contract KeyValueResolver is IKeyValueResolver, ResolverBase {
     /// @param ipId The canonical identifier of the IP asset.
     /// @param k The string parameter key to update.
     /// @param v The value to set for the specified key.
-    function setValue(address ipId, string calldata k, string calldata v) external virtual onlyAuthorized(ipId) {
+    function setValue(address ipId, string calldata k, string calldata v) external virtual verifyPermission(ipId) {
         _values[ipId][k] = v;
         emit KeyValueSet(ipId, k, v);
     }

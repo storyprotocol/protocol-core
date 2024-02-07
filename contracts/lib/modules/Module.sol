@@ -16,3 +16,7 @@ string constant TAGGING_MODULE_KEY = "TAGGING_MODULE";
 string constant ROYALTY_MODULE_KEY = "ROYALTY_MODULE";
 
 string constant LICENSING_MODULE_KEY = "LICENSING_MODULE";
+
+// Module types
+uint256 constant MODULE_TYPE_ACTION = 1;
+uint256 constant MODULE_TYPE_HOOK = 2;
