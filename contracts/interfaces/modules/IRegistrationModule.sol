@@ -10,7 +10,9 @@ interface IRegistrationModule {
         uint256 policyId,
         address tokenContract,
         uint256 tokenId,
-        bytes calldata metadata
+        string memory ipName,
+        bytes32 hash,
+        string calldata externalURL
     ) external returns (address);
 
     function registerDerivativeIp(

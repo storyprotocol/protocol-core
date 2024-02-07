@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Test } from "forge-std/Test.sol";
+import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
+
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
-import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
 import { IUMLPolicyFrameworkManager, UMLPolicy } from "contracts/interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
-import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";

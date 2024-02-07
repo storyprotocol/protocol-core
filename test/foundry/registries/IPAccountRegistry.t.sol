@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 import { Test } from "forge-std/Test.sol";
 
-import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
+import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
 
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";

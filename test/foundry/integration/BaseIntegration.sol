@@ -5,10 +5,10 @@ pragma solidity ^0.8.23;
 import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Test } from "forge-std/Test.sol";
-import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
-import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.sol";
-import { IERC6551Registry } from "lib/reference/src/interfaces/IERC6551Registry.sol";
-import { ERC6551AccountLib } from "lib/reference/src/lib/ERC6551AccountLib.sol";
+import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
+import { IERC6551Account } from "@erc6551/interfaces/IERC6551Account.sol";
+import { IERC6551Registry } from "@erc6551/interfaces/IERC6551Registry.sol";
+import { ERC6551AccountLib } from "@erc6551/lib/ERC6551AccountLib.sol";
 
 // contracts
 import { AccessController } from "contracts/AccessController.sol";
@@ -250,15 +250,14 @@ contract BaseIntegration is Test {
 
         vm.label(expectedAddr, string(abi.encodePacked("IPAccount", Strings.toString(tokenId))));
 
-        bytes memory metadata = abi.encode(
-            IP.MetadataV1({
-                name: string(abi.encodePacked("IPAccount", Strings.toString(tokenId))),
-                hash: bytes32("ip account hash"),
-                registrationDate: uint64(block.timestamp),
-                registrant: caller,
-                uri: "external URL"
-            })
-        );
+        IP.MetadataV1 memory metadataV1 = IP.MetadataV1({
+            name: string(abi.encodePacked("IPAccount", Strings.toString(tokenId))),
+            hash: bytes32("ip account hash"),
+            registrationDate: uint64(block.timestamp),
+            registrant: caller,
+            uri: "external URL"
+        });
+        bytes memory metadata = abi.encode(metadataV1);
 
         // expect all events below when calling `registrationModule.registerRootIp`
 
@@ -310,7 +309,7 @@ contract BaseIntegration is Test {
 
         // policyId = 0 means no policy attached directly on creation
         vm.startPrank(caller);
-        return registrationModule.registerRootIp(0, nft, tokenId, metadata);
+        return registrationModule.registerRootIp(0, nft, tokenId, metadataV1.name, metadataV1.hash, metadataV1.uri);
     }
 
     function registerIpAccount(MockERC721 nft, uint256 tokenId, address caller) internal returns (address) {

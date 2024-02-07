@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 import { Script } from "forge-std/Script.sol";
 import { stdJson } from "forge-std/StdJson.sol";
 
-import { StringUtil } from "script/foundry/utils/StringUtil.sol";
+import { StringUtil } from "../../../script/foundry/utils/StringUtil.sol";
 
 contract JsonDeploymentHandler is Script {
     using StringUtil for uint256;

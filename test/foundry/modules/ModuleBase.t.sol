@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
+
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { BaseTest } from "test/foundry/utils/BaseTest.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
@@ -10,7 +12,6 @@ import { BaseModule } from "contracts/modules/BaseModule.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { AccessController } from "contracts/AccessController.sol";
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
-import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
 import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";

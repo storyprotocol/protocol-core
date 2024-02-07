@@ -34,9 +34,9 @@ import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/A
 import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
 // script
-import { StringUtil } from "script/foundry/utils/StringUtil.sol";
-import { BroadcastManager } from "script/foundry/utils/BroadcastManager.s.sol";
-import { JsonDeploymentHandler } from "script/foundry/utils/JsonDeploymentHandler.s.sol";
+import { StringUtil } from "../../../script/foundry/utils/StringUtil.sol";
+import { BroadcastManager } from "../../../script/foundry/utils/BroadcastManager.s.sol";
+import { JsonDeploymentHandler } from "../../../script/foundry/utils/JsonDeploymentHandler.s.sol";
 
 // test
 import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
@@ -166,6 +166,10 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         _predeploy(contractKey);
         ipAssetRegistry = new IPAssetRegistry(address(accessController), ERC6551_REGISTRY, address(ipAccountImpl));
         _postdeploy(contractKey, address(ipAssetRegistry));
+
+        contractKey = "MetadataProviderV1";
+        _predeploy(contractKey);
+        _postdeploy(contractKey, ipAssetRegistry.metadataProvider());
 
         contractKey = "IPAssetRenderer";
         _predeploy(contractKey);
@@ -412,15 +416,9 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             0,
             address(erc721),
             1,
-            abi.encode(
-                IP.MetadataV1({
-                    name: "IPAccount1",
-                    hash: bytes32("some of the best description"),
-                    registrationDate: uint64(block.timestamp),
-                    registrant: deployer,
-                    uri: "https://example.com/test-ip"
-                })
-            )
+            "IPAccount1",
+            bytes32("some content hash"),
+            "https://example.com/test-ip"
         );
         disputeModule.setArbitrationPolicy(ipAcct[1], address(arbitrationPolicySP));
 
@@ -430,15 +428,9 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             policyIds["uml_noncom_deriv_reciprocal"],
             address(erc721),
             2,
-            abi.encode(
-                IP.MetadataV1({
-                    name: "IPAccount2",
-                    hash: bytes32("some of the best description"),
-                    registrationDate: uint64(block.timestamp),
-                    registrant: deployer,
-                    uri: "https://example.com/test-ip"
-                })
-            )
+            "IPAccount2",
+            bytes32("some of the best description"),
+            "https://example.com/test-ip"
         );
 
         // wildcard allow
@@ -510,15 +502,9 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 0,
                 address(erc721),
                 4,
-                abi.encode(
-                    IP.MetadataV1({
-                        name: "IPAccount4",
-                        hash: bytes32("some of the best description"),
-                        registrationDate: uint64(block.timestamp),
-                        registrant: deployer,
-                        uri: "https://example.com/test-ip"
-                    })
-                )
+                "IPAccount4",
+                bytes32("some of the best description"),
+                "https://example.com/test-ip"
             );
 
             licensingModule.linkIpToParents(licenseIds, ipAcct[4], 0);

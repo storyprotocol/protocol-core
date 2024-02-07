@@ -14,6 +14,12 @@ contract MetadataProviderV1 is MetadataProviderBase {
     /// @param ipAssetRegistry The protocol-wide IP asset registry.
     constructor(address ipAssetRegistry) MetadataProviderBase(ipAssetRegistry) {}
 
+    /// @notice Fetches the metadata linked to an IP asset.
+    /// @param ipId The address identifier of the IP asset.
+    function metadata(address ipId) external view returns (IP.MetadataV1 memory) {
+        return _metadataV1(ipId);
+    }
+
     /// @notice Gets the name associated with the IP asset.
     /// @param ipId The address identifier of the IP asset.
     function name(address ipId) external view returns (string memory) {
@@ -48,20 +54,8 @@ contract MetadataProviderV1 is MetadataProviderBase {
     /// @param data The canonical metadata in bytes to verify.
     function _verifyMetadata(bytes memory data) internal virtual override {
         IP.MetadataV1 memory decodedMetadata = abi.decode(data, (IP.MetadataV1));
-        if (bytes(decodedMetadata.name).length == 0) {
-            revert Errors.MetadataProvider__NameInvalid();
-        }
-        if (decodedMetadata.hash == "") {
-            revert Errors.MetadataProvider__HashInvalid();
-        }
-         if (decodedMetadata.registrationDate != uint64(block.timestamp)) {
-             revert Errors.MetadataProvider__RegistrationDateInvalid();
-         }
         if (decodedMetadata.registrant == address(0)) {
             revert Errors.MetadataProvider__RegistrantInvalid();
-        }
-        if (bytes(decodedMetadata.uri).length == 0) {
-            revert Errors.MetadataProvider__URIInvalid();
         }
     }
  

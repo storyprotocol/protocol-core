@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 import { Script } from "forge-std/Script.sol";
 
-import { StringUtil } from "script/foundry/utils/StringUtil.sol";
+import { StringUtil } from "../../../script/foundry/utils/StringUtil.sol";
 
 contract BroadcastManager is Script {
     address public multisig;

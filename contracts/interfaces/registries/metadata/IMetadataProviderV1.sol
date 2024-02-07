@@ -2,10 +2,15 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
+import { IP } from "../../../lib/IP.sol";
 import { IMetadataProvider } from "./IMetadataProvider.sol";
 
 /// @title Metadata Provider v1 Interface
 interface IMetadataProviderV1 is IMetadataProvider {
+
+    /// @notice Fetches the metadata linked to an IP asset.
+    /// @param ipId The address identifier of the IP asset.
+    function metadata(address ipId) external view returns (IP.MetadataV1 memory);
 
     /// @notice Gets the name associated with the IP asset.
     /// @param ipId The address identifier of the IP asset.

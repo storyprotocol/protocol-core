@@ -6,7 +6,7 @@ import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { KeyValueResolver } from "contracts/resolvers/KeyValueResolver.sol";
 import { IKeyValueResolver } from "contracts/interfaces/resolvers/IKeyValueResolver.sol";
 import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
-import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
+import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
 import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
