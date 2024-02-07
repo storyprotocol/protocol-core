@@ -3,7 +3,6 @@
 pragma solidity ^0.8.23;
 
 import { ResolverBase } from "./ResolverBase.sol";
-import { BaseModule } from "../modules/BaseModule.sol";
 import { IModule } from "../interfaces/modules/base/IModule.sol";
 import { KeyValueResolver } from "../resolvers/KeyValueResolver.sol";
 import { IP_RESOLVER_MODULE_KEY } from "../lib/modules/Module.sol";
@@ -17,10 +16,7 @@ contract IPResolver is KeyValueResolver {
     /// @notice Initializes the IP metadata resolver.
     /// @param accessController The access controller used for IP authorization.
     /// @param ipAssetRegistry The address of the IP record registry.
-    constructor(
-        address accessController,
-        address ipAssetRegistry
-    ) ResolverBase(accessController, ipAssetRegistry) {}
+    constructor(address accessController, address ipAssetRegistry) ResolverBase(accessController, ipAssetRegistry) {}
 
     /// @notice Checks whether the resolver interface is supported.
     /// @param id The resolver interface identifier.

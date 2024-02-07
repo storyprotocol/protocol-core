@@ -11,17 +11,13 @@ import { IPAssetRegistry } from "../registries/IPAssetRegistry.sol";
 ///         ensure all modules share the same authorization through the access
 ///         controll manager.
 abstract contract BaseModule is IModule, AccessControlled {
-
     /// @notice Gets the protocol-wide IP asset registry.
     IPAssetRegistry public immutable IP_ASSET_REGISTRY;
 
     /// @notice Initializes the base module contract.
     /// @param accessController The access controller used for IP authorization.
     /// @param ipAssetRegistry The address of the IP asset registry.
-    constructor(
-        address accessController,
-        address ipAssetRegistry
-    ) AccessControlled(accessController, ipAssetRegistry) {
+    constructor(address accessController, address ipAssetRegistry) AccessControlled(accessController, ipAssetRegistry) {
         IP_ASSET_REGISTRY = IPAssetRegistry(ipAssetRegistry);
     }
 }

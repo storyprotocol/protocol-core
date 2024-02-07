@@ -10,10 +10,7 @@ abstract contract ResolverBase is IResolver, BaseModule {
     /// @notice Initializes the base module contract.
     /// @param controller The access controller used for IP authorization.
     /// @param assetRegistry The address of the IP record registry.
-    constructor(
-        address controller,
-        address assetRegistry
-    ) BaseModule(controller, assetRegistry) {}
+    constructor(address controller, address assetRegistry) BaseModule(controller, assetRegistry) {}
 
     /// @notice Checks whether the resolver interface is supported.
     /// @param id The resolver interface identifier.

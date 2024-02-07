@@ -130,7 +130,6 @@ contract IPAssetRendererTest is BaseTest {
         registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry),
             address(licensingModule),
             address(resolver)
         );

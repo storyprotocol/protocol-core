@@ -81,7 +81,6 @@ abstract contract ModuleBaseTest is BaseTest {
         RegistrationModule registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry),
             address(licensingModule),
             address(ipResolver)
         );

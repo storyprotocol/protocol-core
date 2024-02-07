@@ -141,7 +141,6 @@ contract BaseIntegration is Test {
         registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry),
             address(licensingModule),
             address(ipResolver)
         );
