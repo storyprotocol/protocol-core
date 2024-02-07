@@ -1,6 +1,5 @@
+import "@nomicfoundation/hardhat-ethers"
 import "@nomicfoundation/hardhat-foundry"
-import "@nomiclabs/hardhat-waffle"
-import "@nomiclabs/hardhat-ethers"
 import "@nomicfoundation/hardhat-verify"
 import "@tenderly/hardhat-tenderly"
 import * as tdly from "@tenderly/hardhat-tenderly" // also import tdly for setup, in addition to global import above
