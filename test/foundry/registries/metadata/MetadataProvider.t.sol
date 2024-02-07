@@ -139,8 +139,7 @@ contract MetadataProviderTest is BaseTest {
         uint256 tokenId = erc721.mintId(alice, 99);
         IPResolver resolver = new IPResolver(
             address(accessController),
-            address(registry),
-            address(licenseRegistry)
+            address(registry)
         );
         ipId = registry.register(
             block.chainid,

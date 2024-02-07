@@ -54,14 +54,12 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
     /// @notice Initializes the registration module contract
     /// @param _controller The access controller used for IP authorization
     /// @param _assetRegistry The address of the IP asset registry
-    /// @param _licenseRegistry The address of the license registry
     /// @param _governance The address of the governance contract
     constructor(
         address _controller,
         address _assetRegistry,
-        address _licenseRegistry,
         address _governance
-    ) BaseModule(_controller, _assetRegistry, _licenseRegistry) Governable(_governance) {}
+    ) BaseModule(_controller, _assetRegistry) Governable(_governance) {}
 
     /// @notice Whitelists a dispute tag
     /// @param _tag The dispute tag
@@ -114,8 +112,7 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
     /// @notice Sets the arbitration policy for an ipId
     /// @param _ipId The ipId
     /// @param _arbitrationPolicy The address of the arbitration policy
-    function setArbitrationPolicy(address _ipId, address _arbitrationPolicy) external {
-        if (_ipId != msg.sender) _authenticate(_ipId);
+    function setArbitrationPolicy(address _ipId, address _arbitrationPolicy) external verifyPermission(_ipId) {
         if (!isWhitelistedArbitrationPolicy[_arbitrationPolicy]) revert Errors.DisputeModule__NotWhitelistedArbitrationPolicy();
 
         arbitrationPolicies[_ipId] = _arbitrationPolicy;

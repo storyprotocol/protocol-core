@@ -204,7 +204,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "IPResolver";
         _predeploy(contractKey);
-        ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry), address(licenseRegistry));
+        ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry));
         _postdeploy(contractKey, address(ipResolver));
 
         contractKey = "RegistrationModule";
@@ -212,7 +212,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry),
             address(licensingModule),
             address(ipResolver)
         );
@@ -223,7 +222,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         disputeModule = new DisputeModule(
             address(accessController),
             address(ipAssetRegistry),
-            address(licenseRegistry),
             address(governance)
         );
         _postdeploy(contractKey, address(disputeModule));

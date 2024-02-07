@@ -191,7 +191,15 @@ contract TestDisputeModule is TestHelper {
     }
 
     function test_DisputeModule_setArbitrationPolicy_revert_UnauthorizedAccess() public {
-        vm.expectRevert(Errors.Module_Unauthorized.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
+                ipAddr,
+                address(this),
+                address(disputeModule),
+                disputeModule.setArbitrationPolicy.selector
+            )
+        );
         disputeModule.setArbitrationPolicy(ipAddr, address(arbitrationPolicySP2));
     }
 

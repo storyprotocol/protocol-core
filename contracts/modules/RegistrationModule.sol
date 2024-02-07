@@ -25,14 +25,12 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
     /// @notice Initializes the registration module contract.
     /// @param controller The access controller used for IP authorization.
     /// @param assetRegistry The address of the IP asset registry.
-    /// @param licenseRegistry The address of the license module.
     constructor(
         address controller,
         address assetRegistry,
-        address licenseRegistry,
         address licensingModule,
         address resolverAddr
-    ) BaseModule(controller, assetRegistry, licenseRegistry) {
+    ) BaseModule(controller, assetRegistry) {
         resolver = IPResolver(resolverAddr);
         _LICENSING_MODULE = ILicensingModule(licensingModule);
     }

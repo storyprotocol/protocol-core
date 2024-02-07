@@ -91,8 +91,7 @@ contract IPResolverTest is ResolverBaseTest {
         return address(
             new IPResolver(
                 address(accessController),
-                address(ipAssetRegistry),
-                address(licenseRegistry)
+                address(ipAssetRegistry)
             )
         );
     }
