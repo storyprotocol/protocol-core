@@ -11,7 +11,7 @@ import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensin
 // test
 import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { DeployHelper } from "test/utils/DeployHelper.sol";
+import { DeployHelper } from "test/foundry/utils/DeployHelper.sol";
 
 struct PolicyFrameworkManagerData {
     string name;

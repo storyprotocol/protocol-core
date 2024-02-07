@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-
-import {console2} from "forge-std/console2.sol";
+// external
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
+// contracts
 import {RoyaltyModule} from "contracts/modules/royalty-module/RoyaltyModule.sol";
-import { TestHelper } from "../../../utils/TestHelper.sol";
 import { Errors } from "contracts/lib/Errors.sol";
+// tests
+import { TestHelper } from "../../utils/TestHelper.sol";
 
 contract TestRoyaltyModule is TestHelper {
     event RoyaltyPolicyWhitelistUpdated(address royaltyPolicy, bool allowed);

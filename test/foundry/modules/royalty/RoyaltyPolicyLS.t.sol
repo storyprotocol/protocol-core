@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-import { console2 } from "forge-std/console2.sol";
+// external
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-
-import { TestHelper } from "../../../utils/TestHelper.sol";
+// contracts
 import { RoyaltyPolicyLS } from "../../../../contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
 import { ILiquidSplitClone } from "../../../../contracts/interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
 import { Errors } from "../../../../contracts/lib/Errors.sol";
+// tests
+import { TestHelper } from "../../utils/TestHelper.sol";
 
 contract TestLSClaimer is TestHelper {
     RoyaltyPolicyLS internal testRoyaltyPolicyLS;

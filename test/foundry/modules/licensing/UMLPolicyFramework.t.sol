@@ -17,7 +17,7 @@ import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
-import { TestHelper } from "test/utils/TestHelper.sol";
+import { TestHelper } from "test/foundry/utils/TestHelper.sol";
 
 contract UMLPolicyFrameworkTest is TestHelper {
     UMLPolicyFrameworkManager internal umlFramework;

@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 import { Errors } from "contracts/lib/Errors.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
-import { TestHelper } from "test/utils/TestHelper.sol";
+import { TestHelper } from "test/foundry/utils/TestHelper.sol";
 
 contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
     UMLPolicyFrameworkManager internal umlFramework;

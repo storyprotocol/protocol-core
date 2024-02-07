@@ -7,7 +7,7 @@ import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
 import { UMLPolicy } from "contracts/interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
-import { TestHelper } from "test/utils/TestHelper.sol";
+import { TestHelper } from "test/foundry/utils/TestHelper.sol";
 
 contract UMLPolicyFrameworkMultiParentTest is TestHelper {
 

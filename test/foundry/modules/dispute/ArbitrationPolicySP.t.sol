@@ -13,7 +13,7 @@ import { IP } from "contracts/lib/IP.sol";
 import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
 import { MintPaymentPolicyFrameworkManager } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { TestHelper } from "test/utils/TestHelper.sol";
+import { TestHelper } from "test/foundry/utils/TestHelper.sol";
 
 contract TestArbitrationPolicySP is TestHelper {
     event GovernanceWithdrew(uint256 amount);
