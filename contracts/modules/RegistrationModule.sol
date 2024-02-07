@@ -11,7 +11,6 @@ import { Errors } from "../lib/Errors.sol";
 import { IP } from "../lib/IP.sol";
 import { BaseModule } from "../modules/BaseModule.sol";
 import { ILicensingModule } from "../interfaces/modules/licensing/ILicensingModule.sol";
-import { ILicenseRegistry } from "../interfaces/registries/ILicenseRegistry.sol";
 
 /// @title Registration Module
 /// @notice The registration module is responsible for registration of IP into

@@ -2,11 +2,9 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 import { IIPAccount } from "../interfaces/IIPAccount.sol";
-import { IMetadataProvider } from "../interfaces/registries/metadata/IMetadataProvider.sol";
 import { IIPAssetRegistry } from "../interfaces/registries/IIPAssetRegistry.sol";
 import { IPAccountRegistry } from "../registries/IPAccountRegistry.sol";
 import { IMetadataProviderMigratable } from "../interfaces/registries/metadata/IMetadataProviderMigratable.sol";

@@ -11,7 +11,6 @@ import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/Mes
 
 import { IAccessController } from "./interfaces/IAccessController.sol";
 import { IIPAccount } from "./interfaces/IIPAccount.sol";
-import { AccessPermission } from "./lib/AccessPermission.sol";
 import { MetaTx } from "./lib/MetaTx.sol";
 import { Errors } from "./lib/Errors.sol";
 
