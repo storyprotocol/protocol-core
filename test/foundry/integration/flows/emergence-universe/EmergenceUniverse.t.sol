@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 import { Test } from "forge-std/Test.sol";
 
-import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.sol";
+import { IERC6551Account } from "@erc6551/interfaces/IERC6551Account.sol";
 
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";

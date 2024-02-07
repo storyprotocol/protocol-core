@@ -9,7 +9,7 @@ import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
-import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
+import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
 import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
 import { MockMetadataProviderV2 } from "test/foundry/mocks/MockMetadataProviderV2.sol";
 import { AccessController } from "contracts/AccessController.sol";

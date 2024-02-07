@@ -5,7 +5,7 @@ pragma solidity ^0.8.23;
 import { console2 } from "forge-std/console2.sol";
 import { ERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import { ERC6551AccountLib } from "lib/reference/src/lib/ERC6551AccountLib.sol";
+import { ERC6551AccountLib } from "@erc6551/lib/ERC6551AccountLib.sol";
 
 // contracts
 import { ILiquidSplitFactory } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitFactory.sol";

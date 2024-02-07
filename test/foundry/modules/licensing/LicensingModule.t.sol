@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 // external
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Test } from "forge-std/Test.sol";
-import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
+import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
 
 // contracts
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";

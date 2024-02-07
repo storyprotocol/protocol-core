@@ -4,8 +4,8 @@ pragma solidity ^0.8.23;
 import { Test } from "forge-std/Test.sol";
 
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
-import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
-import { IERC6551Account } from "lib/reference/src/interfaces/IERC6551Account.sol";
+import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
+import { IERC6551Account } from "@erc6551/interfaces/IERC6551Account.sol";
 
 import { AccessController } from "contracts/AccessController.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";

@@ -9,7 +9,7 @@ import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
 import { AccessController } from "contracts/AccessController.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
-import { ERC6551Registry } from "lib/reference/src/ERC6551Registry.sol";
+import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
 import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";

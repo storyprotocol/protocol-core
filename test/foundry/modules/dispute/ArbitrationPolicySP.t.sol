@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 // external
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import { ERC6551AccountLib } from "lib/reference/src/lib/ERC6551AccountLib.sol";
+import { ERC6551AccountLib } from "@erc6551/lib/ERC6551AccountLib.sol";
 // contracts
 import {Errors} from "contracts/lib/Errors.sol";
 import {ArbitrationPolicySP} from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";

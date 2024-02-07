@@ -45,7 +45,8 @@
     "solidity-coverage": "^0.8.2",
     "ts-node": "^10.9.2",
     "typechain": "^8.3.2",
-    "forge-std": "github:foundry-rs/forge-std#v1.7.6"
+    "forge-std": "github:foundry-rs/forge-std#v1.7.6",
+    "ds-test": "github:dapphub/ds-test"
   },
   "dependencies": {
     "@openzeppelin/contracts": "5.0.1",
