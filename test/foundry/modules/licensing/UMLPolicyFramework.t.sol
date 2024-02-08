@@ -80,7 +80,9 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: territories,
             distributionChannels: distributionChannels,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(mockRoyaltyPolicyLS)
+            royaltyPolicy: address(mockRoyaltyPolicyLS),
+            mintingFeeAmount: mintFeeAmount,
+            mintingFeeToken: address(USDC)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         UMLPolicy memory policy = umlFramework.getPolicy(policyId);
@@ -108,7 +110,9 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(0) // must be 0 because commercialUse = false
+            royaltyPolicy: address(0), // must be 0 because commercialUse = false
+            mintingFeeAmount: 0,
+            mintingFeeToken: address(0)
         });
         // commercialAttribution = true should revert
         vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddAttribution.selector);
@@ -152,7 +156,9 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(mockRoyaltyPolicyLS)
+            royaltyPolicy: address(mockRoyaltyPolicyLS),
+            mintingFeeAmount: mintFeeAmount,
+            mintingFeeToken: address(USDC)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         UMLPolicy memory policy = umlFramework.getPolicy(policyId);
@@ -176,7 +182,9 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(mockRoyaltyPolicyLS)
+            royaltyPolicy: address(mockRoyaltyPolicyLS),
+            mintingFeeAmount: mintFeeAmount,
+            mintingFeeToken: address(USDC)
         });
         // derivativesAttribution = true should revert
         vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddAttribution.selector);
@@ -214,7 +222,9 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(mockRoyaltyPolicyLS)
+            royaltyPolicy: address(mockRoyaltyPolicyLS),
+            mintingFeeAmount: mintFeeAmount,
+            mintingFeeToken: address(USDC)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         UMLPolicy memory policy = umlFramework.getPolicy(policyId);
@@ -242,7 +252,9 @@ contract UMLPolicyFrameworkTest is TestHelper {
                 territories: emptyStringArray,
                 distributionChannels: emptyStringArray,
                 contentRestrictions: emptyStringArray,
-                royaltyPolicy: address(0) // must be 0 because commercialUse = false
+                royaltyPolicy: address(0), // must be 0 because commercialUse = false
+                mintingFeeAmount: 0,
+                mintingFeeToken: address(0)
             })
         );
 
@@ -281,7 +293,9 @@ contract UMLPolicyFrameworkTest is TestHelper {
                 territories: emptyStringArray,
                 distributionChannels: emptyStringArray,
                 contentRestrictions: emptyStringArray,
-                royaltyPolicy: address(0) // must be 0 because commercialUse = false
+                royaltyPolicy: address(0), // must be 0 because commercialUse = false
+                mintingFeeAmount: 0,
+                mintingFeeToken: address(0)
             })
         );
 
@@ -327,7 +341,9 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(0) // must be 0 because commercialUse = false
+            royaltyPolicy: address(0), // must be 0 because commercialUse = false
+            mintingFeeAmount: 0,
+            mintingFeeToken: address(0)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         vm.prank(ipOwner);
@@ -357,7 +373,9 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(0) // must be 0 because commercialUse = false
+            royaltyPolicy: address(0), // must be 0 because commercialUse = false
+            mintingFeeAmount: 0,
+            mintingFeeToken: address(0)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         vm.prank(ipOwner);

@@ -20,6 +20,8 @@ import { IPolicyFrameworkManager } from "../../../interfaces/modules/licensing/I
 /// @param territories List of territories where the license is valid. If empty, global.
 /// @param distributionChannels List of distribution channels where the license is valid. Empty if no restrictions.
 /// @param royaltyPolicy Address of a royalty policy contract (e.g. RoyaltyPolicyLS) that will handle royalty payments
+/// @param mintingFeeAmount Amount of tokens to be paid to mint a new license
+/// @param mintingFeeToken Address of the token to be paid to mint a new license
 struct UMLPolicy {
     bool transferable;
     bool attribution;
@@ -36,6 +38,8 @@ struct UMLPolicy {
     string[] distributionChannels;
     string[] contentRestrictions;
     address royaltyPolicy;
+    address mintingFeeToken;
+    uint256 mintingFeeAmount;
 }
 
 /// @notice Struct that accumulates values of inherited policies

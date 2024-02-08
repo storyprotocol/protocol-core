@@ -135,6 +135,14 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
         return getPolicy(policyId).commercialRevShare;
     }
 
+    function getMintingFeeAmount(uint256 policyId) external view returns (uint256) {
+        return getPolicy(policyId).mintingFeeAmount;
+    }
+
+    function getMintingFeeToken(uint256 policyId) external view returns (address) {
+        return getPolicy(policyId).mintingFeeToken;
+    }
+
     function isPolicyCommercial(uint256 policyId) external view returns (bool) {
         return getPolicy(policyId).commercialUse;
     }
@@ -326,10 +334,19 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
             if (policy.royaltyPolicy != address(0)) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddRoyaltyPolicy();
             }
+            if (policy.mintingFeeAmount > 0) {
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddMintingFee();
+            }
+            if (policy.mintingFeeToken != address(0)) {
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddMintingFeeToken();
+            }
         } else {
             // TODO: check for supportInterface instead
             if (policy.royaltyPolicy == address(0)) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialEnabled_RoyaltyPolicyRequired();
+            }
+            if (policy.mintingFeeAmount > 0 && policy.mintingFeeToken == address(0)) {
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialEnabled_MintingFeeTokenRequired();
             }
         }
     }

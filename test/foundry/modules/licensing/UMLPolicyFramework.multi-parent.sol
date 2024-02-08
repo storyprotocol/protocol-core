@@ -199,6 +199,8 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         polB.commercialRevShare = 0;
         polB.derivativesRevShare = 0;
         polB.royaltyPolicy = address(0x0);
+        polB.mintingFeeAmount = 0;
+        polB.mintingFeeToken = address(0x0);
         // TODO: passing in two different royaltyPolicy addresses
         // solhint-disable-next-line max-line-length
         // _testRevertCompat(polA, polB, UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialValueMismatch.selector);
