@@ -5,18 +5,8 @@ import { ResolverBaseTest } from "test/foundry/resolvers/ResolverBase.t.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { KeyValueResolver } from "contracts/resolvers/KeyValueResolver.sol";
 import { IKeyValueResolver } from "contracts/interfaces/resolvers/IKeyValueResolver.sol";
-import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
-import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
-import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
-import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
-import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
-import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
-import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
-import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { ModuleBaseTest } from "test/foundry/modules/ModuleBase.t.sol";
 import { IP } from "contracts/lib/IP.sol";
-import { Errors } from "contracts/lib/Errors.sol";
 import { IP_RESOLVER_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 
 /// @title IP Resolver Test Contract

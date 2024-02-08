@@ -2,7 +2,6 @@
 pragma solidity ^0.8.23;
 
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
 import { REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 
 /// @title Mock Module Registry Contract

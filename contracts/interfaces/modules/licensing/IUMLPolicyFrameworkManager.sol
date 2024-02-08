@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
-
 pragma solidity ^0.8.23;
 
-import { Licensing } from "../../../lib/Licensing.sol";
 import { IPolicyFrameworkManager } from "../../../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 
 /// @notice Licensing parameters for the UML standard
@@ -44,7 +42,8 @@ struct UMLPolicy {
 /// so we can verify compatibility when inheriting new policies
 /// @param commercial Whether or not there is a policy that allows commercial use
 /// @param derivatives Whether or not there is a policy that allows derivatives
-/// @param derivativesReciprocal Whether or not there is a policy that requires derivatives to be licensed under the same terms
+/// @param derivativesReciprocal Whether or not there is a policy that requires derivatives
+/// to be licensed under the same terms
 /// @param lastPolicyId The last policy ID that was added to the IP
 /// @param territoriesAcc The last hash of the territories array
 /// @param distributionChannelsAcc The last hash of the distributionChannels array

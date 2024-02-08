@@ -5,14 +5,13 @@ pragma solidity ^0.8.23;
 // external
 import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 // contracts
-import { ShortStringOps } from "../../utils/ShortStringOps.sol";
 import { ILicensingModule } from "../../interfaces/modules/licensing/ILicensingModule.sol";
 import { Licensing } from "../../lib/Licensing.sol";
 import { Errors } from "../../lib/Errors.sol";
 import { UMLFrameworkErrors } from "../../lib/UMLFrameworkErrors.sol";
+// solhint-disable-next-line max-line-length
 import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator } from "../../interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
 import { IPolicyFrameworkManager } from "../../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 import { BasePolicyFrameworkManager } from "../../modules/licensing/BasePolicyFrameworkManager.sol";
@@ -143,6 +142,7 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
     /// @param policy the policy to inherit
     /// @return changedAgg  true if the aggregator was changed
     /// @return newAggregator the new aggregator
+    // solhint-disable-next-line code-complexity
     function processInheritedPolicies(
         bytes memory aggregator,
         uint256 policyId,

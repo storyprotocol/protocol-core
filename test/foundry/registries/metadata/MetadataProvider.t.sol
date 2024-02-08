@@ -5,22 +5,18 @@ import { BaseTest } from "test/foundry/utils/BaseTest.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
-import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { MockMetadataProviderV2 } from "test/foundry/mocks/MockMetadataProviderV2.sol";
 import { AccessController } from "contracts/AccessController.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { Governance } from "contracts/governance/Governance.sol";
-import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProviderV1.sol";
 import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMetadataProvider.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 
 /// @title IP Metadata Provider Testing Contract
 /// @notice Contract for metadata provider settings.
@@ -123,10 +119,8 @@ contract MetadataProviderTest is BaseTest {
         );
         vm.prank(bob);
         registry = new IPAssetRegistry(address(accessController), address(erc6551Registry), address(ipAccountImpl));
-        RoyaltyModule royaltyModule = new RoyaltyModule(address(governance));
 
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-        LicenseRegistry licenseRegistry = new LicenseRegistry();
         MockERC721 erc721 = new MockERC721("MockERC721");
         uint256 tokenId = erc721.mintId(alice, 99);
         IPResolver resolver = new IPResolver(address(accessController), address(registry));

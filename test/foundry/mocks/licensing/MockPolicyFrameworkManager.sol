@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-// external
-import { ERC165, IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 // contracts
-import { Errors } from "contracts/lib/Errors.sol";
-import { Licensing } from "contracts/lib/Licensing.sol";
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 
@@ -64,7 +60,7 @@ contract MockPolicyFrameworkManager is BasePolicyFrameworkManager {
             });
     }
 
-    function policyToJson(bytes memory policyData) public pure returns (string memory) {
+    function policyToJson(bytes memory) public pure returns (string memory) {
         return "MockPolicyFrameworkManager";
     }
 

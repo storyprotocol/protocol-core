@@ -2,11 +2,9 @@
 pragma solidity ^0.8.23;
 
 // external
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 // contracts
 import { RoyaltyPolicyLS } from "../../../../contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
-import { ILiquidSplitClone } from "../../../../contracts/interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
 import { Errors } from "../../../../contracts/lib/Errors.sol";
 // tests
 import { TestHelper } from "../../utils/TestHelper.sol";
@@ -179,7 +177,7 @@ contract TestLSClaimer is TestHelper {
         uint32 minRoyaltyIpAccount1 = 100;
         bytes memory data1 = abi.encode(minRoyaltyIpAccount1);
         royaltyModule.setRoyaltyPolicy(ipAccount1, address(royaltyPolicyLS), parentIpIds1, data1);
-        (address splitClone1, address claimer2, , ) = royaltyPolicyLS.royaltyData(ipAccount1);
+        (address splitClone1, , , ) = royaltyPolicyLS.royaltyData(ipAccount1);
         vm.stopPrank();
 
         uint256 royaltyAmount = 1000 * 10 ** 6;

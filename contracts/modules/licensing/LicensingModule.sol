@@ -160,6 +160,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
     /// @param amount of licenses to be minted. License NFT is fungible for same policy and same licensors
     /// @param receiver of the License NFT(s).
     /// @return licenseId of the NFT(s).
+    // solhint-disable-next-line code-complexity
     function mintLicense(
         uint256 policyId,
         address licensorIp,

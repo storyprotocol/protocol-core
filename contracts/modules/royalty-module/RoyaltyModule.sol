@@ -69,7 +69,8 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
         emit RoyaltyTokenWhitelistUpdated(_token, _allowed);
     }
 
-    // TODO: Ensure that the ipId that is passed in from license cannot be manipulated - given ipId addresses are deterministic
+    // TODO: Ensure that the ipId that is passed in from license cannot be manipulated
+    //       - given ipId addresses are deterministic
     /// @notice Sets the royalty policy for an ipId
     /// @param _ipId The ipId
     /// @param _royaltyPolicy The address of the royalty policy

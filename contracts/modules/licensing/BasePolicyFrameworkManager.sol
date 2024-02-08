@@ -2,15 +2,12 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-// contracts
-import { IPolicyFrameworkManager } from "../../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
-import { Licensing } from "../../lib/Licensing.sol";
-import { Errors } from "../../lib/Errors.sol";
-import { LicensingModuleAware } from "../../modules/licensing/LicensingModuleAware.sol";
-
 // external
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+// contracts
+import { IPolicyFrameworkManager } from "../../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
+import { LicensingModuleAware } from "../../modules/licensing/LicensingModuleAware.sol";
 
 /// @title BasePolicyFrameworkManager
 /// @notice Base contract for policy framework managers.

@@ -2,9 +2,7 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
-import { IP } from "contracts/lib/IP.sol";
 import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProviderV1.sol";
-import { Errors } from "contracts/lib/Errors.sol";
 
 /// @title Mock IP Metadata Provider v2
 /// @notice Mock storage provider for upgraded Story Protocol canonical IP metadata (v2).
@@ -40,7 +38,7 @@ contract MockMetadataProviderV2 is MetadataProviderV1 {
     function _verifyMetadata(bytes memory data) internal virtual override {}
 
     /// @dev Checks whether two sets of metadata are compatible with one another.
-    function _compatible(bytes memory m1, bytes memory m2) internal pure virtual override returns (bool) {
+    function _compatible(bytes memory, bytes memory) internal pure virtual override returns (bool) {
         return true;
     }
 }

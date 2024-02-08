@@ -2,13 +2,15 @@
 pragma solidity ^0.8.23;
 
 // external
-import { console2 } from "forge-std/console2.sol";
+// solhint-disable no-console
+import { console2 } from "forge-std/console2.sol"; // console to indicate setUp call.
 import { Test } from "forge-std/Test.sol";
 
 // contracts
 import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
 // test
+// solhint-disable-next-line max-line-length
 import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { DeployHelper } from "test/foundry/utils/DeployHelper.sol";
@@ -45,6 +47,7 @@ contract TestHelper is Test, DeployHelper {
     string[] internal emptyStringArray = new string[](0);
 
     function setUp() public virtual {
+        // solhint-disable no-console
         console2.log("TestHelper.setUp");
         deployer = vm.addr(accountA);
         arbitrationRelayer = vm.addr(accountC);
@@ -61,7 +64,6 @@ contract TestHelper is Test, DeployHelper {
         // vm.label(ipAccount2, "ipAccount2");
         // vm.label(ipAccount3, "ipAccount3");
         // vm.label(ipAccount4, "ipAccount4");
-
     }
 
     function _setUMLPolicyFrameworkManager() internal {

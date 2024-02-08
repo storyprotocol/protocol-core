@@ -13,6 +13,7 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { BaseIntegration } from "test/foundry/integration/BaseIntegration.sol";
 import { MintPaymentPolicyFrameworkManager } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+// solhint-disable-next-line max-line-length
 import { Integration_Shared_LicensingHelper, UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
 
 contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration_Shared_LicensingHelper {

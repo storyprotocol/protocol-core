@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
-import "contracts/interfaces/IAccessController.sol";
-import "contracts/interfaces/IIPAccount.sol";
-import "contracts/lib/Errors.sol";
+
+import { IAccessController } from "contracts/interfaces/IAccessController.sol";
+import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
+import { Errors } from "contracts/lib/Errors.sol";
+import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 
 contract MockAccessController is IAccessController {
     bool public isAllowed = true;

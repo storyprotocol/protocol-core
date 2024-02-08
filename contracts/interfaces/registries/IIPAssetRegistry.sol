@@ -3,7 +3,6 @@
 pragma solidity ^0.8.23;
 
 import { IIPAccountRegistry } from "./IIPAccountRegistry.sol";
-import { IMetadataProvider } from "./metadata/IMetadataProvider.sol";
 
 /// @title Interface for IP Account Registry
 /// @notice This interface manages the registration and tracking of IP Accounts

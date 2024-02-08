@@ -2,30 +2,24 @@
 pragma solidity ^0.8.23;
 
 // external
-import { console2 } from "forge-std/console2.sol";
-import { ERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC6551AccountLib } from "@erc6551/lib/ERC6551AccountLib.sol";
 
 // contracts
-import { ILiquidSplitFactory } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitFactory.sol";
 import { Errors } from "contracts/lib/Errors.sol";
-import { IP } from "contracts/lib/IP.sol";
-import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
-import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { ILiquidSplitClone } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
 import { ILiquidSplitMain } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitMain.sol";
 import { LSClaimer } from "contracts/modules/royalty-module/policies/LSClaimer.sol";
 import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
 
 // test
+// solhint-disable-next-line max-line-length
 import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
-import { MintPaymentPolicyFrameworkManager } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
-import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { TestHelper } from "test/foundry/utils/TestHelper.sol";
 
 contract TestLSClaimer is TestHelper {
-    RoyaltyPolicyLS testRoyaltyPolicyLS;
+    RoyaltyPolicyLS public testRoyaltyPolicyLS;
     address[] public LONG_CHAIN = new address[](100);
     address[] public accounts = new address[](2);
     uint32[] public initAllocations = new uint32[](2);

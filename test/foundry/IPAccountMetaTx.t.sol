@@ -1,32 +1,28 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
-
-import "forge-std/Test.sol";
-import "forge-std/console.sol";
+pragma solidity ^0.8.23;
 
 import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
-
-import "contracts/IPAccountImpl.sol";
-import "contracts/interfaces/IIPAccount.sol";
-import "contracts/interfaces/IAccessController.sol";
-import "contracts/registries/IPAccountRegistry.sol";
-import "contracts/registries/ModuleRegistry.sol";
-
-import "contracts/AccessController.sol";
-import "test/foundry/mocks/MockERC721.sol";
-import "test/foundry/mocks/MockModule.sol";
-import "test/foundry/mocks/MockMetaTxModule.sol";
-
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-import { SignatureChecker } from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
+import { Test } from "forge-std/Test.sol";
+
+import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
+import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
+import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
+import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
+import { AccessController } from "contracts/AccessController.sol";
 import { MetaTx } from "contracts/lib/MetaTx.sol";
-import "contracts/lib/AccessPermission.sol";
+import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 import { Governance } from "contracts/governance/Governance.sol";
+import { Errors } from "contracts/lib/Errors.sol";
+
+import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { MockModule } from "test/foundry/mocks/MockModule.sol";
+import { MockMetaTxModule } from "test/foundry/mocks/MockMetaTxModule.sol";
 
 contract IPAccountMetaTxTest is Test {
     IPAccountRegistry public registry;
     IPAccountImpl public implementation;
-    MockERC721 nft = new MockERC721("MockERC721");
+    MockERC721 public nft = new MockERC721("MockERC721");
     ERC6551Registry public erc6551Registry = new ERC6551Registry();
     AccessController public accessController;
     ModuleRegistry public moduleRegistry;

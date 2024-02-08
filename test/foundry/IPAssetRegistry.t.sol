@@ -2,17 +2,14 @@
 pragma solidity ^0.8.23;
 
 import { BaseTest } from "./utils/BaseTest.sol";
-import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
 import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
 import { IP } from "contracts/lib/IP.sol";
-import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProviderV1.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
-import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 

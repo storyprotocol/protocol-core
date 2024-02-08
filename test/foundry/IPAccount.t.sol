@@ -1,24 +1,25 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
-
-import "forge-std/Test.sol";
+pragma solidity ^0.8.23;
 
 import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
+import { IERC6551Account } from "@erc6551/interfaces/IERC6551Account.sol";
+import { Test } from "forge-std/Test.sol";
 
-import "contracts/IPAccountImpl.sol";
-import "contracts/interfaces/IIPAccount.sol";
-import "contracts/registries/IPAccountRegistry.sol";
-import "contracts/registries/ModuleRegistry.sol";
-
-import "test/foundry/mocks/MockAccessController.sol";
-import "test/foundry/mocks/MockERC721.sol";
-import "test/foundry/mocks/MockModule.sol";
+import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
+import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
+import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
+import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { Governance } from "contracts/governance/Governance.sol";
+import { Errors } from "contracts/lib/Errors.sol";
+
+import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
+import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { MockModule } from "test/foundry/mocks/MockModule.sol";
 
 contract IPAccountTest is Test {
     IPAccountRegistry public registry;
     IPAccountImpl public implementation;
-    MockERC721 nft = new MockERC721("MockERC721");
+    MockERC721 public nft = new MockERC721("MockERC721");
     ERC6551Registry public erc6551Registry = new ERC6551Registry();
     MockAccessController public accessController = new MockAccessController();
     ModuleRegistry public moduleRegistry;

@@ -7,18 +7,15 @@ import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 // contract
-import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { ILiquidSplitClone } from "contracts/interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
 import { IRoyaltyModule } from "contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
-import { IRoyaltyPolicyLS } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLS.sol";
 import { ILSClaimer } from "contracts/interfaces/modules/royalty/policies/ILSClaimer.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { LSClaimer } from "contracts/modules/royalty-module/policies/LSClaimer.sol";
 
 // test
 import { BaseIntegration } from "test/foundry/integration/BaseIntegration.sol";
-import { MintPaymentPolicyFrameworkManager } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+// solhint-disable-next-line max-line-length
 import { Integration_Shared_LicensingHelper, UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
 
 contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_Shared_LicensingHelper {
@@ -253,12 +250,12 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
 
             vm.expectEmit(address(danSplitClone));
             emit IERC1155.TransferSingle({ // rNFTs
-                operator: address(danClaimer),
-                from: address(danClaimer),
-                to: aliceSplitClone,
-                id: 0,
-                value: 250
-            });
+                    operator: address(danClaimer),
+                    from: address(danClaimer),
+                    to: aliceSplitClone,
+                    id: 0,
+                    value: 250
+                });
 
             vm.expectEmit(address(USDC));
             emit IERC20.Transfer(address(danClaimer), aliceSplitClone, 249999999); // alice should get 25% of 1000 USDC

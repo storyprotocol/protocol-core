@@ -2,28 +2,15 @@
 pragma solidity ^0.8.23;
 
 import { Test } from "forge-std/Test.sol";
-import { console2 } from "forge-std/console2.sol";
 
 // external
-import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Test } from "forge-std/Test.sol";
 import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
-import { IERC6551Account } from "@erc6551/interfaces/IERC6551Account.sol";
-import { IERC6551Registry } from "@erc6551/interfaces/IERC6551Registry.sol";
-import { ERC6551AccountLib } from "@erc6551/lib/ERC6551AccountLib.sol";
 
 // contracts
 import { AccessController } from "contracts/AccessController.sol";
 import { Governance } from "contracts/governance/Governance.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
-import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { IRegistrationModule } from "contracts/interfaces/modules/IRegistrationModule.sol";
-import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
-import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
-import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
-import { Errors } from "contracts/lib/Errors.sol";
-import { Licensing } from "contracts/lib/Licensing.sol";
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
@@ -44,7 +31,6 @@ import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/A
 // test
 import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { MockModule } from "test/foundry/mocks/MockModule.sol";
 import { MockUSDC } from "test/foundry/mocks/MockUSDC.sol";
 import { MockRoyaltyPolicyLS } from "test/foundry/mocks/MockRoyaltyPolicyLS.sol";
 import { Users, UsersLib } from "test/foundry/utils/Users.sol";
@@ -54,8 +40,6 @@ struct MockERC721s {
     MockERC721 cat;
     MockERC721 dog;
 }
-
-import "forge-std/console2.sol";
 
 contract DeployHelper is Test {
     ERC6551Registry internal erc6551Registry;

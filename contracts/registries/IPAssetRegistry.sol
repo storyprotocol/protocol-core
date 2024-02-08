@@ -33,7 +33,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
     uint256 public totalSupply = 0;
 
     /// @notice Protocol governance administrator of the IP record registry.
-    address owner;
+    address public owner;
 
     /// @dev Maps an IP, identified by its IP ID, to an IP record.
     mapping(address => Record) internal _records;

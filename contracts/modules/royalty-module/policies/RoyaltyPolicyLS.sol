@@ -22,8 +22,10 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     struct LSRoyaltyData {
         address splitClone; // address of the liquid split clone contract for a given ipId
         address claimer; // address of the claimer contract for a given ipId
-        uint32 royaltyStack; // royalty stack for a given ipId is the sum of the minRoyalty of all its parents (number between 0 and 1000)
-        uint32 minRoyalty; // minimum royalty the ipId will receive from its children and grandchildren (number between 0 and 1000)
+        uint32 royaltyStack; // royalty stack for a given ipId is the sum of the minRoyalty of all its parents
+        // (number between 0 and 1000)
+        uint32 minRoyalty; // minimum royalty the ipId will receive from its children and grandchildren
+        // (number between 0 and 1000)
     }
 
     /// @notice Percentage scale - 1000 rnfts represents 100%
@@ -92,7 +94,8 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
         (uint32 royaltyStack, uint32 newRoyaltyStack) = _checkRoyaltyStackIsValid(_parentIpIds, minRoyalty);
 
         // deploy claimer if not root ip
-        address claimer = address(this); // 0xSplit requires two addresses to allow a split so for root ip address(this) is used as the second address
+        address claimer = address(this); // 0xSplit requires two addresses to allow a split so
+        // for root ip address(this) is used as the second address
         if (_parentIpIds.length > 0) claimer = address(new LSClaimer(_ipId, LICENSING_MODULE, address(this)));
 
         // deploy split clone

@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-// external
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // contracts
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { Errors } from "contracts/lib/Errors.sol";

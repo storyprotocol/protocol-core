@@ -200,6 +200,7 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         polB.derivativesRevShare = 0;
         polB.royaltyPolicy = address(0x0);
         // TODO: passing in two different royaltyPolicy addresses
+        // solhint-disable-next-line max-line-length
         // _testRevertCompat(polA, polB, UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialValueMismatch.selector);
         _testRevertCompat(polA, polB, Errors.LicensingModule__IncompatibleLicensorCommercialPolicy.selector);
     }
@@ -266,6 +267,7 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         polB.derivativesRevShare = 0;
 
         // TODO: passing in two different royaltyPolicy addresses
+        // solhint-disable-next-line max-line-length
         // _testRevertCompat(polA, polB, UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesValueMismatch.selector);
         _testRevertCompat(polA, polB, Errors.LicensingModule__IncompatibleRoyaltyPolicyDerivativeRevShare.selector);
     }
@@ -305,7 +307,6 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         // polB.transferable = !polB.transferable; // generates different policyId
         // vm.expectRevert(Errors.RoyaltyModule__AlreadySetRoyaltyPolicy.selector);
         // _testSuccessCompat(polA, polB, 4);
-
     }
 
     function test_UMLPolicyFramework_multiParent_revert_NonReciprocalTerritories() public {
@@ -377,7 +378,6 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         // polB.transferable = !polB.transferable; // generates different policyId
         // vm.expectRevert(Errors.RoyaltyModule__AlreadySetRoyaltyPolicy.selector);
         // _testSuccessCompat(polA, polB, 4);
-
     }
 
     function test_UMLPolicyFramework_multiParent_revert_NonReciprocalDistributionChannels() public {
@@ -449,7 +449,6 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
         // polB.transferable = !polB.transferable; // generates different policyId
         // vm.expectRevert(Errors.RoyaltyModule__AlreadySetRoyaltyPolicy.selector);
         // _testSuccessCompat(polA, polB, 4);
-
     }
 
     function test_UMLPolicyFramework_multiParent_revert_NonReciprocalContentRestrictions() public {
