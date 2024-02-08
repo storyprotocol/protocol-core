@@ -56,7 +56,7 @@ contract MockPolicyFrameworkManager is BasePolicyFrameworkManager {
     ) external pure override returns (IPolicyFrameworkManager.VerifyLinkResponse memory) {
         MockPolicy memory policy = abi.decode(data, (MockPolicy));
         return
-        IPolicyFrameworkManager.VerifyLinkResponse({
+            IPolicyFrameworkManager.VerifyLinkResponse({
                 isLinkingAllowed: policy.returnVerifyLink,
                 isRoyaltyRequired: false,
                 royaltyPolicy: address(0),
@@ -67,7 +67,7 @@ contract MockPolicyFrameworkManager is BasePolicyFrameworkManager {
     function policyToJson(bytes memory policyData) public pure returns (string memory) {
         return "MockPolicyFrameworkManager";
     }
-    
+
     function processInheritedPolicies(
         bytes memory aggregator,
         uint256, // policyId,

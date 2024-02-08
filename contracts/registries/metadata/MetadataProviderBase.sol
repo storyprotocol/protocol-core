@@ -12,7 +12,6 @@ import { IPAssetRegistry } from "../../registries/IPAssetRegistry.sol";
 /// @title IP Metadata Provider Base Contract
 /// @notice Metadata provider base contract for storing canonical IP metadata.
 abstract contract MetadataProviderBase is IMetadataProviderMigratable {
-
     /// @notice Gets the protocol-wide IP asset registry.
     IPAssetRegistry public immutable IP_ASSET_REGISTRY;
 
@@ -23,7 +22,7 @@ abstract contract MetadataProviderBase is IMetadataProviderMigratable {
     mapping(address ip => bytes metadata) internal _ipMetadata;
 
     /// @notice Restricts calls to only originate from a protocol-authorized caller.
-    modifier onlyIPAssetRegistry {
+    modifier onlyIPAssetRegistry() {
         if (msg.sender != address(IP_ASSET_REGISTRY)) {
             revert Errors.MetadataProvider__Unauthorized();
         }
@@ -85,5 +84,5 @@ abstract contract MetadataProviderBase is IMetadataProviderMigratable {
     /// @dev Checks whether two sets of metadata are compatible with one another.
     /// @param m1 The first set of bytes metadata being compared.
     /// @param m2 The second set of bytes metadata being compared.
-    function _compatible(bytes memory m1, bytes memory m2) internal virtual pure returns (bool);
+    function _compatible(bytes memory m1, bytes memory m2) internal pure virtual returns (bool);
 }

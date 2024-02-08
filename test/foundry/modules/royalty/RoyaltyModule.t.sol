@@ -2,10 +2,10 @@
 pragma solidity ^0.8.23;
 
 // external
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // contracts
-import {RoyaltyModule} from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 // tests
 import { TestHelper } from "../../utils/TestHelper.sol";
@@ -15,7 +15,7 @@ contract TestRoyaltyModule is TestHelper {
     event RoyaltyTokenWhitelistUpdated(address token, bool allowed);
     event RoyaltyPolicySet(address ipId, address royaltyPolicy, bytes data);
     event RoyaltyPaid(address receiverIpId, address payerIpId, address sender, address token, uint256 amount);
-    
+
     function setUp() public override {
         super.setUp();
 
@@ -197,7 +197,7 @@ contract TestRoyaltyModule is TestHelper {
     }
 
     function test_RoyaltyModule_payRoyaltyOnBehalf() public {
-         uint256 royaltyAmount = 100 * 10 ** 6;
+        uint256 royaltyAmount = 100 * 10 ** 6;
 
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; // 10%
@@ -209,11 +209,11 @@ contract TestRoyaltyModule is TestHelper {
         address[] memory parentIpIds2 = new address[](0);
         uint32 minRoyaltyIpAccount2 = 100; // 10%
         bytes memory data2 = abi.encode(minRoyaltyIpAccount2);
-                
+
         royaltyModule.setRoyaltyPolicy(ipAccount2, address(royaltyPolicyLS), parentIpIds2, data2);
         vm.stopPrank();
 
-        (address splitClone1,,,) = royaltyPolicyLS.royaltyData(ipAccount1);
+        (address splitClone1, , , ) = royaltyPolicyLS.royaltyData(ipAccount1);
 
         vm.startPrank(ipAccount2);
         USDC.approve(address(royaltyPolicyLS), royaltyAmount);

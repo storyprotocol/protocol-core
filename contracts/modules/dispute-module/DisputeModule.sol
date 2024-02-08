@@ -15,7 +15,6 @@ import { ShortStringOps } from "../../utils/ShortStringOps.sol";
 /// @notice The Story Protocol dispute module acts as an enforcement layer for
 ///         that allows to raise disputes and resolve them through arbitration.
 contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuard {
-
     /// @notice tag to represent the dispute is in dispute state waiting for judgement
     bytes32 public constant IN_DISPUTE = bytes32("IN_DISPUTE");
 
@@ -45,8 +44,8 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
     mapping(address arbitrationPolicy => bool allowed) public isWhitelistedArbitrationPolicy;
 
     /// @notice Indicates if an arbitration relayer is whitelisted for a given arbitration policy
-    mapping(address arbitrationPolicy => mapping(address arbitrationRelayer => bool allowed)) public
-        isWhitelistedArbitrationRelayer;
+    mapping(address arbitrationPolicy => mapping(address arbitrationRelayer => bool allowed))
+        public isWhitelistedArbitrationRelayer;
 
     /// @notice Arbitration policy for a given ipId
     mapping(address ipId => address arbitrationPolicy) public arbitrationPolicies;
@@ -87,10 +86,11 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
     /// @param _arbitrationPolicy The address of the arbitration policy
     /// @param _arbPolicyRelayer The address of the arbitration relayer
     /// @param _allowed Indicates if the arbitration relayer is whitelisted or not
-    function whitelistArbitrationRelayer(address _arbitrationPolicy, address _arbPolicyRelayer, bool _allowed)
-        external
-        onlyProtocolAdmin
-    {
+    function whitelistArbitrationRelayer(
+        address _arbitrationPolicy,
+        address _arbPolicyRelayer,
+        bool _allowed
+    ) external onlyProtocolAdmin {
         if (_arbitrationPolicy == address(0)) revert Errors.DisputeModule__ZeroArbitrationPolicy();
         if (_arbPolicyRelayer == address(0)) revert Errors.DisputeModule__ZeroArbitrationRelayer();
 
@@ -102,7 +102,8 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
     /// @notice Sets the base arbitration policy
     /// @param _arbitrationPolicy The address of the arbitration policy
     function setBaseArbitrationPolicy(address _arbitrationPolicy) external onlyProtocolAdmin {
-        if (!isWhitelistedArbitrationPolicy[_arbitrationPolicy]) revert Errors.DisputeModule__NotWhitelistedArbitrationPolicy();
+        if (!isWhitelistedArbitrationPolicy[_arbitrationPolicy])
+            revert Errors.DisputeModule__NotWhitelistedArbitrationPolicy();
 
         baseArbitrationPolicy = _arbitrationPolicy;
 
@@ -113,7 +114,8 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
     /// @param _ipId The ipId
     /// @param _arbitrationPolicy The address of the arbitration policy
     function setArbitrationPolicy(address _ipId, address _arbitrationPolicy) external verifyPermission(_ipId) {
-        if (!isWhitelistedArbitrationPolicy[_arbitrationPolicy]) revert Errors.DisputeModule__NotWhitelistedArbitrationPolicy();
+        if (!isWhitelistedArbitrationPolicy[_arbitrationPolicy])
+            revert Errors.DisputeModule__NotWhitelistedArbitrationPolicy();
 
         arbitrationPolicies[_ipId] = _arbitrationPolicy;
 
@@ -155,7 +157,13 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
         IArbitrationPolicy(arbitrationPolicy).onRaiseDispute(msg.sender, _data);
 
         emit DisputeRaised(
-            disputeId_, _targetIpId, msg.sender, arbitrationPolicy, linkToDisputeEvidence, _targetTag, _data
+            disputeId_,
+            _targetIpId,
+            msg.sender,
+            arbitrationPolicy,
+            linkToDisputeEvidence,
+            _targetTag,
+            _data
         );
 
         return disputeId_;

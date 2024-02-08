@@ -34,7 +34,11 @@ contract MockRoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
         ROYALTY_MODULE = _royaltyModule;
     }
 
-    function initPolicy(address _ipId, address[] calldata _parentIpIds, bytes calldata _data) external onlyRoyaltyModule {
+    function initPolicy(
+        address _ipId,
+        address[] calldata _parentIpIds,
+        bytes calldata _data
+    ) external onlyRoyaltyModule {
         royaltyData[_ipId] = LSRoyaltyData({
             splitClone: address(0x1),
             claimer: address(0x2),
@@ -67,7 +71,10 @@ contract MockRoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
 
     function claimRoyalties(address _account, uint256 _withdrawETH, ERC20[] calldata _tokens) external pure {}
 
-    function _checkRoyaltyStackIsValid(address[] calldata _parentIpIds, uint32 _minRoyalty) internal pure returns (uint32, uint32) {
+    function _checkRoyaltyStackIsValid(
+        address[] calldata _parentIpIds,
+        uint32 _minRoyalty
+    ) internal pure returns (uint32, uint32) {
         return (0, 0);
     }
 

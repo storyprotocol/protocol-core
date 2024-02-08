@@ -201,12 +201,7 @@ contract AccessControlledTest is Test {
 
     function test_AccessControlled_revert_callIpAccountOrPermissionFunction_passInNonIpAccount() public {
         address nonIpAccount = vm.addr(7);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.AccessControlled__NotIpAccount.selector,
-                nonIpAccount
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessControlled__NotIpAccount.selector, nonIpAccount));
         vm.prank(owner);
         mockModule.ipAccountOrPermissionFunction(nonIpAccount, "test", true);
     }

@@ -9,14 +9,12 @@ import { Errors } from "contracts/lib/Errors.sol";
 /// @title Mock IP Metadata Provider v2
 /// @notice Mock storage provider for upgraded Story Protocol canonical IP metadata (v2).
 contract MockMetadataProviderV2 is MetadataProviderV1 {
-
     /// @notice Core v2 metadata to associate with each IP.
     struct MetadataV2 {
         // The name associated with the IP.
         string name;
         // A keccak-256 hash of the IP content.
         bytes32 hash;
-
         ////////////////////////////////////////////////////////////////////////
         //             Note:  Missing registration memory encoding           ///
         ////////////////////////////////////////////////////////////////////////
@@ -42,8 +40,7 @@ contract MockMetadataProviderV2 is MetadataProviderV1 {
     function _verifyMetadata(bytes memory data) internal virtual override {}
 
     /// @dev Checks whether two sets of metadata are compatible with one another.
-    function _compatible(bytes memory m1, bytes memory m2) internal virtual override pure returns (bool) {
+    function _compatible(bytes memory m1, bytes memory m2) internal pure virtual override returns (bool) {
         return true;
     }
-
 }

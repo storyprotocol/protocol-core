@@ -7,7 +7,6 @@ import { REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 
 /// @title Mock Module Registry Contract
 contract MockModuleRegistry {
-
     address public immutable REGISTRATION_MODULE;
 
     constructor(address registrationModule) {

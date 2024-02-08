@@ -2,12 +2,12 @@
 pragma solidity ^0.8.23;
 
 // external
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC6551AccountLib } from "@erc6551/lib/ERC6551AccountLib.sol";
 // contracts
-import {Errors} from "contracts/lib/Errors.sol";
-import {ArbitrationPolicySP} from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
+import { Errors } from "contracts/lib/Errors.sol";
+import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
 import { IP } from "contracts/lib/IP.sol";
 // test
 import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
@@ -118,7 +118,12 @@ contract TestArbitrationPolicySP is TestHelper {
         uint256 arbitrationPrice = 1000;
         address governance = address(3);
 
-        ArbitrationPolicySP arbitrationPolicySP = new ArbitrationPolicySP(disputeModule, paymentToken, arbitrationPrice, address(3));
+        ArbitrationPolicySP arbitrationPolicySP = new ArbitrationPolicySP(
+            disputeModule,
+            paymentToken,
+            arbitrationPrice,
+            address(3)
+        );
 
         assertEq(address(arbitrationPolicySP.DISPUTE_MODULE()), disputeModule);
         assertEq(address(arbitrationPolicySP.PAYMENT_TOKEN()), paymentToken);

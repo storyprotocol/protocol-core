@@ -200,9 +200,7 @@ contract LicensingModuleTest is Test {
         assertFalse(isInherited);
 
         // Adding different policy to same ipId
-        policy = abi.encode(
-            MockPolicy({ returnVerifyLink: true, returnVerifyMint: false})
-        );
+        policy = abi.encode(MockPolicy({ returnVerifyLink: true, returnVerifyMint: false }));
         vm.prank(address(module1));
         uint256 policyId2 = licensingModule.registerPolicy(true, policy);
         vm.prank(ipOwner);
@@ -294,9 +292,7 @@ contract LicensingModuleTest is Test {
         licensingModule.registerPolicyFrameworkManager(address(module1));
 
         bytes memory policy = _createPolicy();
-        bytes memory policy2 = abi.encode(
-            MockPolicy({ returnVerifyLink: true, returnVerifyMint: true })
-        );
+        bytes memory policy2 = abi.encode(MockPolicy({ returnVerifyLink: true, returnVerifyMint: true }));
         IPAccountImpl ipAccount1 = IPAccountImpl(payable(ipId1));
 
         vm.startPrank(address(module1));
@@ -396,9 +392,7 @@ contract LicensingModuleTest is Test {
 
     function test_LicensingModule_singleTransfer_revert_verifyFalse() public {
         licensingModule.registerPolicyFrameworkManager(address(module1));
-        bytes memory policy = abi.encode(
-            MockPolicy({ returnVerifyLink: true, returnVerifyMint: true })
-        );
+        bytes memory policy = abi.encode(MockPolicy({ returnVerifyLink: true, returnVerifyMint: true }));
         vm.prank(address(module1));
         uint256 policyId = licensingModule.registerPolicy(false, policy);
         vm.prank(ipOwner);

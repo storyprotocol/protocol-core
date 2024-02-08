@@ -75,12 +75,13 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager {
         address, // parentIpId
         bytes calldata // policyData
     ) external view returns (IPolicyFrameworkManager.VerifyLinkResponse memory) {
-        return IPolicyFrameworkManager.VerifyLinkResponse({
-            isLinkingAllowed: true,
-            isRoyaltyRequired: false,
-            royaltyPolicy: royaltyPolicy,
-            royaltyDerivativeRevShare: 0
-        });
+        return
+            IPolicyFrameworkManager.VerifyLinkResponse({
+                isLinkingAllowed: true,
+                isRoyaltyRequired: false,
+                royaltyPolicy: royaltyPolicy,
+                royaltyDerivativeRevShare: 0
+            });
     }
 
     function verifyTransfer(

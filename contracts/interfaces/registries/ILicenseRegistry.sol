@@ -55,7 +55,7 @@ interface ILicenseRegistry {
     /// @notice True if holder is the licensee for the license (owner of the license NFT), or derivative IP owner if
     /// the license was added to the IP by linking (burning a license)
     function isLicensee(uint256 licenseId, address holder) external view returns (bool);
-    
+
     /// @notice IP ID of the licensor for the license (parent IP)
     function licensorIpId(uint256 licenseId) external view returns (address);
 

@@ -24,24 +24,15 @@ interface IIPAccountRegistry {
     /// @param chainId_ The chain ID where  the token contract deployed
     /// @param tokenContract_ The address of the token contract to be associated with the IP Account
     /// @param tokenId_ The ID of the token to be associated with the IP Account
-    /// @return The address of the newly created IP Account    
-    function registerIpAccount(
-        uint256 chainId_,
-        address tokenContract_,
-        uint256 tokenId_
-    ) external returns (address);
+    /// @return The address of the newly created IP Account
+    function registerIpAccount(uint256 chainId_, address tokenContract_, uint256 tokenId_) external returns (address);
 
     /// @notice Returns the IPAccount address for the given NFT token
     /// @param chainId_ The chain ID where  the token contract deployed
     /// @param tokenContract_ The address of the token contract associated with the IP Account
     /// @param tokenId_ The ID of the token associated with the IP Account
     /// @return The address of the IP Account associated with the given NFT token
-    function ipAccount(
-        uint256 chainId_,
-        address tokenContract_,
-        uint256 tokenId_
-    ) external view returns (address);
-
+    function ipAccount(uint256 chainId_, address tokenContract_, uint256 tokenId_) external view returns (address);
 
     /// @notice Returns the IPAccount implementation address
     /// @return The address of the IPAccount implementation

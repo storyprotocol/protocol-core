@@ -13,7 +13,6 @@ import { ROYALTY_MODULE_KEY } from "../../lib/modules/Module.sol";
 /// @notice The Story Protocol royalty module allows to set royalty policies an ipId
 ///         and pay royalties as a derivative ip.
 contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
-
     string public constant override name = ROYALTY_MODULE_KEY;
 
     /// @notice Licensing module address
@@ -29,7 +28,7 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
     mapping(address ipId => address royaltyPolicy) public royaltyPolicies;
 
     /// @notice Indicates if a royalty policy is immutable
-    mapping(address ipId => bool) public isRoyaltyPolicyImmutable;    
+    mapping(address ipId => bool) public isRoyaltyPolicyImmutable;
 
     /// @notice Constructor
     /// @param _governance The address of the governance contract
@@ -89,7 +88,8 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
 
         // the loop below is limited to 100 iterations
         for (uint32 i = 0; i < _parentIpIds.length; i++) {
-            if (royaltyPolicies[_parentIpIds[i]] != _royaltyPolicy) revert Errors.RoyaltyModule__IncompatibleRoyaltyPolicy();
+            if (royaltyPolicies[_parentIpIds[i]] != _royaltyPolicy)
+                revert Errors.RoyaltyModule__IncompatibleRoyaltyPolicy();
             isRoyaltyPolicyImmutable[_parentIpIds[i]] = true;
         }
 
@@ -116,7 +116,12 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
     /// @param _payerIpId The ipId that pays the royalties
     /// @param _token The token to use to pay the royalties
     /// @param _amount The amount to pay
-    function payRoyaltyOnBehalf(address _receiverIpId, address _payerIpId, address _token, uint256 _amount) external nonReentrant {
+    function payRoyaltyOnBehalf(
+        address _receiverIpId,
+        address _payerIpId,
+        address _token,
+        uint256 _amount
+    ) external nonReentrant {
         address royaltyPolicy = royaltyPolicies[_receiverIpId];
         if (royaltyPolicy == address(0)) revert Errors.RoyaltyModule__NoRoyaltyPolicySet();
         if (!isWhitelistedRoyaltyToken[_token]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyToken();

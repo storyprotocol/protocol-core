@@ -48,7 +48,12 @@ interface IRoyaltyModule is IModule {
     /// @param royaltyPolicy The address of the royalty policy
     /// @param parentIpIds The parent ipIds
     /// @param data The data to initialize the policy
-    function setRoyaltyPolicy(address ipId, address royaltyPolicy, address[] calldata parentIpIds, bytes calldata data) external;
+    function setRoyaltyPolicy(
+        address ipId,
+        address royaltyPolicy,
+        address[] calldata parentIpIds,
+        bytes calldata data
+    ) external;
 
     /// @notice Allows a sender to to pay royalties on behalf of an ipId
     /// @param receiverIpId The ipId that receives the royalties

@@ -22,11 +22,7 @@ import { LicensorApprovalChecker } from "../../modules/licensing/parameter-helpe
 /// @notice This is the UML Policy Framework Manager, which implements the UML Policy Framework
 /// logic for encoding and decoding UML policies into the LicenseRegistry and verifying
 /// the licensing parameters for linking, minting, and transferring.
-contract UMLPolicyFrameworkManager is
-    IUMLPolicyFrameworkManager,
-    BasePolicyFrameworkManager,
-    LicensorApprovalChecker
-{
+contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFrameworkManager, LicensorApprovalChecker {
     bytes32 private constant _EMPTY_STRING_ARRAY_HASH =
         0x569e75fc77c1a856f6daaf9e69d8a9566ca34aa47f9133711ce065a571af0cfd;
 
@@ -39,9 +35,7 @@ contract UMLPolicyFrameworkManager is
     )
         BasePolicyFrameworkManager(licensing, name_, licenseUrl_)
         LicensorApprovalChecker(accessController, ipAccountRegistry, ILicensingModule(licensing).licenseRegistry())
-    {
-    }
-
+    {}
 
     /// @notice Re a new policy to the registry
     /// @dev Must encode the policy into bytes to be stored in the LicensingModule
@@ -108,7 +102,6 @@ contract UMLPolicyFrameworkManager is
         }
         return true;
     }
-
 
     /// @notice Fetchs a policy from the registry, decoding the raw bytes into a UMLPolicy struct
     /// @param policyId  The ID of the policy to fetch

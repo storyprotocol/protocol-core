@@ -18,7 +18,7 @@ import { Errors } from "../../../lib/Errors.sol";
 ///         the percentage of royalty NFTs owned by each account.
 contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     using SafeERC20 for IERC20;
-    
+
     struct LSRoyaltyData {
         address splitClone; // address of the liquid split clone contract for a given ipId
         address claimer; // address of the claimer contract for a given ipId
@@ -55,7 +55,12 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     /// @param _licensingModule Address of the LicensingModule contract
     /// @param _liquidSplitFactory Address of the LiquidSplitFactory contract
     /// @param _liquidSplitMain Address of the LiquidSplitMain contract
-    constructor(address _royaltyModule, address _licensingModule, address _liquidSplitFactory, address _liquidSplitMain) {
+    constructor(
+        address _royaltyModule,
+        address _licensingModule,
+        address _liquidSplitFactory,
+        address _liquidSplitMain
+    ) {
         if (_royaltyModule == address(0)) revert Errors.RoyaltyPolicyLS__ZeroRoyaltyModule();
         if (_licensingModule == address(0)) revert Errors.RoyaltyPolicyLS__ZeroLicensingModule();
         if (_liquidSplitFactory == address(0)) revert Errors.RoyaltyPolicyLS__ZeroLiquidSplitFactory();
@@ -71,8 +76,12 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     /// @param _ipId The ipId
     /// @param _parentIpIds The parent ipIds
     /// @param _data The data to initialize the policy
-    function initPolicy(address _ipId, address[] calldata _parentIpIds, bytes calldata _data) external onlyRoyaltyModule {
-        (uint32 minRoyalty) = abi.decode(_data, (uint32));
+    function initPolicy(
+        address _ipId,
+        address[] calldata _parentIpIds,
+        bytes calldata _data
+    ) external onlyRoyaltyModule {
+        uint32 minRoyalty = abi.decode(_data, (uint32));
         // root you can choose 0% but children have to choose at least 1%
         if (minRoyalty == 0 && _parentIpIds.length > 0) revert Errors.RoyaltyPolicyLS__ZeroMinRoyalty();
         // minRoyalty has to be a multiple of 1% and given that there are 1000 royalty nfts
@@ -145,7 +154,10 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     /// @param _minRoyalty The minimum royalty
     /// @return royaltyStack The royalty stack
     ///         newRoyaltyStack The new royalty stack
-    function _checkRoyaltyStackIsValid(address[] calldata _parentIpIds, uint32 _minRoyalty) internal view returns (uint32, uint32) {
+    function _checkRoyaltyStackIsValid(
+        address[] calldata _parentIpIds,
+        uint32 _minRoyalty
+    ) internal view returns (uint32, uint32) {
         // the loop below is limited to a length of 100 parents
         // given the minimum royalty step of 1% and a cap of 100%
         uint32 royaltyStack;
@@ -168,7 +180,7 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
         address[] memory accounts = new address[](2);
         accounts[0] = _ipId;
         accounts[1] = _claimer;
-        
+
         uint32[] memory initAllocations = new uint32[](2);
         initAllocations[0] = TOTAL_RNFT_SUPPLY - royaltyStack;
         initAllocations[1] = royaltyStack;

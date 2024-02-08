@@ -49,7 +49,6 @@ import { MockUSDC } from "test/foundry/mocks/MockUSDC.sol";
 import { MockRoyaltyPolicyLS } from "test/foundry/mocks/MockRoyaltyPolicyLS.sol";
 import { Users, UsersLib } from "test/foundry/utils/Users.sol";
 
-
 struct MockERC721s {
     MockERC721 ape;
     MockERC721 cat;
@@ -117,7 +116,7 @@ contract DeployHelper is Test {
 
     function _deployContracts() internal {
         governance = new Governance(u.admin);
-        
+
         accessController = new AccessController(address(governance));
         erc6551Registry = new ERC6551Registry();
         ipAccountImpl = new IPAccountImpl();
@@ -151,11 +150,7 @@ contract DeployHelper is Test {
             address(ipResolver)
         );
         taggingModule = new TaggingModule();
-        disputeModule = new DisputeModule(
-            address(accessController),
-            address(ipAssetRegistry),
-            address(governance)
-        );
+        disputeModule = new DisputeModule(address(accessController), address(ipAssetRegistry), address(governance));
         ipAssetRenderer = new IPAssetRenderer(
             address(ipAssetRegistry),
             address(licenseRegistry),

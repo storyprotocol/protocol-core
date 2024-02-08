@@ -20,7 +20,5 @@ contract Integration_Flow_EmergenceUniverse_Test is Test {
         u = UsersLib.createMockUsers(vm);
     }
 
-    function test_IntegrationFlow_EmergenceUniverse() public {
-        
-    }
+    function test_IntegrationFlow_EmergenceUniverse() public {}
 }

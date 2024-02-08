@@ -15,7 +15,6 @@ import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol
 /// @title BasePolicyFrameworkManager
 /// @notice Base contract for policy framework managers.
 abstract contract BasePolicyFrameworkManager is IPolicyFrameworkManager, ERC165, LicensingModuleAware {
-    
     string public override name;
     string public override licenseTextUrl;
 

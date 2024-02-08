@@ -2,13 +2,13 @@
 pragma solidity ^0.8.23;
 
 // external
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC6551AccountLib } from "@erc6551/lib/ERC6551AccountLib.sol";
 // contracts
-import {Errors} from "contracts/lib/Errors.sol";
-import {ShortStringOps} from "contracts/utils/ShortStringOps.sol";
-import {DisputeModule} from "contracts/modules/dispute-module/DisputeModule.sol";
+import { Errors } from "contracts/lib/Errors.sol";
+import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
+import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
 import { IP } from "contracts/lib/IP.sol";
 // test
 import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
@@ -83,7 +83,6 @@ contract TestDisputeModule is TestHelper {
                 derivativesRevShare: 10
             })
         );
-
 
         nft.mintId(deployer, 0);
 
@@ -223,16 +222,12 @@ contract TestDisputeModule is TestHelper {
 
     function test_DisputeModule_PolicySP_raiseDispute_revert_NotRegisteredIpId() public {
         vm.expectRevert(Errors.DisputeModule__NotRegisteredIpId.selector);
-        disputeModule.raiseDispute(
-            address(1), string("urlExample"), "PLAGIARISM", ""
-        );
+        disputeModule.raiseDispute(address(1), string("urlExample"), "PLAGIARISM", "");
     }
 
     function test_DisputeModule_PolicySP_raiseDispute_revert_NotWhitelistedDisputeTag() public {
         vm.expectRevert(Errors.DisputeModule__NotWhitelistedDisputeTag.selector);
-        disputeModule.raiseDispute(
-            ipAddr, string("urlExample"), "NOT_WHITELISTED", ""
-        );
+        disputeModule.raiseDispute(ipAddr, string("urlExample"), "NOT_WHITELISTED", "");
     }
 
     function test_DisputeModule_PolicySP_raiseDispute_revert_ZeroLinkToDisputeEvidence() public {
@@ -358,7 +353,7 @@ contract TestDisputeModule is TestHelper {
         vm.stopPrank();
 
         // set dispute judgement
-        (,,,,, bytes32 currentTagBefore) = disputeModule.disputes(1);
+        (, , , , , bytes32 currentTagBefore) = disputeModule.disputes(1);
         uint256 ipAccount1USDCBalanceBefore = USDC.balanceOf(ipAccount1);
         uint256 arbitrationPolicySPUSDCBalanceBefore = USDC.balanceOf(address(arbitrationPolicySP));
 
@@ -368,7 +363,7 @@ contract TestDisputeModule is TestHelper {
         vm.startPrank(arbitrationRelayer);
         disputeModule.setDisputeJudgement(1, true, "");
 
-        (,,,,, bytes32 currentTagAfter) = disputeModule.disputes(1);
+        (, , , , , bytes32 currentTagAfter) = disputeModule.disputes(1);
         uint256 ipAccount1USDCBalanceAfter = USDC.balanceOf(ipAccount1);
         uint256 arbitrationPolicySPUSDCBalanceAfter = USDC.balanceOf(address(arbitrationPolicySP));
 
@@ -386,7 +381,7 @@ contract TestDisputeModule is TestHelper {
         vm.stopPrank();
 
         // set dispute judgement
-        (,,,,, bytes32 currentTagBefore) = disputeModule.disputes(1);
+        (, , , , , bytes32 currentTagBefore) = disputeModule.disputes(1);
         uint256 ipAccount1USDCBalanceBefore = USDC.balanceOf(ipAccount1);
         uint256 arbitrationPolicySPUSDCBalanceBefore = USDC.balanceOf(address(arbitrationPolicySP));
 
@@ -396,7 +391,7 @@ contract TestDisputeModule is TestHelper {
         vm.startPrank(arbitrationRelayer);
         disputeModule.setDisputeJudgement(1, false, "");
 
-        (,,,,, bytes32 currentTagAfter) = disputeModule.disputes(1);
+        (, , , , , bytes32 currentTagAfter) = disputeModule.disputes(1);
         uint256 ipAccount1USDCBalanceAfter = USDC.balanceOf(ipAccount1);
         uint256 arbitrationPolicySPUSDCBalanceAfter = USDC.balanceOf(address(arbitrationPolicySP));
 
@@ -429,7 +424,7 @@ contract TestDisputeModule is TestHelper {
         disputeModule.raiseDispute(ipAddr, string("urlExample"), "PLAGIARISM", "");
         vm.stopPrank();
 
-        (,,,,, bytes32 currentTagBeforeCancel) = disputeModule.disputes(1);
+        (, , , , , bytes32 currentTagBeforeCancel) = disputeModule.disputes(1);
 
         vm.startPrank(ipAccount1);
         vm.expectEmit(true, true, true, true, address(disputeModule));
@@ -438,7 +433,7 @@ contract TestDisputeModule is TestHelper {
         disputeModule.cancelDispute(1, "");
         vm.stopPrank();
 
-        (,,,,, bytes32 currentTagAfterCancel) = disputeModule.disputes(1);
+        (, , , , , bytes32 currentTagAfterCancel) = disputeModule.disputes(1);
 
         assertEq(currentTagBeforeCancel, bytes32("IN_DISPUTE"));
         assertEq(currentTagAfterCancel, bytes32(0));
@@ -473,7 +468,7 @@ contract TestDisputeModule is TestHelper {
         disputeModule.setDisputeJudgement(1, true, "");
         vm.stopPrank();
 
-        (,,,,, bytes32 currentTagBeforeResolve) = disputeModule.disputes(1);
+        (, , , , , bytes32 currentTagBeforeResolve) = disputeModule.disputes(1);
 
         // resolve dispute
         vm.startPrank(ipAccount1);
@@ -482,7 +477,7 @@ contract TestDisputeModule is TestHelper {
 
         disputeModule.resolveDispute(1);
 
-        (,,,,, bytes32 currentTagAfterResolve) = disputeModule.disputes(1);
+        (, , , , , bytes32 currentTagAfterResolve) = disputeModule.disputes(1);
 
         assertEq(currentTagBeforeResolve, bytes32("PLAGIARISM"));
         assertEq(currentTagAfterResolve, bytes32(0));

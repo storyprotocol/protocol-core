@@ -103,7 +103,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
         IPolicyFrameworkManager pfm = IPolicyFrameworkManager(policy(polId).policyFramework);
         bool isPolicyCommercial = pfm.isPolicyCommercial(polId);
 
-        // If the IPAccount has mutable royalty policy setting and the added policy is commercial, the IPAccount 
+        // If the IPAccount has mutable royalty policy setting and the added policy is commercial, the IPAccount
         // can change its royalty policy. This mutability will be set to false in two cases:
         // 1. `mintLicense`: when a child mints a license on a policy, it will lock in the value defined in that policy.
         // 2. `linkIpToParents`: when a child links to parents, it will lock in the value defined in the policies.
@@ -202,7 +202,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
                         abi.encode(commercialRevenueShare) // new minRoyaty
                     );
                 } else {
-                    // If the royalty policy is immutable, we allow minting license on a private policy if and only 
+                    // If the royalty policy is immutable, we allow minting license on a private policy if and only
                     // if this policyId's royalty policy and min royalty is the same as the current setting.
                     uint256 minRoyalty = ROYALTY_MODULE.minRoyaltyFromDescendants(licensorIp);
                     if (commercialRevenueShare != minRoyalty) {
@@ -291,12 +291,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
             // If the parent licenses specify the `derivativeRevShare` value to non-zero, use the value.
             // Otherwise, the child IPAccount has the freedom to set the value.
             uint256 dRevShare = royaltyDerivativeRevShare > 0 ? royaltyDerivativeRevShare : minRoyalty;
-            ROYALTY_MODULE.setRoyaltyPolicy(
-                childIpId,
-                royaltyPolicyAddress,
-                licensors,
-                abi.encode(dRevShare)
-            );
+            ROYALTY_MODULE.setRoyaltyPolicy(childIpId, royaltyPolicyAddress, licensors, abi.encode(dRevShare));
         }
 
         // Burn licenses
@@ -312,11 +307,14 @@ contract LicensingModule is AccessControlled, ILicensingModule {
         address royaltyPolicyAddress,
         uint32 royaltyDerivativeRevShare,
         uint32 derivativeRevShareSum
-    ) private returns (
-        address nextRoyaltyPolicyAddress,
-        uint32 nextRoyaltyDerivativeRevShare,
-        uint32 nextDerivativeRevShareSum
-    ) {
+    )
+        private
+        returns (
+            address nextRoyaltyPolicyAddress,
+            uint32 nextRoyaltyDerivativeRevShare,
+            uint32 nextDerivativeRevShareSum
+        )
+    {
         // TODO: check licensor not part of a branch tagged by disputer
         if (licensor == childIpId) {
             revert Errors.LicensingModule__ParentIdEqualThanChild();
@@ -338,8 +336,8 @@ contract LicensingModule is AccessControlled, ILicensingModule {
 
         // If link says royalty is required for license (licenseIds[i]) and no royalty policy is set, set it.
         // But if the index is NOT 0, this is previous licenses didn't set the royalty policy because they don't
-        // require royalty payment. So, revert in this case. Similarly, if the new royaltyPolicyAddress is different 
-        // from the previous one (in iteration > 0), revert. We currently restrict all licenses (parents) to have 
+        // require royalty payment. So, revert in this case. Similarly, if the new royaltyPolicyAddress is different
+        // from the previous one (in iteration > 0), revert. We currently restrict all licenses (parents) to have
         // the same royalty policy, so the child can inherit it.
         if (response.isRoyaltyRequired) {
             if (iteration > 0 && royaltyPolicyAddress != response.royaltyPolicy) {

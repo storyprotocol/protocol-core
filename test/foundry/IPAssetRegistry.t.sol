@@ -10,7 +10,7 @@ import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProvid
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
-import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
+import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
@@ -19,7 +19,6 @@ import { Errors } from "contracts/lib/Errors.sol";
 /// @title IP Asset Registry Testing Contract
 /// @notice Contract for testing core IP registration.
 contract IPAssetRegistryTest is BaseTest {
-
     // Default IP record attributes.
     string public constant IP_NAME = "IPAsset";
     string public constant IP_DESCRIPTION = "IPs all the way down.";
@@ -57,41 +56,21 @@ contract IPAssetRegistryTest is BaseTest {
         address accessController = address(new MockAccessController());
         erc6551Registry = address(new ERC6551Registry());
         ipAccountImpl = address(new IPAccountImpl());
-        ipAccountRegistry = new IPAccountRegistry(
-            erc6551Registry,
-            accessController,
-            ipAccountImpl
-        );
-        registry = new IPAssetRegistry(
-            accessController,
-            erc6551Registry,
-            ipAccountImpl
-        );
+        ipAccountRegistry = new IPAccountRegistry(erc6551Registry, accessController, ipAccountImpl);
+        registry = new IPAssetRegistry(accessController, erc6551Registry, ipAccountImpl);
         MockERC721 erc721 = new MockERC721("MockERC721");
         tokenAddress = address(erc721);
         tokenId = erc721.mintId(alice, 99);
 
         assertEq(ipAccountRegistry.getIPAccountImpl(), ipAccountImpl);
-        ipId = _getAccount(
-            ipAccountImpl,
-            block.chainid,
-            tokenAddress,
-            tokenId,
-            ipAccountRegistry.IP_ACCOUNT_SALT()
-        );
+        ipId = _getAccount(ipAccountImpl, block.chainid, tokenAddress, tokenId, ipAccountRegistry.IP_ACCOUNT_SALT());
     }
 
     /// @notice Tests retrieval of IP canonical IDs.
     function test_IPAssetRegistry_IpId() public {
         assertEq(
             registry.ipId(block.chainid, tokenAddress, tokenId),
-            _getAccount(
-                ipAccountImpl,
-                block.chainid,
-                tokenAddress,
-                tokenId,
-                ipAccountRegistry.IP_ACCOUNT_SALT()
-            )
+            _getAccount(ipAccountImpl, block.chainid, tokenAddress, tokenId, ipAccountRegistry.IP_ACCOUNT_SALT())
         );
     }
 
@@ -118,14 +97,7 @@ contract IPAssetRegistryTest is BaseTest {
             address(registry.metadataProvider()),
             metadata
         );
-        registry.register(
-            block.chainid,
-            tokenAddress,
-            tokenId,
-            resolver,
-            true,
-            metadata
-        );
+        registry.register(block.chainid, tokenAddress, tokenId, resolver, true, metadata);
 
         /// Ensures IP asset post-registration conditions are met.
         assertEq(registry.resolver(ipId), resolver);
@@ -156,14 +128,7 @@ contract IPAssetRegistryTest is BaseTest {
             address(registry.metadataProvider()),
             metadata
         );
-        registry.register(
-            block.chainid,
-            tokenAddress,
-            tokenId,
-            resolver,
-            false,
-            metadata
-        );
+        registry.register(block.chainid, tokenAddress, tokenId, resolver, false, metadata);
 
         /// Ensures IP asset post-registration conditions are met.
         assertEq(registry.resolver(ipId), resolver);
@@ -174,22 +139,10 @@ contract IPAssetRegistryTest is BaseTest {
 
     /// @notice Tests registration of IP assets works with existing IP accounts.
     function test_IPAssetRegistry_RegisterExistingAccount() public {
-        registry.registerIpAccount(
-            block.chainid,
-            tokenAddress,
-            tokenId
-        );
+        registry.registerIpAccount(block.chainid, tokenAddress, tokenId);
         assertTrue(IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
         bytes memory metadata = _generateMetadata();
-        registry.register(
-            block.chainid,
-            tokenAddress,
-            tokenId,
-            resolver,
-            true,
-            metadata
-        );
-
+        registry.register(block.chainid, tokenAddress, tokenId, resolver, true, metadata);
     }
 
     /// @notice Tests registration of IP reverts when an IP has already been registered.
@@ -205,10 +158,7 @@ contract IPAssetRegistryTest is BaseTest {
         registry.register(block.chainid, tokenAddress, tokenId, resolver, true, _generateMetadata());
 
         vm.expectEmit(true, true, true, true);
-        emit IIPAssetRegistry.IPResolverSet(
-            ipId,
-            resolver2
-        );
+        emit IIPAssetRegistry.IPResolverSet(ipId, resolver2);
         vm.prank(alice);
         registry.setResolver(ipId, resolver2);
     }
@@ -228,26 +178,19 @@ contract IPAssetRegistryTest is BaseTest {
         uint256 contractId,
         bytes32 salt
     ) internal view returns (address) {
-        return ERC6551Registry(erc6551Registry).account(
-            impl,
-            salt,
-            chainId,
-            contractAddress,
-            contractId
-        );
+        return ERC6551Registry(erc6551Registry).account(impl, salt, chainId, contractAddress, contractId);
     }
 
     function _generateMetadata() internal view returns (bytes memory) {
-        return abi.encode(
-            IP.MetadataV1({
-                name: IP_NAME,
-                hash: IP_HASH,
-                registrationDate: uint64(block.timestamp),
-                registrant: alice,
-                uri: IP_EXTERNAL_URL
-
-            })
-        );
+        return
+            abi.encode(
+                IP.MetadataV1({
+                    name: IP_NAME,
+                    hash: IP_HASH,
+                    registrationDate: uint64(block.timestamp),
+                    registrant: alice,
+                    uri: IP_EXTERNAL_URL
+                })
+            );
     }
-
 }

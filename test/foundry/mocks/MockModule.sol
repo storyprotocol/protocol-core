@@ -24,7 +24,7 @@ contract MockModule is IModule {
         return param;
     }
 
-    function executeNoReturn(string memory) view external {
+    function executeNoReturn(string memory) external view {
         require(ipAccountRegistry.isIpAccount(msg.sender), "MockModule: caller is not ipAccount");
     }
 

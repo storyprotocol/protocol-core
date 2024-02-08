@@ -245,7 +245,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
             // Dan is paying 65% of 1000 USDC royalty to parents (stored in Dan's Claimer).
             // The other 35% of 1000 USDC royalty goes directly to Dan's IPAccount.
             vm.expectEmit(address(USDC));
-            emit IERC20.Transfer(LIQUID_SPLIT_MAIN, address(danClaimer), 749999998); 
+            emit IERC20.Transfer(LIQUID_SPLIT_MAIN, address(danClaimer), 749999998);
             royaltyPolicyLS.claimRoyalties({ _account: danClaimer, _withdrawETH: 0, _tokens: tokens });
 
             // Alice calls the claim her portion of rNFTs and tokens. She can only call `claim` once.
@@ -278,5 +278,5 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
                 _tokens: tokens
             });
         }
-    } 
+    }
 }

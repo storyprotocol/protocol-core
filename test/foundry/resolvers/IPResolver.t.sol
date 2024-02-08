@@ -12,7 +12,7 @@ import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
 import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
-import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
+import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { ModuleBaseTest } from "test/foundry/modules/ModuleBase.t.sol";
 import { IP } from "contracts/lib/IP.sol";
@@ -22,7 +22,6 @@ import { IP_RESOLVER_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 /// @title IP Resolver Test Contract
 /// @notice Tests IP metadata resolver functionality.
 contract IPResolverTest is ResolverBaseTest {
-
     // Test record attributes.
     string public constant TEST_KEY = "Key";
     string public constant TEST_VALUE = "Value";
@@ -50,17 +49,9 @@ contract IPResolverTest is ResolverBaseTest {
                 registrationDate: uint64(block.timestamp),
                 registrant: alice,
                 uri: "https://storyprotocol.xyz"
-
             })
         );
-        ipId = ipAssetRegistry.register(
-            block.chainid,
-            address(erc721),
-            tokenId,
-            address(ipResolver),
-            true,
-            metadata
-        );
+        ipId = ipAssetRegistry.register(block.chainid, address(erc721), tokenId, address(ipResolver), true, metadata);
     }
 
     /// @notice Tests that the IP resolver interface is supported.
@@ -73,27 +64,17 @@ contract IPResolverTest is ResolverBaseTest {
         vm.prank(ipId);
         accessController.setPermission(ipId, alice, address(ipResolver), KeyValueResolver.setValue.selector, 1);
         vm.prank(alice);
-        ipResolver.setValue(
-            ipId,
-            TEST_KEY,
-            TEST_VALUE
-        );
+        ipResolver.setValue(ipId, TEST_KEY, TEST_VALUE);
         assertEq(ipResolver.value(ipId, TEST_KEY), TEST_VALUE);
     }
 
     /// @dev Gets the expected name for the module.
-    function _expectedName() internal virtual view override returns (string memory) {
+    function _expectedName() internal view virtual override returns (string memory) {
         return "IP_RESOLVER_MODULE";
     }
 
     /// @dev Deploys a new IP Metadata Resolver.
     function _deployModule() internal override returns (address) {
-        return address(
-            new IPResolver(
-                address(accessController),
-                address(ipAssetRegistry)
-            )
-        );
+        return address(new IPResolver(address(accessController), address(ipAssetRegistry)));
     }
-
 }

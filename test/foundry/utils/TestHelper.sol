@@ -61,6 +61,7 @@ contract TestHelper is Test, DeployHelper {
         // vm.label(ipAccount2, "ipAccount2");
         // vm.label(ipAccount3, "ipAccount3");
         // vm.label(ipAccount4, "ipAccount4");
+
     }
 
     function _setUMLPolicyFrameworkManager() internal {
@@ -101,8 +102,7 @@ contract TestHelper is Test, DeployHelper {
             contentRestrictions: gparams.contentRestrictions,
             royaltyPolicy: cparams.royaltyPolicy
         });
-        policyIds[pName] = UMLPolicyFrameworkManager(pfms["uml"].addr)
-        .registerPolicy(policies[pName]);
+        policyIds[pName] = UMLPolicyFrameworkManager(pfms["uml"].addr).registerPolicy(policies[pName]);
     }
 
     function _mapUMLPolicySimple(
@@ -133,7 +133,7 @@ contract TestHelper is Test, DeployHelper {
         });
     }
 
-    function _addUMLPolicyFromMapping(string memory name, address umlFramework) internal returns (uint256){
+    function _addUMLPolicyFromMapping(string memory name, address umlFramework) internal returns (uint256) {
         string memory pName = string(abi.encodePacked("uml_", name));
         policyIds[pName] = UMLPolicyFrameworkManager(umlFramework).registerPolicy(policies[pName]);
         return policyIds[pName];
@@ -148,7 +148,6 @@ contract TestHelper is Test, DeployHelper {
         string memory pName = string(abi.encodePacked("uml_", name));
         return policyIds[pName];
     }
-
 
     function _getIpId(MockERC721 mnft, uint256 tokenId) internal view returns (address ipId) {
         return _getIpId(address(mnft), tokenId);

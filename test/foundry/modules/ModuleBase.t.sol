@@ -73,12 +73,9 @@ abstract contract ModuleBaseTest is BaseTest {
             address(ipAssetRegistry),
             address(licenseRegistry),
             address(royaltyModule)
-        ); 
-        licenseRegistry.setLicensingModule(address(licensingModule));
-        IPResolver ipResolver = new IPResolver(
-            address(accessController),
-            address(ipAssetRegistry)
         );
+        licenseRegistry.setLicensingModule(address(licensingModule));
+        IPResolver ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry));
         RegistrationModule registrationModule = new RegistrationModule(
             address(accessController),
             address(ipAssetRegistry),

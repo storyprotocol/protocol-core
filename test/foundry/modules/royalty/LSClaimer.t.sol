@@ -103,7 +103,7 @@ contract TestLSClaimer is TestHelper {
             new address[](0), // no parent
             abi.encode(10)
         );
-        
+
         vm.stopPrank();
         vm.startPrank(deployer);
         uint256[] memory licenseId = new uint256[](1);
@@ -125,7 +125,7 @@ contract TestLSClaimer is TestHelper {
             );
             string memory ipAcctName = string(abi.encodePacked("IPAccount", Strings.toString(nftIds[i + 1])));
             vm.label(expectedAddr, ipAcctName);
-            
+
             registrationModule.registerDerivativeIp(
                 licenseId,
                 address(nft),
@@ -284,7 +284,7 @@ contract TestLSClaimer is TestHelper {
         USDC.mint(address(lsClaimer100), usdcRoyaltyAmount);
 
         address claimerIpId = _getIpId(nft, nftIds[0]);
-        (address claimerSplitClone,,,) = testRoyaltyPolicyLS.royaltyData(_getIpId(nft, nftIds[0]));
+        (address claimerSplitClone, , , ) = testRoyaltyPolicyLS.royaltyData(_getIpId(nft, nftIds[0]));
         tokens[0] = USDC;
 
         uint256 lsClaimerUSDCBalBefore = USDC.balanceOf(address(lsClaimer100));

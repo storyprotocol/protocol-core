@@ -13,7 +13,9 @@ interface IRoyaltyPolicyLS is IRoyaltyPolicy {
     ///         claimer The claimer address
     ///         royaltyStack The royalty stack
     ///         minRoyalty The min royalty
-    function royaltyData(address ipId) external view returns (address splitClone, address claimer, uint32 royaltyStack, uint32 minRoyalty);
+    function royaltyData(
+        address ipId
+    ) external view returns (address splitClone, address claimer, uint32 royaltyStack, uint32 minRoyalty);
 
     /// @notice Distributes funds to the accounts in the LiquidSplitClone contract
     /// @param ipId The ipId

@@ -22,7 +22,7 @@ interface IDisputeModule {
     /// @notice Event emitted when the base arbitration policy is set
     /// @param arbitrationPolicy The address of the arbitration policy
     event DefaultArbitrationPolicyUpdated(address arbitrationPolicy);
-    
+
     /// @notice Event emitted when an arbitration policy is set for an ipId
     /// @param ipId The ipId address
     /// @param arbitrationPolicy The address of the arbitration policy
@@ -107,7 +107,9 @@ interface IDisputeModule {
 
     /// @notice Gets the dispute struct characteristics
     /// @param disputeId The dispute id
-    function disputes(uint256 disputeId)
+    function disputes(
+        uint256 disputeId
+    )
         external
         view
         returns (

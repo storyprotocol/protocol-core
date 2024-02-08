@@ -145,11 +145,7 @@ contract BaseIntegration is Test {
             address(ipResolver)
         );
         taggingModule = new TaggingModule();
-        disputeModule = new DisputeModule(
-            address(accessController),
-            address(ipAssetRegistry),
-            address(governance)
-        );
+        disputeModule = new DisputeModule(address(accessController), address(ipAssetRegistry), address(governance));
         ipAssetRenderer = new IPAssetRenderer(
             address(ipAssetRegistry),
             address(licenseRegistry),

@@ -84,5 +84,4 @@ contract MockAccessControlledModule is IModule, AccessControlled {
         }
         return param;
     }
-
 }

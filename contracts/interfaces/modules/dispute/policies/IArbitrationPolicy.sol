@@ -8,8 +8,8 @@ interface IArbitrationPolicy {
     event GovernanceWithdrew(uint256 amount);
 
     /// @notice Executes custom logic on raise dispute
-    /// @param caller Address of the caller   
-    /// @param data The data to raise the dispute 
+    /// @param caller Address of the caller
+    /// @param data The data to raise the dispute
     function onRaiseDispute(address caller, bytes calldata data) external;
 
     /// @notice Executes custom logic on dispute judgement

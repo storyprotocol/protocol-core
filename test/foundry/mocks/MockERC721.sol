@@ -25,11 +25,7 @@ contract MockERC721 is ERC721 {
         _burn(tokenId);
     }
 
-    function transferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) public override {
+    function transferFrom(address from, address to, uint256 tokenId) public override {
         _transfer(from, to, tokenId);
     }
 }

@@ -52,5 +52,4 @@ contract TaggingModule is ITaggingModule {
         // WARNING: tag ordering not guaranteed (since they can be removed)
         return ShortString.wrap(_tagsForIpIds[ipId].at(index)).toString();
     }
-
 }

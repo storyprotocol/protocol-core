@@ -10,7 +10,6 @@ import { Errors } from "../../lib/Errors.sol";
 /// @title IP Metadata Provider Contract
 /// @notice Base contract used for customization of canonical IP metadata.
 contract IPMetadataProvider is IMetadataProvider {
-
     /// @notice Gets the protocol-wide module registry.
     IModuleRegistry public immutable MODULE_REGISTRY;
 

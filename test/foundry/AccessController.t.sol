@@ -938,22 +938,16 @@ contract AccessControllerTest is Test {
             mockModule.executeNoReturn.selector,
             3
         );
-
     }
 
     function test_AccessController_revert_setGlobalPermissionWithZeroSignerAddress() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.AccessController__SignerIsZeroAddress.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessController__SignerIsZeroAddress.selector));
         accessController.setGlobalPermission(
             address(0),
             address(mockModule),
             mockModule.executeNoReturn.selector,
             AccessPermission.ALLOW
         );
-
     }
 
     function test_AccessController_ipAccountOwnerSetBatchPermissions() public {
@@ -987,10 +981,7 @@ contract AccessControllerTest is Test {
         ipAccount.execute(
             address(accessController),
             0,
-            abi.encodeWithSignature(
-                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
-                permissionList
-            )
+            abi.encodeWithSignature("setBatchPermissions((address,address,address,bytes4,uint8)[])", permissionList)
         );
         assertEq(
             accessController.getPermission(
@@ -1053,7 +1044,6 @@ contract AccessControllerTest is Test {
         );
     }
 
-
     function test_AccessController_revert_NonIpAccountOwnerSetBatchPermissions() public {
         moduleRegistry.registerModule("MockModule", address(mockModule));
         address signer = vm.addr(2);
@@ -1095,10 +1085,7 @@ contract AccessControllerTest is Test {
         ipAccount.execute(
             address(accessController),
             0,
-            abi.encodeWithSignature(
-                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
-                permissionList
-            )
+            abi.encodeWithSignature("setBatchPermissions((address,address,address,bytes4,uint8)[])", permissionList)
         );
     }
 
@@ -1130,18 +1117,11 @@ contract AccessControllerTest is Test {
         });
 
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.AccessController__IPAccountIsZeroAddress.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessController__IPAccountIsZeroAddress.selector));
         ipAccount.execute(
             address(accessController),
             0,
-            abi.encodeWithSignature(
-                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
-                permissionList
-            )
+            abi.encodeWithSignature("setBatchPermissions((address,address,address,bytes4,uint8)[])", permissionList)
         );
     }
 
@@ -1173,18 +1153,11 @@ contract AccessControllerTest is Test {
         });
 
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.AccessController__SignerIsZeroAddress.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessController__SignerIsZeroAddress.selector));
         ipAccount.execute(
             address(accessController),
             0,
-            abi.encodeWithSignature(
-                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
-                permissionList
-            )
+            abi.encodeWithSignature("setBatchPermissions((address,address,address,bytes4,uint8)[])", permissionList)
         );
     }
 
@@ -1223,10 +1196,7 @@ contract AccessControllerTest is Test {
         ipAccount.execute(
             address(accessController),
             0,
-            abi.encodeWithSignature(
-                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
-                permissionList
-            )
+            abi.encodeWithSignature("setBatchPermissions((address,address,address,bytes4,uint8)[])", permissionList)
         );
     }
 
@@ -1263,10 +1233,7 @@ contract AccessControllerTest is Test {
         ipAccount.execute(
             address(accessController),
             0,
-            abi.encodeWithSignature(
-                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
-                permissionList
-            )
+            abi.encodeWithSignature("setBatchPermissions((address,address,address,bytes4,uint8)[])", permissionList)
         );
     }
 
