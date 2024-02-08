@@ -44,4 +44,14 @@ contract TokenGatedHookTest is Test {
         nft.burn(1);
         assertEq(tokenGatedHook.verify(goodCaller, data), false);
     }
+
+    function test_TokenGatedHook_CallerIsZeroAddress() public {
+        bytes memory data = abi.encode(address(nft));
+        assertEq(tokenGatedHook.verify(address(0), data), false);
+    }
+
+    function test_TokenGatedHook_InvalidNftCollectionAddress() public {
+        bytes memory data = abi.encode(address(0x2222));
+        assertEq(tokenGatedHook.verify(goodCaller, data), false);
+    }
 }
