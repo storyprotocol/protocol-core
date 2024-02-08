@@ -31,6 +31,12 @@ interface IPolicyFrameworkManager is IERC165 {
     /// @notice Returns the commercial revenue share of a policy ID belonging to the PFM
     function getCommercialRevenueShare(uint256 policyId) external view returns (uint32 commercialRevenueShare);
 
+    /// @notice Returns the minting fee amount of a policy ID belonging to the PFM
+    function getMintingFeeAmount(uint256 policyId) external view returns (uint256 mintingFeeAmount);
+
+    /// @notice Returns the minting fee token of a policy ID belonging to the PFM
+    function getMintingFeeToken(uint256 policyId) external view returns (address mintingFeeToken);
+
     /// @notice Returns whether the policy ID belonging to the PFM is commercial or non-commercial
     function isPolicyCommercial(uint256 policyId) external view returns (bool);
 
