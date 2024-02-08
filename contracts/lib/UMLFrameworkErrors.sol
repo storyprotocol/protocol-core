@@ -25,4 +25,7 @@ library UMLFrameworkErrors {
     error UMLPolicyFrameworkManager__CommercialValueMismatch();
     error UMLPolicyFrameworkManager__DerivativesValueMismatch();
     error UMLPolicyFrameworkManager__StringArrayMismatch();
+    error UMLPolicyFrameworkManager__CommercialDisabled_CantAddMintingFee();
+    error UMLPolicyFrameworkManager__CommercialDisabled_CantAddMintingFeeToken();
+    error UMLPolicyFrameworkManager__CommecialEnabled_MintingFeeTokenRequired();
 }
