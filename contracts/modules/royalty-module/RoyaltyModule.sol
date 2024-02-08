@@ -118,19 +118,34 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
     /// @param _payerIpId The ipId that pays the royalties
     /// @param _token The token to use to pay the royalties
     /// @param _amount The amount to pay
-    function payRoyaltyOnBehalf(
-        address _receiverIpId,
-        address _payerIpId,
-        address _token,
-        uint256 _amount
-    ) external nonReentrant {
+    function payRoyaltyOnBehalf(address _receiverIpId, address _payerIpId, address _token, uint256 _amount) external nonReentrant {
+        _payRoyalty(_receiverIpId, msg.sender, _token, _amount);
+
+        emit RoyaltyPaid(_receiverIpId, _payerIpId, msg.sender, _token, _amount);
+    }
+
+    /// @notice Allows to pay the minting fee for a license
+    /// @param _receiverIpId The ipId that receives the royalties
+    /// @param _payerAddress The address that pays the royalties
+    /// @param _token The token to use to pay the royalties
+    /// @param _amount The amount to pay
+    function payLicenseMintingFee(address _receiverIpId, address _payerAddress, address _token, uint256 _amount) external onlyLicensingModule {
+        _payRoyalty(_receiverIpId, _payerAddress, _token, _amount);
+
+        emit LicenseMintingFeePaid(_receiverIpId, _payerAddress, _token, _amount);
+    }
+
+    /// @notice Allows to pay a royalty
+    /// @param _receiverIpId The ipId that receives the royalties
+    /// @param _payerAddress The address that pays the royalties
+    /// @param _token The token to use to pay the royalties
+    /// @param _amount The amount to pay
+    function _payRoyalty(address _receiverIpId, address _payerAddress, address _token, uint256 _amount) internal {
         address royaltyPolicy = royaltyPolicies[_receiverIpId];
         if (royaltyPolicy == address(0)) revert Errors.RoyaltyModule__NoRoyaltyPolicySet();
         if (!isWhitelistedRoyaltyToken[_token]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyToken();
         if (!isWhitelistedRoyaltyPolicy[royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
 
-        IRoyaltyPolicy(royaltyPolicy).onRoyaltyPayment(msg.sender, _receiverIpId, _token, _amount);
-
-        emit RoyaltyPaid(_receiverIpId, _payerIpId, msg.sender, _token, _amount);
+        IRoyaltyPolicy(royaltyPolicy).onRoyaltyPayment(_payerAddress, _receiverIpId, _token, _amount);
     }
 }

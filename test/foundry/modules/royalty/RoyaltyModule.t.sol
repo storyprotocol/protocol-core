@@ -12,7 +12,8 @@ contract TestRoyaltyModule is TestHelper {
     event RoyaltyTokenWhitelistUpdated(address token, bool allowed);
     event RoyaltyPolicySet(address ipId, address royaltyPolicy, bytes data);
     event RoyaltyPaid(address receiverIpId, address payerIpId, address sender, address token, uint256 amount);
-
+    event LicenseMintingFeePaid(address ipId, address payerIpId, address token, uint256 amount);
+    
     function setUp() public override {
         super.setUp();
 
@@ -228,5 +229,77 @@ contract TestRoyaltyModule is TestHelper {
 
         assertEq(ipAccount2USDCBalBefore - ipAccount2USDCBalAfter, royaltyAmount);
         assertEq(splitClone1USDCBalAfter - splitClone1USDCBalBefore, royaltyAmount);
+    }
+
+    function test_RoyaltyModule_payLicenseMintingFee_revert_NotAllowedCaller() public {
+        vm.expectRevert(Errors.RoyaltyModule__NotAllowedCaller.selector);
+        royaltyModule.payLicenseMintingFee(ipAccount1, ipAccount2, address(USDC), 100);
+    }
+    
+    function test_RoyaltyModule_payLicenseMintingFee_revert_NoRoyaltyPolicySet() public {
+        vm.startPrank(address(licensingModule));
+        vm.expectRevert(Errors.RoyaltyModule__NoRoyaltyPolicySet.selector);
+        royaltyModule.payLicenseMintingFee(ipAccount1, ipAccount2, address(USDC), 100);
+    }
+
+    function test_RoyaltyModule_payLicenseMintingFee_revert_NotWhitelistedRoyaltyToken() public {
+        address[] memory parentIpIds1 = new address[](0);
+        uint32 minRoyaltyIpAccount1 = 100; // 10%
+        bytes memory data = abi.encode(minRoyaltyIpAccount1);
+
+        vm.startPrank(address(licensingModule));
+        royaltyModule.setRoyaltyPolicy(ipAccount1, address(royaltyPolicyLS), parentIpIds1, data);
+
+        vm.expectRevert(Errors.RoyaltyModule__NotWhitelistedRoyaltyToken.selector);
+        royaltyModule.payLicenseMintingFee(ipAccount1, ipAccount2, address(1), 100);
+    }
+
+    function test_RoyaltyModule_payLicenseMintingFee_revert_NotWhitelistedRoyaltyPolicy() public {
+        address[] memory parentIpIds1 = new address[](0);
+        uint32 minRoyaltyIpAccount1 = 100; // 10%
+        bytes memory data = abi.encode(minRoyaltyIpAccount1);
+
+        vm.startPrank(address(licensingModule));
+        royaltyModule.setRoyaltyPolicy(ipAccount1, address(royaltyPolicyLS), parentIpIds1, data);
+        vm.stopPrank();
+
+        vm.startPrank(u.admin);
+        royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), false);
+        vm.stopPrank();
+
+        vm.startPrank(address(licensingModule));
+        vm.expectRevert(Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy.selector);
+        royaltyModule.payLicenseMintingFee(ipAccount1, ipAccount2, address(USDC), 100);
+    }
+
+    function test_RoyaltyModule_payLicenseMintingFee() public {
+        uint256 mintingLicenseFee = 100 * 10 ** 6;
+
+        address[] memory parentIpIds1 = new address[](0);
+        uint32 minRoyaltyIpAccount1 = 100; // 10%
+        bytes memory data1 = abi.encode(minRoyaltyIpAccount1);
+
+        vm.startPrank(address(ipAccount2));
+        USDC.approve(address(royaltyPolicyLS), mintingLicenseFee);
+        vm.stopPrank();
+
+        vm.startPrank(address(licensingModule));
+        royaltyModule.setRoyaltyPolicy(ipAccount1, address(royaltyPolicyLS), parentIpIds1, data1);
+
+        (address splitClone1,,,) = royaltyPolicyLS.royaltyData(ipAccount1);
+
+        uint256 ipAccount2USDCBalBefore = USDC.balanceOf(ipAccount2);
+        uint256 splitClone1USDCBalBefore = USDC.balanceOf(splitClone1);
+
+        vm.expectEmit(true, true, true, true, address(royaltyModule));
+        emit LicenseMintingFeePaid(ipAccount1, ipAccount2, address(USDC), mintingLicenseFee);
+
+        royaltyModule.payLicenseMintingFee(ipAccount1, ipAccount2, address(USDC), mintingLicenseFee);
+
+        uint256 ipAccount2USDCBalAfter = USDC.balanceOf(ipAccount2);
+        uint256 splitClone1USDCBalAfter = USDC.balanceOf(splitClone1);
+
+        assertEq(ipAccount2USDCBalBefore - ipAccount2USDCBalAfter, mintingLicenseFee);
+        assertEq(splitClone1USDCBalAfter - splitClone1USDCBalBefore, mintingLicenseFee);
     }
 }
