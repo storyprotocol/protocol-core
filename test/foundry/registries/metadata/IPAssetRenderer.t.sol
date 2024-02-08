@@ -4,46 +4,35 @@ pragma solidity ^0.8.23;
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
 
-import { ResolverBaseTest } from "test/foundry/resolvers/ResolverBase.t.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
 import { AccessController } from "contracts/AccessController.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
-import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
-import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
 import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProviderV1.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
-import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
 import { IPAssetRenderer } from "contracts/registries/metadata/IPAssetRenderer.sol";
 import { BaseTest } from "test/foundry/utils/BaseTest.sol";
-import { IPAccountImpl} from "contracts/IPAccountImpl.sol";
+import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { ModuleBaseTest } from "test/foundry/modules/ModuleBase.t.sol";
 import { IP } from "contracts/lib/IP.sol";
-import { Errors } from "contracts/lib/Errors.sol";
-import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { Governance } from "contracts/governance/Governance.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
-
-import "forge-std/console2.sol";
 
 /// @title IP Asset Renderer Test Contract
 /// @notice Tests IP asset rendering functionality.
 /// TODO: Make this inherit module base to avoid code duplication.
 contract IPAssetRendererTest is BaseTest {
-
     // Module placeholders
     // TODO: Mock these out.
-    address taggingModule = vm.addr(0x1111);
+    address public taggingModule = vm.addr(0x1111);
 
     /// @notice Gets the metadata provider used for IP registration.
-    MetadataProviderV1 metadataProvider;
+    MetadataProviderV1 public metadataProvider;
 
     /// @notice Used for registration in the IP asset registry.
     RegistrationModule public registrationModule;
@@ -94,7 +83,7 @@ contract IPAssetRendererTest is BaseTest {
         accessController = new AccessController(address(governance));
         moduleRegistry = new ModuleRegistry(address(governance));
         MockERC721 erc721 = new MockERC721("MockERC721");
-        
+
         ERC6551Registry erc6551Registry = new ERC6551Registry();
         IPAccountImpl ipAccountImpl = new IPAccountImpl();
         ipAccountRegistry = new IPAccountRegistry(
@@ -108,7 +97,6 @@ contract IPAssetRendererTest is BaseTest {
             address(ipAccountImpl)
         );
         RoyaltyModule royaltyModule = new RoyaltyModule(address(governance));
-        uint i;
         licenseRegistry = new LicenseRegistry();
         licensingModule = new LicensingModule(
             address(accessController),
@@ -117,10 +105,7 @@ contract IPAssetRendererTest is BaseTest {
             address(licenseRegistry)
         );
         licenseRegistry.setLicensingModule(address(licensingModule));
-        resolver = new IPResolver(
-            address(accessController),
-            address(ipAssetRegistry)
-        );
+        resolver = new IPResolver(address(accessController), address(ipAssetRegistry));
         renderer = new IPAssetRenderer(
             address(ipAssetRegistry),
             address(licenseRegistry),
@@ -145,18 +130,10 @@ contract IPAssetRendererTest is BaseTest {
                 registrationDate: IP_REGISTRATION_DATE,
                 registrant: alice,
                 uri: IP_EXTERNAL_URL
-
             })
         );
         vm.prank(address(registrationModule));
-        ipId = ipAssetRegistry.register(
-            block.chainid,
-            address(erc721),
-            tokenId,
-            address(resolver),
-            true,
-            metadata
-        );
+        ipId = ipAssetRegistry.register(block.chainid, address(erc721), tokenId, address(resolver), true, metadata);
     }
 
     /// @notice Tests that the constructor works as expected.
@@ -172,7 +149,7 @@ contract IPAssetRendererTest is BaseTest {
     /// @notice Tests that the renderer can properly resolve descriptions.
     function test_IPAssetRenderer_Description() public virtual {
         assertEq(
-            renderer.description(ipId), 
+            renderer.description(ipId),
             string.concat(
                 IP_NAME,
                 ", IP #",
@@ -224,20 +201,35 @@ contract IPAssetRendererTest is BaseTest {
         );
 
         string memory ipIdStr = Strings.toHexString(uint160(ipId));
-        string memory uriEncoding = string(abi.encodePacked(
-            '{"name": "IP Asset #', ipIdStr, '", "description": "', description, '", "attributes": [',
-            '{"trait_type": "Name", "value": "IPAsset"},',
-            '{"trait_type": "Owner", "value": "', ownerStr, '"},'
-            '{"trait_type": "Registrant", "value": "', ownerStr, '"},',
-            '{"trait_type": "Hash", "value": "0x3078303000000000000000000000000000000000000000000000000000000000"},',
-            '{"trait_type": "Registration Date", "value": "', Strings.toString(IP_REGISTRATION_DATE), '"}',
-            ']}'
-        ));
-        string memory expectedURI = string(abi.encodePacked(
-            "data:application/json;base64,",
-            Base64.encode(bytes(string(abi.encodePacked(uriEncoding))))
-        ));
+        /* solhint-disable */
+        string memory uriEncoding = string(
+            abi.encodePacked(
+                '{"name": "IP Asset #',
+                ipIdStr,
+                '", "description": "',
+                description,
+                '", "attributes": [',
+                '{"trait_type": "Name", "value": "IPAsset"},',
+                '{"trait_type": "Owner", "value": "',
+                ownerStr,
+                '"},'
+                '{"trait_type": "Registrant", "value": "',
+                ownerStr,
+                '"},',
+                '{"trait_type": "Hash", "value": "0x3078303000000000000000000000000000000000000000000000000000000000"},',
+                '{"trait_type": "Registration Date", "value": "',
+                Strings.toString(IP_REGISTRATION_DATE),
+                '"}',
+                "]}"
+            )
+        );
+        /* solhint-enable */
+        string memory expectedURI = string(
+            abi.encodePacked(
+                "data:application/json;base64,",
+                Base64.encode(bytes(string(abi.encodePacked(uriEncoding))))
+            )
+        );
         assertEq(expectedURI, renderer.tokenURI(ipId));
     }
-
 }

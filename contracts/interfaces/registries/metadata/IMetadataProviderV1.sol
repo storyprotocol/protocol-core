@@ -7,7 +7,6 @@ import { IMetadataProvider } from "./IMetadataProvider.sol";
 
 /// @title Metadata Provider v1 Interface
 interface IMetadataProviderV1 is IMetadataProvider {
-
     /// @notice Fetches the metadata linked to an IP asset.
     /// @param ipId The address identifier of the IP asset.
     function metadata(address ipId) external view returns (IP.MetadataV1 memory);

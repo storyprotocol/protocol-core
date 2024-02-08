@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.23;
 
 import { Test } from "forge-std/Test.sol";
 
 import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
-import { IERC6551Account } from "@erc6551/interfaces/IERC6551Account.sol";
 
 import { AccessController } from "contracts/AccessController.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
@@ -14,7 +13,6 @@ import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
-import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { MockModule } from "test/foundry/mocks/MockModule.sol";
 import { MockOrchestratorModule } from "test/foundry/mocks/MockOrchestratorModule.sol";
@@ -25,13 +23,13 @@ contract AccessControllerTest is Test {
     IPAccountRegistry public ipAccountRegistry;
     IModuleRegistry public moduleRegistry;
     IPAccountImpl public implementation;
-    MockERC721 nft = new MockERC721("MockERC721");
+    MockERC721 public nft = new MockERC721("MockERC721");
     MockModule public mockModule;
     MockModule public moduleWithoutPermission;
     IIPAccount public ipAccount;
     ERC6551Registry public erc6551Registry = new ERC6551Registry();
-    address owner = vm.addr(1);
-    uint256 tokenId = 100;
+    address public owner = vm.addr(1);
+    uint256 public tokenId = 100;
     Governance public governance;
 
     function setUp() public {
@@ -938,22 +936,16 @@ contract AccessControllerTest is Test {
             mockModule.executeNoReturn.selector,
             3
         );
-
     }
 
     function test_AccessController_revert_setGlobalPermissionWithZeroSignerAddress() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.AccessController__SignerIsZeroAddress.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessController__SignerIsZeroAddress.selector));
         accessController.setGlobalPermission(
             address(0),
             address(mockModule),
             mockModule.executeNoReturn.selector,
             AccessPermission.ALLOW
         );
-
     }
 
     function test_AccessController_ipAccountOwnerSetBatchPermissions() public {
@@ -987,10 +979,7 @@ contract AccessControllerTest is Test {
         ipAccount.execute(
             address(accessController),
             0,
-            abi.encodeWithSignature(
-                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
-                permissionList
-            )
+            abi.encodeWithSignature("setBatchPermissions((address,address,address,bytes4,uint8)[])", permissionList)
         );
         assertEq(
             accessController.getPermission(
@@ -1053,7 +1042,6 @@ contract AccessControllerTest is Test {
         );
     }
 
-
     function test_AccessController_revert_NonIpAccountOwnerSetBatchPermissions() public {
         moduleRegistry.registerModule("MockModule", address(mockModule));
         address signer = vm.addr(2);
@@ -1095,10 +1083,7 @@ contract AccessControllerTest is Test {
         ipAccount.execute(
             address(accessController),
             0,
-            abi.encodeWithSignature(
-                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
-                permissionList
-            )
+            abi.encodeWithSignature("setBatchPermissions((address,address,address,bytes4,uint8)[])", permissionList)
         );
     }
 
@@ -1130,18 +1115,11 @@ contract AccessControllerTest is Test {
         });
 
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.AccessController__IPAccountIsZeroAddress.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessController__IPAccountIsZeroAddress.selector));
         ipAccount.execute(
             address(accessController),
             0,
-            abi.encodeWithSignature(
-                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
-                permissionList
-            )
+            abi.encodeWithSignature("setBatchPermissions((address,address,address,bytes4,uint8)[])", permissionList)
         );
     }
 
@@ -1173,18 +1151,11 @@ contract AccessControllerTest is Test {
         });
 
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.AccessController__SignerIsZeroAddress.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessController__SignerIsZeroAddress.selector));
         ipAccount.execute(
             address(accessController),
             0,
-            abi.encodeWithSignature(
-                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
-                permissionList
-            )
+            abi.encodeWithSignature("setBatchPermissions((address,address,address,bytes4,uint8)[])", permissionList)
         );
     }
 
@@ -1223,10 +1194,7 @@ contract AccessControllerTest is Test {
         ipAccount.execute(
             address(accessController),
             0,
-            abi.encodeWithSignature(
-                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
-                permissionList
-            )
+            abi.encodeWithSignature("setBatchPermissions((address,address,address,bytes4,uint8)[])", permissionList)
         );
     }
 
@@ -1263,10 +1231,7 @@ contract AccessControllerTest is Test {
         ipAccount.execute(
             address(accessController),
             0,
-            abi.encodeWithSignature(
-                "setBatchPermissions((address,address,address,bytes4,uint8)[])",
-                permissionList
-            )
+            abi.encodeWithSignature("setBatchPermissions((address,address,address,bytes4,uint8)[])", permissionList)
         );
     }
 

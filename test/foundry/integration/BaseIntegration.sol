@@ -6,7 +6,6 @@ import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Test } from "forge-std/Test.sol";
 import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
-import { IERC6551Account } from "@erc6551/interfaces/IERC6551Account.sol";
 import { IERC6551Registry } from "@erc6551/interfaces/IERC6551Registry.sol";
 import { ERC6551AccountLib } from "@erc6551/lib/ERC6551AccountLib.sol";
 
@@ -14,15 +13,11 @@ import { ERC6551AccountLib } from "@erc6551/lib/ERC6551AccountLib.sol";
 import { AccessController } from "contracts/AccessController.sol";
 import { Governance } from "contracts/governance/Governance.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
-import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { IRegistrationModule } from "contracts/interfaces/modules/IRegistrationModule.sol";
 import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
 import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
-import { ILicenseRegistry } from "contracts/interfaces/registries/ILicenseRegistry.sol";
 import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
-import { Errors } from "contracts/lib/Errors.sol";
 import { IP } from "contracts/lib/IP.sol";
-import { Licensing } from "contracts/lib/Licensing.sol";
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
@@ -145,11 +140,7 @@ contract BaseIntegration is Test {
             address(ipResolver)
         );
         taggingModule = new TaggingModule();
-        disputeModule = new DisputeModule(
-            address(accessController),
-            address(ipAssetRegistry),
-            address(governance)
-        );
+        disputeModule = new DisputeModule(address(accessController), address(ipAssetRegistry), address(governance));
         ipAssetRenderer = new IPAssetRenderer(
             address(ipAssetRegistry),
             address(licenseRegistry),
@@ -516,7 +507,7 @@ contract BaseIntegration is Test {
                 "license not burnt on linking"
             );
             assertTrue(licensingModule.isParent(parentIpIds[i], ipId), "parent IP account is not parent");
-            (uint256 index, bool isInherited, bool active) = licensingModule.policyStatus(parentIpIds[i], policyIds[i]);
+            (uint256 index, bool isInherited, ) = licensingModule.policyStatus(parentIpIds[i], policyIds[i]);
             assertEq(
                 keccak256(abi.encode(licensingModule.policyForIpAtIndex(isInherited, parentIpIds[i], index))),
                 keccak256(abi.encode(licensingModule.policyForIpAtIndex(true, ipId, i))),

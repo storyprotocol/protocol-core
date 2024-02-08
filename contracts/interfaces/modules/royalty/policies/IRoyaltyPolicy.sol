@@ -2,7 +2,7 @@
 pragma solidity ^0.8.23;
 
 /// @title RoyaltyPolicy interface
-interface IRoyaltyPolicy {   
+interface IRoyaltyPolicy {
     /// @notice Initializes the royalty policy
     /// @param ipId The ipId
     /// @param parentsIpIds The parent ipIds

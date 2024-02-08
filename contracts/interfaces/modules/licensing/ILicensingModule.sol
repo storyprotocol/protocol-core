@@ -83,11 +83,7 @@ interface ILicensingModule is IModule {
     /// @param childIpId The id of the child IP to be linked
     /// @param minRoyalty The minimum derivative rev share that the child wants from its descendants. The value is
     /// overriden by the `derivativesRevShare` value of the linking licenses.
-    function linkIpToParents(
-        uint256[] calldata licenseIds,
-        address childIpId,
-        uint32 minRoyalty
-    ) external;
+    function linkIpToParents(uint256[] calldata licenseIds, address childIpId, uint32 minRoyalty) external;
 
     ///
     /// Getters

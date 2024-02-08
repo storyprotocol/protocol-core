@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.23;
 
-import "contracts/interfaces/modules/base/IModule.sol";
-import "contracts/interfaces/IIPAccount.sol";
-import "contracts/interfaces/registries/IModuleRegistry.sol";
-import "contracts/interfaces/registries/IIPAccountRegistry.sol";
+import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
+import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
+import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
+import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 

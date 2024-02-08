@@ -5,9 +5,9 @@ pragma solidity ^0.8.23;
 interface ILiquidSplitFactory {
     /// @notice Creates a new LiquidSplitClone contract
     /// @param accounts The accounts to initialize the LiquidSplitClone contract with
-    /// @param initAllocations The initial allocations 
+    /// @param initAllocations The initial allocations
     /// @param _distributorFee The distributor fee
-    /// @param owner The owner of the LiquidSplitClone contract 
+    /// @param owner The owner of the LiquidSplitClone contract
     function createLiquidSplitClone(
         address[] calldata accounts,
         uint32[] calldata initAllocations,

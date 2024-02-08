@@ -37,7 +37,12 @@ contract ArbitrationPolicySP is IArbitrationPolicy, Governable {
     /// @param _paymentToken Address of the payment token
     /// @param _arbitrationPrice Arbitration price
     /// @param _governable Address of the governable contract
-    constructor(address _disputeModule, address _paymentToken, uint256 _arbitrationPrice, address _governable) Governable(_governable) {
+    constructor(
+        address _disputeModule,
+        address _paymentToken,
+        uint256 _arbitrationPrice,
+        address _governable
+    ) Governable(_governable) {
         if (_disputeModule == address(0)) revert Errors.ArbitrationPolicySP__ZeroDisputeModule();
         if (_paymentToken == address(0)) revert Errors.ArbitrationPolicySP__ZeroPaymentToken();
 
@@ -58,7 +63,7 @@ contract ArbitrationPolicySP is IArbitrationPolicy, Governable {
     /// @param _decision The decision of the dispute
     function onDisputeJudgement(uint256 _disputeId, bool _decision, bytes calldata) external onlyDisputeModule {
         if (_decision) {
-            (, address disputeInitiator,,,,) = IDisputeModule(DISPUTE_MODULE).disputes(_disputeId);
+            (, address disputeInitiator, , , , ) = IDisputeModule(DISPUTE_MODULE).disputes(_disputeId);
             IERC20(PAYMENT_TOKEN).safeTransfer(disputeInitiator, ARBITRATION_PRICE);
         }
     }

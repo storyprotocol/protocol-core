@@ -2,16 +2,18 @@
 pragma solidity ^0.8.23;
 
 // external
-import { console2 } from "forge-std/console2.sol";
+// solhint-disable no-console
+import { console2 } from "forge-std/console2.sol"; // console to indicate setUp call.
 import { Test } from "forge-std/Test.sol";
 
 // contracts
 import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
 // test
+// solhint-disable-next-line max-line-length
 import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { DeployHelper } from "test/utils/DeployHelper.sol";
+import { DeployHelper } from "test/foundry/utils/DeployHelper.sol";
 
 struct PolicyFrameworkManagerData {
     string name;
@@ -45,6 +47,7 @@ contract TestHelper is Test, DeployHelper {
     string[] internal emptyStringArray = new string[](0);
 
     function setUp() public virtual {
+        // solhint-disable no-console
         console2.log("TestHelper.setUp");
         deployer = vm.addr(accountA);
         arbitrationRelayer = vm.addr(accountC);
@@ -101,8 +104,7 @@ contract TestHelper is Test, DeployHelper {
             contentRestrictions: gparams.contentRestrictions,
             royaltyPolicy: cparams.royaltyPolicy
         });
-        policyIds[pName] = UMLPolicyFrameworkManager(pfms["uml"].addr)
-        .registerPolicy(policies[pName]);
+        policyIds[pName] = UMLPolicyFrameworkManager(pfms["uml"].addr).registerPolicy(policies[pName]);
     }
 
     function _mapUMLPolicySimple(
@@ -133,7 +135,7 @@ contract TestHelper is Test, DeployHelper {
         });
     }
 
-    function _addUMLPolicyFromMapping(string memory name, address umlFramework) internal returns (uint256){
+    function _addUMLPolicyFromMapping(string memory name, address umlFramework) internal returns (uint256) {
         string memory pName = string(abi.encodePacked("uml_", name));
         policyIds[pName] = UMLPolicyFrameworkManager(umlFramework).registerPolicy(policies[pName]);
         return policyIds[pName];
@@ -148,7 +150,6 @@ contract TestHelper is Test, DeployHelper {
         string memory pName = string(abi.encodePacked("uml_", name));
         return policyIds[pName];
     }
-
 
     function _getIpId(MockERC721 mnft, uint256 tokenId) internal view returns (address ipId) {
         return _getIpId(address(mnft), tokenId);

@@ -3,29 +3,17 @@ pragma solidity ^0.8.23;
 
 import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
 
-import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { BaseTest } from "test/foundry/utils/BaseTest.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
-import { BaseModule } from "contracts/modules/BaseModule.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { AccessController } from "contracts/AccessController.sol";
-import { IAccessController } from "contracts/interfaces/IAccessController.sol";
-import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
-import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { MockModuleRegistry } from "test/foundry/mocks/MockModuleRegistry.sol";
-import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
-import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { IP } from "contracts/lib/IP.sol";
-import { Errors } from "contracts/lib/Errors.sol";
 import { Governance } from "contracts/governance/Governance.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
-import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 
 /// @title Module Base Test Contract
 /// @notice Base contract for testing standard module functionality.
@@ -73,18 +61,8 @@ abstract contract ModuleBaseTest is BaseTest {
             address(ipAssetRegistry),
             address(licenseRegistry),
             address(royaltyModule)
-        ); 
+        );
         licenseRegistry.setLicensingModule(address(licensingModule));
-        IPResolver ipResolver = new IPResolver(
-            address(accessController),
-            address(ipAssetRegistry)
-        );
-        RegistrationModule registrationModule = new RegistrationModule(
-            address(accessController),
-            address(ipAssetRegistry),
-            address(licensingModule),
-            address(ipResolver)
-        );
         baseModule = IModule(_deployModule());
         accessController.initialize(address(ipAssetRegistry), address(moduleRegistry));
         royaltyModule.setLicensingModule(address(licensingModule));

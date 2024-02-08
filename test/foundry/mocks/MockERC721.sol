@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSDL-1.1
 pragma solidity ^0.8.23;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract MockERC721 is ERC721 {
     uint256 private _counter;
@@ -25,11 +25,7 @@ contract MockERC721 is ERC721 {
         _burn(tokenId);
     }
 
-    function transferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) public override {
+    function transferFrom(address from, address to, uint256 tokenId) public override {
         _transfer(from, to, tokenId);
     }
 }

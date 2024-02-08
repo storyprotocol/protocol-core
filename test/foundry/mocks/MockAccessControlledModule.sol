@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import "contracts/interfaces/modules/base/IModule.sol";
-import "contracts/interfaces/registries/IIPAccountRegistry.sol";
-import "contracts/lib/registries/IPAccountChecker.sol";
-import "contracts/interfaces/registries/IModuleRegistry.sol";
-import "contracts/access/AccessControlled.sol";
+import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
+import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
+import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
+import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
+import { AccessControlled } from "contracts/access/AccessControlled.sol";
 
 /// @title MockAccessControlledModule
 /// @dev This contract is a mock implementation of an access-controlled module, used for testing purposes.
@@ -84,5 +84,4 @@ contract MockAccessControlledModule is IModule, AccessControlled {
         }
         return param;
     }
-
 }
