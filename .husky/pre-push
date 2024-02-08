@@ -2,3 +2,5 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 yarn lint:sol:fix
+# recheck
+yarn lint:sol
