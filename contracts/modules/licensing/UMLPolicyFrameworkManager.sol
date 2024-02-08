@@ -123,6 +123,10 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
         rights = abi.decode(policyAggregatorData, (UMLAggregator));
     }
 
+    function getPolicyId(UMLPolicy calldata umlPolicy) external view returns (uint256 policyId) {
+        return LICENSING_MODULE.getPolicyId(address(this), umlPolicy.transferable, abi.encode(umlPolicy));
+    }
+
     function getRoyaltyPolicy(uint256 policyId) external view returns (address) {
         return getPolicy(policyId).royaltyPolicy;
     }

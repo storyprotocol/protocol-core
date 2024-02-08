@@ -86,6 +86,32 @@ contract LicensingModule is AccessControlled, ILicensingModule {
         emit PolicyFrameworkRegistered(manager, fwManager.name(), licenseUrl);
     }
 
+    /// @notice Registers a policy into the contract. MUST be called by a registered
+    /// framework or it will revert. The policy data and its integrity must be
+    /// verified by the policy framework manager.
+    /// @param isLicenseTransferable True if the license is transferable
+    /// @param data The policy data
+    function registerPolicy(bool isLicenseTransferable, bytes memory data) external returns (uint256 policyId) {
+        _verifyRegisteredFramework(address(msg.sender));
+        Licensing.Policy memory pol = Licensing.Policy({
+            isLicenseTransferable: isLicenseTransferable,
+            policyFramework: msg.sender,
+            data: data
+        });
+        (uint256 polId, bool newPol) = DataUniqueness.addIdOrGetExisting(
+            abi.encode(pol),
+            _hashedPolicies,
+            _totalPolicies
+        );
+
+        if (newPol) {
+            _totalPolicies = polId;
+            _policies[polId] = pol;
+            emit PolicyRegistered(msg.sender, polId, data);
+        }
+        return polId;
+    }
+
     /// Adds a policy to an ipId, which can be used to mint licenses.
     /// Licnses are permissions for ipIds to be derivatives (children).
     /// if policyId is not defined in LicenseRegistry, reverts.
@@ -117,35 +143,6 @@ contract LicensingModule is AccessControlled, ILicensingModule {
 
             ROYALTY_MODULE.setRoyaltyPolicy(ipId, newRoyaltyPolicy, new address[](0), abi.encode(newMinRoyalty));
         }
-    }
-
-    /// @notice Registers a policy into the contract. MUST be called by a registered
-    /// framework or it will revert. The policy data and its integrity must be
-    /// verified by the policy framework manager.
-    /// @param isLicenseTransferable True if the license is transferable
-    /// @param data The policy data
-    function registerPolicy(bool isLicenseTransferable, bytes memory data) external returns (uint256 policyId) {
-        _verifyRegisteredFramework(address(msg.sender));
-        Licensing.Policy memory pol = Licensing.Policy({
-            isLicenseTransferable: isLicenseTransferable,
-            policyFramework: msg.sender,
-            data: data
-        });
-        (uint256 polId, bool newPol) = DataUniqueness.addIdOrGetExisting(
-            abi.encode(pol),
-            _hashedPolicies,
-            _totalPolicies
-        );
-
-        if (!newPol) {
-            revert Errors.LicensingModule__PolicyAlreadyAdded();
-        } else {
-            _totalPolicies = polId;
-            _policies[polId] = pol;
-            emit PolicyRegistered(msg.sender, polId, data);
-        }
-
-        return polId;
     }
 
     /// Mints license NFTs representing a policy granted by a set of ipIds (licensors). This NFT needs to be burned
@@ -299,82 +296,6 @@ contract LicensingModule is AccessControlled, ILicensingModule {
         LICENSE_REGISTRY.burnLicenses(holder, licenseIds);
     }
 
-    function _linkIpToParent(
-        uint256 iteration,
-        uint256 licenseId,
-        uint256 policyId,
-        address licensor,
-        address childIpId,
-        address royaltyPolicyAddress,
-        uint32 royaltyDerivativeRevShare,
-        uint32 derivativeRevShareSum
-    )
-        private
-        returns (
-            address nextRoyaltyPolicyAddress,
-            uint32 nextRoyaltyDerivativeRevShare,
-            uint32 nextDerivativeRevShareSum
-        )
-    {
-        // TODO: check licensor not part of a branch tagged by disputer
-        if (licensor == childIpId) {
-            revert Errors.LicensingModule__ParentIdEqualThanChild();
-        }
-        // Verify linking params
-        Licensing.Policy memory pol = policy(policyId);
-        IPolicyFrameworkManager.VerifyLinkResponse memory response = IPolicyFrameworkManager(pol.policyFramework)
-            .verifyLink(licenseId, msg.sender, childIpId, licensor, pol.data);
-
-        if (!response.isLinkingAllowed) {
-            revert Errors.LicensingModule__LinkParentParamFailed();
-        }
-
-        // Compatibility check: If link says no royalty is required for license (licenseIds[i]) but
-        // another license requires royalty, revert.
-        if (!response.isRoyaltyRequired && royaltyPolicyAddress != address(0)) {
-            revert Errors.LicensingModule__IncompatibleLicensorCommercialPolicy();
-        }
-
-        // If link says royalty is required for license (licenseIds[i]) and no royalty policy is set, set it.
-        // But if the index is NOT 0, this is previous licenses didn't set the royalty policy because they don't
-        // require royalty payment. So, revert in this case. Similarly, if the new royaltyPolicyAddress is different
-        // from the previous one (in iteration > 0), revert. We currently restrict all licenses (parents) to have
-        // the same royalty policy, so the child can inherit it.
-        if (response.isRoyaltyRequired) {
-            if (iteration > 0 && royaltyPolicyAddress != response.royaltyPolicy) {
-                // If iteration > 0 and
-                // - royaltyPolicyAddress == address(0), revert. Previous licenses didn't set RP.
-                // - royaltyPolicyAddress != response.royaltyPolicy, revert. Previous licenses set different RP.
-                // ==> this can be considered as royaltyPolicyAddress != response.royaltyPolicy
-                revert Errors.LicensingModule__IncompatibleRoyaltyPolicyAddress();
-            }
-
-            // TODO: Unit test.
-            // If the previous license's derivativeRevShare is different from that of the current license, revert.
-            // For iteration == 0, this check is skipped as `royaltyDerivativeRevShare` param is at 0.
-            if (iteration > 0 && royaltyDerivativeRevShare != response.royaltyDerivativeRevShare) {
-                revert Errors.LicensingModule__IncompatibleRoyaltyPolicyDerivativeRevShare();
-            }
-
-            // TODO: Read max RNFT supply instead of hardcoding the expected max supply
-            // TODO: Do we need safe check?
-            // TODO: Test this in unit test.
-            if (derivativeRevShareSum + response.royaltyDerivativeRevShare > 1000) {
-                revert Errors.LicensingModule__DerivativeRevShareSumExceedsMaxRNFTSupply();
-            }
-
-            nextRoyaltyPolicyAddress = response.royaltyPolicy;
-            nextRoyaltyDerivativeRevShare = response.royaltyDerivativeRevShare;
-            nextDerivativeRevShareSum = derivativeRevShareSum + response.royaltyDerivativeRevShare;
-        }
-
-        // Add the policy of licenseIds[i] to the child. If the policy's already set from previous parents,
-        // then the addition will be skipped.
-        _addPolicyIdToIp({ ipId: childIpId, policyId: policyId, isInherited: true, skipIfDuplicate: true });
-        // Set parent
-        _ipIdParents[childIpId].add(licensor);
-    }
-
     /// @notice True if the framework address is registered in LicenseRegistry
     function isFrameworkRegistered(address policyFramework) external view returns (bool) {
         return _registeredFrameworkManagers[policyFramework];
@@ -390,6 +311,16 @@ contract LicensingModule is AccessControlled, ILicensingModule {
         pol = _policies[policyId];
         _verifyPolicy(pol);
         return pol;
+    }
+
+    /// @notice gets the policy id for the given data, or 0 if not found
+    function getPolicyId(address framework, bool isLicenseTransferable, bytes memory data) external view returns (uint256 policyId) {
+        Licensing.Policy memory pol = Licensing.Policy({
+            isLicenseTransferable: isLicenseTransferable,
+            policyFramework: framework,
+            data: data
+        });
+        return _hashedPolicies[keccak256(abi.encode(pol))];
     }
 
     function policyAggregatorData(address framework, address ipId) external view returns (bytes memory) {
@@ -497,6 +428,83 @@ contract LicensingModule is AccessControlled, ILicensingModule {
         emit PolicyAddedToIpId(msg.sender, ipId, policyId, index, isInherited);
         return index;
     }
+
+    function _linkIpToParent(
+        uint256 iteration,
+        uint256 licenseId,
+        uint256 policyId,
+        address licensor,
+        address childIpId,
+        address royaltyPolicyAddress,
+        uint32 royaltyDerivativeRevShare,
+        uint32 derivativeRevShareSum
+    )
+        private
+        returns (
+            address nextRoyaltyPolicyAddress,
+            uint32 nextRoyaltyDerivativeRevShare,
+            uint32 nextDerivativeRevShareSum
+        )
+    {
+        // TODO: check licensor not part of a branch tagged by disputer
+        if (licensor == childIpId) {
+            revert Errors.LicensingModule__ParentIdEqualThanChild();
+        }
+        // Verify linking params
+        Licensing.Policy memory pol = policy(policyId);
+        IPolicyFrameworkManager.VerifyLinkResponse memory response = IPolicyFrameworkManager(pol.policyFramework)
+            .verifyLink(licenseId, msg.sender, childIpId, licensor, pol.data);
+
+        if (!response.isLinkingAllowed) {
+            revert Errors.LicensingModule__LinkParentParamFailed();
+        }
+
+        // Compatibility check: If link says no royalty is required for license (licenseIds[i]) but
+        // another license requires royalty, revert.
+        if (!response.isRoyaltyRequired && royaltyPolicyAddress != address(0)) {
+            revert Errors.LicensingModule__IncompatibleLicensorCommercialPolicy();
+        }
+
+        // If link says royalty is required for license (licenseIds[i]) and no royalty policy is set, set it.
+        // But if the index is NOT 0, this is previous licenses didn't set the royalty policy because they don't
+        // require royalty payment. So, revert in this case. Similarly, if the new royaltyPolicyAddress is different
+        // from the previous one (in iteration > 0), revert. We currently restrict all licenses (parents) to have
+        // the same royalty policy, so the child can inherit it.
+        if (response.isRoyaltyRequired) {
+            if (iteration > 0 && royaltyPolicyAddress != response.royaltyPolicy) {
+                // If iteration > 0 and
+                // - royaltyPolicyAddress == address(0), revert. Previous licenses didn't set RP.
+                // - royaltyPolicyAddress != response.royaltyPolicy, revert. Previous licenses set different RP.
+                // ==> this can be considered as royaltyPolicyAddress != response.royaltyPolicy
+                revert Errors.LicensingModule__IncompatibleRoyaltyPolicyAddress();
+            }
+
+            // TODO: Unit test.
+            // If the previous license's derivativeRevShare is different from that of the current license, revert.
+            // For iteration == 0, this check is skipped as `royaltyDerivativeRevShare` param is at 0.
+            if (iteration > 0 && royaltyDerivativeRevShare != response.royaltyDerivativeRevShare) {
+                revert Errors.LicensingModule__IncompatibleRoyaltyPolicyDerivativeRevShare();
+            }
+
+            // TODO: Read max RNFT supply instead of hardcoding the expected max supply
+            // TODO: Do we need safe check?
+            // TODO: Test this in unit test.
+            if (derivativeRevShareSum + response.royaltyDerivativeRevShare > 1000) {
+                revert Errors.LicensingModule__DerivativeRevShareSumExceedsMaxRNFTSupply();
+            }
+
+            nextRoyaltyPolicyAddress = response.royaltyPolicy;
+            nextRoyaltyDerivativeRevShare = response.royaltyDerivativeRevShare;
+            nextDerivativeRevShareSum = derivativeRevShareSum + response.royaltyDerivativeRevShare;
+        }
+
+        // Add the policy of licenseIds[i] to the child. If the policy's already set from previous parents,
+        // then the addition will be skipped.
+        _addPolicyIdToIp({ ipId: childIpId, policyId: policyId, isInherited: true, skipIfDuplicate: true });
+        // Set parent
+        _ipIdParents[childIpId].add(licensor);
+    }
+
 
     function _verifyCanAddPolicy(uint256 policyId, address ipId, bool isInherited) private {
         bool ipIdIsDerivative = _policySetPerIpId(true, ipId).length() > 0;

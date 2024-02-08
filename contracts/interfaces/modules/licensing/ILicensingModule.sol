@@ -59,6 +59,9 @@ interface ILicensingModule is IModule {
     /// @param data The policy data
     function registerPolicy(bool isLicenseTransferable, bytes memory data) external returns (uint256 policyId);
 
+    /// @notice returns the policy id for the given data, or 0 if not found
+    function getPolicyId(address framework, bool isLicenseTransferable, bytes memory data) external view returns (uint256 policyId);
+
     /// @notice Adds a policy to an IP policy list
     /// @param ipId The id of the IP
     /// @param polId The id of the policy

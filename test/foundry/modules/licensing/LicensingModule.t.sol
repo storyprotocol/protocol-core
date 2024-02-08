@@ -136,13 +136,20 @@ contract LicensingModuleTest is Test {
         assertEq(polId, 1, "polId not 1");
     }
 
-    function test_LicensingModule_registerPolicy_revert_policyAlreadyAdded() public {
+    function test_LicensingModule_registerPolicy_reusesIdForAlreadyAddedPolicy() public {
         licensingModule.registerPolicyFrameworkManager(address(module1));
         vm.startPrank(address(module1));
-        licensingModule.registerPolicy(true, _createPolicy());
-        vm.expectRevert(Errors.LicensingModule__PolicyAlreadyAdded.selector);
-        licensingModule.registerPolicy(true, _createPolicy());
+        uint256 polId = licensingModule.registerPolicy(true, _createPolicy());
+        assertEq(polId, licensingModule.registerPolicy(true, _createPolicy()));
         vm.stopPrank();
+    }
+
+    function test_LicensingModule_getPolicyId() public {
+        licensingModule.registerPolicyFrameworkManager(address(module1));
+        bytes memory policy = _createPolicy();
+        vm.prank(address(module1));
+        uint256 policyId = licensingModule.registerPolicy(true, policy);
+        assertEq(licensingModule.getPolicyId(address(module1), true, policy), policyId, "policyId not found");
     }
 
     function test_LicensingModule_registerPolicy_revert_frameworkNotFound() public {
