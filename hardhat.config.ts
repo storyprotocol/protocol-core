@@ -2,6 +2,7 @@ import "@nomicfoundation/hardhat-ethers"
 import "@nomicfoundation/hardhat-foundry"
 import "@nomicfoundation/hardhat-verify"
 import "@tenderly/hardhat-tenderly"
+import { TenderlyConfig } from "@tenderly/hardhat-tenderly/dist/tenderly/types"
 import * as tdly from "@tenderly/hardhat-tenderly" // also import tdly for setup, in addition to global import above
 import "@typechain/hardhat"
 // import "@openzeppelin/hardhat-upgrades"
@@ -69,19 +70,21 @@ const config: HardhatUserConfig = {
       url: MAINNET_URL || "",
       accounts: [MAINNET_PRIVATEKEY],
     },
-    ...(USE_TENDERLY? ({
-      tenderly: {
-        chainId: 11155111,
-        url: TENDERLY_URL || "",
-        accounts: [TENDERLY_PRIVATEKEY],
-      }
-    }) : ({
-      sepolia: {
-        chainId: 11155111,
-        url: SEPOLIA_URL || "",
-        accounts: [SEPOLIA_PRIVATEKEY],
-      }
-    })),
+    ...(USE_TENDERLY
+      ? {
+          tenderly: {
+            chainId: 11155111,
+            url: TENDERLY_URL || "",
+            accounts: [TENDERLY_PRIVATEKEY],
+          },
+        }
+      : {
+          sepolia: {
+            chainId: 11155111,
+            url: SEPOLIA_URL || "",
+            accounts: [SEPOLIA_PRIVATEKEY],
+          },
+        }),
   },
   // @ts-ignore
   namedAccounts: {
@@ -102,14 +105,15 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: ETHERSCAN_API_KEY,
   },
-  ...(USE_TENDERLY? ({
-    tenderly: {
-      project: process.env.TENDERLY_PROJECT_SLUG || "",
-      username: process.env.TENDERLY_USERNAME || "",
-      forkNetwork: 1, // fork mainnet
-      privateVerification: process.env.TENDERLY_PRIVATE_VERIFICATION === "true",
-    },
-  }) : ({})),
+  ...(USE_TENDERLY
+    ? {
+        tenderly: {
+          project: process.env.TENDERLY_PROJECT_SLUG || "",
+          username: process.env.TENDERLY_USERNAME || "",
+          privateVerification: process.env.TENDERLY_PRIVATE_VERIFICATION === "true",
+        } as TenderlyConfig,
+      }
+    : {}),
   typechain: {
     outDir: "typechain",
     target: "ethers-v6",

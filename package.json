@@ -8,10 +8,14 @@
     "test": "test"
   },
   "scripts": {
-    "lint": "npm run lint:solidity && npm run lint:javascript",
-    "lint:javascript": "eslint ./",
-    "lint:solidity": "solhint \"contracts/**/*.sol\" \"test/**/*.sol\"",
-    "test": "npx hardhat test"
+    "lint": "npm run lint:js && npm run lint:sol",
+    "lint:fix": "npm run lint:js:fix && npm run lint:sol:fix",
+    "lint:js": "prettier --loglevel warn --ignore-path .gitignore '**/*.{js,ts}' --check && eslint --ignore-path .gitignore .",
+    "lint:js:fix": "prettier --loglevel warn --ignore-path .gitignore '**/*.{js,ts}' --write && eslint --ignore-path .gitignore . --fix",
+    "lint:sol": "prettier --loglevel warn --ignore-path .gitignore '{contracts,test}/**/*.sol' --check && solhint '{contracts,test}/**/*.sol'",
+    "lint:sol:fix": "prettier --loglevel warn --ignore-path .gitignore '{contracts,test}/**/*.sol' --write",
+    "test": "npx hardhat test",
+    "prepare": "husky install"
   },
   "author": "StoryProtocol",
   "license": "MIT",
@@ -36,14 +40,17 @@
     "hardhat-deploy": "^0.11.45",
     "hardhat-deploy-ethers": "^0.4.1",
     "hardhat-gas-reporter": "^1.0.10",
+    "minimatch": "^9.0.3",
     "mocha": "^10.2.0",
-    "prettier": "^3.2.5",
-    "prettier-plugin-solidity": "^1.1.3",
+    "prettier": "^3.0.0",
+    "prettier-plugin-solidity": "^1.1.0",
     "solhint": "^4.1.1",
+    "solhint-community": "^3.7.0",
     "solhint-plugin-prettier": "^0.1.0",
     "solidity-coverage": "^0.8.6",
     "ts-node": "^10.9.2",
-    "typechain": "^8.3.2"
+    "typechain": "^8.3.2",
+    "husky": "^8.0.0"
   },
   "dependencies": {
     "@openzeppelin/contracts": "5.0.1",

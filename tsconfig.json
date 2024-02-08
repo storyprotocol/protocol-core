@@ -31,12 +31,12 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["jest", "node"],
+    "types": ["node"],
     "baseUrl": "src",
     "paths": {
         "@gtp/*": ["./*"]
     }
   },
-  "include": ["scripts/**/*"],
+  "include": ["script/hardhat/**/*"],
   "exclude": ["node_modules"]
 }
