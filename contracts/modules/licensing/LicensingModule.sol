@@ -104,9 +104,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
             _totalPolicies
         );
 
-        if (!newPol) {
-            return polId;
-        } else {
+        if (newPol) {
             _totalPolicies = polId;
             _policies[polId] = pol;
             emit PolicyRegistered(msg.sender, polId, data);
