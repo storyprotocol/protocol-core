@@ -197,7 +197,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
                         licensorIp,
                         newRoyaltyPolicy,
                         new address[](0),
-                        abi.encode(commercialRevenueShare) // new minRoyaty
+                        abi.encode(commercialRevenueShare) // new minRoyalty
                     );
                 } else {
                     // If the royalty policy is immutable, we allow minting license on a private policy if and only
@@ -240,6 +240,13 @@ contract LicensingModule is AccessControlled, ILicensingModule {
             // it currently has set.
             if (!ROYALTY_MODULE.isRoyaltyPolicyImmutable(licensorIp)) {
                 ROYALTY_MODULE.setRoyaltyPolicyImmutable(licensorIp);
+            }
+
+            // pay upfront license fee
+            uint256 mintingFeeAmount = pfm.getMintingFeeAmount(policyId);
+            if (mintingFeeAmount > 0) {
+                address mintingFeeToken = pfm.getMintingFeeToken(policyId);
+                ROYALTY_MODULE.payLicenseMintingFee(licensorIp, msg.sender, mintingFeeToken, mintingFeeAmount);
             }
         }
     }
