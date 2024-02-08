@@ -84,6 +84,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
     /// @notice Enables third party operators to register on behalf of an NFT owner.
     /// @param operator The address of the operator the sender authorizes.
     /// @param approved Whether or not to approve that operator for registration.
+    /// TODO: Switch to access controller for centralizing this auth mechanism.
     function setApprovalForAll(address operator, bool approved) external {
         isApprovedForAll[msg.sender][operator] = approved;
         emit ApprovalForAll(msg.sender, operator, approved);
