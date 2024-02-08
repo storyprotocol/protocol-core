@@ -37,6 +37,28 @@ contract UMLPolicyFrameworkTest is TestHelper {
         ipId2 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 2);
     }
 
+    function test_UMLPolicyFrameworkManager_getPolicyId() public {
+        UMLPolicy memory umlPolicy = UMLPolicy({
+            transferable: true,
+            attribution: true,
+            commercialUse: false,
+            commercialAttribution: false,
+            commercializers: emptyStringArray,
+            commercialRevShare: 0,
+            derivativesAllowed: false,
+            derivativesAttribution: false,
+            derivativesApproval: false,
+            derivativesReciprocal: false,
+            derivativesRevShare: 0,
+            territories: emptyStringArray,
+            distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray,
+            royaltyPolicy: address(0)
+        });
+        uint256 policyId = umlFramework.registerPolicy(umlPolicy);
+        assertEq(umlFramework.getPolicyId(umlPolicy), policyId);
+    }
+
     function test_UMLPolicyFrameworkManager__valuesSetCorrectly() public {
         string[] memory territories = new string[](2);
         territories[0] = "test1";

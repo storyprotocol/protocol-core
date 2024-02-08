@@ -70,6 +70,9 @@ interface IUMLPolicyFrameworkManager is IPolicyFrameworkManager {
     /// @return policy The UMLPolicy struct
     function getPolicy(uint256 policyId) external view returns (UMLPolicy memory policy);
 
+    /// @notice gets the policy ID for the given policy data, or 0 if not found
+    function getPolicyId(UMLPolicy calldata umlPolicy) external view returns (uint256 policyId);
+
     /// @notice gets the aggregation data for inherited policies.
     function getAggregator(address ipId) external view returns (UMLAggregator memory rights);
 }

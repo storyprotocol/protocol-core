@@ -125,7 +125,6 @@ library Errors {
     error LicensingModule__FrameworkNotFound();
     error LicensingModule__EmptyLicenseUrl();
     error LicensingModule__InvalidPolicyFramework();
-    error LicensingModule__PolicyAlreadyAdded();
     error LicensingModule__ParamVerifierLengthMismatch();
     error LicensingModule__PolicyNotFound();
     error LicensingModule__NotLicensee();
