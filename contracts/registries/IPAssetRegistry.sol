@@ -2,6 +2,7 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
+import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 import { IIPAccount } from "../interfaces/IIPAccount.sol";
@@ -11,6 +12,10 @@ import { IMetadataProviderMigratable } from "../interfaces/registries/metadata/I
 import { MetadataProviderV1 } from "../registries/metadata/MetadataProviderV1.sol";
 import { Errors } from "../lib/Errors.sol";
 import { IResolver } from "../interfaces/resolvers/IResolver.sol";
+import { LICENSING_MODULE_KEY } from "contracts/lib/modules/Module.sol";
+import { IModuleRegistry } from "../interfaces/registries/IModuleRegistry.sol";
+import { ILicensingModule } from "../interfaces/modules/licensing/ILicensingModule.sol";
+import { IIPAssetRegistry } from "../interfaces/registries/IIPAssetRegistry.sol";
 
 /// @title IP Asset Registry
 /// @notice This contract acts as the source of truth for all IP registered in
@@ -26,14 +31,22 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
     struct Record {
         // Metadata provider for Story Protocol canonicalized metadata.
         IMetadataProviderMigratable metadataProvider;
+        // Metadata resolver for custom metadata added by the IP owner.
+        // TODO: Deprecate this in favor of consolidation through the provider.
         address resolver;
     }
+
+    /// @notice The canonical module registry used by the protocol.
+    IModuleRegistry public immutable MODULE_REGISTRY;
 
     /// @notice Tracks the total number of IP assets in existence.
     uint256 public totalSupply = 0;
 
     /// @notice Protocol governance administrator of the IP record registry.
     address public owner;
+
+    /// @notice Checks whether an operator is approved to register on behalf of an IP owner.
+    mapping(address owner => mapping(address operator => bool)) public isApprovedForAll;
 
     /// @dev Maps an IP, identified by its IP ID, to an IP record.
     mapping(address => Record) internal _records;
@@ -53,21 +66,37 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
     /// @param erc6551Registry The address of the ERC6551 registry.
     /// @param accessController The address of the access controller.
     /// @param ipAccountImpl The address of the IP account implementation.
+    /// @param moduleRegistry The address of the module registry.
+    /// TODO: Utilize module registry for fetching different modules.
     constructor(
         address accessController,
         address erc6551Registry,
-        address ipAccountImpl
+        address ipAccountImpl,
+        address moduleRegistry
     ) IPAccountRegistry(erc6551Registry, accessController, ipAccountImpl) {
         // TODO: Migrate this to a parameterized governance owner address.
+        // TODO: Replace with OZ's 2StepOwnable
         owner = msg.sender;
+        MODULE_REGISTRY = IModuleRegistry(moduleRegistry);
         _metadataProvider = IMetadataProviderMigratable(new MetadataProviderV1(address(this)));
     }
 
-    /// @notice Registers an NFT as an IP, creating a corresponding IP asset.
+    /// @notice Enables third party operators to register on behalf of an NFT owner.
+    /// @param operator The address of the operator the sender authorizes.
+    /// @param approved Whether or not to approve that operator for registration.
+    /// TODO: Switch to access controller for centralizing this auth mechanism.
+    function setApprovalForAll(address operator, bool approved) external {
+        isApprovedForAll[msg.sender][operator] = approved;
+        emit ApprovalForAll(msg.sender, operator, approved);
+    }
+
+    /// @notice Registers an NFT as an IP asset.
     /// @param chainId The chain identifier of where the NFT resides.
     /// @param tokenContract The address of the NFT.
     /// @param tokenId The token identifier of the NFT.
+    /// @param resolverAddr The address of the resolver to associate with the IP.
     /// @param createAccount Whether to create an IP account when registering.
+    /// @param data Canonical metadata to associate with the IP.
     function register(
         uint256 chainId,
         address tokenContract,
@@ -76,17 +105,29 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
         bool createAccount,
         bytes calldata data
     ) external returns (address id) {
-        id = ipId(chainId, tokenContract, tokenId);
-        if (_records[id].resolver != address(0)) {
-            revert Errors.IPAssetRegistry__AlreadyRegistered();
-        }
+        id = _register(new uint256[](0), 0, chainId, tokenContract, tokenId, resolverAddr, createAccount, data);
+        emit IPRegistered(id, chainId, tokenContract, tokenId, resolverAddr, address(_metadataProvider), data);
+    }
 
-        if (id.code.length == 0 && createAccount && id != registerIpAccount(chainId, tokenContract, tokenId)) {
-            revert Errors.IPAssetRegistry__InvalidAccount();
-        }
-        _setResolver(id, resolverAddr);
-        _setMetadata(id, _metadataProvider, data);
-        totalSupply++;
+    /// @notice Registers an NFT as an IP using licenses derived from parent IP asset(s).
+    /// @param licenseIds The parent IP asset licenses used to derive the new IP asset.
+    /// @param minRoyalty The minimum royalty to enforce if applicable, else 0.
+    /// @param chainId The chain identifier of where the NFT resides.
+    /// @param tokenContract The address of the NFT.
+    /// @param tokenId The token identifier of the NFT.
+    /// @param createAccount Whether to create an IP account when registering.
+    /// @param data Canonical metadata to associate with the IP.
+    function register(
+        uint256[] calldata licenseIds,
+        uint32 minRoyalty,
+        uint256 chainId,
+        address tokenContract,
+        uint256 tokenId,
+        address resolverAddr,
+        bool createAccount,
+        bytes calldata data
+    ) external returns (address id) {
+        id = _register(licenseIds, minRoyalty, chainId, tokenContract, tokenId, resolverAddr, createAccount, data);
         emit IPRegistered(id, chainId, tokenContract, tokenId, resolverAddr, address(_metadataProvider), data);
     }
 
@@ -150,8 +191,8 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
     /// @param id The canonical ID of the IP.
     /// @param data Canonical metadata to associate with the IP.
     function setMetadata(address id, address provider, bytes calldata data) external {
-        // Metadata is set on registration and immutable thereafter, with new fields
-        // only added during a migration to new protocol-approved metadata provider.
+        // Canonical metadata is set on registration and immutable thereafter, with new
+        // fields only added during a migration to new protocol-approved metadata provider.
         if (address(_records[id].metadataProvider) != msg.sender) {
             revert Errors.IPAssetRegistry__Unauthorized();
         }
@@ -166,10 +207,53 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
             revert Errors.IPAssetRegistry__NotYetRegistered();
         }
         // TODO: Update authorization logic to use the access controller.
-        if (msg.sender != IIPAccount(payable(id)).owner()) {
+        address owner = IIPAccount(payable(id)).owner();
+        if (msg.sender != owner && !isApprovedForAll[owner][msg.sender]) {
             revert Errors.IPAssetRegistry__Unauthorized();
         }
         _setResolver(id, resolverAddr);
+    }
+
+    /// @dev Registers an NFT as an IP.
+    /// @param licenseIds IP asset licenses used to derive the new IP asset, if any.
+    /// @param minRoyalty The minimum royalty to enforce if applicable, else 0.
+    /// @param chainId The chain identifier of where the NFT resides.
+    /// @param tokenContract The address of the NFT.
+    /// @param tokenId The token identifier of the NFT.
+    /// @param resolverAddr The address of the resolver to associate with the IP.
+    /// @param createAccount Whether to create an IP account when registering.
+    /// @param data Canonical metadata to associate with the IP.
+    function _register(
+        uint256[] memory licenseIds,
+        uint32 minRoyalty,
+        uint256 chainId,
+        address tokenContract,
+        uint256 tokenId,
+        address resolverAddr,
+        bool createAccount,
+        bytes calldata data
+    ) internal returns (address id) {
+        id = ipId(chainId, tokenContract, tokenId);
+        if (_records[id].resolver != address(0)) {
+            revert Errors.IPAssetRegistry__AlreadyRegistered();
+        }
+
+        address owner = IERC721(tokenContract).ownerOf(tokenId);
+        if (msg.sender != owner && !isApprovedForAll[owner][msg.sender]) {
+            revert Errors.IPAssetRegistry__RegistrantUnauthorized();
+        }
+
+        if (id.code.length == 0 && createAccount && id != registerIpAccount(chainId, tokenContract, tokenId)) {
+            revert Errors.IPAssetRegistry__InvalidAccount();
+        }
+        _setResolver(id, resolverAddr);
+        _setMetadata(id, _metadataProvider, data);
+        totalSupply++;
+
+        if (licenseIds.length != 0) {
+            ILicensingModule licensingModule = ILicensingModule(MODULE_REGISTRY.getModule(LICENSING_MODULE_KEY));
+            licensingModule.linkIpToParents(licenseIds, id, minRoyalty);
+        }
     }
 
     /// @dev Sets the resolver for the specified IP.

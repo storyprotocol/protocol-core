@@ -9,6 +9,7 @@ import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
 // contracts
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { Governance } from "contracts/governance/Governance.sol";
+import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
@@ -40,6 +41,8 @@ contract LicensingModuleTest is Test {
 
     MockERC721 internal nft = new MockERC721("MockERC721");
 
+    ModuleRegistry internal moduleRegistry;
+
     ERC6551Registry internal erc6551Registry;
 
     IPAccountImpl internal ipAccountImpl;
@@ -66,10 +69,12 @@ contract LicensingModuleTest is Test {
             address(accessController),
             address(ipAccountImpl)
         );
+        moduleRegistry = new ModuleRegistry(address(governance));
         ipAssetRegistry = new IPAssetRegistry(
             address(accessController),
             address(erc6551Registry),
-            address(ipAccountImpl)
+            address(ipAccountImpl),
+            address(moduleRegistry)
         );
         royaltyModule = new RoyaltyModule(address(governance));
         licenseRegistry = new LicenseRegistry();

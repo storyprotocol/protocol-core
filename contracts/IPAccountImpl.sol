@@ -7,7 +7,7 @@ import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Rec
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import { SignatureChecker } from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-import { IERC6551Account } from "@erc6551/interfaces/IERC6551Account.sol";
+import { IERC6551Account } from "erc6551/interfaces/IERC6551Account.sol";
 
 import { IAccessController } from "./interfaces/IAccessController.sol";
 import { IIPAccount } from "./interfaces/IIPAccount.sol";

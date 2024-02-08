@@ -41,6 +41,7 @@ contract IPResolverTest is ResolverBaseTest {
                 uri: "https://storyprotocol.xyz"
             })
         );
+        vm.prank(alice);
         ipId = ipAssetRegistry.register(block.chainid, address(erc721), tokenId, address(ipResolver), true, metadata);
     }
 
