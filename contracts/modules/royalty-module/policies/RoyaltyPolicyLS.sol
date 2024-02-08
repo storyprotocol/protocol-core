@@ -126,7 +126,7 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
 
     /// @notice Returns the minimum royalty the IPAccount expects from descendants
     /// @param _ipId The ipId
-    function minRoyaltyFromDescendants(address _ipId) external view override returns (uint32) {
+    function minRoyaltyFromDescendants(address _ipId) external view returns (uint32) {
         return royaltyData[_ipId].minRoyalty;
     }
 
