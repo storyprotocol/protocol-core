@@ -50,7 +50,9 @@ contract TestLSClaimer is TestHelper {
                 commercialAttribution: true,
                 commercializers: new string[](0),
                 commercialRevShare: 10,
-                royaltyPolicy: address(royaltyPolicyLS)
+                royaltyPolicy: address(royaltyPolicyLS),
+                mintingFeeAmount: mintFeeAmount,
+                mintingFeeToken: address(USDC)
             }),
             UMLPolicyDerivativeParams({
                 derivativesAttribution: true,
@@ -101,6 +103,7 @@ contract TestLSClaimer is TestHelper {
 
         vm.stopPrank();
         vm.startPrank(deployer);
+        USDC.approve(address(royaltyPolicyLS), type(uint256).max);
         uint256[] memory licenseId = new uint256[](1);
         for (uint256 i = 0; i < 99; i++) {
             licenseId[0] = licensingModule.mintLicense(

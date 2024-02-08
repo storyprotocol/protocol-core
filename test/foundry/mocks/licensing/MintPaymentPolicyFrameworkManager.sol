@@ -110,4 +110,12 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager {
     function isPolicyCommercial(uint256 policyId) external view returns (bool) {
         return _isPolicyCommercial[policyId];
     }
+
+    function getMintingFeeAmount(uint256) public pure override returns (uint256) {
+        return 0;
+    }
+
+    function getMintingFeeToken(uint256) public pure override returns (address) {
+        return address(0);
+    }
 }

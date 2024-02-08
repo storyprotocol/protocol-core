@@ -44,6 +44,8 @@ struct UMLPolicyCommercialParams {
     string[] commercializers;
     uint32 commercialRevShare;
     address royaltyPolicy;
+    uint32 mintingFeeAmount;
+    address mintingFeeToken;
 }
 
 struct UMLPolicyDerivativeParams {
@@ -175,7 +177,9 @@ contract Integration_Shared_LicensingHelper {
                 territories: gparams.territories,
                 contentRestrictions: gparams.contentRestrictions,
                 distributionChannels: gparams.distributionChannels,
-                royaltyPolicy: cparams.royaltyPolicy
+                royaltyPolicy: cparams.royaltyPolicy,
+                mintingFeeAmount: cparams.mintingFeeAmount,
+                mintingFeeToken: cparams.mintingFeeToken
             })
         );
         _;
@@ -204,7 +208,9 @@ contract Integration_Shared_LicensingHelper {
                 territories: gparams.territories,
                 contentRestrictions: gparams.contentRestrictions,
                 distributionChannels: gparams.distributionChannels,
-                royaltyPolicy: cparams.royaltyPolicy
+                royaltyPolicy: cparams.royaltyPolicy,
+                mintingFeeAmount: cparams.mintingFeeAmount,
+                mintingFeeToken: cparams.mintingFeeToken
             })
         );
         _;
@@ -233,7 +239,9 @@ contract Integration_Shared_LicensingHelper {
                 territories: gparams.territories,
                 distributionChannels: gparams.distributionChannels,
                 contentRestrictions: gparams.contentRestrictions,
-                royaltyPolicy: address(0)
+                royaltyPolicy: address(0),
+                mintingFeeAmount: 0,
+                mintingFeeToken: address(0)
             })
         );
         _;
@@ -259,7 +267,9 @@ contract Integration_Shared_LicensingHelper {
                 territories: gparams.territories,
                 contentRestrictions: gparams.contentRestrictions,
                 distributionChannels: gparams.distributionChannels,
-                royaltyPolicy: address(0)
+                royaltyPolicy: address(0),
+                mintingFeeAmount: 0,
+                mintingFeeToken: address(0)
             })
         );
         _;
@@ -283,6 +293,8 @@ contract Integration_Shared_LicensingHelper {
         bool supportVerifyLink,
         bool supportVerifyMint
     ) private returns (BasePolicyFrameworkManager) {
+        uint256 mintingFeeAmount = 1000 * 10**6;
+
         return
             BasePolicyFrameworkManager(
                 new MockPolicyFrameworkManager(
@@ -292,7 +304,9 @@ contract Integration_Shared_LicensingHelper {
                         licenseUrl: "license url",
                         supportVerifyLink: supportVerifyLink,
                         supportVerifyMint: supportVerifyMint,
-                        royaltyPolicy: address(0xdeadbeef)
+                        royaltyPolicy: address(0xdeadbeef),
+                        mintingFeeAmount: mintingFeeAmount,
+                        mintingFeeToken: address(0) // TODO: change to USDC
                     })
                 )
             );

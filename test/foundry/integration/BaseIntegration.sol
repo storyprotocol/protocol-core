@@ -88,6 +88,8 @@ contract BaseIntegration is Test {
 
     uint256 internal constant ARBITRATION_PRICE = 1000 * 10 ** 6; // 1000 USDC
 
+    uint32 internal mintFeeAmount = 1000 * 10 ** 6;
+
     function setUp() public virtual {
         u = UsersLib.createMockUsers(vm);
 

@@ -26,6 +26,7 @@ import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy } fro
 import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { MockRoyaltyPolicyLS } from "test/foundry/mocks/MockRoyaltyPolicyLS.sol";
+import { MockUSDC } from "test/foundry/mocks/MockUSDC.sol";
 
 contract LicensingModuleTest is Test {
     using Strings for *;
@@ -40,6 +41,7 @@ contract LicensingModuleTest is Test {
     UMLPolicyFrameworkManager internal umlManager;
 
     MockERC721 internal nft = new MockERC721("MockERC721");
+    MockUSDC internal USDC = new MockUSDC();
 
     ModuleRegistry internal moduleRegistry;
 
@@ -58,6 +60,7 @@ contract LicensingModuleTest is Test {
     address public ipId2;
     address public ipOwner = vm.addr(1);
     address public licenseHolder = address(0x101);
+    uint32 public mintFeeAmount = 1000 * 10 ** 6;
 
     function setUp() public {
         // Registry
@@ -95,7 +98,9 @@ contract LicensingModuleTest is Test {
                 licenseUrl: licenseUrl,
                 supportVerifyLink: true,
                 supportVerifyMint: true,
-                royaltyPolicy: address(mockRoyaltyPolicyLS)
+                royaltyPolicy: address(mockRoyaltyPolicyLS),
+                mintingFeeAmount: 0,
+                mintingFeeToken: address(0)
             })
         );
         umlManager = new UMLPolicyFrameworkManager(
@@ -437,7 +442,9 @@ contract LicensingModuleTest is Test {
             territories: new string[](1),
             distributionChannels: new string[](1),
             contentRestrictions: new string[](0),
-            royaltyPolicy: address(mockRoyaltyPolicyLS)
+            royaltyPolicy: address(mockRoyaltyPolicyLS),
+            mintingFeeAmount: mintFeeAmount,
+            mintingFeeToken: address(USDC)
         });
 
         policyData.commercializers[0] = "commercializer1";

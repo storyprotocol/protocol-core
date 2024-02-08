@@ -55,7 +55,9 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
                 commercialAttribution: true,
                 commercializers: new string[](0),
                 commercialRevShare: 10,
-                royaltyPolicy: address(royaltyPolicyLS)
+                royaltyPolicy: address(royaltyPolicyLS),
+                mintingFeeAmount: mintFeeAmount,
+                mintingFeeToken: address(USDC)
             }),
             UMLPolicyDerivativeParams({
                 derivativesAttribution: true,

@@ -382,7 +382,9 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 territories: new string[](0),
                 distributionChannels: new string[](0),
                 contentRestrictions: new string[](0),
-                royaltyPolicy: address(royaltyPolicyLS)
+                royaltyPolicy: address(royaltyPolicyLS),
+                mintingFeeAmount: 0,
+                mintingFeeToken: address(0)
             })
         );
 
@@ -402,7 +404,9 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 territories: new string[](0),
                 distributionChannels: new string[](0),
                 contentRestrictions: new string[](0),
-                royaltyPolicy: address(0) // non-commercial => no royalty policy
+                royaltyPolicy: address(0), // non-commercial => no royalty policy
+                mintingFeeAmount: 0,
+                mintingFeeToken: address(0)
             })
         );
 

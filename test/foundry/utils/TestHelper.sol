@@ -46,6 +46,8 @@ contract TestHelper is Test, DeployHelper {
 
     string[] internal emptyStringArray = new string[](0);
 
+    uint32 internal mintFeeAmount = 1000 * 10**6;
+
     function setUp() public virtual {
         // solhint-disable no-console
         console2.log("TestHelper.setUp");
@@ -102,7 +104,9 @@ contract TestHelper is Test, DeployHelper {
             territories: gparams.territories,
             distributionChannels: gparams.distributionChannels,
             contentRestrictions: gparams.contentRestrictions,
-            royaltyPolicy: cparams.royaltyPolicy
+            royaltyPolicy: cparams.royaltyPolicy,
+            mintingFeeAmount: cparams.mintingFeeAmount,
+            mintingFeeToken: cparams.mintingFeeToken
         });
         policyIds[pName] = UMLPolicyFrameworkManager(pfms["uml"].addr).registerPolicy(policies[pName]);
     }
@@ -131,7 +135,9 @@ contract TestHelper is Test, DeployHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(mockRoyaltyPolicyLS) // TODO: should use mock or real royalty policy
+            royaltyPolicy: address(mockRoyaltyPolicyLS), // TODO: should use mock or real royalty policy
+            mintingFeeAmount: mintFeeAmount,
+            mintingFeeToken: address(USDC)
         });
     }
 

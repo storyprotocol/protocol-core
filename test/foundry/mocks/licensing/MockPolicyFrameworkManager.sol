@@ -12,6 +12,8 @@ struct MockPolicyFrameworkConfig {
     bool supportVerifyLink;
     bool supportVerifyMint;
     address royaltyPolicy;
+    uint256 mintingFeeAmount;
+    address mintingFeeToken;
 }
 
 struct MockPolicy {
@@ -82,5 +84,13 @@ contract MockPolicyFrameworkManager is BasePolicyFrameworkManager {
 
     function isPolicyCommercial(uint256 policyId) external view returns (bool) {
         return policyId % 2 == 0;
+    }
+
+    function getMintingFeeAmount(uint256) public pure override returns (uint256) {
+        return 0;
+    }
+
+    function getMintingFeeToken(uint256) public pure override returns (address) {
+        return address(0);
     }
 }
