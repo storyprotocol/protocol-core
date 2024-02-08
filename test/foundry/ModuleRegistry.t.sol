@@ -155,7 +155,9 @@ contract ModuleRegistryTest is Test {
 
     function test_ModuleRegistry_revert_registerHookDoesNotMatchInterfaceId() public {
         moduleRegistry.registerModuleType(MODULE_TYPE_HOOK, type(IHookModule).interfaceId);
-        vm.expectRevert(abi.encodeWithSelector(Errors.ModuleRegistry__ModuleNotSupportExpectedModuleTypeInterfaceId.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.ModuleRegistry__ModuleNotSupportExpectedModuleTypeInterfaceId.selector)
+        );
         moduleRegistry.registerModule("CustomModule", address(customModule), MODULE_TYPE_HOOK);
     }
 
@@ -194,5 +196,4 @@ contract ModuleRegistryTest is Test {
         assertTrue(moduleRegistry.isRegistered(address(customModule)));
         assertEq(moduleRegistry.getModuleType(address(customModule)), "CustomModuleType");
     }
-
 }

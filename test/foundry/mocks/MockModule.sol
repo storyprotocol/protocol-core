@@ -7,7 +7,7 @@ import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRe
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
 import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
-import {BaseModule} from "../../../contracts/modules/BaseModule.sol";
+import { BaseModule } from "../../../contracts/modules/BaseModule.sol";
 
 contract MockModule is BaseModule {
     using ERC165Checker for address;
@@ -48,8 +48,6 @@ contract MockModule is BaseModule {
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return
-            interfaceId == type(IModule).interfaceId ||
-            super.supportsInterface(interfaceId);
+        return interfaceId == type(IModule).interfaceId || super.supportsInterface(interfaceId);
     }
 }

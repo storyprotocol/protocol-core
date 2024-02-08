@@ -89,7 +89,6 @@ contract MockAccessControlledModule is BaseModule, AccessControlled {
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return interfaceId == type(IModule).interfaceId ||
-            super.supportsInterface(interfaceId);
+        return interfaceId == type(IModule).interfaceId || super.supportsInterface(interfaceId);
     }
 }

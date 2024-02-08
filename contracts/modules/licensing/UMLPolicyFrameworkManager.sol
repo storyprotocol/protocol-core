@@ -5,11 +5,9 @@ pragma solidity ^0.8.23;
 // external
 import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 // contracts
-import { ShortStringOps } from "../../utils/ShortStringOps.sol";
 import { IHookModule } from "../../interfaces/modules/base/IHookModule.sol";
 import { ILicensingModule } from "../../interfaces/modules/licensing/ILicensingModule.sol";
 import { Licensing } from "../../lib/Licensing.sol";
@@ -25,11 +23,7 @@ import { LicensorApprovalChecker } from "../../modules/licensing/parameter-helpe
 /// @notice This is the UML Policy Framework Manager, which implements the UML Policy Framework
 /// logic for encoding and decoding UML policies into the LicenseRegistry and verifying
 /// the licensing parameters for linking, minting, and transferring.
-contract UMLPolicyFrameworkManager is
-    IUMLPolicyFrameworkManager,
-    BasePolicyFrameworkManager,
-    LicensorApprovalChecker
-{
+contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFrameworkManager, LicensorApprovalChecker {
     using ERC165Checker for address;
     using Strings for *;
 
@@ -343,6 +337,7 @@ contract UMLPolicyFrameworkManager is
 
     /// Checks the configuration of commercial use and throws if the policy is not compliant
     /// @param policy The policy to verify
+    // solhint-disable code-complexity
     function _verifyComercialUse(UMLPolicy calldata policy) internal view {
         if (!policy.commercialUse) {
             if (policy.commercialAttribution) {

@@ -1,16 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.23;
 
-import "forge-std/Test.sol";
-import "contracts/lib/Errors.sol";
-import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
-import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
-import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
+import { Test } from "forge-std/Test.sol";
 import { TokenGatedHook } from "contracts/modules/hooks/TokenGatedHook.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 
 contract TokenGatedHookTest is Test {
-    using ShortStrings for *;
     TokenGatedHook public tokenGatedHook;
     MockERC721 nft = new MockERC721("MockERC721");
     address goodCaller = vm.addr(1);

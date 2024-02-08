@@ -597,7 +597,7 @@ contract LicensingModuleTest is Test {
         licensingModule.addPolicyToIp(ipId1, policyId);
 
         vm.expectRevert(Errors.LicensingModule__MintLicenseParamFailed.selector);
-        uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder);
+        licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder);
     }
 
     function onERC721Received(address, address, uint256, bytes memory) public pure returns (bytes4) {

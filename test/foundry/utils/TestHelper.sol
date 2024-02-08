@@ -93,7 +93,7 @@ contract TestHelper is Test, DeployHelper {
             commercialUse: commercialUse,
             commercialAttribution: cparams.commercialAttribution,
             commercializers: cparams.commercializers,
-            commercializersData : cparams.commercializersData,
+            commercializersData: cparams.commercializersData,
             commercialRevShare: cparams.commercialRevShare,
             derivativesAllowed: derivativesAllowed,
             derivativesAttribution: dparams.derivativesAttribution,

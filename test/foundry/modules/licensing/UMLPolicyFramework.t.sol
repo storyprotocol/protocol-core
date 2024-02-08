@@ -74,7 +74,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             commercialUse: true,
             commercialAttribution: true,
             commercializers: new address[](0),
-            commercializersData : new bytes[](0),
+            commercializersData: new bytes[](0),
             commercialRevShare: 0,
             derivativesAllowed: false, // If false, derivativesRevShare should revert
             derivativesAttribution: false,
@@ -103,7 +103,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             commercialUse: false,
             commercialAttribution: true,
             commercializers: new address[](0),
-            commercializersData : new bytes[](0),
+            commercializersData: new bytes[](0),
             commercialRevShare: 0,
             derivativesAllowed: false,
             derivativesAttribution: false,
@@ -183,7 +183,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             commercialUse: true, // So derivativesRevShare doesn't revert for this
             commercialAttribution: false,
             commercializers: new address[](0),
-            commercializersData : new bytes[](0),
+            commercializersData: new bytes[](0),
             commercialRevShare: 0,
             derivativesAllowed: false,
             derivativesAttribution: true,
@@ -222,7 +222,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             commercialUse: true, // If false, derivativesRevShare should revert
             commercialAttribution: true,
             commercializers: new address[](0),
-            commercializersData : new bytes[](0),
+            commercializersData: new bytes[](0),
             commercialRevShare: 0,
             derivativesAllowed: true, // If false, derivativesRevShare should revert
             derivativesAttribution: true,
@@ -251,7 +251,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
                 commercialUse: false,
                 commercialAttribution: false,
                 commercializers: new address[](0),
-                commercializersData : new bytes[](0),
+                commercializersData: new bytes[](0),
                 commercialRevShare: 0,
                 derivativesAllowed: true,
                 derivativesAttribution: false,
@@ -291,7 +291,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
                 commercialUse: false,
                 commercialAttribution: false,
                 commercializers: new address[](0),
-                commercializersData : new bytes[](0),
+                commercializersData: new bytes[](0),
                 commercialRevShare: 0,
                 derivativesAllowed: true,
                 derivativesAttribution: false,
@@ -338,7 +338,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             commercialUse: false,
             commercialAttribution: false,
             commercializers: new address[](0),
-            commercializersData : new bytes[](0),
+            commercializersData: new bytes[](0),
             commercialRevShare: 0,
             derivativesAllowed: false, // If false, derivativesRevShare should revert
             derivativesAttribution: false,
@@ -369,7 +369,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             commercialUse: false,
             commercialAttribution: false,
             commercializers: new address[](0),
-            commercializersData : new bytes[](0),
+            commercializersData: new bytes[](0),
             commercialRevShare: 0,
             derivativesAllowed: false, // If false, derivativesRevShare should revert
             derivativesAttribution: false,

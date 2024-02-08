@@ -10,7 +10,7 @@ import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
-import {BaseModule} from "../../../contracts/modules/BaseModule.sol";
+import { BaseModule } from "../../../contracts/modules/BaseModule.sol";
 
 contract MockMetaTxModule is BaseModule {
     using ERC165Checker for address;
@@ -120,8 +120,6 @@ contract MockMetaTxModule is BaseModule {
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return
-            interfaceId == type(IModule).interfaceId ||
-            super.supportsInterface(interfaceId);
+        return interfaceId == type(IModule).interfaceId || super.supportsInterface(interfaceId);
     }
 }
