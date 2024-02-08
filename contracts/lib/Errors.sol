@@ -161,6 +161,7 @@ library Errors {
     ////////////////////////////////////////////////////////////////////////////
 
     error PolicyFrameworkManager__GettingPolicyWrongFramework();
+    error PolicyFrameworkManager__CommercializerDoesNotSupportHook(address commercializer);
 
     ////////////////////////////////////////////////////////////////////////////
     //                     LicensorApprovalChecker                            //
@@ -233,6 +234,11 @@ library Errors {
     error ModuleRegistry__NameAlreadyRegistered();
     error ModuleRegistry__NameDoesNotMatch();
     error ModuleRegistry__ModuleNotRegistered();
+    error ModuleRegistry__InterfaceIdZero();
+    error ModuleRegistry__ModuleTypeAlreadyRegistered();
+    error ModuleRegistry__ModuleTypeNotRegistered();
+    error ModuleRegistry__ModuleNotSupportExpectedModuleTypeInterfaceId();
+    error ModuleRegistry__ModuleTypeEmptyString();
 
     ////////////////////////////////////////////////////////////////////////////
     //                               RegistrationModule                       //

@@ -41,7 +41,8 @@ struct UMLPolicyGenericParams {
 
 struct UMLPolicyCommercialParams {
     bool commercialAttribution;
-    string[] commercializers;
+    address[] commercializers;
+    bytes[] commercializersData;
     uint32 commercialRevShare;
     address royaltyPolicy;
 }
@@ -166,6 +167,7 @@ contract Integration_Shared_LicensingHelper {
                 commercialUse: true,
                 commercialAttribution: cparams.commercialAttribution,
                 commercializers: cparams.commercializers,
+                commercializersData : cparams.commercializersData,
                 commercialRevShare: cparams.commercialRevShare,
                 derivativesAllowed: true,
                 derivativesAttribution: dparams.derivativesAttribution,
@@ -195,6 +197,7 @@ contract Integration_Shared_LicensingHelper {
                 commercialUse: true,
                 commercialAttribution: cparams.commercialAttribution,
                 commercializers: cparams.commercializers,
+                commercializersData : cparams.commercializersData,
                 commercialRevShare: cparams.commercialRevShare,
                 derivativesAllowed: false,
                 derivativesAttribution: false,
@@ -223,7 +226,8 @@ contract Integration_Shared_LicensingHelper {
                 attribution: gparams.attribution,
                 commercialUse: false,
                 commercialAttribution: false,
-                commercializers: new string[](0),
+                commercializers: new address[](0),
+                commercializersData : new bytes[](0),
                 commercialRevShare: 0,
                 derivativesAllowed: true,
                 derivativesAttribution: dparams.derivativesAttribution,
@@ -249,7 +253,8 @@ contract Integration_Shared_LicensingHelper {
                 attribution: gparams.attribution,
                 commercialUse: false,
                 commercialAttribution: false,
-                commercializers: new string[](0),
+                commercializers: new address[](0),
+                commercializersData : new bytes[](0),
                 commercialRevShare: 0,
                 derivativesAllowed: false,
                 derivativesAttribution: false,

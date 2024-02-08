@@ -5,8 +5,9 @@ pragma solidity ^0.8.23;
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-import { IIPAccount } from "../..//interfaces/IIPAccount.sol";
+import { IIPAccount } from "../../interfaces/IIPAccount.sol";
 import { IPolicyFrameworkManager } from "../../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 import { ILicenseRegistry } from "../../interfaces/registries/ILicenseRegistry.sol";
 import { ILicensingModule } from "../../interfaces/modules/licensing/ILicensingModule.sol";
@@ -18,9 +19,11 @@ import { IPAccountChecker } from "../../lib/registries/IPAccountChecker.sol";
 import { RoyaltyModule } from "../../modules/royalty-module/RoyaltyModule.sol";
 import { AccessControlled } from "../../access/AccessControlled.sol";
 import { LICENSING_MODULE_KEY } from "../../lib/modules/Module.sol";
+import { BaseModule } from "../BaseModule.sol";
 
 // TODO: consider disabling operators/approvals on creation
-contract LicensingModule is AccessControlled, ILicensingModule {
+contract LicensingModule is AccessControlled, ILicensingModule, BaseModule {
+    using ERC165Checker for address;
     using IPAccountChecker for IIPAccountRegistry;
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -294,6 +297,11 @@ contract LicensingModule is AccessControlled, ILicensingModule {
 
         // Burn licenses
         LICENSE_REGISTRY.burnLicenses(holder, licenseIds);
+    }
+
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
+        return interfaceId == type(ILicensingModule).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /// @notice True if the framework address is registered in LicenseRegistry

@@ -6,6 +6,8 @@ import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
 import { UMLPolicy } from "contracts/interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { TestHelper } from "test/foundry/utils/TestHelper.sol";
+import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { TokenGatedHook } from "contracts/modules/hooks/TokenGatedHook.sol";
 
 contract UMLPolicyFrameworkTest is TestHelper {
     UMLPolicyFrameworkManager internal umlFramework;
@@ -15,6 +17,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
     address public ipId2;
     address public ipOwner = vm.addr(1);
     address public licenseHolder = address(0x101);
+    MockERC721 internal gatedNftFoo = new MockERC721("GatedNftFoo");
 
     function setUp() public override {
         TestHelper.setUp();
@@ -70,7 +73,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
             transferable: false,
             commercialUse: true,
             commercialAttribution: true,
-            commercializers: emptyStringArray,
+            commercializers: new address[](0),
+            commercializersData : new bytes[](0),
             commercialRevShare: 0,
             derivativesAllowed: false, // If false, derivativesRevShare should revert
             derivativesAttribution: false,
@@ -98,7 +102,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
             transferable: false,
             commercialUse: false,
             commercialAttribution: true,
-            commercializers: emptyStringArray,
+            commercializers: new address[](0),
+            commercializersData : new bytes[](0),
             commercialRevShare: 0,
             derivativesAllowed: false,
             derivativesAttribution: false,
@@ -110,19 +115,26 @@ contract UMLPolicyFrameworkTest is TestHelper {
             contentRestrictions: emptyStringArray,
             royaltyPolicy: address(0) // must be 0 because commercialUse = false
         });
+
+        gatedNftFoo.mintId(address(this), 1);
+        TokenGatedHook tokenGatedHook = new TokenGatedHook();
+
         // commercialAttribution = true should revert
         vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddAttribution.selector);
         umlFramework.registerPolicy(umlPolicy);
         // Non empty commercializers should revert
         umlPolicy.commercialAttribution = false;
-        umlPolicy.commercializers = new string[](1);
-        umlPolicy.commercializers[0] = "test";
+        umlPolicy.commercializers = new address[](1);
+        umlPolicy.commercializers[0] = address(tokenGatedHook);
+        umlPolicy.commercializersData = new bytes[](1);
+        umlPolicy.commercializersData[0] = abi.encode(address(gatedNftFoo));
         vm.expectRevert(
             UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddCommercializers.selector
         );
         umlFramework.registerPolicy(umlPolicy);
         // No rev share should be set; revert
-        umlPolicy.commercializers = new string[](0);
+        umlPolicy.commercializers = new address[](0);
+        umlPolicy.commercializersData = new bytes[](0);
         umlPolicy.commercialRevShare = 1;
         vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddRevShare.selector);
         umlFramework.registerPolicy(umlPolicy);
@@ -134,15 +146,19 @@ contract UMLPolicyFrameworkTest is TestHelper {
     }
 
     function test_UMLPolicyFrameworkManager__commercialUse_valuesSetCorrectly() public {
-        string[] memory commercializers = new string[](2);
-        commercializers[0] = "test1";
-        commercializers[1] = "test2";
+        address[] memory commercializers = new address[](2);
+        commercializers[0] = address(0x123);
+        commercializers[1] = address(0x456);
+        bytes[] memory commercializersData = new bytes[](2);
+        commercializersData[0] = abi.encode(address(0x987));
+        commercializersData[1] = abi.encode(address(0x653));
         UMLPolicy memory umlPolicy = UMLPolicy({
             attribution: false,
             transferable: false,
             commercialUse: true,
             commercialAttribution: true,
             commercializers: commercializers,
+            commercializersData: commercializersData,
             commercialRevShare: 123123,
             derivativesAllowed: true, // If false, derivativesRevShare should revert
             derivativesAttribution: false,
@@ -166,7 +182,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
             transferable: false,
             commercialUse: true, // So derivativesRevShare doesn't revert for this
             commercialAttribution: false,
-            commercializers: emptyStringArray,
+            commercializers: new address[](0),
+            commercializersData : new bytes[](0),
             commercialRevShare: 0,
             derivativesAllowed: false,
             derivativesAttribution: true,
@@ -204,7 +221,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
             transferable: false,
             commercialUse: true, // If false, derivativesRevShare should revert
             commercialAttribution: true,
-            commercializers: emptyStringArray,
+            commercializers: new address[](0),
+            commercializersData : new bytes[](0),
             commercialRevShare: 0,
             derivativesAllowed: true, // If false, derivativesRevShare should revert
             derivativesAttribution: true,
@@ -232,7 +250,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
                 attribution: false,
                 commercialUse: false,
                 commercialAttribution: false,
-                commercializers: emptyStringArray,
+                commercializers: new address[](0),
+                commercializersData : new bytes[](0),
                 commercialRevShare: 0,
                 derivativesAllowed: true,
                 derivativesAttribution: false,
@@ -271,7 +290,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
                 attribution: false,
                 commercialUse: false,
                 commercialAttribution: false,
-                commercializers: emptyStringArray,
+                commercializers: new address[](0),
+                commercializersData : new bytes[](0),
                 commercialRevShare: 0,
                 derivativesAllowed: true,
                 derivativesAttribution: false,
@@ -317,7 +337,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
             transferable: true,
             commercialUse: false,
             commercialAttribution: false,
-            commercializers: emptyStringArray,
+            commercializers: new address[](0),
+            commercializersData : new bytes[](0),
             commercialRevShare: 0,
             derivativesAllowed: false, // If false, derivativesRevShare should revert
             derivativesAttribution: false,
@@ -347,7 +368,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
             transferable: false,
             commercialUse: false,
             commercialAttribution: false,
-            commercializers: emptyStringArray,
+            commercializers: new address[](0),
+            commercializersData : new bytes[](0),
             commercialRevShare: 0,
             derivativesAllowed: false, // If false, derivativesRevShare should revert
             derivativesAttribution: false,
@@ -369,5 +391,9 @@ contract UMLPolicyFrameworkTest is TestHelper {
         vm.expectRevert(Errors.LicenseRegistry__NotTransferable.selector);
         licenseRegistry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
         vm.stopPrank();
+    }
+
+    function onERC721Received(address, address, uint256, bytes memory) public pure returns (bytes4) {
+        return this.onERC721Received.selector;
     }
 }

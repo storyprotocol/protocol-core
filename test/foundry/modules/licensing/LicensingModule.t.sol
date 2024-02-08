@@ -19,6 +19,7 @@ import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
+import { TokenGatedHook } from "contracts/modules/hooks/TokenGatedHook.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 
@@ -42,6 +43,8 @@ contract LicensingModuleTest is Test {
     UMLPolicyFrameworkManager internal umlManager;
 
     MockERC721 internal nft = new MockERC721("MockERC721");
+    MockERC721 internal gatedNftFoo = new MockERC721("GatedNftFoo");
+    MockERC721 internal gatedNftBar = new MockERC721("GatedNftBar");
 
     ModuleRegistry internal moduleRegistry;
 
@@ -438,7 +441,8 @@ contract LicensingModuleTest is Test {
             attribution: true,
             commercialUse: true,
             commercialAttribution: true,
-            commercializers: new string[](2),
+            commercializers: new address[](2),
+            commercializersData: new bytes[](2),
             commercialRevShare: 0,
             derivativesAllowed: true,
             derivativesAttribution: true,
@@ -451,8 +455,14 @@ contract LicensingModuleTest is Test {
             royaltyPolicy: address(mockRoyaltyPolicyLS)
         });
 
-        policyData.commercializers[0] = "commercializer1";
-        policyData.commercializers[1] = "commercializer2";
+        gatedNftFoo.mintId(address(this), 1);
+        gatedNftBar.mintId(address(this), 1);
+
+        TokenGatedHook tokenGatedHook = new TokenGatedHook();
+        policyData.commercializers[0] = address(tokenGatedHook);
+        policyData.commercializersData[0] = abi.encode(address(gatedNftFoo));
+        policyData.commercializers[1] = address(tokenGatedHook);
+        policyData.commercializersData[1] = abi.encode(address(gatedNftBar));
         policyData.territories[0] = "territory1";
         policyData.distributionChannels[0] = "distributionChannel1";
 
@@ -541,11 +551,56 @@ contract LicensingModuleTest is Test {
 
         /* solhint-disable */
         string
-            memory expectedJson = "eyJuYW1lIjogIlN0b3J5IFByb3RvY29sIExpY2Vuc2UgTkZUIiwgImRlc2NyaXB0aW9uIjogIkxpY2Vuc2UgYWdyZWVtZW50IHN0YXRpbmcgdGhlIHRlcm1zIG9mIGEgU3RvcnkgUHJvdG9jb2wgSVBBc3NldCIsICJhdHRyaWJ1dGVzIjogW3sidHJhaXRfdHlwZSI6ICJBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIlRyYW5zZmVyYWJsZSIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkNvbW1lcmljYWwgVXNlIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbEF0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbFJldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogImNvbW1lcmNpYWxpemVycyIsICJ2YWx1ZSI6IFsiY29tbWVyY2lhbGl6ZXIxIiwiY29tbWVyY2lhbGl6ZXIyIl19LCB7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBbGxvd2VkIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzQXBwcm92YWwiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc1JlY2lwcm9jYWwiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc1JldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogInRlcnJpdG9yaWVzIiwgInZhbHVlIjogWyJ0ZXJyaXRvcnkxIl19LCB7InRyYWl0X3R5cGUiOiAiZGlzdHJpYnV0aW9uQ2hhbm5lbHMiLCAidmFsdWUiOiBbImRpc3RyaWJ1dGlvbkNoYW5uZWwxIl19XX0=";
+            memory expectedJson = "eyJuYW1lIjogIlN0b3J5IFByb3RvY29sIExpY2Vuc2UgTkZUIiwgImRlc2NyaXB0aW9uIjogIkxpY2Vuc2UgYWdyZWVtZW50IHN0YXRpbmcgdGhlIHRlcm1zIG9mIGEgU3RvcnkgUHJvdG9jb2wgSVBBc3NldCIsICJhdHRyaWJ1dGVzIjogW3sidHJhaXRfdHlwZSI6ICJBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIlRyYW5zZmVyYWJsZSIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkNvbW1lcmljYWwgVXNlIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbEF0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbFJldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogImNvbW1lcmNpYWxpemVycyIsICJ2YWx1ZSI6IFsiMHhhMDViYzBlYTdhMzZiY2FkODQxNjc0OWFmOGE2MzBhODkxZTJkNDZjIiwiMHhhMDViYzBlYTdhMzZiY2FkODQxNjc0OWFmOGE2MzBhODkxZTJkNDZjIl19LCB7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBbGxvd2VkIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzQXBwcm92YWwiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc1JlY2lwcm9jYWwiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc1JldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogInRlcnJpdG9yaWVzIiwgInZhbHVlIjogWyJ0ZXJyaXRvcnkxIl19LCB7InRyYWl0X3R5cGUiOiAiZGlzdHJpYnV0aW9uQ2hhbm5lbHMiLCAidmFsdWUiOiBbImRpc3RyaWJ1dGlvbkNoYW5uZWwxIl19XX0=";
         /* solhint-enable */
 
         string memory expectedUri = string(abi.encodePacked("data:application/json;base64,", expectedJson));
 
         assertEq(actualUri, expectedUri);
+    }
+
+    function test_LicensingModule_revert_HookVerifyFail() public {
+        licensingModule.registerPolicyFrameworkManager(address(umlManager));
+
+        UMLPolicy memory policyData = UMLPolicy({
+            transferable: true,
+            attribution: true,
+            commercialUse: true,
+            commercialAttribution: true,
+            commercializers: new address[](2),
+            commercializersData: new bytes[](2),
+            commercialRevShare: 0,
+            derivativesAllowed: true,
+            derivativesAttribution: true,
+            derivativesApproval: true,
+            derivativesReciprocal: true,
+            derivativesRevShare: 0,
+            territories: new string[](1),
+            distributionChannels: new string[](1),
+            contentRestrictions: new string[](0),
+            royaltyPolicy: address(mockRoyaltyPolicyLS)
+        });
+
+        gatedNftFoo.mintId(address(this), 1);
+
+        TokenGatedHook tokenGatedHook = new TokenGatedHook();
+        policyData.commercializers[0] = address(tokenGatedHook);
+        policyData.commercializersData[0] = abi.encode(address(gatedNftFoo));
+        policyData.commercializers[1] = address(tokenGatedHook);
+        policyData.commercializersData[1] = abi.encode(address(gatedNftBar));
+        policyData.territories[0] = "territory1";
+        policyData.distributionChannels[0] = "distributionChannel1";
+
+        uint256 policyId = umlManager.registerPolicy(policyData);
+
+        vm.prank(ipOwner);
+        licensingModule.addPolicyToIp(ipId1, policyId);
+
+        vm.expectRevert(Errors.LicensingModule__MintLicenseParamFailed.selector);
+        uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder);
+    }
+
+    function onERC721Received(address, address, uint256, bytes memory) public pure returns (bytes4) {
+        return this.onERC721Received.selector;
     }
 }

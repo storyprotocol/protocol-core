@@ -5,12 +5,14 @@ pragma solidity ^0.8.23;
 
 import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 import { ShortStringOps } from "../../utils/ShortStringOps.sol";
 import { ITaggingModule } from "../../interfaces/modules/ITaggingModule.sol";
 import { TAGGING_MODULE_KEY } from "../../lib/modules/Module.sol";
 
 contract TaggingModule is ITaggingModule {
+    using ERC165Checker for address;
     using ShortStrings for *;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -33,6 +35,7 @@ contract TaggingModule is ITaggingModule {
         emit TagRemoved(tag, ipId);
         return _tagsForIpIds[ipId].remove(ShortStringOps.stringToBytes32(tag));
     }
+
     function isTagged(string calldata tag, address ipId) external view returns (bool) {
         return _tagsForIpIds[ipId].contains(ShortStringOps.stringToBytes32(tag));
     }
@@ -49,5 +52,9 @@ contract TaggingModule is ITaggingModule {
     function tagStringAtIndexForIp(address ipId, uint256 index) external view returns (string memory) {
         // WARNING: tag ordering not guaranteed (since they can be removed)
         return ShortString.wrap(_tagsForIpIds[ipId].at(index)).toString();
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == type(ITaggingModule).interfaceId;
     }
 }

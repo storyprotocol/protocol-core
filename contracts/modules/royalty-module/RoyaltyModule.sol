@@ -2,17 +2,22 @@
 pragma solidity ^0.8.23;
 
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 import { Governable } from "../../governance/Governable.sol";
 import { IRoyaltyModule } from "../../interfaces/modules/royalty/IRoyaltyModule.sol";
 import { IRoyaltyPolicy } from "../../interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
 import { Errors } from "../../lib/Errors.sol";
 import { ROYALTY_MODULE_KEY } from "../../lib/modules/Module.sol";
+import { BaseModule } from "../BaseModule.sol";
 
 /// @title Story Protocol Royalty Module
 /// @notice The Story Protocol royalty module allows to set royalty policies an ipId
 ///         and pay royalties as a derivative ip.
-contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
+contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModule {
+    using ERC165Checker for address;
+
     string public constant override name = ROYALTY_MODULE_KEY;
 
     /// @notice Licensing module address
@@ -131,5 +136,9 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
         IRoyaltyPolicy(royaltyPolicy).onRoyaltyPayment(msg.sender, _receiverIpId, _token, _amount);
 
         emit RoyaltyPaid(_receiverIpId, _payerIpId, msg.sender, _token, _amount);
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
+        return interfaceId == type(IRoyaltyModule).interfaceId || super.supportsInterface(interfaceId);
     }
 }

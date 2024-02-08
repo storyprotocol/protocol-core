@@ -6,11 +6,14 @@ import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRe
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
 import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
 import { AccessControlled } from "contracts/access/AccessControlled.sol";
+import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { BaseModule } from "../../../contracts/modules/BaseModule.sol";
 
 /// @title MockAccessControlledModule
 /// @dev This contract is a mock implementation of an access-controlled module, used for testing purposes.
 /// It demonstrates the use of access control checks in function calls.
-contract MockAccessControlledModule is IModule, AccessControlled {
+contract MockAccessControlledModule is BaseModule, AccessControlled {
+    using ERC165Checker for address;
     using IPAccountChecker for IIPAccountRegistry;
 
     IModuleRegistry public moduleRegistry;
@@ -83,5 +86,10 @@ contract MockAccessControlledModule is IModule, AccessControlled {
             revert("expected failure");
         }
         return param;
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == type(IModule).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 }

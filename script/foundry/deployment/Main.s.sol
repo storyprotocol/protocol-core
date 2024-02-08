@@ -32,6 +32,9 @@ import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/Royal
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
 import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { MODULE_TYPE_HOOK } from "contracts/lib/modules/Module.sol";
+import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
+import { IHookModule } from "contracts/interfaces/modules/base/IHookModule.sol";
 
 // script
 import { StringUtil } from "../../../script/foundry/utils/StringUtil.sol";
@@ -220,7 +223,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         contractKey = "RegistrationModule";
         _predeploy(contractKey);
         registrationModule = new RegistrationModule(
-            address(accessController),
             address(ipAssetRegistry),
             address(licensingModule),
             address(ipResolver)
@@ -379,7 +381,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 transferable: true,
                 commercialUse: true,
                 commercialAttribution: true,
-                commercializers: new string[](0),
+                commercializers: new address[](0),
+                commercializersData: new bytes[](0),
                 commercialRevShare: 100,
                 derivativesAllowed: true,
                 derivativesAttribution: false,
@@ -399,7 +402,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 transferable: false,
                 commercialUse: false,
                 commercialAttribution: false,
-                commercializers: new string[](0),
+                commercializers: new address[](0),
+                commercializersData: new bytes[](0),
                 commercialRevShare: 0,
                 derivativesAllowed: true,
                 derivativesAttribution: true,

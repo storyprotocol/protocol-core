@@ -2,22 +2,17 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
+import { IERC165, ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { IModule } from "../interfaces/modules/base/IModule.sol";
-import { AccessControlled } from "../access/AccessControlled.sol";
-import { IPAssetRegistry } from "../registries/IPAssetRegistry.sol";
 
 /// @title BaseModule
-/// @notice Base implementation for all modules in Story Protocol. This is to
-///         ensure all modules share the same authorization through the access
-///         controll manager.
-abstract contract BaseModule is IModule, AccessControlled {
-    /// @notice Gets the protocol-wide IP asset registry.
-    IPAssetRegistry public immutable IP_ASSET_REGISTRY;
-
-    /// @notice Initializes the base module contract.
-    /// @param accessController The access controller used for IP authorization.
-    /// @param ipAssetRegistry The address of the IP asset registry.
-    constructor(address accessController, address ipAssetRegistry) AccessControlled(accessController, ipAssetRegistry) {
-        IP_ASSET_REGISTRY = IPAssetRegistry(ipAssetRegistry);
+/// @notice Base implementation for all modules in Story Protocol.
+abstract contract BaseModule is ERC165, IModule {
+    /// @notice Checks if the contract implements an interface.
+    /// @dev Overrides ERC165's `supportsInterface` to include support for IModule interface.
+    /// @param interfaceId The interface identifier, as specified in ERC-165.
+    /// @return True if the contract implements `interfaceId`, false otherwise.
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
+        return interfaceId == type(IModule).interfaceId || super.supportsInterface(interfaceId);
     }
 }

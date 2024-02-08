@@ -6,8 +6,10 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC6551AccountLib } from "@erc6551/lib/ERC6551AccountLib.sol";
 // contracts
-import { Errors } from "contracts/lib/Errors.sol";
-import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
+import {Errors} from "contracts/lib/Errors.sol";
+import {ShortStringOps} from "contracts/utils/ShortStringOps.sol";
+import {DisputeModule} from "contracts/modules/dispute-module/DisputeModule.sol";
+import { IP } from "contracts/lib/IP.sol";
 // test
 // solhint-disable-next-line max-line-length
 import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
@@ -70,7 +72,8 @@ contract TestDisputeModule is TestHelper {
             }),
             UMLPolicyCommercialParams({
                 commercialAttribution: true,
-                commercializers: new string[](0),
+                commercializers: new address[](0),
+                commercializersData: new bytes[](0),
                 commercialRevShare: 10,
                 royaltyPolicy: address(royaltyPolicyLS)
             }),

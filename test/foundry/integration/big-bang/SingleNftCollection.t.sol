@@ -53,7 +53,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             }),
             UMLPolicyCommercialParams({
                 commercialAttribution: true,
-                commercializers: new string[](0),
+                commercializers: new address[](0),
+                commercializersData: new bytes[](0),
                 commercialRevShare: 10,
                 royaltyPolicy: address(royaltyPolicyLS)
             }),

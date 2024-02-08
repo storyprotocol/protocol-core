@@ -25,7 +25,8 @@ struct UMLPolicy {
     bool attribution;
     bool commercialUse;
     bool commercialAttribution;
-    string[] commercializers;
+    address[] commercializers;
+    bytes[] commercializersData;
     uint32 commercialRevShare;
     bool derivativesAllowed;
     bool derivativesAttribution;

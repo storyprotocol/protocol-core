@@ -5,8 +5,12 @@ pragma solidity ^0.8.23;
 // external
 import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 // contracts
+import { ShortStringOps } from "../../utils/ShortStringOps.sol";
+import { IHookModule } from "../../interfaces/modules/base/IHookModule.sol";
 import { ILicensingModule } from "../../interfaces/modules/licensing/ILicensingModule.sol";
 import { Licensing } from "../../lib/Licensing.sol";
 import { Errors } from "../../lib/Errors.sol";
@@ -21,7 +25,14 @@ import { LicensorApprovalChecker } from "../../modules/licensing/parameter-helpe
 /// @notice This is the UML Policy Framework Manager, which implements the UML Policy Framework
 /// logic for encoding and decoding UML policies into the LicenseRegistry and verifying
 /// the licensing parameters for linking, minting, and transferring.
-contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFrameworkManager, LicensorApprovalChecker {
+contract UMLPolicyFrameworkManager is
+    IUMLPolicyFrameworkManager,
+    BasePolicyFrameworkManager,
+    LicensorApprovalChecker
+{
+    using ERC165Checker for address;
+    using Strings for *;
+
     bytes32 private constant _EMPTY_STRING_ARRAY_HASH =
         0x569e75fc77c1a856f6daaf9e69d8a9566ca34aa47f9133711ce065a571af0cfd;
 
@@ -54,7 +65,7 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
     /// @param policyData the licensing policy to verify
     function verifyLink(
         uint256 licenseId,
-        address, // caller
+        address caller,
         address ipId,
         address, // parentIpId
         bytes calldata policyData
@@ -79,6 +90,17 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
             response.isLinkingAllowed = response.isLinkingAllowed && isDerivativeApproved(licenseId, ipId);
         }
 
+        for (uint256 i = 0; i < policy.commercializers.length; i++) {
+            if (!policy.commercializers[i].supportsInterface(type(IHookModule).interfaceId)) {
+                revert Errors.PolicyFrameworkManager__CommercializerDoesNotSupportHook(policy.commercializers[i]);
+            }
+
+            if (!IHookModule(policy.commercializers[i]).verify(caller, policy.commercializersData[i])) {
+                response.isLinkingAllowed = false;
+                break;
+            }
+        }
+
         return response;
     }
 
@@ -86,7 +108,7 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
     /// @param policyWasInherited check if IP is subjected to it's parent's policy
     /// @param policyData the licensing policy to verify
     function verifyMint(
-        address,
+        address caller,
         bool policyWasInherited,
         address,
         address,
@@ -99,6 +121,17 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
         if (!policy.derivativesAllowed && policyWasInherited) {
             return false;
         }
+
+        for (uint256 i = 0; i < policy.commercializers.length; i++) {
+            if (!policy.commercializers[i].supportsInterface(type(IHookModule).interfaceId)) {
+                revert Errors.PolicyFrameworkManager__CommercializerDoesNotSupportHook(policy.commercializers[i]);
+            }
+
+            if (!IHookModule(policy.commercializers[i]).verify(caller, policy.commercializersData[i])) {
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -255,11 +288,12 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
 
         uint256 commercializerCount = policy.commercializers.length;
         for (uint256 i = 0; i < commercializerCount; ++i) {
-            json = string(abi.encodePacked(json, '"', policy.commercializers[i], '"'));
+            json = string(abi.encodePacked(json, '"', policy.commercializers[i].toHexString(), '"'));
             if (i != commercializerCount - 1) {
                 json = string(abi.encodePacked(json, ","));
             }
         }
+        // TODO: add commercializersData?
 
         json = string(
             abi.encodePacked(
@@ -330,6 +364,9 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
             // TODO: check for supportInterface instead
             if (policy.royaltyPolicy == address(0)) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialEnabled_RoyaltyPolicyRequired();
+            }
+            if (policy.commercializers.length != policy.commercializersData.length) {
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercializersDataMismatch();
             }
         }
     }
