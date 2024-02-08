@@ -13,7 +13,6 @@ import { MetadataProviderV1 } from "../registries/metadata/MetadataProviderV1.so
 import { Errors } from "../lib/Errors.sol";
 import { IResolver } from "../interfaces/resolvers/IResolver.sol";
 import { LICENSING_MODULE_KEY } from "contracts/lib/modules/Module.sol";
-import { IMetadataProvider } from "../interfaces/registries/metadata/IMetadataProvider.sol";
 import { IModuleRegistry } from "../interfaces/registries/IModuleRegistry.sol";
 import { ILicensingModule } from "../interfaces/modules/licensing/ILicensingModule.sol";
 import { IIPAssetRegistry } from "../interfaces/registries/IIPAssetRegistry.sol";

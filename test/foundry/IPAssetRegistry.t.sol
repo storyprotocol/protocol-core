@@ -9,7 +9,6 @@ import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol"
 import { LICENSING_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { MockLicensingModule } from "test/foundry/mocks/licensing/MockLicensingModule.sol";
-import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProviderV1.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
@@ -69,17 +68,8 @@ contract IPAssetRegistryTest is BaseTest {
         moduleRegistry.registerModule(LICENSING_MODULE_KEY, address(licensingModule));
         erc6551Registry = address(new ERC6551Registry());
         ipAccountImpl = address(new IPAccountImpl());
-        ipAccountRegistry = new IPAccountRegistry(
-            erc6551Registry,
-            accessController,
-            ipAccountImpl
-        );
-        registry = new IPAssetRegistry(
-            accessController,
-            erc6551Registry,
-            ipAccountImpl,
-            address(moduleRegistry)
-        );
+        ipAccountRegistry = new IPAccountRegistry(erc6551Registry, accessController, ipAccountImpl);
+        registry = new IPAssetRegistry(accessController, erc6551Registry, ipAccountImpl, address(moduleRegistry));
         MockERC721 erc721 = new MockERC721("MockERC721");
         tokenAddress = address(erc721);
         tokenId = erc721.mintId(alice, 99);
@@ -102,16 +92,8 @@ contract IPAssetRegistryTest is BaseTest {
         registry.setApprovalForAll(bob, true);
         bytes memory metadata = _generateMetadata();
         vm.prank(bob);
-        registry.register(
-            block.chainid,
-            tokenAddress,
-            tokenId,
-            resolver,
-            true,
-            metadata
-        );
+        registry.register(block.chainid, tokenAddress, tokenId, resolver, true, metadata);
     }
-
 
     /// @notice Tests registration of IP assets without licenses.
     function test_IPAssetRegistry_Register() public {
@@ -137,14 +119,7 @@ contract IPAssetRegistryTest is BaseTest {
             metadata
         );
         vm.prank(alice);
-        registry.register(
-            block.chainid,
-            tokenAddress,
-            tokenId,
-            resolver,
-            true,
-            metadata
-        );
+        registry.register(block.chainid, tokenAddress, tokenId, resolver, true, metadata);
 
         /// Ensures IP asset post-registration conditions are met.
         assertEq(registry.resolver(ipId), resolver);
@@ -180,14 +155,7 @@ contract IPAssetRegistryTest is BaseTest {
             metadata
         );
         vm.prank(alice);
-        registry.register(
-            block.chainid,
-            tokenAddress,
-            tokenId,
-            resolver,
-            true,
-            metadata
-        );
+        registry.register(block.chainid, tokenAddress, tokenId, resolver, true, metadata);
 
         /// Ensures IP asset post-registration conditions are met.
         assertEq(registry.resolver(ipId), resolver);
@@ -219,14 +187,7 @@ contract IPAssetRegistryTest is BaseTest {
             metadata
         );
         vm.prank(alice);
-        registry.register(
-            block.chainid,
-            tokenAddress,
-            tokenId,
-            resolver,
-            false,
-            metadata
-        );
+        registry.register(block.chainid, tokenAddress, tokenId, resolver, false, metadata);
 
         /// Ensures IP asset post-registration conditions are met.
         assertEq(registry.resolver(ipId), resolver);
@@ -241,15 +202,7 @@ contract IPAssetRegistryTest is BaseTest {
         assertTrue(IPAccountChecker.isRegistered(ipAccountRegistry, block.chainid, tokenAddress, tokenId));
         bytes memory metadata = _generateMetadata();
         vm.prank(alice);
-        registry.register(
-            block.chainid,
-            tokenAddress,
-            tokenId,
-            resolver,
-            true,
-            metadata
-        );
-
+        registry.register(block.chainid, tokenAddress, tokenId, resolver, true, metadata);
     }
 
     /// @notice Tests registration of IP reverts when an IP has already been registered.

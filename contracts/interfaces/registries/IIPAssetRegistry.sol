@@ -35,11 +35,7 @@ interface IIPAssetRegistry is IIPAccountRegistry {
     /// @param owner The address of the IP owner.
     /// @param operator The address of the operator the owneris authorizing.
     /// @param approved Whether or not to approve that operator for registration.
-    event ApprovalForAll(
-        address indexed owner,
-        address indexed operator,
-        bool approved
-    );
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
 
     /// @notice Emits when metadata is set for an IP asset.
     /// @param ipId The canonical identifier of the specified IP.

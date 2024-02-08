@@ -134,14 +134,7 @@ contract IPAssetRendererTest is BaseTest {
             })
         );
         vm.prank(alice);
-        ipId = ipAssetRegistry.register(
-            block.chainid,
-            address(erc721),
-            tokenId,
-            address(resolver),
-            true,
-            metadata
-        );
+        ipId = ipAssetRegistry.register(block.chainid, address(erc721), tokenId, address(resolver), true, metadata);
     }
 
     /// @notice Tests that the constructor works as expected.

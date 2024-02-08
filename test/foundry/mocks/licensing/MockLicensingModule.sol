@@ -6,7 +6,6 @@ import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicens
 
 /// @title Mock Licensing Module
 contract MockLicensingModule is ILicensingModule {
-
     function licenseRegistry() external view returns (address) {}
 
     function registerPolicyFrameworkManager(address manager) external {}
@@ -22,11 +21,7 @@ contract MockLicensingModule is ILicensingModule {
         address receiver
     ) external returns (uint256 licenseId) {}
 
-    function linkIpToParents(
-        uint256[] calldata licenseIds,
-        address childIpId,
-        uint32 minRoyalty
-    ) external {}
+    function linkIpToParents(uint256[] calldata licenseIds, address childIpId, uint32 minRoyalty) external {}
 
     function isFrameworkRegistered(address framework) external view returns (bool) {}
 

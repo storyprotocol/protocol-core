@@ -42,14 +42,7 @@ contract IPResolverTest is ResolverBaseTest {
             })
         );
         vm.prank(alice);
-        ipId = ipAssetRegistry.register(
-            block.chainid,
-            address(erc721),
-            tokenId,
-            address(ipResolver),
-            true,
-            metadata
-        );
+        ipId = ipAssetRegistry.register(block.chainid, address(erc721), tokenId, address(ipResolver), true, metadata);
     }
 
     /// @notice Tests that the IP resolver interface is supported.
