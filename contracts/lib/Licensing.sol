@@ -13,6 +13,13 @@ library Licensing {
     struct Policy {
         address policyFramework;
         bool isLicenseTransferable;
+        bool isCommercial;
+        RoyaltyConfig royaltyConfig;
+        bytes data;
+    }
+
+    struct RoyaltyConfig {
+        address rPolicy;
         bytes data;
     }
 

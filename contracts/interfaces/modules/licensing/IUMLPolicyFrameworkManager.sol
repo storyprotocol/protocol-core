@@ -18,14 +18,13 @@ import { IPolicyFrameworkManager } from "../../../interfaces/modules/licensing/I
 /// @param derivativesApproval Whether or not the licensor must approve derivatives of the work before they can be
 /// linked to the licensor IP ID
 /// @param derivativesReciprocal Whether or not the licensee must license derivatives of the work under the same terms.
-/// @param derivativesRevShare Percentage of revenue that must be shared with the licensor for derivatives of the work
 /// @param territories List of territories where the license is valid. If empty, global.
 /// @param distributionChannels List of distribution channels where the license is valid. Empty if no restrictions.
 /// @param royaltyPolicy Address of a royalty policy contract (e.g. RoyaltyPolicyLS) that will handle royalty payments
 struct UMLPolicy {
-    bool transferable;
+    bool transferable; // This should be removed as is now in Policy
     bool attribution;
-    bool commercialUse;
+    bool commercialUse; // This should be removed as is now in Policy
     bool commercialAttribution;
     string[] commercializers;
     uint32 commercialRevShare;

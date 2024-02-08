@@ -16,7 +16,12 @@ interface IRoyaltyPolicy {
     /// @param amount The amount to pay
     function onRoyaltyPayment(address caller, address ipId, address token, uint256 amount) external;
 
-    /// @notice Returns the minimum royalty the IPAccount expects from descendants
-    /// @param ipId The ipId
-    function minRoyaltyFromDescendants(address ipId) external view returns (uint32);
+    function verifyParamsMatch(bytes memory data) external view;
+    function verifyMultiParentLinking(
+        uint256 iteration,
+        bytes memory accumulator,
+        bytes memory data
+    ) external view returns (bytes memory accData);
+    function childRoyaltyData(bytes memory accumulator, bytes calldata childInput) external pure returns (bytes memory output);
+
 }

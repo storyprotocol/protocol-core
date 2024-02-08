@@ -17,6 +17,7 @@ import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator } from "../../inte
 import { IPolicyFrameworkManager } from "../../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 import { BasePolicyFrameworkManager } from "../../modules/licensing/BasePolicyFrameworkManager.sol";
 import { LicensorApprovalChecker } from "../../modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
+import { LSParams } from "../../interfaces/modules/royalty/policies/IRoyaltyPolicyLS.sol";
 
 /// @title UMLPolicyFrameworkManager
 /// @notice This is the UML Policy Framework Manager, which implements the UML Policy Framework
@@ -49,9 +50,23 @@ contract UMLPolicyFrameworkManager is
     function registerPolicy(UMLPolicy calldata umlPolicy) external returns (uint256 policyId) {
         _verifyComercialUse(umlPolicy);
         _verifyDerivatives(umlPolicy);
-        // No need to emit here, as the LicensingModule will emit the event
+        // TODO if royaltyPolicy not supported, revert? or just set royaltyPolicy in UMLPolicyFrameworkManager
+        // constructor
+        
 
-        return LICENSING_MODULE.registerPolicy(umlPolicy.transferable, abi.encode(umlPolicy));
+        Licensing.RoyaltyConfig memory rConfig = Licensing.RoyaltyConfig({
+            rPolicy: umlPolicy.royaltyPolicy,
+            data: abi.encode(
+                LSParams({
+                    selfRevShare: umlPolicy.commercialRevShare,
+                    derivRevShare: umlPolicy.derivativesRevShare
+                })
+            )
+        });
+        
+        // TODO: either split UMLPolicy in smaller structs, or dont store the whole thing encoded in module
+        // No need to emit here, as the LicensingModule will emit the event
+        return LICENSING_MODULE.registerPolicy(umlPolicy.transferable, umlPolicy.commercialUse, abi.encode(umlPolicy));
     }
 
     /// Called by licenseRegistry to verify policy parameters for linking an IP
@@ -65,28 +80,17 @@ contract UMLPolicyFrameworkManager is
         address ipId,
         address, // parentIpId
         bytes calldata policyData
-    ) external override onlyLicensingModule returns (IPolicyFrameworkManager.VerifyLinkResponse memory) {
+    ) external override onlyLicensingModule returns (bool) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
-        IPolicyFrameworkManager.VerifyLinkResponse memory response = IPolicyFrameworkManager.VerifyLinkResponse({
-            isLinkingAllowed: true, // If you successfully mint and now hold a license, you have the right to link.
-            isRoyaltyRequired: false,
-            royaltyPolicy: address(0),
-            royaltyDerivativeRevShare: 0
-        });
-
-        if (policy.commercialUse) {
-            response.isRoyaltyRequired = true;
-            response.royaltyPolicy = policy.royaltyPolicy;
-            response.royaltyDerivativeRevShare = policy.derivativesRevShare;
-        }
+        bool isLinkingAllowed = true;
 
         // If the policy defines the licensor must approve derivatives, check if the
         // derivative is approved by the licensor
         if (policy.derivativesApproval) {
-            response.isLinkingAllowed = response.isLinkingAllowed && isDerivativeApproved(licenseId, ipId);
+            isLinkingAllowed == isLinkingAllowed && isLinkingAllowed && isDerivativeApproved(licenseId, ipId);
         }
 
-        return response;
+        return isLinkingAllowed;
     }
 
     /// Called by licenseRegistry to verify policy parameters for minting a license

@@ -10,7 +10,7 @@ import { LSClaimer } from "../../../modules/royalty-module/policies/LSClaimer.so
 import { ILiquidSplitClone } from "../../../interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
 import { ILiquidSplitFactory } from "../../../interfaces/modules/royalty/policies/ILiquidSplitFactory.sol";
 import { ILiquidSplitMain } from "../../../interfaces/modules/royalty/policies/ILiquidSplitMain.sol";
-import { IRoyaltyPolicyLS } from "../../../interfaces/modules/royalty/policies/IRoyaltyPolicyLS.sol";
+import { IRoyaltyPolicyLS, LSParams } from "../../../interfaces/modules/royalty/policies/IRoyaltyPolicyLS.sol";
 import { Errors } from "../../../lib/Errors.sol";
 
 /// @title Liquid Split Royalty Policy
@@ -24,6 +24,11 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
         address claimer; // address of the claimer contract for a given ipId
         uint32 royaltyStack; // royalty stack for a given ipId is the sum of the minRoyalty of all its parents (number between 0 and 1000)
         uint32 minRoyalty; // minimum royalty the ipId will receive from its children and grandchildren (number between 0 and 1000)
+    }
+
+    struct LSRoyaltyAccumulator {
+        uint32 royaltyDerivativeRevShare;
+        uint32 derivativeRevShareSum;
     }
 
     /// @notice Percentage scale - 1000 rnfts represents 100%
@@ -114,8 +119,60 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
 
     /// @notice Returns the minimum royalty the IPAccount expects from descendants
     /// @param _ipId The ipId
-    function minRoyaltyFromDescendants(address _ipId) external view override returns (uint32) {
+    function minRoyaltyFromDescendants(address _ipId) public view override returns (uint32) {
         return royaltyData[_ipId].minRoyalty;
+    }
+
+    function verifyParamsMatch(bytes memory data, address ipId) external view {
+        uint256 newMinRoyalty = abi.decode(data, (uint256));
+        uint256 minRoyalty = minRoyaltyFromDescendants(ipId);
+        if (newMinRoyalty != minRoyalty) {
+            revert Errors.LicensingModule__MismatchBetweenCommercialRevenueShareAndMinRoyalty();
+        }
+    }
+
+    function verifyMultiParentLinking(
+        uint256 iteration,
+        bytes memory accumulator,
+        bytes memory data
+    ) external pure returns (bytes memory accData) {
+        LSRoyaltyAccumulator memory acc;
+        if (accumulator.length == 0) {
+            acc = LSRoyaltyAccumulator({
+                royaltyDerivativeRevShare: 0,
+                derivativeRevShareSum: 0
+            });
+        } else {
+            acc = abi.decode(accumulator, (LSRoyaltyAccumulator));
+        }
+        LSParams memory policyRData = abi.decode(data, (LSParams));
+        // TODO: Unit test.
+        // If the previous license's derivativeRevShare is different from that of the current license, revert.
+        // For iteration == 0, this check is skipped as `royaltyDerivativeRevShare` param is at 0.
+        if (iteration > 0 && acc.royaltyDerivativeRevShare != policyRData.derivRevShare) {
+            revert Errors.LicensingModule__IncompatibleRoyaltyPolicyDerivativeRevShare();
+        }
+
+        // TODO: Read max RNFT supply instead of hardcoding the expected max supply
+        // TODO: Do we need safe check?
+        // TODO: Test this in unit test.
+        if (acc.derivativeRevShareSum + policyRData.derivRevShare > 1000) {
+            revert Errors.LicensingModule__DerivativeRevShareSumExceedsMaxRNFTSupply();
+        }
+        acc.royaltyDerivativeRevShare = policyRData.derivRevShare;
+        acc.derivativeRevShareSum += policyRData.derivRevShare;
+        return abi.encode(acc);
+    }
+
+    function childRoyaltyData(bytes memory accumulator, bytes calldata childInput) external pure returns (bytes memory output) {
+        // TODO: currently, `royaltyDerivativeRevShare` is the derivative rev share value of the last license.
+        LSRoyaltyAccumulator memory acc = abi.decode(accumulator, (LSRoyaltyAccumulator));
+        // If the parent licenses specify the `derivativeRevShare` value to non-zero, use the value.
+        // Otherwise, the child IPAccount has the freedom to set the value.
+        uint256 minRoyalty = abi.decode(childInput, (uint256));
+        return abi.encode(
+            acc.royaltyDerivativeRevShare > 0 ? acc.royaltyDerivativeRevShare : minRoyalty
+        );
     }
 
     /// @notice Distributes funds to the accounts in the LiquidSplitClone contract

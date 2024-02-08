@@ -5,6 +5,11 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import { IRoyaltyPolicy } from "../../../../interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
 
+struct LSParams {
+    uint256 selfRevShare;
+    uint256 derivRevShare;
+}
+
 /// @title RoyaltyPolicy interface
 interface IRoyaltyPolicyLS is IRoyaltyPolicy {
     /// @notice Gets the royalty data

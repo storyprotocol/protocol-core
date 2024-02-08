@@ -82,7 +82,9 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
         address[] calldata _parentIpIds,
         bytes calldata _data
     ) external nonReentrant onlyLicensingModule {
-        if (isRoyaltyPolicyImmutable[_ipId]) revert Errors.RoyaltyModule__AlreadySetRoyaltyPolicy();
+        if (isRoyaltyPolicyImmutable[_ipId]) {
+            revert Errors.RoyaltyModule__AlreadySetRoyaltyPolicy();
+        }
         if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
 
         if (_parentIpIds.length > 0) isRoyaltyPolicyImmutable[_ipId] = true;
@@ -100,15 +102,17 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
         emit RoyaltyPolicySet(_ipId, _royaltyPolicy, _data);
     }
 
-    function setRoyaltyPolicyImmutable(address _ipId) external onlyLicensingModule {
-        isRoyaltyPolicyImmutable[_ipId] = true;
+    function verifyCanMintWihtImmutable(address licensorIp, address royaltyPolicy, bytes memory data) external view nonReentrant onlyLicensingModule {
+        // If the royalty policy is immutable, we allow minting license on a private policy if and only 
+        // if this policyId's royalty policy and min royalty is the same as the current setting.
+        if (royaltyPolicy != royaltyPolicies[licensorIp]) {
+            revert Errors.LicensingModule__MismatchBetweenRoyaltyPolicy();
+        }
+        IRoyaltyPolicy(royaltyPolicy).verifyParamsMatch(data);
     }
 
-    function minRoyaltyFromDescendants(address _ipId) external view returns (uint256) {
-        address royaltyPolicy = royaltyPolicies[_ipId];
-        if (royaltyPolicy == address(0)) revert Errors.RoyaltyModule__NoRoyaltyPolicySet();
-
-        return IRoyaltyPolicy(royaltyPolicy).minRoyaltyFromDescendants(_ipId);
+    function setRoyaltyPolicyImmutable(address _ipId) external onlyLicensingModule {
+        isRoyaltyPolicyImmutable[_ipId] = true;
     }
 
     /// @notice Allows a sender to to pay royalties on behalf of an ipId

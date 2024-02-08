@@ -57,7 +57,7 @@ interface ILicensingModule is IModule {
     /// verified by the policy framework manager.
     /// @param isLicenseTransferable True if the license is transferable
     /// @param data The policy data
-    function registerPolicy(bool isLicenseTransferable, bytes memory data) external returns (uint256 policyId);
+    function registerPolicy(bool isLicenseTransferable, bool isCommercial, Licensing.RoyaltyConfig calldata royaltyConfig, bytes calldata data) external returns (uint256 policyId);
 
     /// @notice Adds a policy to an IP policy list
     /// @param ipId The id of the IP
