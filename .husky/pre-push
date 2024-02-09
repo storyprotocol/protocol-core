@@ -3,4 +3,4 @@
 
 yarn lint:sol:fix
 # recheck
-yarn lint:sol
+yarn solhint
