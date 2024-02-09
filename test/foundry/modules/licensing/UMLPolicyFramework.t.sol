@@ -39,23 +39,8 @@ contract UMLPolicyFrameworkTest is TestHelper {
     }
 
     function test_UMLPolicyFrameworkManager_getPolicyId() public {
-        UMLPolicy memory umlPolicy = UMLPolicy({
-            transferable: true,
-            attribution: true,
-            commercialUse: false,
-            commercialAttribution: false,
-            commercializers: emptyStringArray,
-            commercialRevShare: 0,
-            derivativesAllowed: false,
-            derivativesAttribution: false,
-            derivativesApproval: false,
-            derivativesReciprocal: false,
-            derivativesRevShare: 0,
-            territories: emptyStringArray,
-            distributionChannels: emptyStringArray,
-            contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(0)
-        });
+        _mapUMLPolicySimple({name: "pol", commercial: true, derivatives: false, reciprocal: false, commercialRevShare: 0, derivativesRevShare: 0});
+        UMLPolicy memory umlPolicy = _getMappedUmlPolicy("pol");
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         assertEq(umlFramework.getPolicyId(umlPolicy), policyId);
     }
