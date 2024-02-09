@@ -119,6 +119,14 @@ contract TestHelper is Test, DeployHelper {
         uint32 commercialRevShare,
         uint32 derivativesRevShare
     ) internal {
+        address royaltyPolicy;
+        uint256 mintintFeeAmount;
+        address mintingFeeToken;
+        if (commercial) {
+            royaltyPolicy = address(mockRoyaltyPolicyLS);
+            mintintFeeAmount = mintFeeAmount;
+            mintingFeeToken = address(USDC);
+        }
         string memory pName = string(abi.encodePacked("uml_", name));
         policies[pName] = UMLPolicy({
             transferable: true,
@@ -135,9 +143,9 @@ contract TestHelper is Test, DeployHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(mockRoyaltyPolicyLS), // TODO: should use mock or real royalty policy
-            mintingFeeAmount: mintFeeAmount,
-            mintingFeeToken: address(USDC)
+            royaltyPolicy: royaltyPolicy, // TODO: should use mock or real royalty policy
+            mintingFeeAmount: mintintFeeAmount,
+            mintingFeeToken: mintingFeeToken
         });
     }
 
