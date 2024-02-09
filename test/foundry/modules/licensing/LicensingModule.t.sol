@@ -19,6 +19,8 @@ import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
+import { IPResolver } from "contracts/resolvers/IPResolver.sol";
+import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 
 // test
 // solhint-disable-next-line max-line-length
@@ -74,7 +76,8 @@ contract LicensingModuleTest is Test {
             address(accessController),
             address(erc6551Registry),
             address(ipAccountImpl),
-            address(moduleRegistry)
+            address(moduleRegistry),
+            address(governance)
         );
         royaltyModule = new RoyaltyModule(address(governance));
         licenseRegistry = new LicenseRegistry();
@@ -105,7 +108,15 @@ contract LicensingModuleTest is Test {
             "UMLPolicyFrameworkManager",
             licenseUrl
         );
+        IPResolver ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry));
+        RegistrationModule registrationModule = new RegistrationModule(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(licensingModule),
+            address(ipResolver)
+        );
 
+        ipAssetRegistry.setRegistrationModule(address(registrationModule));
         // Set licensing module in royalty module
         royaltyModule.setLicensingModule(address(licensingModule));
         royaltyModule.whitelistRoyaltyPolicy(address(mockRoyaltyPolicyLS), true);

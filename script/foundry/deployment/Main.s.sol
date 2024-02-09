@@ -164,7 +164,13 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "IPAssetRegistry";
         _predeploy(contractKey);
-        ipAssetRegistry = new IPAssetRegistry(address(accessController), ERC6551_REGISTRY, address(ipAccountImpl), address(moduleRegistry));
+        ipAssetRegistry = new IPAssetRegistry(
+            address(accessController),
+            ERC6551_REGISTRY,
+            address(ipAccountImpl),
+            address(moduleRegistry),
+            address(governance)
+        );
         _postdeploy(contractKey, address(ipAssetRegistry));
 
         contractKey = "MetadataProviderV1";
@@ -290,6 +296,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         _postdeploy("IPMetadataProvider", address(ipMetadataProvider));
 
         licenseRegistry.setLicensingModule(address(licensingModule));
+        ipAssetRegistry.setRegistrationModule(address(registrationModule));
     }
 
     function _configureAccessController() private {

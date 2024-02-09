@@ -18,6 +18,8 @@ import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProvid
 import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMetadataProvider.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { IPResolver } from "contracts/resolvers/IPResolver.sol";
+import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 
 /// @title IP Metadata Provider Testing Contract
 /// @notice Contract for metadata provider settings.
@@ -119,19 +121,26 @@ contract MetadataProviderTest is BaseTest {
             address(accessController),
             address(ipAccountImpl)
         );
-        vm.prank(bob);
         registry = new IPAssetRegistry(
             address(accessController),
             address(erc6551Registry),
             address(ipAccountImpl),
-            address(licensingModule)
+            address(licensingModule),
+            address(governance)
+        );
+        IPResolver ipResolver = new IPResolver(address(accessController), address(registry));
+        RegistrationModule registrationModule = new RegistrationModule(
+            address(accessController),
+            address(registry),
+            address(licensingModule),
+            address(ipResolver)
         );
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
+        registry.setRegistrationModule(address(registrationModule));
         MockERC721 erc721 = new MockERC721("MockERC721");
         uint256 tokenId = erc721.mintId(alice, 99);
-        IPResolver resolver = new IPResolver(address(accessController), address(registry));
         vm.prank(alice);
-        ipId = registry.register(block.chainid, address(erc721), tokenId, address(resolver), true, v1Metadata);
+        ipId = registry.register(block.chainid, address(erc721), tokenId, address(ipResolver), true, v1Metadata);
 
         metadataProvider = MetadataProviderV1(registry.metadataProvider());
         upgradedProvider = new MockMetadataProviderV2(address(registry));

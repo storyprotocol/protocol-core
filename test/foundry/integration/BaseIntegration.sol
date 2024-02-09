@@ -123,7 +123,8 @@ contract BaseIntegration is Test {
             address(accessController),
             address(erc6551Registry),
             address(ipAccountImpl),
-            address(moduleRegistry)
+            address(moduleRegistry),
+            address(governance)
         );
         licenseRegistry = new LicenseRegistry();
         licensingModule = new LicensingModule(
@@ -173,6 +174,7 @@ contract BaseIntegration is Test {
         vm.startPrank(u.admin);
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
         royaltyModule.setLicensingModule(address(licensingModule));
+        ipAssetRegistry.setRegistrationModule(address(registrationModule));
 
         moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));

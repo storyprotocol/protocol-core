@@ -95,7 +95,8 @@ contract IPAssetRendererTest is BaseTest {
             address(accessController),
             address(erc6551Registry),
             address(ipAccountImpl),
-            address(moduleRegistry)
+            address(moduleRegistry),
+            address(governance)
         );
         RoyaltyModule royaltyModule = new RoyaltyModule(address(governance));
         licenseRegistry = new LicenseRegistry();
@@ -121,6 +122,7 @@ contract IPAssetRendererTest is BaseTest {
         );
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
         royaltyModule.setLicensingModule(address(licensingModule));
+        ipAssetRegistry.setRegistrationModule(address(registrationModule));
 
         vm.prank(alice);
         uint256 tokenId = erc721.mintId(alice, 99);

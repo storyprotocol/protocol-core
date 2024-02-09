@@ -14,6 +14,8 @@ import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { Governance } from "contracts/governance/Governance.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { IPResolver } from "contracts/resolvers/IPResolver.sol";
+import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 
 /// @title Module Base Test Contract
 /// @notice Base contract for testing standard module functionality.
@@ -41,6 +43,10 @@ abstract contract ModuleBaseTest is BaseTest {
 
     RoyaltyModule public royaltyModule;
 
+    IPResolver public ipResolver;
+
+    RegistrationModule public registrationModule;
+
     /// @notice Initializes the base module for testing.
     function setUp() public virtual override(BaseTest) {
         BaseTest.setUp();
@@ -53,7 +59,8 @@ abstract contract ModuleBaseTest is BaseTest {
             address(accessController),
             address(new ERC6551Registry()),
             address(new IPAccountImpl()),
-            address(moduleRegistry)
+            address(moduleRegistry),
+            address(governance)
         );
         royaltyModule = new RoyaltyModule(address(governance));
         licenseRegistry = new LicenseRegistry();
@@ -63,10 +70,18 @@ abstract contract ModuleBaseTest is BaseTest {
             address(licenseRegistry),
             address(royaltyModule)
         );
+        ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry));
+        registrationModule = new RegistrationModule(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(licensingModule),
+            address(ipResolver)
+        );
         licenseRegistry.setLicensingModule(address(licensingModule));
         baseModule = IModule(_deployModule());
         accessController.initialize(address(ipAssetRegistry), address(moduleRegistry));
         royaltyModule.setLicensingModule(address(licensingModule));
+        ipAssetRegistry.setRegistrationModule(address(registrationModule));
     }
 
     /// @notice Tests that the default resolver constructor runs successfully.
