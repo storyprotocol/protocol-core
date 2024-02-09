@@ -51,7 +51,7 @@ contract TestLSClaimer is TestHelper {
                 commercializers: new string[](0),
                 commercialRevShare: 10,
                 royaltyPolicy: address(royaltyPolicyLS),
-                mintingFeeAmount: mintFeeAmount,
+                mintingFeeAmount: 0, // no upfront payment for LSClaimer
                 mintingFeeToken: address(USDC)
             }),
             UMLPolicyDerivativeParams({

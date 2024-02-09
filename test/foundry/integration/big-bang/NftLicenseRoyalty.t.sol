@@ -103,6 +103,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
         // Bob mints 1 license from Alice's NFT 1 IPAccount, registers NFT 2 IPAccount, and links using the license
         {
             vm.startPrank(u.bob);
+            USDC.approve(address(royaltyPolicyLS), mintFeeAmount);
             uint256 bob_license_from_root_alice = licensingModule.mintLicense(
                 policyIds["uml_com_deriv_reciprocal"],
                 ipAcct[1], // Alice's IPAccount
@@ -120,6 +121,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
         // Carl mints 1 license from Bob's NFT 2 IPAccount, registers NFT 3 IPAccount, and links using the license
         {
             vm.startPrank(u.carl);
+            USDC.approve(address(royaltyPolicyLS), mintFeeAmount);
             uint256 carl_license_from_bob = licensingModule.mintLicense(
                 policyIds["uml_com_deriv_reciprocal"],
                 ipAcct[2], // Bob's IPAccount
@@ -149,6 +151,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
         // Dan mints 1 license from Carl's NFT 3 IPAccount, registers NFT 4 IPAccount, and links using the license
         {
             vm.startPrank(u.dan);
+            USDC.approve(address(royaltyPolicyLS), mintFeeAmount);
             uint256 dan_license_from_carl = licensingModule.mintLicense(
                 policyIds["uml_com_deriv_reciprocal"],
                 ipAcct[3], // Carl's IPAccount

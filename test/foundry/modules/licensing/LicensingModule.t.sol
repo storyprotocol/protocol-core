@@ -123,6 +123,10 @@ contract LicensingModuleTest is Test {
 
         vm.label(ipId1, "IPAccount1");
         vm.label(ipId2, "IPAccount2");
+
+        // For `test_LicensingModule_licenseUri` to use UML policy, we must whitelist the royalty token.
+        // TODO: fix to use mock
+        royaltyModule.whitelistRoyaltyToken(address(USDC), true);
     }
 
     function _createPolicy() internal pure returns (bytes memory) {
