@@ -16,6 +16,8 @@ import { LICENSING_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IModuleRegistry } from "../interfaces/registries/IModuleRegistry.sol";
 import { ILicensingModule } from "../interfaces/modules/licensing/ILicensingModule.sol";
 import { IIPAssetRegistry } from "../interfaces/registries/IIPAssetRegistry.sol";
+import { IRegistrationModule } from "../interfaces/modules/IRegistrationModule.sol";
+import { Governable } from "../governance/Governable.sol";
 
 /// @title IP Asset Registry
 /// @notice This contract acts as the source of truth for all IP registered in
@@ -26,7 +28,7 @@ import { IIPAssetRegistry } from "../interfaces/registries/IIPAssetRegistry.sol"
 ///         attribution and an IP account for protocol authorization.
 ///         IMPORTANT: The IP account address, besides being used for protocol
 ///                    auth, is also the canonical IP identifier for the IP NFT.
-contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
+contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
     /// @notice Attributes for the IP asset type.
     struct Record {
         // Metadata provider for Story Protocol canonicalized metadata.
@@ -39,11 +41,11 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
     /// @notice The canonical module registry used by the protocol.
     IModuleRegistry public immutable MODULE_REGISTRY;
 
+    /// @notice The registration module that interacts with IPAssetRegistry.
+    IRegistrationModule public REGISTRATION_MODULE;
+
     /// @notice Tracks the total number of IP assets in existence.
     uint256 public totalSupply = 0;
-
-    /// @notice Protocol governance administrator of the IP record registry.
-    address public owner;
 
     /// @notice Checks whether an operator is approved to register on behalf of an IP owner.
     mapping(address owner => mapping(address operator => bool)) public isApprovedForAll;
@@ -54,29 +56,20 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
     /// @notice Tracks the current metadata provider used for IP registrations.
     IMetadataProviderMigratable internal _metadataProvider;
 
-    /// @notice Ensures only protocol governance owner may call a function.
-    modifier onlyOwner() {
-        if (msg.sender != owner) {
-            revert Errors.IPAssetRegistry__Unauthorized();
-        }
-        _;
-    }
-
     /// @notice Initializes the IP Asset Registry.
     /// @param erc6551Registry The address of the ERC6551 registry.
     /// @param accessController The address of the access controller.
     /// @param ipAccountImpl The address of the IP account implementation.
     /// @param moduleRegistry The address of the module registry.
+    /// @param governance The address of the governance contract.
     /// TODO: Utilize module registry for fetching different modules.
     constructor(
         address accessController,
         address erc6551Registry,
         address ipAccountImpl,
-        address moduleRegistry
-    ) IPAccountRegistry(erc6551Registry, accessController, ipAccountImpl) {
-        // TODO: Migrate this to a parameterized governance owner address.
-        // TODO: Replace with OZ's 2StepOwnable
-        owner = msg.sender;
+        address moduleRegistry,
+        address governance
+    ) IPAccountRegistry(erc6551Registry, accessController, ipAccountImpl) Governable(governance) {
         MODULE_REGISTRY = IModuleRegistry(moduleRegistry);
         _metadataProvider = IMetadataProviderMigratable(new MetadataProviderV1(address(this)));
     }
@@ -88,6 +81,12 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
     function setApprovalForAll(address operator, bool approved) external {
         isApprovedForAll[msg.sender][operator] = approved;
         emit ApprovalForAll(msg.sender, operator, approved);
+    }
+
+    /// @notice Sets the registration module that interacts with IPAssetRegistry.
+    /// @param registrationModule The address of the registration module.
+    function setRegistrationModule(address registrationModule) external onlyProtocolAdmin {
+        REGISTRATION_MODULE = IRegistrationModule(registrationModule);
     }
 
     /// @notice Registers an NFT as an IP asset.
@@ -180,7 +179,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
     /// @notice Sets the provider for storage of new IP metadata, while enabling
     ///         existing IP assets to migrate their metadata to the new provider.
     /// @param newMetadataProvider Address of the new metadata provider contract.
-    function setMetadataProvider(address newMetadataProvider) external onlyOwner {
+    function setMetadataProvider(address newMetadataProvider) external onlyProtocolAdmin {
         _metadataProvider.setUpgradeProvider(newMetadataProvider);
         _metadataProvider = IMetadataProviderMigratable(newMetadataProvider);
     }
@@ -238,8 +237,10 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry {
             revert Errors.IPAssetRegistry__AlreadyRegistered();
         }
 
-        address owner = IERC721(tokenContract).ownerOf(tokenId);
-        if (msg.sender != owner && !isApprovedForAll[owner][msg.sender]) {
+        address _owner = IERC721(tokenContract).ownerOf(tokenId);
+        if (
+            msg.sender != _owner && msg.sender != address(REGISTRATION_MODULE) && !isApprovedForAll[_owner][msg.sender]
+        ) {
             revert Errors.IPAssetRegistry__RegistrantUnauthorized();
         }
 

@@ -63,7 +63,8 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         // Check that the caller is authorized to perform the registration.
         // TODO: Perform additional registration authorization logic, allowing
         //       registrants or root-IP creators to specify their own auth logic.
-        if (IERC721(tokenContract).ownerOf(tokenId) != msg.sender) {
+        address owner = IERC721(tokenContract).ownerOf(tokenId);
+        if (msg.sender != owner && !IERC721(tokenContract).isApprovedForAll(owner, msg.sender)) {
             revert Errors.RegistrationModule__InvalidOwner();
         }
 
@@ -120,7 +121,8 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         // Check that the caller is authorized to perform the registration.
         // TODO: Perform additional registration authorization logic, allowing
         //       registrants or IP creators to specify their own auth logic.
-        if (IERC721(tokenContract).ownerOf(tokenId) != msg.sender) {
+        address owner = IERC721(tokenContract).ownerOf(tokenId);
+        if (msg.sender != owner && !IERC721(tokenContract).isApprovedForAll(owner, msg.sender)) {
             revert Errors.RegistrationModule__InvalidOwner();
         }
 
