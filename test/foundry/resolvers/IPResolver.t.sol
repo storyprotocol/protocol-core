@@ -16,9 +16,6 @@ contract IPResolverTest is ResolverBaseTest {
     string public constant TEST_KEY = "Key";
     string public constant TEST_VALUE = "Value";
 
-    /// @notice The token contract SUT.
-    IPResolver public ipResolver;
-
     /// @notice Mock IP identifier for resolver testing.
     address public ipId;
 

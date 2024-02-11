@@ -37,7 +37,11 @@ contract MockLicensingModule is ILicensingModule {
 
     function isPolicyIdSetForIp(bool isInherited, address ipId, uint256 policyId) external view returns (bool) {}
 
-    function getPolicyId(address framework, bool isLicenseTransferable, bytes memory data) external view returns (uint256 policyId) {}
+    function getPolicyId(
+        address framework,
+        bool isLicenseTransferable,
+        bytes memory data
+    ) external view returns (uint256 policyId) {}
 
     function policyIdForIpAtIndex(
         bool isInherited,

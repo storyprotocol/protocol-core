@@ -10,6 +10,7 @@ import { GovernanceLib } from "../lib/GovernanceLib.sol";
 
 /// @title Governance
 /// @dev This contract is used for governance of the protocol.
+/// TODO: Replace with OZ's 2StepOwnable
 contract Governance is AccessControl, IGovernance {
     GovernanceLib.ProtocolState internal state;
 

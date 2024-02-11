@@ -116,7 +116,8 @@ contract DeployHelper is Test {
             address(accessController),
             address(erc6551Registry),
             address(ipAccountImpl),
-            address(moduleRegistry)
+            address(moduleRegistry),
+            address(governance)
         );
         licenseRegistry = new LicenseRegistry();
         licensingModule = new LicensingModule(
@@ -125,7 +126,6 @@ contract DeployHelper is Test {
             address(royaltyModule),
             address(licenseRegistry)
         );
-        licenseRegistry.setLicensingModule(address(licensingModule));
         ipMetadataProvider = new IPMetadataProvider(address(moduleRegistry));
         ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry));
         registrationModule = new RegistrationModule(
@@ -170,6 +170,8 @@ contract DeployHelper is Test {
         vm.startPrank(u.admin);
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
         royaltyModule.setLicensingModule(address(licensingModule));
+        licenseRegistry.setLicensingModule(address(licensingModule));
+        ipAssetRegistry.setRegistrationModule(address(registrationModule));
 
         moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));

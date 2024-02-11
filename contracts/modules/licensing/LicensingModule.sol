@@ -314,7 +314,11 @@ contract LicensingModule is AccessControlled, ILicensingModule {
     }
 
     /// @notice gets the policy id for the given data, or 0 if not found
-    function getPolicyId(address framework, bool isLicenseTransferable, bytes memory data) external view returns (uint256 policyId) {
+    function getPolicyId(
+        address framework,
+        bool isLicenseTransferable,
+        bytes memory data
+    ) external view returns (uint256 policyId) {
         Licensing.Policy memory pol = Licensing.Policy({
             isLicenseTransferable: isLicenseTransferable,
             policyFramework: framework,
@@ -504,7 +508,6 @@ contract LicensingModule is AccessControlled, ILicensingModule {
         // Set parent
         _ipIdParents[childIpId].add(licensor);
     }
-
 
     function _verifyCanAddPolicy(uint256 policyId, address ipId, bool isInherited) private {
         bool ipIdIsDerivative = _policySetPerIpId(true, ipId).length() > 0;

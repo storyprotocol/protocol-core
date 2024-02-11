@@ -69,7 +69,13 @@ contract IPAssetRegistryTest is BaseTest {
         erc6551Registry = address(new ERC6551Registry());
         ipAccountImpl = address(new IPAccountImpl());
         ipAccountRegistry = new IPAccountRegistry(erc6551Registry, accessController, ipAccountImpl);
-        registry = new IPAssetRegistry(accessController, erc6551Registry, ipAccountImpl, address(moduleRegistry));
+        registry = new IPAssetRegistry(
+            accessController,
+            erc6551Registry,
+            ipAccountImpl,
+            address(moduleRegistry),
+            address(governance)
+        );
         MockERC721 erc721 = new MockERC721("MockERC721");
         tokenAddress = address(erc721);
         tokenId = erc721.mintId(alice, 99);
