@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
+import { BaseModule } from "contracts/modules/BaseModule.sol";
 
 /// @title Mock Licensing Module
-contract MockLicensingModule is ILicensingModule {
+contract MockLicensingModule is BaseModule, ILicensingModule {
     function licenseRegistry() external view returns (address) {}
 
     function registerPolicyFrameworkManager(address manager) external {}
@@ -70,5 +72,9 @@ contract MockLicensingModule is ILicensingModule {
 
     function name() external view returns (string memory) {
         return "LICENSING_MODULE";
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
+        return interfaceId == type(ILicensingModule).interfaceId || super.supportsInterface(interfaceId);
     }
 }

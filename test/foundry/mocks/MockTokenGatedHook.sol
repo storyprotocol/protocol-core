@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { IERC165, ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IHookModule } from "../../../contracts/interfaces/modules/base/IHookModule.sol";
 import { BaseModule } from "../../../contracts/modules/BaseModule.sol";
 
-/// @title Token Gated Hook.
+/// @title Mock Token Gated Hook.
 /// @notice Hook for ensursing caller is the owner of an NFT token.
 contract MockTokenGatedHook is BaseModule, IHookModule {
     using ERC165Checker for address;
@@ -33,5 +33,4 @@ contract MockTokenGatedHook is BaseModule, IHookModule {
     function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
         return interfaceId == type(IHookModule).interfaceId || super.supportsInterface(interfaceId);
     }
-
 }

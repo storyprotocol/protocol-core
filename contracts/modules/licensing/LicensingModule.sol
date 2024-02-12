@@ -303,7 +303,6 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         LICENSE_REGISTRY.burnLicenses(holder, licenseIds);
     }
 
-
     function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
         return interfaceId == type(ILicensingModule).interfaceId || super.supportsInterface(interfaceId);
     }

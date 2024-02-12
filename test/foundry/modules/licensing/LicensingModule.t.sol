@@ -43,8 +43,8 @@ contract LicensingModuleTest is Test {
     UMLPolicyFrameworkManager internal umlManager;
 
     MockERC721 internal nft = new MockERC721("MockERC721");
-    MockERC721 internal gatedNftFoo = new MockERC721("GatedNftFoo");
-    MockERC721 internal gatedNftBar = new MockERC721("GatedNftBar");
+    MockERC721 internal gatedNftFoo = new MockERC721{ salt: bytes32(uint256(1)) }("GatedNftFoo");
+    MockERC721 internal gatedNftBar = new MockERC721{ salt: bytes32(uint256(2)) }("GatedNftBar");
 
     ModuleRegistry internal moduleRegistry;
 
@@ -113,7 +113,6 @@ contract LicensingModuleTest is Test {
         );
         IPResolver ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry));
         RegistrationModule registrationModule = new RegistrationModule(
-            address(accessController),
             address(ipAssetRegistry),
             address(licensingModule),
             address(ipResolver)
@@ -132,6 +131,12 @@ contract LicensingModuleTest is Test {
 
         vm.label(ipId1, "IPAccount1");
         vm.label(ipId2, "IPAccount2");
+
+        //        MockERC721 tempGatedNftFoo = new MockERC721("GatedNftFoo");
+        //        bytes memory GatedNftFooCode = address(tempGatedNftFoo).code;
+        //        address gatedNftFoo = makeAddr("GatedNftFoo");
+        ////        vm.etch(gatedNftFoo, GatedNftFooCode);
+        //        deployCodeTo("test/foundry/mocks/MockTokenGatedHook.sol", gatedNftFoo);
     }
 
     function _createPolicy() internal pure returns (bytes memory) {
@@ -548,7 +553,7 @@ contract LicensingModuleTest is Test {
 
         /* solhint-disable */
         string
-            memory expectedJson = "eyJuYW1lIjogIlN0b3J5IFByb3RvY29sIExpY2Vuc2UgTkZUIiwgImRlc2NyaXB0aW9uIjogIkxpY2Vuc2UgYWdyZWVtZW50IHN0YXRpbmcgdGhlIHRlcm1zIG9mIGEgU3RvcnkgUHJvdG9jb2wgSVBBc3NldCIsICJhdHRyaWJ1dGVzIjogW3sidHJhaXRfdHlwZSI6ICJBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIlRyYW5zZmVyYWJsZSIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkNvbW1lcmljYWwgVXNlIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbEF0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbFJldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogImNvbW1lcmNpYWxpemVyQ2hlY2siLCAidmFsdWUiOiAiMHhhMDViYzBlYTdhMzZiY2FkODQxNjc0OWFmOGE2MzBhODkxZTJkNDZjIn0sIHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc0FsbG93ZWQiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc0F0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBcHByb3ZhbCIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzUmVjaXByb2NhbCIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzUmV2U2hhcmUiLCAidmFsdWUiOiAwfSx7InRyYWl0X3R5cGUiOiAidGVycml0b3JpZXMiLCAidmFsdWUiOiBbInRlcnJpdG9yeTEiXX0sIHsidHJhaXRfdHlwZSI6ICJkaXN0cmlidXRpb25DaGFubmVscyIsICJ2YWx1ZSI6IFsiZGlzdHJpYnV0aW9uQ2hhbm5lbDEiXX1dfQ==";
+            memory expectedJson = "eyJuYW1lIjogIlN0b3J5IFByb3RvY29sIExpY2Vuc2UgTkZUIiwgImRlc2NyaXB0aW9uIjogIkxpY2Vuc2UgYWdyZWVtZW50IHN0YXRpbmcgdGhlIHRlcm1zIG9mIGEgU3RvcnkgUHJvdG9jb2wgSVBBc3NldCIsICJhdHRyaWJ1dGVzIjogW3sidHJhaXRfdHlwZSI6ICJBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIlRyYW5zZmVyYWJsZSIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkNvbW1lcmljYWwgVXNlIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbEF0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbFJldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogImNvbW1lcmNpYWxpemVyQ2hlY2siLCAidmFsdWUiOiAiMHgxMGY3YWJkMDEyNmE5MDkzNWYzZjkwMDJmYTc5NzY3YWZjMGUzYzBkIn0sIHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc0FsbG93ZWQiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc0F0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBcHByb3ZhbCIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzUmVjaXByb2NhbCIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzUmV2U2hhcmUiLCAidmFsdWUiOiAwfSx7InRyYWl0X3R5cGUiOiAidGVycml0b3JpZXMiLCAidmFsdWUiOiBbInRlcnJpdG9yeTEiXX0sIHsidHJhaXRfdHlwZSI6ICJkaXN0cmlidXRpb25DaGFubmVscyIsICJ2YWx1ZSI6IFsiZGlzdHJpYnV0aW9uQ2hhbm5lbDEiXX1dfQ==";
         /* solhint-enable */
 
         string memory expectedUri = string(abi.encodePacked("data:application/json;base64,", expectedJson));
