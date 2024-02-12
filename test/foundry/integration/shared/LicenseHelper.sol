@@ -41,8 +41,8 @@ struct UMLPolicyGenericParams {
 
 struct UMLPolicyCommercialParams {
     bool commercialAttribution;
-    address[] commercializers;
-    bytes[] commercializersData;
+    address commercializerChecker;
+    bytes commercializerCheckerData;
     uint32 commercialRevShare;
     address royaltyPolicy;
 }
@@ -166,8 +166,8 @@ contract Integration_Shared_LicensingHelper {
                 attribution: gparams.attribution,
                 commercialUse: true,
                 commercialAttribution: cparams.commercialAttribution,
-                commercializers: cparams.commercializers,
-                commercializersData: cparams.commercializersData,
+                commercializerChecker: cparams.commercializerChecker,
+                commercializerCheckerData: cparams.commercializerCheckerData,
                 commercialRevShare: cparams.commercialRevShare,
                 derivativesAllowed: true,
                 derivativesAttribution: dparams.derivativesAttribution,
@@ -196,8 +196,8 @@ contract Integration_Shared_LicensingHelper {
                 attribution: gparams.attribution,
                 commercialUse: true,
                 commercialAttribution: cparams.commercialAttribution,
-                commercializers: cparams.commercializers,
-                commercializersData: cparams.commercializersData,
+                commercializerChecker: cparams.commercializerChecker,
+                commercializerCheckerData: cparams.commercializerCheckerData,
                 commercialRevShare: cparams.commercialRevShare,
                 derivativesAllowed: false,
                 derivativesAttribution: false,
@@ -226,8 +226,8 @@ contract Integration_Shared_LicensingHelper {
                 attribution: gparams.attribution,
                 commercialUse: false,
                 commercialAttribution: false,
-                commercializers: new address[](0),
-                commercializersData: new bytes[](0),
+                commercializerChecker: address(0),
+                commercializerCheckerData: "",
                 commercialRevShare: 0,
                 derivativesAllowed: true,
                 derivativesAttribution: dparams.derivativesAttribution,
@@ -253,8 +253,8 @@ contract Integration_Shared_LicensingHelper {
                 attribution: gparams.attribution,
                 commercialUse: false,
                 commercialAttribution: false,
-                commercializers: new address[](0),
-                commercializersData: new bytes[](0),
+                commercializerChecker: address(0),
+                commercializerCheckerData: "",
                 commercialRevShare: 0,
                 derivativesAllowed: false,
                 derivativesAttribution: false,

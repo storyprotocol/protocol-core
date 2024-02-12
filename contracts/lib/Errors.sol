@@ -161,7 +161,7 @@ library Errors {
     ////////////////////////////////////////////////////////////////////////////
 
     error PolicyFrameworkManager__GettingPolicyWrongFramework();
-    error PolicyFrameworkManager__CommercializerDoesNotSupportHook(address commercializer);
+    error PolicyFrameworkManager__CommercializerCheckerDoesNotSupportHook(address commercializer);
 
     ////////////////////////////////////////////////////////////////////////////
     //                     LicensorApprovalChecker                            //

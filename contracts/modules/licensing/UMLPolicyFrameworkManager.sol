@@ -6,6 +6,7 @@ pragma solidity ^0.8.23;
 import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 // contracts
 import { IHookModule } from "../../interfaces/modules/base/IHookModule.sol";
@@ -23,7 +24,12 @@ import { LicensorApprovalChecker } from "../../modules/licensing/parameter-helpe
 /// @notice This is the UML Policy Framework Manager, which implements the UML Policy Framework
 /// logic for encoding and decoding UML policies into the LicenseRegistry and verifying
 /// the licensing parameters for linking, minting, and transferring.
-contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFrameworkManager, LicensorApprovalChecker {
+contract UMLPolicyFrameworkManager is
+    IUMLPolicyFrameworkManager,
+    BasePolicyFrameworkManager,
+    LicensorApprovalChecker,
+    ReentrancyGuard
+{
     using ERC165Checker for address;
     using Strings for *;
 
@@ -44,7 +50,7 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
     /// @notice Re a new policy to the registry
     /// @dev Must encode the policy into bytes to be stored in the LicensingModule
     /// @param umlPolicy UMLPolicy compliant licensing term values
-    function registerPolicy(UMLPolicy calldata umlPolicy) external returns (uint256 policyId) {
+    function registerPolicy(UMLPolicy calldata umlPolicy) external nonReentrant returns (uint256 policyId) {
         _verifyComercialUse(umlPolicy);
         _verifyDerivatives(umlPolicy);
         // No need to emit here, as the LicensingModule will emit the event
@@ -63,7 +69,7 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
         address ipId,
         address, // parentIpId
         bytes calldata policyData
-    ) external override onlyLicensingModule returns (IPolicyFrameworkManager.VerifyLinkResponse memory) {
+    ) external override nonReentrant onlyLicensingModule returns (IPolicyFrameworkManager.VerifyLinkResponse memory) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
         IPolicyFrameworkManager.VerifyLinkResponse memory response = IPolicyFrameworkManager.VerifyLinkResponse({
             isLinkingAllowed: true, // If you successfully mint and now hold a license, you have the right to link.
@@ -83,15 +89,15 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
         if (policy.derivativesApproval) {
             response.isLinkingAllowed = response.isLinkingAllowed && isDerivativeApproved(licenseId, ipId);
         }
-
-        for (uint256 i = 0; i < policy.commercializers.length; i++) {
-            if (!policy.commercializers[i].supportsInterface(type(IHookModule).interfaceId)) {
-                revert Errors.PolicyFrameworkManager__CommercializerDoesNotSupportHook(policy.commercializers[i]);
+        if (policy.commercializerChecker != address(0)) {
+            if (!policy.commercializerChecker.supportsInterface(type(IHookModule).interfaceId)) {
+                revert Errors.PolicyFrameworkManager__CommercializerCheckerDoesNotSupportHook(
+                    policy.commercializerChecker
+                );
             }
 
-            if (!IHookModule(policy.commercializers[i]).verify(caller, policy.commercializersData[i])) {
+            if (!IHookModule(policy.commercializerChecker).verify(caller, policy.commercializerCheckerData)) {
                 response.isLinkingAllowed = false;
-                break;
             }
         }
 
@@ -108,7 +114,7 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
         address,
         uint256,
         bytes memory policyData
-    ) external onlyLicensingModule returns (bool) {
+    ) external nonReentrant onlyLicensingModule returns (bool) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
         // If the policy defines no derivative is allowed, and policy was inherited,
         // we don't allow minting
@@ -116,12 +122,14 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
             return false;
         }
 
-        for (uint256 i = 0; i < policy.commercializers.length; i++) {
-            if (!policy.commercializers[i].supportsInterface(type(IHookModule).interfaceId)) {
-                revert Errors.PolicyFrameworkManager__CommercializerDoesNotSupportHook(policy.commercializers[i]);
+        if (policy.commercializerChecker != address(0)) {
+            if (!policy.commercializerChecker.supportsInterface(type(IHookModule).interfaceId)) {
+                revert Errors.PolicyFrameworkManager__CommercializerCheckerDoesNotSupportHook(
+                    policy.commercializerChecker
+                );
             }
 
-            if (!IHookModule(policy.commercializers[i]).verify(caller, policy.commercializersData[i])) {
+            if (!IHookModule(policy.commercializerChecker).verify(caller, policy.commercializerCheckerData)) {
                 return false;
             }
         }
@@ -246,7 +254,7 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
         return (changedAgg, abi.encode(agg));
     }
 
-    function policyToJson(bytes memory policyData) public view returns (string memory) {
+    function policyToJson(bytes memory policyData) public pure returns (string memory) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
 
         /* solhint-disable */
@@ -276,23 +284,20 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
                 '{"trait_type": "commercialRevShare", "value": ',
                 Strings.toString(policy.commercialRevShare),
                 "},"
-                '{"trait_type": "commercializers", "value": ['
             )
         );
-
-        uint256 commercializerCount = policy.commercializers.length;
-        for (uint256 i = 0; i < commercializerCount; ++i) {
-            json = string(abi.encodePacked(json, '"', policy.commercializers[i].toHexString(), '"'));
-            if (i != commercializerCount - 1) {
-                json = string(abi.encodePacked(json, ","));
-            }
-        }
-        // TODO: add commercializersData?
-
         json = string(
             abi.encodePacked(
                 json,
-                ']}, {"trait_type": "derivativesAllowed", "value": "',
+                '{"trait_type": "commercializerCheck", "value": "',
+                policy.commercializerChecker.toHexString()
+            )
+        );
+        // TODO: add commercializersData?
+        json = string(
+            abi.encodePacked(
+                json,
+                '"}, {"trait_type": "derivativesAllowed", "value": "',
                 policy.derivativesAllowed ? "true" : "false",
                 '"},',
                 '{"trait_type": "derivativesAttribution", "value": "',
@@ -343,7 +348,7 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
             if (policy.commercialAttribution) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddAttribution();
             }
-            if (policy.commercializers.length > 0) {
+            if (policy.commercializerChecker != address(0)) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddCommercializers();
             }
             if (policy.commercialRevShare > 0) {
@@ -360,8 +365,13 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
             if (policy.royaltyPolicy == address(0)) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialEnabled_RoyaltyPolicyRequired();
             }
-            if (policy.commercializers.length != policy.commercializersData.length) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercializersDataMismatch();
+            if (policy.commercializerChecker != address(0)) {
+                if (!policy.commercializerChecker.supportsInterface(type(IHookModule).interfaceId)) {
+                    revert Errors.PolicyFrameworkManager__CommercializerCheckerDoesNotSupportHook(
+                        policy.commercializerChecker
+                    );
+                }
+                IHookModule(policy.commercializerChecker).validateConfig(policy.commercializerCheckerData);
             }
         }
     }
@@ -395,7 +405,7 @@ contract UMLPolicyFrameworkManager is IUMLPolicyFrameworkManager, BasePolicyFram
         bytes32 oldHash,
         bytes32 newHash,
         bytes32 permissive
-    ) internal view returns (bytes32 result) {
+    ) internal pure returns (bytes32 result) {
         if (oldHash == newHash) {
             return newHash;
         }

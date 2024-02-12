@@ -64,8 +64,8 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
             }),
             UMLPolicyCommercialParams({
                 commercialAttribution: true,
-                commercializers: new address[](0),
-                commercializersData: new bytes[](0),
+                commercializerChecker: address(0),
+                commercializerCheckerData: "",
                 commercialRevShare: minRevShare,
                 royaltyPolicy: address(royaltyPolicyLS)
             }),

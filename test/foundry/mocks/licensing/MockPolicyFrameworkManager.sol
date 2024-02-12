@@ -80,7 +80,7 @@ contract MockPolicyFrameworkManager is BasePolicyFrameworkManager {
         return 0;
     }
 
-    function isPolicyCommercial(uint256 policyId) external view returns (bool) {
+    function isPolicyCommercial(uint256 policyId) external pure returns (bool) {
         return policyId % 2 == 0;
     }
 }

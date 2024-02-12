@@ -45,6 +45,9 @@ contract TestHelper is Test, DeployHelper {
     mapping(string => UMLPolicy) internal policies;
 
     string[] internal emptyStringArray = new string[](0);
+    address internal zeroAddress = address(0);
+    string internal emptyString = "";
+    bytes internal emptyBytes = "";
 
     function setUp() public virtual {
         // solhint-disable no-console
@@ -92,8 +95,8 @@ contract TestHelper is Test, DeployHelper {
             attribution: gparams.attribution,
             commercialUse: commercialUse,
             commercialAttribution: cparams.commercialAttribution,
-            commercializers: cparams.commercializers,
-            commercializersData: cparams.commercializersData,
+            commercializerChecker: cparams.commercializerChecker,
+            commercializerCheckerData: cparams.commercializerCheckerData,
             commercialRevShare: cparams.commercialRevShare,
             derivativesAllowed: derivativesAllowed,
             derivativesAttribution: dparams.derivativesAttribution,
@@ -122,8 +125,8 @@ contract TestHelper is Test, DeployHelper {
             attribution: true,
             commercialUse: commercial,
             commercialAttribution: false,
-            commercializers: new address[](0),
-            commercializersData: new bytes[](0),
+            commercializerChecker: address(0),
+            commercializerCheckerData: "",
             commercialRevShare: commercial ? commercialRevShare : 0,
             derivativesAllowed: derivatives,
             derivativesAttribution: false,

@@ -17,7 +17,7 @@ import { Governance } from "contracts/governance/Governance.sol";
 import { MODULE_TYPE_DEFAULT, MODULE_TYPE_HOOK } from "contracts/lib/modules/Module.sol";
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
 import { IHookModule } from "../../contracts/interfaces/modules/base/IHookModule.sol";
-import { TokenGatedHook } from "../../contracts/modules/hooks/TokenGatedHook.sol";
+import { MockTokenGatedHook } from "test/foundry/mocks/MockTokenGatedHook.sol";
 
 contract ModuleRegistryTest is Test {
     IPAccountRegistry public registry;
@@ -27,7 +27,7 @@ contract ModuleRegistryTest is Test {
     MockAccessController public accessController = new MockAccessController();
     MockModule public module;
     CustomModule public customModule;
-    TokenGatedHook public tokenGatedHook;
+    MockTokenGatedHook public tokenGatedHook;
     Governance public governance;
 
     function setUp() public {
@@ -37,7 +37,7 @@ contract ModuleRegistryTest is Test {
         registry = new IPAccountRegistry(address(erc6551Registry), address(accessController), address(implementation));
         module = new MockModule(address(registry), address(moduleRegistry), "MockModule");
         customModule = new CustomModule();
-        tokenGatedHook = new TokenGatedHook();
+        tokenGatedHook = new MockTokenGatedHook();
     }
 
     function test_ModuleRegistry_registerModule() public {
@@ -147,8 +147,8 @@ contract ModuleRegistryTest is Test {
 
     function test_ModuleRegistry_registerModuleWithHookModuleType() public {
         moduleRegistry.registerModuleType(MODULE_TYPE_HOOK, type(IHookModule).interfaceId);
-        moduleRegistry.registerModule("TokenGatedHook", address(tokenGatedHook), MODULE_TYPE_HOOK);
-        assertEq(moduleRegistry.getModule("TokenGatedHook"), address(tokenGatedHook));
+        moduleRegistry.registerModule("MockTokenGatedHook", address(tokenGatedHook), MODULE_TYPE_HOOK);
+        assertEq(moduleRegistry.getModule("MockTokenGatedHook"), address(tokenGatedHook));
         assertTrue(moduleRegistry.isRegistered(address(tokenGatedHook)));
         assertEq(moduleRegistry.getModuleType(address(tokenGatedHook)), MODULE_TYPE_HOOK);
     }
