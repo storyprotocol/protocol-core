@@ -88,6 +88,25 @@ make slither
 And get your slither output.
 
 
+# Document Generation
+
+We use [solidity-docgen](https://github.com/OpenZeppelin/solidity-docgen) to generate the documents for smart contracts. Documents can be generated with the following command:
+
+```
+npx hardhat docgen
+```
+
+By default, the documents are generated in Markdown format in the `doc` folder of the project. Each Solidity file (`*.sol`) has its own Markdown (`*.md`) file. To update the configuration for document generation, you can update the following section in `harhat.config.js`:
+
+```
+docgen: {
+  outputDir: "./docs",
+  pages: "files"
+}
+```
+
+You can refer to the [config.ts](https://github.com/OpenZeppelin/solidity-docgen/blob/master/src/config.ts) of solidity-docgen for the full list of configurable parameters.
+
 ## Resources
 -   [Hardhat](https://hardhat.org/docs)
 -   [Foundry Documentation](https://book.getfoundry.sh/)
