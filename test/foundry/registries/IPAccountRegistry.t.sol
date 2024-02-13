@@ -9,7 +9,7 @@ import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 
-import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
+import { MockAccessController } from "test/foundry/mocks/access/MockAccessController.sol";
 
 contract RegistryTest is Test {
     using IPAccountChecker for IPAccountRegistry;

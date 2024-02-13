@@ -30,7 +30,8 @@ struct UMLPolicyGenericParams {
 
 struct UMLPolicyCommercialParams {
     bool commercialAttribution;
-    string[] commercializers;
+    address commercializerChecker;
+    bytes commercializerCheckerData;
     uint32 commercialRevShare;
     address royaltyPolicy;
 }
@@ -53,7 +54,7 @@ contract LicensingHelper {
 
     IRoyaltyPolicy private royaltyPolicy; // keep private to avoid collision with `BaseIntegration`
 
-		mapping(string frameworkName => uint256 frameworkId) internal frameworkIds;
+    mapping(string frameworkName => uint256 frameworkId) internal frameworkIds;
 
     mapping(string policyName => uint256 globalPolicyId) internal policyIds;
 
@@ -61,7 +62,7 @@ contract LicensingHelper {
 
     mapping(string policyFrameworkManagerName => address policyFrameworkManagerAddr) internal pfm;
 
-		string[] internal emptyStringArray = new string[](0);
+    string[] internal emptyStringArray = new string[](0);
 
     function initLicensingHelper(
         address _accessController,
@@ -298,7 +299,8 @@ contract LicensingHelper {
             attribution: true,
             commercialUse: commercial,
             commercialAttribution: false,
-            commercializers: emptyStringArray,
+            commercializerChecker: address(0),
+            commercializerCheckerData: "",
             commercialRevShare: commercial ? commercialRevShare : 0,
             derivativesAllowed: derivatives,
             derivativesAttribution: false,
@@ -325,7 +327,8 @@ contract LicensingHelper {
             attribution: gparams.attribution,
             commercialUse: commercialUse,
             commercialAttribution: cparams.commercialAttribution,
-            commercializers: cparams.commercializers,
+            commercializerChecker: cparams.commercializerChecker,
+            commercializerCheckerData: cparams.commercializerCheckerData,
             commercialRevShare: cparams.commercialRevShare,
             derivativesAllowed: derivativesAllowed,
             derivativesAttribution: dparams.derivativesAttribution,

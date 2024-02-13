@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { ModuleBaseTest } from "test/foundry/modules/ModuleBase.t.sol";
 import { IResolver } from "contracts/interfaces/resolvers/IResolver.sol";
+
+import { ModuleBaseTest } from "test/foundry/modules/ModuleBase.t.sol";
 
 /// @title Resolver Base Test Contract
 /// @notice Base contract for testing standard resolver functionality.

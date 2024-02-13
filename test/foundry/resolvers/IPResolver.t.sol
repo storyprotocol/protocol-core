@@ -2,10 +2,8 @@
 pragma solidity ^0.8.23;
 
 import { ResolverBaseTest } from "test/foundry/resolvers/ResolverBase.t.sol";
-import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { KeyValueResolver } from "contracts/resolvers/KeyValueResolver.sol";
 import { IKeyValueResolver } from "contracts/interfaces/resolvers/IKeyValueResolver.sol";
-import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { IP_RESOLVER_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 
@@ -25,10 +23,10 @@ contract IPResolverTest is ResolverBaseTest {
     /// @notice Initializes the base token contract for testing.
     function setUp() public virtual override(ResolverBaseTest) {
         ResolverBaseTest.setUp();
-        MockERC721 erc721 = new MockERC721("MockERC721");
-        ipResolver = IPResolver(_deployModule());
-        uint256 tokenId = erc721.mintId(alice, 99);
+        
+        uint256 tokenId = mockNFT.mintId(alice, 99);
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));
+
         metadata = abi.encode(
             IP.MetadataV1({
                 name: "IP_NAME",
@@ -39,7 +37,7 @@ contract IPResolverTest is ResolverBaseTest {
             })
         );
         vm.prank(alice);
-        ipId = ipAssetRegistry.register(block.chainid, address(erc721), tokenId, address(ipResolver), true, metadata);
+        ipId = ipAssetRegistry.register(block.chainid, address(mockNFT), tokenId, address(ipResolver), true, metadata);
     }
 
     /// @notice Tests that the IP resolver interface is supported.
@@ -62,7 +60,7 @@ contract IPResolverTest is ResolverBaseTest {
     }
 
     /// @dev Deploys a new IP Metadata Resolver.
-    function _deployModule() internal override returns (address) {
-        return address(new IPResolver(address(accessController), address(ipAssetRegistry)));
+    function _deployModule() internal view override returns (address) {
+        return address(ipResolver);
     }
 }

@@ -1,29 +1,52 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
+import { IAccessController } from "contracts/interfaces/IAccessController.sol";
+import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
 import { UMLPolicy } from "contracts/interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
-import { TestHelper } from "test/foundry/utils/TestHelper.sol";
+
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { MockTokenGatedHook } from "test/foundry/mocks/MockTokenGatedHook.sol";
+import { BaseTest } from "test/foundry/utils/BaseTest.sol";
 
-contract UMLPolicyFrameworkTest is TestHelper {
+contract UMLPolicyFrameworkTest is BaseTest {
     UMLPolicyFrameworkManager internal umlFramework;
 
     string public licenseUrl = "https://example.com/license";
     address public ipId1;
     address public ipId2;
-    address public ipOwner = vm.addr(1);
     address public licenseHolder = address(0x101);
     MockERC721 internal gatedNftFoo = new MockERC721("GatedNftFoo");
     MockTokenGatedHook internal tokenGatedHook = new MockTokenGatedHook();
 
     function setUp() public override {
-        TestHelper.setUp();
+        BaseTest.setUp();
+        buildDeployRegistryCondition(DeployRegistryCondition({
+            licenseRegistry: true,
+            moduleRegistry: false
+        }));
+        buildDeployModuleCondition(DeployModuleCondition({
+            registrationModule: false,
+            disputeModule: false,
+            royaltyModule: false,
+            taggingModule: false,
+            licensingModule: true
+        }));
+        buildDeployPolicyCondition(DeployPolicyCondition({
+            arbitrationPolicySP: false,
+            royaltyPolicyLS: true // deploy to set address for commercial licenses
+        }));
+        deployConditionally();
+        postDeploymentSetup();
 
-        nft = erc721.ape;
+        // Call `getXXX` here to either deploy mock or use real contracted deploy via the
+        // deployConditionally() call above.
+        // TODO: three options, auto/mock/real in deploy condition, so no need to call getXXX
+        accessController = IAccessController(getAccessController());
+        licensingModule = ILicensingModule(getLicensingModule());
 
         umlFramework = new UMLPolicyFrameworkManager(
             address(accessController),
@@ -35,10 +58,10 @@ contract UMLPolicyFrameworkTest is TestHelper {
 
         licensingModule.registerPolicyFrameworkManager(address(umlFramework));
 
-        nft.mintId(ipOwner, 1);
-        nft.mintId(ipOwner, 2);
-        ipId1 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 1);
-        ipId2 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 2);
+        mockNFT.mintId(alice, 1);
+        mockNFT.mintId(alice, 2);
+        ipId1 = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), 1);
+        ipId2 = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), 2);
     }
 
     function test_UMLPolicyFrameworkManager_getPolicyId() public {
@@ -86,7 +109,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: territories,
             distributionChannels: distributionChannels,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(mockRoyaltyPolicyLS)
+            royaltyPolicy: address(royaltyPolicyLS)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         UMLPolicy memory policy = umlFramework.getPolicy(policyId);
@@ -161,7 +184,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(mockRoyaltyPolicyLS)
+            royaltyPolicy: address(royaltyPolicyLS)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         UMLPolicy memory policy = umlFramework.getPolicy(policyId);
@@ -221,7 +244,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(mockRoyaltyPolicyLS)
+            royaltyPolicy: address(royaltyPolicyLS)
         });
         // derivativesAttribution = true should revert
         vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddAttribution.selector);
@@ -260,7 +283,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(mockRoyaltyPolicyLS)
+            royaltyPolicy: address(royaltyPolicyLS)
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
         UMLPolicy memory policy = umlFramework.getPolicy(policyId);
@@ -293,10 +316,10 @@ contract UMLPolicyFrameworkTest is TestHelper {
             })
         );
 
-        vm.prank(ipOwner);
+        vm.prank(alice);
         licensingModule.addPolicyToIp(ipId1, policyId);
 
-        uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, ipOwner);
+        uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, alice);
         assertFalse(umlFramework.isDerivativeApproved(licenseId, ipId2));
 
         vm.prank(licenseRegistry.licensorIpId(licenseId));
@@ -307,7 +330,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
         licenseIds[0] = licenseId;
 
         vm.expectRevert(Errors.LicensingModule__LinkParentParamFailed.selector);
-        vm.prank(ipOwner);
+        vm.prank(alice);
         licensingModule.linkIpToParents(licenseIds, ipId2, 0);
     }
 
@@ -333,15 +356,15 @@ contract UMLPolicyFrameworkTest is TestHelper {
             })
         );
 
-        vm.prank(ipOwner);
+        vm.prank(alice);
         licensingModule.addPolicyToIp(ipId1, policyId);
 
-        uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, ipOwner);
+        uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, alice);
         assertFalse(umlFramework.isDerivativeApproved(licenseId, ipId2));
 
         vm.expectRevert(Errors.LicenseRegistry__NotTransferable.selector);
-        vm.prank(ipOwner);
-        licenseRegistry.safeTransferFrom(ipOwner, licenseHolder, licenseId, 1, emptyBytes);
+        vm.prank(alice);
+        licenseRegistry.safeTransferFrom(alice, licenseHolder, licenseId, 1, "");
 
         vm.prank(licenseRegistry.licensorIpId(licenseId));
         umlFramework.setApproval(licenseId, ipId2, true);
@@ -350,7 +373,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
 
-        vm.prank(ipOwner);
+        vm.prank(alice);
         licensingModule.linkIpToParents(licenseIds, ipId2, 0);
         assertTrue(licensingModule.isParent(ipId1, ipId2));
     }
@@ -379,7 +402,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             royaltyPolicy: zeroAddress // must be 0 because commercialUse = false
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
-        vm.prank(ipOwner);
+        vm.prank(alice);
         licensingModule.addPolicyToIp(ipId1, policyId);
         uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder);
         assertEq(licenseRegistry.balanceOf(licenseHolder, licenseId), 1);
@@ -410,7 +433,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             royaltyPolicy: zeroAddress // must be 0 because commercialUse = false
         });
         uint256 policyId = umlFramework.registerPolicy(umlPolicy);
-        vm.prank(ipOwner);
+        vm.prank(alice);
         licensingModule.addPolicyToIp(ipId1, policyId);
         uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder);
         assertEq(licenseRegistry.balanceOf(licenseHolder, licenseId), 1);

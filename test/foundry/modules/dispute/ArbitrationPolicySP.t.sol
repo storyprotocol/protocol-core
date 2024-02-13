@@ -10,33 +10,43 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
 // test
 // solhint-disable-next-line max-line-length
-import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
-import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { TestHelper } from "test/foundry/utils/TestHelper.sol";
+import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.sol";
+import { BaseTest } from "test/foundry/utils/BaseTest.sol";
 
-contract TestArbitrationPolicySP is TestHelper {
+contract TestArbitrationPolicySP is BaseTest {
     event GovernanceWithdrew(uint256 amount);
 
+    address internal ipAccount1 = address(0x111000aaa);
+
     address public ipAddr;
+    address internal arbitrationRelayer;
 
     function setUp() public override {
-        super.setUp();
+        BaseTest.setUp();
+        buildDeployModuleCondition(DeployModuleCondition({
+            registrationModule: true,
+            disputeModule: true,
+            royaltyModule: false,
+            taggingModule: false,
+            licensingModule: false
+        }));
+        buildDeployPolicyCondition(DeployPolicyCondition({
+            arbitrationPolicySP: true,
+            royaltyPolicyLS: true
+        }));
+        buildDeployMiscCondition(DeployMiscCondition({
+            ipAssetRenderer: false,
+            ipMetadataProvider: false,
+            ipResolver: true
+        }));
+        deployConditionally();
+        postDeploymentSetup();
+
+        arbitrationRelayer = u.admin;
 
         USDC.mint(ipAccount1, 10000 * 10 ** 6);
 
-        vm.startPrank(u.admin);
-        // whitelist dispute tag
-        disputeModule.whitelistDisputeTag("PLAGIARISM", true);
-
-        // whitelist arbitration policy
-        disputeModule.whitelistArbitrationPolicy(address(arbitrationPolicySP), true);
-
-        // whitelist arbitration relayer
-        disputeModule.whitelistArbitrationRelayer(address(arbitrationPolicySP), arbitrationRelayer, true);
-        vm.stopPrank();
-
         _setUMLPolicyFrameworkManager();
-        nft = new MockERC721("mock");
         _addUMLPolicy(
             true,
             true,
@@ -63,23 +73,23 @@ contract TestArbitrationPolicySP is TestHelper {
             })
         );
 
-        nft.mintId(deployer, 0);
+        mockNFT.mintId(u.admin, 0);
 
         address expectedAddr = ERC6551AccountLib.computeAddress(
             address(erc6551Registry),
             address(ipAccountImpl),
             ipAccountRegistry.IP_ACCOUNT_SALT(),
             block.chainid,
-            address(nft),
+            address(mockNFT),
             0
         );
         vm.label(expectedAddr, string(abi.encodePacked("IPAccount", Strings.toString(0))));
 
-        vm.startPrank(deployer);
+        vm.startPrank(u.admin);
         ipAssetRegistry.setApprovalForAll(address(registrationModule), true);
         ipAddr = registrationModule.registerRootIp(
             policyIds["uml_cheap_flexible"],
-            address(nft),
+            address(mockNFT),
             0,
             "IPAccount1",
             bytes32("some of the best description"),

@@ -13,9 +13,9 @@ import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
-import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { MockModule } from "test/foundry/mocks/MockModule.sol";
-import { MockOrchestratorModule } from "test/foundry/mocks/MockOrchestratorModule.sol";
+import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
+import { MockModule } from "test/foundry/mocks/module/MockModule.sol";
+import { MockOrchestratorModule } from "test/foundry/mocks/module/MockOrchestratorModule.sol";
 import { Governance } from "contracts/governance/Governance.sol";
 
 contract AccessControllerTest is Test {

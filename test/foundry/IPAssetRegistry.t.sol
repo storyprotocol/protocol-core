@@ -8,13 +8,11 @@ import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegist
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
 import { LICENSING_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IP } from "contracts/lib/IP.sol";
-import { MockLicensingModule } from "test/foundry/mocks/licensing/MockLicensingModule.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
-import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
-import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { MockAccessController } from "test/foundry/mocks/access/MockAccessController.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
@@ -31,64 +29,38 @@ contract IPAssetRegistryTest is BaseTest {
     address public resolver = vm.addr(0x6969);
     address public resolver2 = vm.addr(0x6978);
 
-    /// @notice Test governance contract.
-    Governance public governance;
-
-    /// @notice The IP asset registry SUT.
     IPAssetRegistry public registry;
 
-    /// @notice The IP account registry used for account creation.
-    IPAccountRegistry public ipAccountRegistry;
-
-    /// @notice Protocol-wide module registry.
-    IModuleRegistry public moduleRegistry;
-
-    /// @notice Mock NFT address for IP registration testing.
     address public tokenAddress;
-
-    /// @notice Mock NFT tokenId for IP registration testing.
     uint256 public tokenId;
-
-    /// @notice ERC-6551 public registry.
-    address public erc6551Registry;
-
-    /// @notice Mock IP account implementation address.
-    address public ipAccountImpl;
-
-    /// @notice The expected IP account or IP identifier.
     address public ipId;
 
     /// @notice Initializes the IP asset registry testing contract.
     function setUp() public virtual override {
         BaseTest.setUp();
-        address accessController = address(new MockAccessController());
-        governance = new Governance(address(this));
-        moduleRegistry = new ModuleRegistry(address(governance));
-        MockLicensingModule licensingModule = new MockLicensingModule();
-        moduleRegistry.registerModule(LICENSING_MODULE_KEY, address(licensingModule));
-        erc6551Registry = address(new ERC6551Registry());
-        ipAccountImpl = address(new IPAccountImpl());
-        ipAccountRegistry = new IPAccountRegistry(erc6551Registry, accessController, ipAccountImpl);
-        registry = new IPAssetRegistry(
-            accessController,
-            erc6551Registry,
-            ipAccountImpl,
-            address(moduleRegistry),
-            address(governance)
-        );
-        MockERC721 erc721 = new MockERC721("MockERC721");
-        tokenAddress = address(erc721);
-        tokenId = erc721.mintId(alice, 99);
+        buildDeployRegistryCondition(DeployRegistryCondition({
+            licenseRegistry: false, // don't use
+            moduleRegistry: false // use mock
+        }));
+        deployConditionally();
+        postDeploymentSetup();
 
-        assertEq(ipAccountRegistry.getIPAccountImpl(), ipAccountImpl);
-        ipId = _getAccount(ipAccountImpl, block.chainid, tokenAddress, tokenId, ipAccountRegistry.IP_ACCOUNT_SALT());
+        // moduleRegistry.registerModule(LICENSING_MODULE_KEY, address(licensingModule));
+        
+        registry = ipAssetRegistry;
+
+        tokenAddress = address(mockNFT);
+        tokenId = mockNFT.mintId(alice, 99);
+
+        assertEq(ipAccountRegistry.getIPAccountImpl(), address(ipAccountImpl));
+        ipId = _getIPAccount(tokenId);
     }
 
     /// @notice Tests retrieval of IP canonical IDs.
     function test_IPAssetRegistry_IpId() public {
         assertEq(
             registry.ipId(block.chainid, tokenAddress, tokenId),
-            _getAccount(ipAccountImpl, block.chainid, tokenAddress, tokenId, ipAccountRegistry.IP_ACCOUNT_SALT())
+            _getIPAccount(tokenId)
         );
     }
 
@@ -239,14 +211,14 @@ contract IPAssetRegistryTest is BaseTest {
     }
 
     /// @notice Helper function for generating an account address.
-    function _getAccount(
-        address impl,
-        uint256 chainId,
-        address contractAddress,
-        uint256 contractId,
-        bytes32 salt
-    ) internal view returns (address) {
-        return ERC6551Registry(erc6551Registry).account(impl, salt, chainId, contractAddress, contractId);
+    function _getIPAccount(uint256 contractId) internal view returns (address) {
+        return erc6551Registry.account(
+            address(ipAccountImpl),
+            ipAccountRegistry.IP_ACCOUNT_SALT(),
+            block.chainid,
+            tokenAddress,
+            contractId
+        );
     }
 
     function _generateMetadata() internal view returns (bytes memory) {

@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
+import { IAccessController } from "contracts/interfaces/IAccessController.sol";
+import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
+import { IRoyaltyModule } from "contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
-import { TestHelper } from "test/foundry/utils/TestHelper.sol";
 
-contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
+import { BaseTest } from "test/foundry/utils/BaseTest.sol";
+
+contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
     UMLPolicyFrameworkManager internal umlFramework;
 
     string internal licenseUrl = "https://example.com/license";
-    address internal bob = address(0x111);
     address internal ipId1;
-    address internal alice = address(0x222);
     address internal ipId2;
-    address internal don = address(0x333);
 
     modifier withUMLPolicySimple(
         string memory name,
@@ -44,9 +45,28 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
     }
 
     function setUp() public override {
-        super.setUp();
+        BaseTest.setUp();
+        buildDeployRegistryCondition(DeployRegistryCondition({
+            licenseRegistry: true,
+            moduleRegistry: false
+        }));
+        buildDeployModuleCondition(DeployModuleCondition({
+            registrationModule: false,
+            disputeModule: false,
+            royaltyModule: false,
+            taggingModule: false,
+            licensingModule: true
+        }));
+        deployConditionally();
+        postDeploymentSetup();
 
-        nft = erc721.ape;
+        // Call `getXXX` here to either deploy mock or use real contracted deploy via the
+        // deployConditionally() call above.
+        // TODO: three options, auto/mock/real in deploy condition, so no need to call getXXX
+        accessController = IAccessController(getAccessController());
+        licensingModule = ILicensingModule(getLicensingModule());
+        royaltyModule = IRoyaltyModule(getRoyaltyModule());
+
         umlFramework = new UMLPolicyFrameworkManager(
             address(accessController),
             address(ipAccountRegistry),
@@ -57,13 +77,10 @@ contract UMLPolicyFrameworkCompatibilityTest is TestHelper {
 
         licensingModule.registerPolicyFrameworkManager(address(umlFramework));
 
-        nft.mintId(bob, 1);
-        nft.mintId(alice, 2);
-        ipId1 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 1);
-        ipId2 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 2);
-        vm.label(bob, "Bob");
-        vm.label(alice, "Alice");
-        vm.label(don, "Don");
+        mockNFT.mintId(bob, 1);
+        mockNFT.mintId(alice, 2);
+        ipId1 = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), 1);
+        ipId2 = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), 2);
         vm.label(ipId1, "IP1");
         vm.label(ipId2, "IP2");
 
