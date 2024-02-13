@@ -130,7 +130,6 @@ contract MetadataProviderTest is BaseTest {
         );
         IPResolver ipResolver = new IPResolver(address(accessController), address(registry));
         RegistrationModule registrationModule = new RegistrationModule(
-            address(accessController),
             address(registry),
             address(licensingModule),
             address(ipResolver)

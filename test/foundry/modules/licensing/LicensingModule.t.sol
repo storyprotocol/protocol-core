@@ -19,6 +19,7 @@ import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
+import { MockTokenGatedHook } from "test/foundry/mocks/MockTokenGatedHook.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 
@@ -42,6 +43,8 @@ contract LicensingModuleTest is Test {
     UMLPolicyFrameworkManager internal umlManager;
 
     MockERC721 internal nft = new MockERC721("MockERC721");
+    MockERC721 internal gatedNftFoo = new MockERC721{ salt: bytes32(uint256(1)) }("GatedNftFoo");
+    MockERC721 internal gatedNftBar = new MockERC721{ salt: bytes32(uint256(2)) }("GatedNftBar");
 
     ModuleRegistry internal moduleRegistry;
 
@@ -110,7 +113,6 @@ contract LicensingModuleTest is Test {
         );
         IPResolver ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry));
         RegistrationModule registrationModule = new RegistrationModule(
-            address(accessController),
             address(ipAssetRegistry),
             address(licensingModule),
             address(ipResolver)
@@ -129,6 +131,12 @@ contract LicensingModuleTest is Test {
 
         vm.label(ipId1, "IPAccount1");
         vm.label(ipId2, "IPAccount2");
+
+        //        MockERC721 tempGatedNftFoo = new MockERC721("GatedNftFoo");
+        //        bytes memory GatedNftFooCode = address(tempGatedNftFoo).code;
+        //        address gatedNftFoo = makeAddr("GatedNftFoo");
+        ////        vm.etch(gatedNftFoo, GatedNftFooCode);
+        //        deployCodeTo("test/foundry/mocks/MockTokenGatedHook.sol", gatedNftFoo);
     }
 
     function _createPolicy() internal pure returns (bytes memory) {
@@ -438,7 +446,8 @@ contract LicensingModuleTest is Test {
             attribution: true,
             commercialUse: true,
             commercialAttribution: true,
-            commercializers: new string[](2),
+            commercializerChecker: address(0),
+            commercializerCheckerData: "",
             commercialRevShare: 0,
             derivativesAllowed: true,
             derivativesAttribution: true,
@@ -451,8 +460,11 @@ contract LicensingModuleTest is Test {
             royaltyPolicy: address(mockRoyaltyPolicyLS)
         });
 
-        policyData.commercializers[0] = "commercializer1";
-        policyData.commercializers[1] = "commercializer2";
+        gatedNftFoo.mintId(address(this), 1);
+
+        MockTokenGatedHook tokenGatedHook = new MockTokenGatedHook();
+        policyData.commercializerChecker = address(tokenGatedHook);
+        policyData.commercializerCheckerData = abi.encode(address(gatedNftFoo));
         policyData.territories[0] = "territory1";
         policyData.distributionChannels[0] = "distributionChannel1";
 
@@ -541,11 +553,55 @@ contract LicensingModuleTest is Test {
 
         /* solhint-disable */
         string
-            memory expectedJson = "eyJuYW1lIjogIlN0b3J5IFByb3RvY29sIExpY2Vuc2UgTkZUIiwgImRlc2NyaXB0aW9uIjogIkxpY2Vuc2UgYWdyZWVtZW50IHN0YXRpbmcgdGhlIHRlcm1zIG9mIGEgU3RvcnkgUHJvdG9jb2wgSVBBc3NldCIsICJhdHRyaWJ1dGVzIjogW3sidHJhaXRfdHlwZSI6ICJBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIlRyYW5zZmVyYWJsZSIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkNvbW1lcmljYWwgVXNlIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbEF0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbFJldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogImNvbW1lcmNpYWxpemVycyIsICJ2YWx1ZSI6IFsiY29tbWVyY2lhbGl6ZXIxIiwiY29tbWVyY2lhbGl6ZXIyIl19LCB7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBbGxvd2VkIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzQXBwcm92YWwiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc1JlY2lwcm9jYWwiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc1JldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogInRlcnJpdG9yaWVzIiwgInZhbHVlIjogWyJ0ZXJyaXRvcnkxIl19LCB7InRyYWl0X3R5cGUiOiAiZGlzdHJpYnV0aW9uQ2hhbm5lbHMiLCAidmFsdWUiOiBbImRpc3RyaWJ1dGlvbkNoYW5uZWwxIl19XX0=";
+            memory expectedJson = "eyJuYW1lIjogIlN0b3J5IFByb3RvY29sIExpY2Vuc2UgTkZUIiwgImRlc2NyaXB0aW9uIjogIkxpY2Vuc2UgYWdyZWVtZW50IHN0YXRpbmcgdGhlIHRlcm1zIG9mIGEgU3RvcnkgUHJvdG9jb2wgSVBBc3NldCIsICJhdHRyaWJ1dGVzIjogW3sidHJhaXRfdHlwZSI6ICJBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIlRyYW5zZmVyYWJsZSIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkNvbW1lcmljYWwgVXNlIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbEF0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbFJldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogImNvbW1lcmNpYWxpemVyQ2hlY2siLCAidmFsdWUiOiAiMHgxMGY3YWJkMDEyNmE5MDkzNWYzZjkwMDJmYTc5NzY3YWZjMGUzYzBkIn0sIHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc0FsbG93ZWQiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc0F0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBcHByb3ZhbCIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzUmVjaXByb2NhbCIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzUmV2U2hhcmUiLCAidmFsdWUiOiAwfSx7InRyYWl0X3R5cGUiOiAidGVycml0b3JpZXMiLCAidmFsdWUiOiBbInRlcnJpdG9yeTEiXX0sIHsidHJhaXRfdHlwZSI6ICJkaXN0cmlidXRpb25DaGFubmVscyIsICJ2YWx1ZSI6IFsiZGlzdHJpYnV0aW9uQ2hhbm5lbDEiXX1dfQ==";
         /* solhint-enable */
 
         string memory expectedUri = string(abi.encodePacked("data:application/json;base64,", expectedJson));
 
         assertEq(actualUri, expectedUri);
+    }
+
+    function test_LicensingModule_revert_HookVerifyFail() public {
+        licensingModule.registerPolicyFrameworkManager(address(umlManager));
+
+        UMLPolicy memory policyData = UMLPolicy({
+            transferable: true,
+            attribution: true,
+            commercialUse: true,
+            commercialAttribution: true,
+            commercializerChecker: address(0),
+            commercializerCheckerData: "",
+            commercialRevShare: 0,
+            derivativesAllowed: true,
+            derivativesAttribution: true,
+            derivativesApproval: true,
+            derivativesReciprocal: true,
+            derivativesRevShare: 0,
+            territories: new string[](1),
+            distributionChannels: new string[](1),
+            contentRestrictions: new string[](0),
+            royaltyPolicy: address(mockRoyaltyPolicyLS)
+        });
+
+        gatedNftFoo.mintId(address(this), 1);
+
+        MockTokenGatedHook tokenGatedHook = new MockTokenGatedHook();
+        policyData.commercializerChecker = address(tokenGatedHook);
+        // address(this) doesn't hold token of NFT collection gatedNftBar, so the verification will fail
+        policyData.commercializerCheckerData = abi.encode(address(gatedNftBar));
+        policyData.territories[0] = "territory1";
+        policyData.distributionChannels[0] = "distributionChannel1";
+
+        uint256 policyId = umlManager.registerPolicy(policyData);
+
+        vm.prank(ipOwner);
+        licensingModule.addPolicyToIp(ipId1, policyId);
+
+        vm.expectRevert(Errors.LicensingModule__MintLicenseParamFailed.selector);
+        licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder);
+    }
+
+    function onERC721Received(address, address, uint256, bytes memory) public pure returns (bytes4) {
+        return this.onERC721Received.selector;
     }
 }

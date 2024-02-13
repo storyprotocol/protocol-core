@@ -4,18 +4,19 @@ pragma solidity ^0.8.23;
 
 import { BaseModule } from "../modules/BaseModule.sol";
 import { IResolver } from "../interfaces/resolvers/IResolver.sol";
+import { AccessControlled } from "../access/AccessControlled.sol";
 
 /// @notice IP Resolver Base Contract
-abstract contract ResolverBase is IResolver, BaseModule {
+abstract contract ResolverBase is IResolver, BaseModule, AccessControlled {
     /// @notice Initializes the base module contract.
     /// @param controller The access controller used for IP authorization.
     /// @param assetRegistry The address of the IP record registry.
-    constructor(address controller, address assetRegistry) BaseModule(controller, assetRegistry) {}
+    constructor(address controller, address assetRegistry) AccessControlled(controller, assetRegistry) {}
 
     /// @notice Checks whether the resolver interface is supported.
     /// @param id The resolver interface identifier.
     /// @return Whether the resolver interface is supported.
-    function supportsInterface(bytes4 id) public view virtual override returns (bool) {
-        return id == type(IResolver).interfaceId;
+    function supportsInterface(bytes4 id) public view virtual override(BaseModule, IResolver) returns (bool) {
+        return id == type(IResolver).interfaceId || super.supportsInterface(id);
     }
 }

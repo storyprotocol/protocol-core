@@ -129,7 +129,6 @@ contract DeployHelper is Test {
         ipMetadataProvider = new IPMetadataProvider(address(moduleRegistry));
         ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry));
         registrationModule = new RegistrationModule(
-            address(accessController),
             address(ipAssetRegistry),
             address(licensingModule),
             address(ipResolver)

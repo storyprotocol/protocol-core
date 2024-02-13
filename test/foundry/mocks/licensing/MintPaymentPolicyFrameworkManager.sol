@@ -87,7 +87,7 @@ contract MintPaymentPolicyFrameworkManager is BasePolicyFrameworkManager {
         address, // to
         uint256, // amount
         bytes memory // policyData
-    ) external returns (bool) {
+    ) external pure returns (bool) {
         return true;
     }
 

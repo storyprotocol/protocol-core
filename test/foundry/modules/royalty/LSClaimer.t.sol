@@ -48,7 +48,8 @@ contract TestLSClaimer is TestHelper {
             }),
             UMLPolicyCommercialParams({
                 commercialAttribution: true,
-                commercializers: new string[](0),
+                commercializerChecker: address(0),
+                commercializerCheckerData: "",
                 commercialRevShare: 10,
                 royaltyPolicy: address(royaltyPolicyLS)
             }),

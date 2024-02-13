@@ -11,6 +11,7 @@ import { Errors } from "../lib/Errors.sol";
 import { IP } from "../lib/IP.sol";
 import { BaseModule } from "../modules/BaseModule.sol";
 import { ILicensingModule } from "../interfaces/modules/licensing/ILicensingModule.sol";
+import { IIPAssetRegistry } from "../interfaces/registries/IIPAssetRegistry.sol";
 
 /// @title Registration Module
 /// @notice The registration module is responsible for registration of IP into
@@ -20,19 +21,15 @@ import { ILicensingModule } from "../interfaces/modules/licensing/ILicensingModu
 contract RegistrationModule is BaseModule, IRegistrationModule {
     /// @notice The metadata resolver used by the registration module.
     IPResolver public resolver;
+    IIPAssetRegistry private _IP_ASSET_REGISTRY;
     ILicensingModule private _LICENSING_MODULE;
 
     /// @notice Initializes the registration module contract.
-    /// @param controller The access controller used for IP authorization.
     /// @param assetRegistry The address of the IP asset registry.
-    constructor(
-        address controller,
-        address assetRegistry,
-        address licensingModule,
-        address resolverAddr
-    ) BaseModule(controller, assetRegistry) {
+    constructor(address assetRegistry, address licensingModule, address resolverAddr) {
         resolver = IPResolver(resolverAddr);
         _LICENSING_MODULE = ILicensingModule(licensingModule);
+        _IP_ASSET_REGISTRY = IIPAssetRegistry(assetRegistry);
     }
 
     /// @notice Registers a root-level IP into the protocol. Root-level IPs can
@@ -79,7 +76,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         );
 
         // Perform core IP registration and IP account creation.
-        address ipId = IP_ASSET_REGISTRY.register(
+        address ipId = _IP_ASSET_REGISTRY.register(
             block.chainid,
             tokenContract,
             tokenId,
@@ -135,7 +132,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
                 uri: externalURL
             })
         );
-        address ipId = IP_ASSET_REGISTRY.register(
+        address ipId = _IP_ASSET_REGISTRY.register(
             block.chainid,
             tokenContract,
             tokenId,

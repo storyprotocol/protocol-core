@@ -5,8 +5,10 @@ pragma solidity ^0.8.23;
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import { IIPAccount } from "../..//interfaces/IIPAccount.sol";
+import { IIPAccount } from "../../interfaces/IIPAccount.sol";
 import { IPolicyFrameworkManager } from "../../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 import { ILicenseRegistry } from "../../interfaces/registries/ILicenseRegistry.sol";
 import { ILicensingModule } from "../../interfaces/modules/licensing/ILicensingModule.sol";
@@ -18,9 +20,11 @@ import { IPAccountChecker } from "../../lib/registries/IPAccountChecker.sol";
 import { RoyaltyModule } from "../../modules/royalty-module/RoyaltyModule.sol";
 import { AccessControlled } from "../../access/AccessControlled.sol";
 import { LICENSING_MODULE_KEY } from "../../lib/modules/Module.sol";
+import { BaseModule } from "../BaseModule.sol";
 
 // TODO: consider disabling operators/approvals on creation
-contract LicensingModule is AccessControlled, ILicensingModule {
+contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, ReentrancyGuard {
+    using ERC165Checker for address;
     using IPAccountChecker for IIPAccountRegistry;
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -119,7 +123,10 @@ contract LicensingModule is AccessControlled, ILicensingModule {
     /// @param ipId to receive the policy
     /// @param polId id of the policy data
     /// @return indexOnIpId position of policy within the ipIds policy set
-    function addPolicyToIp(address ipId, uint256 polId) external verifyPermission(ipId) returns (uint256 indexOnIpId) {
+    function addPolicyToIp(
+        address ipId,
+        uint256 polId
+    ) external nonReentrant verifyPermission(ipId) returns (uint256 indexOnIpId) {
         if (!isPolicyDefined(polId)) {
             revert Errors.LicensingModule__PolicyNotFound();
         }
@@ -163,7 +170,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
         address licensorIp,
         uint256 amount, // mint amount
         address receiver
-    ) external returns (uint256 licenseId) {
+    ) external nonReentrant returns (uint256 licenseId) {
         // TODO: check if licensor has been tagged by disputer
         if (!IP_ACCOUNT_REGISTRY.isIpAccount(licensorIp)) {
             revert Errors.LicensingModule__LicensorNotRegistered();
@@ -254,7 +261,7 @@ contract LicensingModule is AccessControlled, ILicensingModule {
         uint256[] calldata licenseIds,
         address childIpId,
         uint32 minRoyalty
-    ) external verifyPermission(childIpId) {
+    ) external nonReentrant verifyPermission(childIpId) {
         address holder = IIPAccount(payable(childIpId)).owner();
         address[] memory licensors = new address[](licenseIds.length);
         // If royalty policy address is address(0), this means no royalty policy to set.
@@ -294,6 +301,10 @@ contract LicensingModule is AccessControlled, ILicensingModule {
 
         // Burn licenses
         LICENSE_REGISTRY.burnLicenses(holder, licenseIds);
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
+        return interfaceId == type(ILicensingModule).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /// @notice True if the framework address is registered in LicenseRegistry

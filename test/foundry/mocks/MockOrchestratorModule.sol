@@ -7,8 +7,11 @@ import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry
 import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
+import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { BaseModule } from "../../../contracts/modules/BaseModule.sol";
 
-contract MockOrchestratorModule is IModule {
+contract MockOrchestratorModule is BaseModule {
+    using ERC165Checker for address;
     using IPAccountChecker for IIPAccountRegistry;
 
     IIPAccountRegistry public ipAccountRegistry;
@@ -70,5 +73,9 @@ contract MockOrchestratorModule is IModule {
             0,
             abi.encodeWithSignature("executeNoReturn(string)", abi.decode(module1Output, (string)))
         );
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == type(IModule).interfaceId || super.supportsInterface(interfaceId);
     }
 }

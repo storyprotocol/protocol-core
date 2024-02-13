@@ -72,7 +72,6 @@ abstract contract ModuleBaseTest is BaseTest {
         );
         ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry));
         registrationModule = new RegistrationModule(
-            address(accessController),
             address(ipAssetRegistry),
             address(licensingModule),
             address(ipResolver)

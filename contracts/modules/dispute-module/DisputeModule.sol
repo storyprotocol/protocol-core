@@ -6,6 +6,8 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 import { DISPUTE_MODULE_KEY } from "../../lib/modules/Module.sol";
 import { BaseModule } from "../../modules/BaseModule.sol";
 import { Governable } from "../../governance/Governable.sol";
+import { AccessControlled } from "../../access/AccessControlled.sol";
+import { IIPAssetRegistry } from "../../interfaces/registries/IIPAssetRegistry.sol";
 import { IDisputeModule } from "../../interfaces/modules/dispute/IDisputeModule.sol";
 import { IArbitrationPolicy } from "../../interfaces/modules/dispute/policies/IArbitrationPolicy.sol";
 import { Errors } from "../../lib/Errors.sol";
@@ -14,9 +16,11 @@ import { ShortStringOps } from "../../utils/ShortStringOps.sol";
 /// @title Story Protocol Dispute Module
 /// @notice The Story Protocol dispute module acts as an enforcement layer for
 ///         that allows to raise disputes and resolve them through arbitration.
-contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuard {
+contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuard, AccessControlled {
     /// @notice tag to represent the dispute is in dispute state waiting for judgement
     bytes32 public constant IN_DISPUTE = bytes32("IN_DISPUTE");
+
+    IIPAssetRegistry public IP_ASSET_REGISTRY;
 
     /// @notice Dispute struct
     struct Dispute {
@@ -58,7 +62,9 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
         address _controller,
         address _assetRegistry,
         address _governance
-    ) BaseModule(_controller, _assetRegistry) Governable(_governance) {}
+    ) Governable(_governance) AccessControlled(_controller, _assetRegistry) {
+        IP_ASSET_REGISTRY = IIPAssetRegistry(_assetRegistry);
+    }
 
     /// @notice Whitelists a dispute tag
     /// @param _tag The dispute tag

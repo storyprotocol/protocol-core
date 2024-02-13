@@ -64,7 +64,8 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
             }),
             UMLPolicyCommercialParams({
                 commercialAttribution: true,
-                commercializers: new string[](0),
+                commercializerChecker: address(0),
+                commercializerCheckerData: "",
                 commercialRevShare: minRevShare,
                 royaltyPolicy: address(royaltyPolicyLS)
             }),
@@ -250,12 +251,12 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
 
             vm.expectEmit(address(danSplitClone));
             emit IERC1155.TransferSingle({ // rNFTs
-                    operator: address(danClaimer),
-                    from: address(danClaimer),
-                    to: aliceSplitClone,
-                    id: 0,
-                    value: 250
-                });
+                operator: address(danClaimer),
+                from: address(danClaimer),
+                to: aliceSplitClone,
+                id: 0,
+                value: 250
+            });
 
             vm.expectEmit(address(USDC));
             emit IERC20.Transfer(address(danClaimer), aliceSplitClone, 249999999); // alice should get 25% of 1000 USDC
