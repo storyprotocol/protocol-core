@@ -1,20 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { BaseTest } from "./utils/BaseTest.sol";
-import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
-import { Governance } from "contracts/governance/Governance.sol";
 import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegistry.sol";
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
-import { LICENSING_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IP } from "contracts/lib/IP.sol";
-import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
-import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
-import { MockAccessController } from "test/foundry/mocks/access/MockAccessController.sol";
-import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { Errors } from "contracts/lib/Errors.sol";
+
+import { BaseTest } from "./utils/BaseTest.sol";
 
 /// @title IP Asset Registry Testing Contract
 /// @notice Contract for testing core IP registration.
@@ -38,15 +31,17 @@ contract IPAssetRegistryTest is BaseTest {
     /// @notice Initializes the IP asset registry testing contract.
     function setUp() public virtual override {
         BaseTest.setUp();
-        buildDeployRegistryCondition(DeployRegistryCondition({
-            licenseRegistry: false, // don't use
-            moduleRegistry: false // use mock
-        }));
+        buildDeployRegistryCondition(
+            DeployRegistryCondition({
+                licenseRegistry: false, // don't use
+                moduleRegistry: false // use mock
+            })
+        );
         deployConditionally();
         postDeploymentSetup();
 
         // moduleRegistry.registerModule(LICENSING_MODULE_KEY, address(licensingModule));
-        
+
         registry = ipAssetRegistry;
 
         tokenAddress = address(mockNFT);
@@ -58,10 +53,7 @@ contract IPAssetRegistryTest is BaseTest {
 
     /// @notice Tests retrieval of IP canonical IDs.
     function test_IPAssetRegistry_IpId() public {
-        assertEq(
-            registry.ipId(block.chainid, tokenAddress, tokenId),
-            _getIPAccount(tokenId)
-        );
+        assertEq(registry.ipId(block.chainid, tokenAddress, tokenId), _getIPAccount(tokenId));
     }
 
     /// @notice Tests operator approvals.
@@ -212,13 +204,14 @@ contract IPAssetRegistryTest is BaseTest {
 
     /// @notice Helper function for generating an account address.
     function _getIPAccount(uint256 contractId) internal view returns (address) {
-        return erc6551Registry.account(
-            address(ipAccountImpl),
-            ipAccountRegistry.IP_ACCOUNT_SALT(),
-            block.chainid,
-            tokenAddress,
-            contractId
-        );
+        return
+            erc6551Registry.account(
+                address(ipAccountImpl),
+                ipAccountRegistry.IP_ACCOUNT_SALT(),
+                block.chainid,
+                tokenAddress,
+                contractId
+            );
     }
 
     function _generateMetadata() internal view returns (bytes memory) {

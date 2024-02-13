@@ -12,7 +12,6 @@ import { Errors } from "contracts/lib/Errors.sol";
 // test
 import { BaseIntegration } from "test/foundry/integration/BaseIntegration.sol";
 import { MintPaymentPolicyFrameworkManager } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
-import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
 // solhint-disable-next-line max-line-length
 import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.sol";
 

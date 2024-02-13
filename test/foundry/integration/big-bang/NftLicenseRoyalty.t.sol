@@ -14,7 +14,6 @@ import { LSClaimer } from "contracts/modules/royalty-module/policies/LSClaimer.s
 
 // test
 import { BaseIntegration } from "test/foundry/integration/BaseIntegration.sol";
-import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
 // solhint-disable-next-line max-line-length
 import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.sol";
 

@@ -23,30 +23,21 @@ contract BaseIntegration is BaseTest {
     function setUp() public virtual override(BaseTest) {
         BaseTest.setUp();
         // deploy everything as real contracts
-        buildDeployAccessCondition(DeployAccessCondition({
-            governance: true,
-            accessController: true
-        }));
-        buildDeployRegistryCondition(DeployRegistryCondition({
-            licenseRegistry: true,
-            moduleRegistry: true
-        }));
-        buildDeployModuleCondition(DeployModuleCondition({
-            registrationModule: true,
-            disputeModule: true,
-            royaltyModule: true,
-            taggingModule: true,
-            licensingModule: true
-        }));
-        buildDeployPolicyCondition(DeployPolicyCondition({
-            arbitrationPolicySP: true,
-            royaltyPolicyLS: true
-        }));
-        buildDeployMiscCondition(DeployMiscCondition({
-            ipAssetRenderer: true,
-            ipMetadataProvider: true,
-            ipResolver: true
-        }));
+        buildDeployAccessCondition(DeployAccessCondition({ governance: true, accessController: true }));
+        buildDeployRegistryCondition(DeployRegistryCondition({ licenseRegistry: true, moduleRegistry: true }));
+        buildDeployModuleCondition(
+            DeployModuleCondition({
+                registrationModule: true,
+                disputeModule: true,
+                royaltyModule: true,
+                taggingModule: true,
+                licensingModule: true
+            })
+        );
+        buildDeployPolicyCondition(DeployPolicyCondition({ arbitrationPolicySP: true, royaltyPolicyLS: true }));
+        buildDeployMiscCondition(
+            DeployMiscCondition({ ipAssetRenderer: true, ipMetadataProvider: true, ipResolver: true })
+        );
         deployConditionally();
         postDeploymentSetup();
 

@@ -11,6 +11,7 @@ import { ILicensingModule } from "../../../contracts/interfaces/modules/licensin
 import { IRoyaltyModule } from "../../../contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
 import { IRoyaltyPolicy } from "../../../contracts/interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
 import { BasePolicyFrameworkManager } from "../../../contracts/modules/licensing/BasePolicyFrameworkManager.sol";
+// solhint-disable-next-line max-line-length
 import { UMLPolicyFrameworkManager, UMLPolicy } from "../../../contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
 // test
@@ -273,7 +274,7 @@ contract LicensingHelper {
                                 HELPER FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-		function _setUMLPolicyFrameworkManager() internal {
+    function _setUMLPolicyFrameworkManager() internal {
         UMLPolicyFrameworkManager umlPfm = new UMLPolicyFrameworkManager(
             address(accessController),
             address(ipAccountRegistry),
@@ -285,7 +286,7 @@ contract LicensingHelper {
         licensingModule.registerPolicyFrameworkManager(address(umlPfm));
     }
 
-		function _mapUMLPolicySimple(
+    function _mapUMLPolicySimple(
         string memory name,
         bool commercial,
         bool derivatives,
@@ -314,7 +315,7 @@ contract LicensingHelper {
         });
     }
 
-		function _addUMLPolicy(
+    function _addUMLPolicy(
         bool commercialUse,
         bool derivativesAllowed,
         UMLPolicyGenericParams memory gparams,

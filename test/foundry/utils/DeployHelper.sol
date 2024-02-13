@@ -1,3 +1,4 @@
+/* solhint-disable no-console */
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
@@ -16,7 +17,6 @@ import { IRoyaltyModule } from "../../../contracts/interfaces/modules/royalty/IR
 import { ILicenseRegistry } from "../../../contracts/interfaces/registries/ILicenseRegistry.sol";
 import { IModuleRegistry } from "../../../contracts/interfaces/registries/IModuleRegistry.sol";
 import { IPAccountImpl } from "../../../contracts/IPAccountImpl.sol";
-import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY } from "../../../contracts/lib/modules/Module.sol";
 import { IPMetadataProvider } from "../../../contracts/registries/metadata/IPMetadataProvider.sol";
 import { IPAccountRegistry } from "../../../contracts/registries/IPAccountRegistry.sol";
 import { IPAssetRegistry } from "../../../contracts/registries/IPAssetRegistry.sol";
@@ -26,7 +26,6 @@ import { LicenseRegistry } from "../../../contracts/registries/LicenseRegistry.s
 import { IPResolver } from "../../../contracts/resolvers/IPResolver.sol";
 import { RegistrationModule } from "../../../contracts/modules/RegistrationModule.sol";
 import { RoyaltyModule } from "../../../contracts/modules/royalty-module/RoyaltyModule.sol";
-import { LSClaimer } from "../../../contracts/modules/royalty-module/policies/LSClaimer.sol";
 import { RoyaltyPolicyLS } from "../../../contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
 import { TaggingModule } from "../../../contracts/modules/tagging/TaggingModule.sol";
 import { DisputeModule } from "../../../contracts/modules/dispute-module/DisputeModule.sol";
@@ -46,7 +45,6 @@ import { MockLicenseRegistry } from "../mocks/registry/MockLicenseRegistry.sol";
 import { MockModuleRegistry } from "../mocks/registry/MockModuleRegistry.sol";
 import { MockERC20 } from "../mocks/token/MockERC20.sol";
 import { MockERC721 } from "../mocks/token/MockERC721.sol";
-import { MockUSDC } from "../mocks/token/MockUSDC.sol";
 
 contract DeployHelper {
     // TODO: three options, auto/mock/real in deploy condition, so that we don't need to manually
@@ -84,13 +82,13 @@ contract DeployHelper {
     }
 
     /// @dev Conditions that determine whether to deploy a contract.
-	struct DeployConditions {
+    struct DeployConditions {
         DeployRegistryCondition registry;
         DeployModuleCondition module;
         DeployAccessCondition access;
         DeployPolicyCondition policy;
         DeployMiscCondition misc;
-	}
+    }
 
     /// @dev Store deployment info for post-deployment setups.
     struct PostDeployConditions {
@@ -303,11 +301,7 @@ contract DeployHelper {
         }
         if (d.disputeModule) {
             require(address(ipAssetRegistry) != address(0), "DeployHelper Module: IPAssetRegistry required");
-            disputeModule = new DisputeModule(
-                getAccessController(),
-                address(ipAssetRegistry),
-                getGovernance()
-            );
+            disputeModule = new DisputeModule(getAccessController(), address(ipAssetRegistry), getGovernance());
             console2.log("DeployHelper: Using REAL DisputeModule");
             postDeployConditions.disputeModule_configure = true;
         }
@@ -323,11 +317,7 @@ contract DeployHelper {
             );
             console2.log("DeployHelper: Using REAL ArbitrationPolicySP");
         } else {
-            mockArbitrationPolicy = new MockArbitrationPolicy(
-                getDisputeModule(),
-                address(erc20),
-                ARBITRATION_PRICE
-            );
+            mockArbitrationPolicy = new MockArbitrationPolicy(getDisputeModule(), address(erc20), ARBITRATION_PRICE);
             console2.log("DeployHelper: Using Mock ArbitrationPolicySP");
         }
         if (d.royaltyPolicyLS) {
@@ -401,10 +391,7 @@ contract DeployHelper {
     /// @dev Get or deploy mock Licensing Module.
     function getLicensingModule() public returns (address) {
         if (address(licensingModule) == address(0)) {
-            licensingModule = new MockLicensingModule(
-                getRoyaltyModule(),
-                getLicenseRegistry()
-            );
+            licensingModule = new MockLicensingModule(getRoyaltyModule(), getLicenseRegistry());
             // solhint-disable-next-line no-console
             console2.log("DeployHelper: Using Mock LicensingModule");
         }

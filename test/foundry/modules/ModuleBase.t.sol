@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
-
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
 
 import { BaseTest } from "test/foundry/utils/BaseTest.sol";
@@ -16,11 +14,9 @@ abstract contract ModuleBaseTest is BaseTest {
     /// @notice Initializes the base module for testing.
     function setUp() public virtual override(BaseTest) {
         BaseTest.setUp();
-        buildDeployMiscCondition(DeployMiscCondition({
-            ipAssetRenderer: false,
-            ipMetadataProvider: false,
-            ipResolver: true
-        }));
+        buildDeployMiscCondition(
+            DeployMiscCondition({ ipAssetRenderer: false, ipMetadataProvider: false, ipResolver: true })
+        );
         deployConditionally();
         postDeploymentSetup();
 

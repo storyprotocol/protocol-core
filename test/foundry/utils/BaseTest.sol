@@ -1,3 +1,4 @@
+/* solhint-disable no-console */
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
@@ -67,7 +68,8 @@ contract BaseTest is Test, DeployHelper, LicensingHelper {
             configureIPAssetRegistry();
         }
 
-        bool isMockRoyaltyPolicyLS = address(royaltyPolicyLS) == address(0) && address(mockRoyaltyPolicyLS) != address(0);
+        bool isMockRoyaltyPolicyLS = address(royaltyPolicyLS) == address(0) &&
+            address(mockRoyaltyPolicyLS) != address(0);
 
         // Initialize licensing helper
         // TODO: conditionally init and use LicensingHelper.

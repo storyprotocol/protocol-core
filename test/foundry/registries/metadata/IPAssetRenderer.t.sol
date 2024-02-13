@@ -1,14 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
 
-import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProviderV1.sol";
-import { IPAssetRenderer } from "contracts/registries/metadata/IPAssetRenderer.sol";
-import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IP } from "contracts/lib/IP.sol";
 
 import { BaseTest } from "test/foundry/utils/BaseTest.sol";
@@ -30,11 +25,9 @@ contract IPAssetRendererTest is BaseTest {
     /// @notice Initializes the base token contract for testing.
     function setUp() public virtual override(BaseTest) {
         BaseTest.setUp();
-        buildDeployMiscCondition(DeployMiscCondition({
-            ipAssetRenderer: true,
-            ipMetadataProvider: false,
-            ipResolver: true
-        }));
+        buildDeployMiscCondition(
+            DeployMiscCondition({ ipAssetRenderer: true, ipMetadataProvider: false, ipResolver: true })
+        );
         deployConditionally();
         postDeploymentSetup();
 
@@ -51,14 +44,7 @@ contract IPAssetRendererTest is BaseTest {
                 uri: IP_EXTERNAL_URL
             })
         );
-        ipId = ipAssetRegistry.register(
-            block.chainid,
-            address(mockNFT),
-            tokenId,
-            address(ipResolver),
-            true,
-            metadata
-        );
+        ipId = ipAssetRegistry.register(block.chainid, address(mockNFT), tokenId, address(ipResolver), true, metadata);
         vm.stopPrank();
     }
 

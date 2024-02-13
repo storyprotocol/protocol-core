@@ -7,21 +7,21 @@ import { IGovernance } from "../../../../contracts/interfaces/governance/IGovern
 import { GovernanceLib } from "../../../../contracts/lib/GovernanceLib.sol";
 
 contract MockGovernance is AccessControl, IGovernance {
-	GovernanceLib.ProtocolState internal state;
+    GovernanceLib.ProtocolState internal state;
 
-	constructor(address admin) {
-		_grantRole(GovernanceLib.PROTOCOL_ADMIN, admin);
-	}
+    constructor(address admin) {
+        _grantRole(GovernanceLib.PROTOCOL_ADMIN, admin);
+    }
 
-	function setState(GovernanceLib.ProtocolState newState) external {
-		state = newState;
-	}
+    function setState(GovernanceLib.ProtocolState newState) external {
+        state = newState;
+    }
 
-	function getState() external view returns (GovernanceLib.ProtocolState) {
-		return state;
-	}
+    function getState() external view returns (GovernanceLib.ProtocolState) {
+        return state;
+    }
 
-	function supportsInterface(bytes4) public pure override returns (bool) {
-		return true;
-	}
+    function supportsInterface(bytes4) public pure override returns (bool) {
+        return true;
+    }
 }

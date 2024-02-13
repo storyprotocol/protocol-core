@@ -23,7 +23,7 @@ contract IPResolverTest is ResolverBaseTest {
     /// @notice Initializes the base token contract for testing.
     function setUp() public virtual override(ResolverBaseTest) {
         ResolverBaseTest.setUp();
-        
+
         uint256 tokenId = mockNFT.mintId(alice, 99);
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));
 

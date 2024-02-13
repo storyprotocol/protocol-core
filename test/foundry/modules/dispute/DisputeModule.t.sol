@@ -43,22 +43,19 @@ contract DisputeModuleTest is BaseTest {
 
     function setUp() public override {
         BaseTest.setUp();
-        buildDeployModuleCondition(DeployModuleCondition({
-            registrationModule: true,
-            disputeModule: true,
-            royaltyModule: false,
-            taggingModule: false,
-            licensingModule: false
-        }));
-        buildDeployPolicyCondition(DeployPolicyCondition({
-            arbitrationPolicySP: true,
-            royaltyPolicyLS: true
-        }));
-        buildDeployMiscCondition(DeployMiscCondition({
-            ipAssetRenderer: false,
-            ipMetadataProvider: false,
-            ipResolver: true
-        }));
+        buildDeployModuleCondition(
+            DeployModuleCondition({
+                registrationModule: true,
+                disputeModule: true,
+                royaltyModule: false,
+                taggingModule: false,
+                licensingModule: false
+            })
+        );
+        buildDeployPolicyCondition(DeployPolicyCondition({ arbitrationPolicySP: true, royaltyPolicyLS: true }));
+        buildDeployMiscCondition(
+            DeployMiscCondition({ ipAssetRenderer: false, ipMetadataProvider: false, ipResolver: true })
+        );
         deployConditionally();
         postDeploymentSetup();
 

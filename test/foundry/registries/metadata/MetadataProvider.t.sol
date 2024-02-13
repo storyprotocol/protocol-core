@@ -1,24 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
-
 import { IP } from "contracts/lib/IP.sol";
-import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
-import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
-import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
-import { AccessController } from "contracts/AccessController.sol";
-import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
-import { Governance } from "contracts/governance/Governance.sol";
 import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProviderV1.sol";
 import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMetadataProvider.sol";
 import { Errors } from "contracts/lib/Errors.sol";
-import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 
-import { MockLicensingModule } from "test/foundry/mocks/module/MockLicensingModule.sol";
 import { BaseTest } from "test/foundry/utils/BaseTest.sol";
 import { MockMetadataProviderV2 } from "test/foundry/mocks/MockMetadataProviderV2.sol";
 
@@ -96,18 +83,18 @@ contract MetadataProviderTest is BaseTest {
     /// @notice Initializes the IP metadata provider contract.
     function setUp() public virtual override {
         BaseTest.setUp();
-        buildDeployModuleCondition(DeployModuleCondition({
-            registrationModule: true,
-            disputeModule: false,
-            royaltyModule: false,
-            taggingModule: false,
-            licensingModule: false
-        }));
-        buildDeployMiscCondition(DeployMiscCondition({
-            ipAssetRenderer: false,
-            ipMetadataProvider: false,
-            ipResolver: true
-        }));
+        buildDeployModuleCondition(
+            DeployModuleCondition({
+                registrationModule: true,
+                disputeModule: false,
+                royaltyModule: false,
+                taggingModule: false,
+                licensingModule: false
+            })
+        );
+        buildDeployMiscCondition(
+            DeployMiscCondition({ ipAssetRenderer: false, ipMetadataProvider: false, ipResolver: true })
+        );
         deployConditionally();
         postDeploymentSetup();
 

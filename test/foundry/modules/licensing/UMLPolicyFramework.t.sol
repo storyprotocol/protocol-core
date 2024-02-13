@@ -24,21 +24,22 @@ contract UMLPolicyFrameworkTest is BaseTest {
 
     function setUp() public override {
         BaseTest.setUp();
-        buildDeployRegistryCondition(DeployRegistryCondition({
-            licenseRegistry: true,
-            moduleRegistry: false
-        }));
-        buildDeployModuleCondition(DeployModuleCondition({
-            registrationModule: false,
-            disputeModule: false,
-            royaltyModule: false,
-            taggingModule: false,
-            licensingModule: true
-        }));
-        buildDeployPolicyCondition(DeployPolicyCondition({
-            arbitrationPolicySP: false,
-            royaltyPolicyLS: true // deploy to set address for commercial licenses
-        }));
+        buildDeployRegistryCondition(DeployRegistryCondition({ licenseRegistry: true, moduleRegistry: false }));
+        buildDeployModuleCondition(
+            DeployModuleCondition({
+                registrationModule: false,
+                disputeModule: false,
+                royaltyModule: false,
+                taggingModule: false,
+                licensingModule: true
+            })
+        );
+        buildDeployPolicyCondition(
+            DeployPolicyCondition({
+                arbitrationPolicySP: false,
+                royaltyPolicyLS: true // deploy to set address for commercial licenses
+            })
+        );
         deployConditionally();
         postDeploymentSetup();
 

@@ -46,17 +46,16 @@ contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
 
     function setUp() public override {
         BaseTest.setUp();
-        buildDeployRegistryCondition(DeployRegistryCondition({
-            licenseRegistry: true,
-            moduleRegistry: false
-        }));
-        buildDeployModuleCondition(DeployModuleCondition({
-            registrationModule: false,
-            disputeModule: false,
-            royaltyModule: false,
-            taggingModule: false,
-            licensingModule: true
-        }));
+        buildDeployRegistryCondition(DeployRegistryCondition({ licenseRegistry: true, moduleRegistry: false }));
+        buildDeployModuleCondition(
+            DeployModuleCondition({
+                registrationModule: false,
+                disputeModule: false,
+                royaltyModule: false,
+                taggingModule: false,
+                licensingModule: true
+            })
+        );
         deployConditionally();
         postDeploymentSetup();
 

@@ -19,17 +19,16 @@ contract TestRoyaltyModule is BaseTest {
 
     function setUp() public override {
         BaseTest.setUp();
-        buildDeployModuleCondition(DeployModuleCondition({
-            registrationModule: false,
-            disputeModule: false,
-            royaltyModule: true,
-            taggingModule: false,
-            licensingModule: false
-        }));
-        buildDeployPolicyCondition(DeployPolicyCondition({
-            arbitrationPolicySP: false,
-            royaltyPolicyLS: true
-        }));
+        buildDeployModuleCondition(
+            DeployModuleCondition({
+                registrationModule: false,
+                disputeModule: false,
+                royaltyModule: true,
+                taggingModule: false,
+                licensingModule: false
+            })
+        );
+        buildDeployPolicyCondition(DeployPolicyCondition({ arbitrationPolicySP: false, royaltyPolicyLS: true }));
         deployConditionally();
         postDeploymentSetup();
 
