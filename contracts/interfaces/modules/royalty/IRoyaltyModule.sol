@@ -29,6 +29,22 @@ interface IRoyaltyModule is IModule {
     /// @param amount The amount that is paid
     event RoyaltyPaid(address receiverIpId, address payerIpId, address sender, address token, uint256 amount);
 
+    /// @notice Indicates if a royalty policy is whitelisted
+    /// @param royaltyPolicy The address of the royalty policy
+    function isWhitelistedRoyaltyPolicy(address royaltyPolicy) external view returns (bool);
+
+    /// @notice Indicates if a royalty token is whitelisted
+    /// @param token The address of the royalty token
+    function isWhitelistedRoyaltyToken(address token) external view returns (bool);
+
+    /// @notice Indicates the royalty policy for a given ipId
+    /// @param ipId The ipId
+    function royaltyPolicies(address ipId) external view returns (address);
+
+    /// @notice Indicates if a royalty policy is immutable
+    /// @param ipId The ipId
+    function isRoyaltyPolicyImmutable(address ipId) external view returns (bool);
+
     /// @notice Sets the licensing module
     /// @param licensingModule The address of the licensing module
     function setLicensingModule(address licensingModule) external;

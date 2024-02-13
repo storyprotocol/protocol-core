@@ -77,6 +77,15 @@ interface IDisputeModule {
     /// @param allowed Indicates if the arbitration relayer is whitelisted or not
     function whitelistArbitrationRelayer(address arbitrationPolicy, address arbPolicyRelayer, bool allowed) external;
 
+    /// @notice Sets the base arbitration policy
+    /// @param _arbitrationPolicy The address of the arbitration policy
+    function setBaseArbitrationPolicy(address _arbitrationPolicy) external;
+
+    /// @notice Sets the arbitration policy for an ipId
+    /// @param _ipId The ipId
+    /// @param _arbitrationPolicy The address of the arbitration policy
+    function setArbitrationPolicy(address _ipId, address _arbitrationPolicy) external;
+
     /// @notice Raises a dispute
     /// @param targetIpId The ipId that is the target of the dispute
     /// @param linkToDisputeEvidence The link of the dispute evidence
