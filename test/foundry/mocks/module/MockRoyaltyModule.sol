@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+
 import { IRoyaltyModule } from "../../../../contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
 import { IRoyaltyPolicy } from "../../../../contracts/interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
+import { BaseModule } from "../../../../contracts/modules/BaseModule.sol";
 
-contract MockRoyaltyModule is IRoyaltyModule {
-    string public constant name = "MockRoyaltyModule";
+contract MockRoyaltyModule is BaseModule, IRoyaltyModule {
+    string public constant name = "ROYALTY_MODULE";
     address public LICENSING_MODULE;
     mapping(address royaltyPolicy => bool allowed) public isWhitelistedRoyaltyPolicy;
     mapping(address token => bool) public isWhitelistedRoyaltyToken;
@@ -52,5 +55,9 @@ contract MockRoyaltyModule is IRoyaltyModule {
     function minRoyaltyFromDescendants(address _ipId) external view returns (uint256) {
         address royaltyPolicy = royaltyPolicies[_ipId];
         return IRoyaltyPolicy(royaltyPolicy).minRoyaltyFromDescendants(_ipId);
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
+        return interfaceId == type(IRoyaltyModule).interfaceId || super.supportsInterface(interfaceId);
     }
 }

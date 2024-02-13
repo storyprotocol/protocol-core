@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-import { IModule } from "../../../../contracts/interfaces/modules/base/IModule.sol";
-import { IArbitrationPolicy } from "../../../../contracts/interfaces/modules/dispute/policies/IArbitrationPolicy.sol";
 import { IDisputeModule } from "../../../../contracts/interfaces/modules/dispute/IDisputeModule.sol";
+import { IArbitrationPolicy } from "../../../../contracts/interfaces/modules/dispute/policies/IArbitrationPolicy.sol";
+import { BaseModule } from "../../../../contracts/modules/BaseModule.sol";
 import { ShortStringOps } from "../../../../contracts/utils/ShortStringOps.sol";
 
-contract MockDisputeModule is IDisputeModule, IModule {
+contract MockDisputeModule is BaseModule, IDisputeModule {
     bytes32 public constant IN_DISPUTE = bytes32("IN_DISPUTE");
 
     struct Dispute {
@@ -115,5 +115,9 @@ contract MockDisputeModule is IDisputeModule, IModule {
 
     function resolveDispute(uint256 _disputeId) external {
         disputes[_disputeId].currentTag = bytes32(0);
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == type(IDisputeModule).interfaceId || super.supportsInterface(interfaceId);
     }
 }
