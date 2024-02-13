@@ -1,224 +1,459 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-import { Test } from "forge-std/Test.sol";
-
 // external
-import { Test } from "forge-std/Test.sol";
+import { console2 } from "forge-std/console2.sol"; // console to indicate mock deployment calls.
 import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
 
 // contracts
-import { AccessController } from "contracts/AccessController.sol";
-import { Governance } from "contracts/governance/Governance.sol";
-import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
-import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY } from "contracts/lib/modules/Module.sol";
-import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
-import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
-import { IPAssetRenderer } from "contracts/registries/metadata/IPAssetRenderer.sol";
-import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
-import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
-import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
-import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
-import { LSClaimer } from "contracts/modules/royalty-module/policies/LSClaimer.sol";
-import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
-import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
-import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
-import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
-import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
+import { AccessController } from "../../../contracts/AccessController.sol";
+import { Governance } from "../../../contracts/governance/Governance.sol";
+import { IAccessController } from "../../../contracts/interfaces/IAccessController.sol";
+import { IGovernance } from "../../../contracts/interfaces/governance/IGovernance.sol";
+import { IDisputeModule } from "../../../contracts/interfaces/modules/dispute/IDisputeModule.sol";
+import { ILicensingModule } from "../../../contracts/interfaces/modules/licensing/ILicensingModule.sol";
+import { IRoyaltyModule } from "../../../contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
+import { ILicenseRegistry } from "../../../contracts/interfaces/registries/ILicenseRegistry.sol";
+import { IModuleRegistry } from "../../../contracts/interfaces/registries/IModuleRegistry.sol";
+import { IPAccountImpl } from "../../../contracts/IPAccountImpl.sol";
+import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY } from "../../../contracts/lib/modules/Module.sol";
+import { IPMetadataProvider } from "../../../contracts/registries/metadata/IPMetadataProvider.sol";
+import { IPAccountRegistry } from "../../../contracts/registries/IPAccountRegistry.sol";
+import { IPAssetRegistry } from "../../../contracts/registries/IPAssetRegistry.sol";
+import { IPAssetRenderer } from "../../../contracts/registries/metadata/IPAssetRenderer.sol";
+import { ModuleRegistry } from "../../../contracts/registries/ModuleRegistry.sol";
+import { LicenseRegistry } from "../../../contracts/registries/LicenseRegistry.sol";
+import { IPResolver } from "../../../contracts/resolvers/IPResolver.sol";
+import { RegistrationModule } from "../../../contracts/modules/RegistrationModule.sol";
+import { RoyaltyModule } from "../../../contracts/modules/royalty-module/RoyaltyModule.sol";
+import { LSClaimer } from "../../../contracts/modules/royalty-module/policies/LSClaimer.sol";
+import { RoyaltyPolicyLS } from "../../../contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
+import { TaggingModule } from "../../../contracts/modules/tagging/TaggingModule.sol";
+import { DisputeModule } from "../../../contracts/modules/dispute-module/DisputeModule.sol";
+import { LicensingModule } from "../../../contracts/modules/licensing/LicensingModule.sol";
+import { ArbitrationPolicySP } from "../../../contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
 
 // test
-import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
-import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { MockUSDC } from "test/foundry/mocks/MockUSDC.sol";
-import { MockRoyaltyPolicyLS } from "test/foundry/mocks/MockRoyaltyPolicyLS.sol";
-import { Users, UsersLib } from "test/foundry/utils/Users.sol";
+import { MockAccessController } from "../mocks/access/MockAccessController.sol";
+import { MockGovernance } from "../mocks/governance/MockGovernance.sol";
+import { MockDisputeModule } from "../mocks/module/MockDisputeModule.sol";
+import { MockLicensingModule } from "../mocks/module/MockLicensingModule.sol";
+import { MockRoyaltyModule } from "../mocks/module/MockRoyaltyModule.sol";
+import { MockTaggingModule } from "../mocks/module/MockTaggingModule.sol";
+import { MockArbitrationPolicy } from "../mocks/policy/MockArbitrationPolicy.sol";
+import { MockRoyaltyPolicyLS } from "../mocks/policy/MockRoyaltyPolicyLS.sol";
+import { MockLicenseRegistry } from "../mocks/registry/MockLicenseRegistry.sol";
+import { MockModuleRegistry } from "../mocks/registry/MockModuleRegistry.sol";
+import { MockERC20 } from "../mocks/token/MockERC20.sol";
+import { MockERC721 } from "../mocks/token/MockERC721.sol";
+import { MockUSDC } from "../mocks/token/MockUSDC.sol";
 
-struct MockERC721s {
-    MockERC721 ape;
-    MockERC721 cat;
-    MockERC721 dog;
-}
+contract DeployHelper {
+    // TODO: three options, auto/mock/real in deploy condition, so that we don't need to manually
+    //       call getXXX to get mock contract (if there's no real contract deployed).
 
-contract DeployHelper is Test {
+    struct DeployRegistryCondition {
+        // bool ipAccountRegistry; // TODO: Add option for mock IPAccountRegistry
+        // bool ipAssetRegistry; // TODO: Add option for mock IPAssetRegistry
+        bool licenseRegistry;
+        bool moduleRegistry;
+    }
+
+    struct DeployModuleCondition {
+        bool registrationModule;
+        bool disputeModule;
+        bool royaltyModule;
+        bool taggingModule;
+        bool licensingModule;
+    }
+
+    struct DeployAccessCondition {
+        bool accessController;
+        bool governance;
+    }
+
+    struct DeployPolicyCondition {
+        bool arbitrationPolicySP;
+        bool royaltyPolicyLS;
+    }
+
+    struct DeployMiscCondition {
+        bool ipAssetRenderer;
+        bool ipMetadataProvider;
+        bool ipResolver;
+    }
+
+    /// @dev Conditions that determine whether to deploy a contract.
+	struct DeployConditions {
+        DeployRegistryCondition registry;
+        DeployModuleCondition module;
+        DeployAccessCondition access;
+        DeployPolicyCondition policy;
+        DeployMiscCondition misc;
+	}
+
+    /// @dev Store deployment info for post-deployment setups.
+    struct PostDeployConditions {
+        bool accessController_init;
+        bool moduleRegistry_registerModules;
+        bool royaltyModule_configure;
+        bool disputeModule_configure;
+    }
+
+    struct MockERC721s {
+        MockERC721 ape;
+        MockERC721 cat;
+        MockERC721 dog;
+    }
+
+    // IPAccount
     ERC6551Registry internal erc6551Registry;
     IPAccountImpl internal ipAccountImpl;
 
     // Registry
+    IModuleRegistry internal moduleRegistry;
     IPAccountRegistry internal ipAccountRegistry;
-    IPMetadataProvider internal ipMetadataProvider;
     IPAssetRegistry internal ipAssetRegistry;
-    LicenseRegistry internal licenseRegistry;
-    ModuleRegistry internal moduleRegistry;
+    ILicenseRegistry internal licenseRegistry;
 
-    // Modules
+    // Module
     RegistrationModule internal registrationModule;
-    DisputeModule internal disputeModule;
-    ArbitrationPolicySP internal arbitrationPolicySP;
-    ArbitrationPolicySP internal arbitrationPolicySP2;
-    RoyaltyModule internal royaltyModule;
-    RoyaltyPolicyLS internal royaltyPolicyLS;
-    LSClaimer internal lsClaimer;
+    IDisputeModule internal disputeModule;
+    IRoyaltyModule internal royaltyModule;
     TaggingModule internal taggingModule;
-    LicensingModule internal licensingModule;
+    ILicensingModule internal licensingModule;
+
+    // Access
+    IGovernance internal governance;
+    IAccessController internal accessController;
+
+    // Policy
+    ArbitrationPolicySP internal arbitrationPolicySP;
+    RoyaltyPolicyLS internal royaltyPolicyLS;
 
     // Misc.
-    Governance internal governance;
-    AccessController internal accessController;
     IPAssetRenderer internal ipAssetRenderer;
+    IPMetadataProvider internal ipMetadataProvider;
     IPResolver internal ipResolver;
 
-    // Mocks
-    MockERC20 internal erc20;
-    MockERC721s internal erc721;
-    MockUSDC internal USDC;
-    MockRoyaltyPolicyLS internal mockRoyaltyPolicyLS;
-
-    // Helpers
-    Users internal u;
-
-    uint256 internal constant ARBITRATION_PRICE = 1000 * 10 ** 6;
-
-    // 0xSplits Liquid Split (Sepolia)
+    // Royalty Policy — 0xSplits Liquid Split (Sepolia)
     address internal constant LIQUID_SPLIT_FACTORY = 0xF678Bae6091Ab6933425FE26Afc20Ee5F324c4aE;
     address internal constant LIQUID_SPLIT_MAIN = 0x57CBFA83f000a38C5b5881743E298819c503A559;
 
-    function deploy() public virtual {
-        u = UsersLib.createMockUsers(vm);
+    // Arbitration Policy
+    // TODO: custom arbitration price for testing
+    uint256 internal constant ARBITRATION_PRICE = 1000; // not decimal exponentiated
 
-        _deployMockAssets(); // deploy mock assets first
-        _deployContracts();
-        _configDeployedContracts();
-        _mintMockAssets();
-        _configAccessControl();
+    // Mock
+    MockERC20 internal erc20;
+    MockERC721s internal erc721;
+    MockArbitrationPolicy internal mockArbitrationPolicy;
+    MockRoyaltyPolicyLS internal mockRoyaltyPolicyLS;
+
+    // DeployHelper
+    DeployConditions internal deployConditions;
+    PostDeployConditions internal postDeployConditions;
+    address private governanceAdmin;
+
+    function setGovernanceAdmin(address admin) public {
+        governanceAdmin = admin;
     }
 
-    /*//////////////////////////////////////////////////////////////////////////
-                                DEPLOYMENT LOGICS
-    //////////////////////////////////////////////////////////////////////////*/
+    function buildDeployRegistryCondition(DeployRegistryCondition memory d) public {
+        deployConditions.registry = d;
+    }
 
-    function _deployContracts() internal {
-        governance = new Governance(u.admin);
+    function buildDeployModuleCondition(DeployModuleCondition memory d) public {
+        deployConditions.module = d;
+    }
 
-        accessController = new AccessController(address(governance));
+    function buildDeployAccessCondition(DeployAccessCondition memory d) public {
+        deployConditions.access = d;
+    }
+
+    function buildDeployPolicyCondition(DeployPolicyCondition memory d) public {
+        deployConditions.policy = d;
+    }
+
+    function buildDeployMiscCondition(DeployMiscCondition memory d) public {
+        deployConditions.misc = d;
+    }
+
+    /// @notice Deploys all contracts for integration test.
+    function deployIntegration() public {
+        buildDeployRegistryCondition(DeployRegistryCondition(true, true));
+        buildDeployModuleCondition(DeployModuleCondition(true, true, true, true, true));
+        buildDeployAccessCondition(DeployAccessCondition(true, true));
+        buildDeployPolicyCondition(DeployPolicyCondition(true, true));
+        buildDeployMiscCondition(DeployMiscCondition(true, true, true));
+
+        deployConditionally();
+    }
+
+    /// @notice Deploys contracts conditionally based on DeployConditions state variable.
+    function deployConditionally() public {
+        require(governanceAdmin != address(0), "DeployHelper: Governance admin not set, setGovernanceAdmin(address)");
+
+        DeployConditions memory dc = deployConditions; // alias
+
         erc6551Registry = new ERC6551Registry();
         ipAccountImpl = new IPAccountImpl();
 
-        moduleRegistry = new ModuleRegistry(address(governance));
-        ipAccountRegistry = new IPAccountRegistry(
-            address(erc6551Registry),
-            address(accessController),
-            address(ipAccountImpl)
-        );
-        royaltyModule = new RoyaltyModule(address(governance));
-        ipAssetRegistry = new IPAssetRegistry(
-            address(accessController),
-            address(erc6551Registry),
-            address(ipAccountImpl),
-            address(moduleRegistry),
-            address(governance)
-        );
-        licenseRegistry = new LicenseRegistry();
-        licensingModule = new LicensingModule(
-            address(accessController),
-            address(ipAssetRegistry),
-            address(royaltyModule),
-            address(licenseRegistry)
-        );
-        ipMetadataProvider = new IPMetadataProvider(address(moduleRegistry));
-        ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry));
-        registrationModule = new RegistrationModule(
-            address(ipAssetRegistry),
-            address(licensingModule),
-            address(ipResolver)
-        );
-        taggingModule = new TaggingModule();
-        disputeModule = new DisputeModule(address(accessController), address(ipAssetRegistry), address(governance));
-        ipAssetRenderer = new IPAssetRenderer(
-            address(ipAssetRegistry),
-            address(licenseRegistry),
-            address(taggingModule),
-            address(royaltyModule)
-        );
+        _deployMockAssets();
 
-        arbitrationPolicySP = new ArbitrationPolicySP(
-            address(disputeModule),
-            address(USDC),
-            ARBITRATION_PRICE,
-            address(governance)
-        );
-        arbitrationPolicySP2 = new ArbitrationPolicySP(
-            address(disputeModule),
-            address(USDC),
-            ARBITRATION_PRICE,
-            address(governance)
-        );
-
-        royaltyPolicyLS = new RoyaltyPolicyLS(
-            address(royaltyModule),
-            address(licensingModule),
-            LIQUID_SPLIT_FACTORY,
-            LIQUID_SPLIT_MAIN
-        );
-
-        mockRoyaltyPolicyLS = new MockRoyaltyPolicyLS(address(royaltyModule));
+        _deployAccessConditionally(dc.access);
+        _deployRegistryConditionally(dc.registry);
+        // Registration module requires ipResolver
+        _deployIPResolverConditionally(dc.misc);
+        _deployModuleConditionally(dc.module);
+        _deployPolicyConditionally(dc.policy);
+        _deployMiscConditionally(dc.misc);
     }
 
-    function _configDeployedContracts() internal {
-        vm.startPrank(u.admin);
-        accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-        royaltyModule.setLicensingModule(address(licensingModule));
-        licenseRegistry.setLicensingModule(address(licensingModule));
-        ipAssetRegistry.setRegistrationModule(address(registrationModule));
-
-        moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
-        moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));
-        moduleRegistry.registerModule("LICENSING_MODULE", address(licensingModule));
-        moduleRegistry.registerModule(DISPUTE_MODULE_KEY, address(disputeModule));
-
-        royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
-        royaltyModule.whitelistRoyaltyPolicy(address(mockRoyaltyPolicyLS), true);
-        royaltyModule.whitelistRoyaltyToken(address(USDC), true);
-        vm.stopPrank();
-    }
-
-    function _deployMockAssets() internal {
+    function _deployMockAssets() public {
         erc20 = new MockERC20();
         erc721 = MockERC721s({ ape: new MockERC721("Ape"), cat: new MockERC721("Cat"), dog: new MockERC721("Dog") });
-        USDC = new MockUSDC();
     }
 
-    function _mintMockAssets() internal {
-        erc20.mint(u.alice, 1000 * 10 ** erc20.decimals());
-        erc20.mint(u.bob, 1000 * 10 ** erc20.decimals());
-        erc20.mint(u.carl, 1000 * 10 ** erc20.decimals());
-        erc20.mint(u.dan, 1000 * 10 ** erc20.decimals());
-        USDC.mint(u.alice, 100_000 * 10 ** USDC.decimals());
-        USDC.mint(u.bob, 100_000 * 10 ** USDC.decimals());
-        USDC.mint(u.carl, 100_000 * 10 ** USDC.decimals());
-        USDC.mint(u.dan, 100_000 * 10 ** USDC.decimals());
-        // skip minting NFTs
+    function _deployAccessConditionally(DeployAccessCondition memory d) public {
+        if (d.governance) {
+            governance = new Governance(governanceAdmin);
+            console2.log("DeployHelper: Using REAL Governance");
+        }
+        if (d.accessController) {
+            accessController = new AccessController(getGovernance());
+            console2.log("DeployHelper: Using REAL AccessController");
+            postDeployConditions.accessController_init = true;
+            // Access Controller uses IPAccountRegistry in its initialize function.
+            // TODO: Use mock IPAccountRegistry, instead of forcing deployment of actual IPAccountRegistry
+            //       contract when using AccessController.
+            // deployConditions.registry.ipAccountRegistry = true;
+        }
     }
 
-    function _configAccessControl() internal {
-        // Set global perm to allow Registration Module to call License Registry on all IPAccounts
-        vm.startPrank(u.admin); // admin of governance
+    function _deployRegistryConditionally(DeployRegistryCondition memory d) public {
+        if (d.moduleRegistry) {
+            moduleRegistry = new ModuleRegistry(getGovernance());
+            console2.log("DeployHelper: Using REAL ModuleRegistry");
+            postDeployConditions.moduleRegistry_registerModules = true;
+        }
 
-        accessController.setGlobalPermission(
-            address(registrationModule),
-            address(licensingModule),
-            bytes4(licensingModule.linkIpToParents.selector),
-            1 // AccessPermission.ALLOW
+        // TODO: Allow using mock IPAccountRegistry, instead of forcing deployment of actual IPAccountRegistry.
+        ipAccountRegistry = new IPAccountRegistry(
+            address(erc6551Registry),
+            getAccessController(),
+            address(ipAccountImpl)
         );
+        console2.log("DeployHelper: Using REAL IPAccountRegistry");
 
-        accessController.setGlobalPermission(
-            address(registrationModule),
-            address(licensingModule),
-            bytes4(licensingModule.addPolicyToIp.selector),
-            1 // AccessPermission.ALLOW
+        // TODO: Allow using mock IPAssetRegistry, instead of forcing deployment of actual IPAssetRegistry.
+        ipAssetRegistry = new IPAssetRegistry(
+            getAccessController(),
+            address(erc6551Registry),
+            address(ipAccountImpl),
+            getModuleRegistry(),
+            getGovernance()
         );
+        console2.log("DeployHelper: Using REAL IPAssetRegistry");
 
-        vm.stopPrank();
+        if (d.licenseRegistry) {
+            licenseRegistry = new LicenseRegistry();
+            console2.log("DeployHelper: Using REAL LicenseRegistry");
+        }
+    }
+
+    function _deployIPResolverConditionally(DeployMiscCondition memory d) public {
+        if (d.ipResolver) {
+            require(address(ipAssetRegistry) != address(0), "DeployHelper IPResolver: IPAssetRegistry required");
+            ipResolver = new IPResolver(getAccessController(), address(ipAssetRegistry));
+            console2.log("DeployHelper: Using REAL IPResolver");
+        }
+    }
+
+    function _deployModuleConditionally(DeployModuleCondition memory d) public {
+        if (d.royaltyModule) {
+            royaltyModule = new RoyaltyModule(getGovernance());
+            console2.log("DeployHelper: Using REAL RoyaltyModule");
+            postDeployConditions.royaltyModule_configure = true;
+        }
+        if (d.licensingModule) {
+            require(address(ipAccountRegistry) != address(0), "DeployHelper Module: IPAccountRegistry required");
+            licensingModule = new LicensingModule(
+                getAccessController(),
+                address(ipAccountRegistry),
+                getRoyaltyModule(),
+                getLicenseRegistry()
+            );
+            console2.log("DeployHelper: Using REAL LicensingModule");
+        }
+        if (d.taggingModule) {
+            taggingModule = new TaggingModule();
+            console2.log("DeployHelper: Using REAL TaggingModule");
+        }
+        if (d.registrationModule) {
+            require(address(ipAssetRegistry) != address(0), "DeployHelper Module: IPAssetRegistry required");
+            require(address(ipResolver) != address(0), "DeployHelper Module: IPResolver required");
+            registrationModule = new RegistrationModule(
+                getAccessController(),
+                address(ipAssetRegistry),
+                getLicensingModule(),
+                address(ipResolver)
+            );
+            console2.log("DeployHelper: Using REAL RegistrationModule");
+        }
+        if (d.disputeModule) {
+            require(address(ipAssetRegistry) != address(0), "DeployHelper Module: IPAssetRegistry required");
+            disputeModule = new DisputeModule(
+                getAccessController(),
+                address(ipAssetRegistry),
+                getGovernance()
+            );
+            console2.log("DeployHelper: Using REAL DisputeModule");
+            postDeployConditions.disputeModule_configure = true;
+        }
+    }
+
+    function _deployPolicyConditionally(DeployPolicyCondition memory d) public {
+        if (d.arbitrationPolicySP) {
+            arbitrationPolicySP = new ArbitrationPolicySP(
+                getDisputeModule(),
+                address(erc20),
+                ARBITRATION_PRICE,
+                getGovernance()
+            );
+            console2.log("DeployHelper: Using REAL ArbitrationPolicySP");
+        } else {
+            mockArbitrationPolicy = new MockArbitrationPolicy(
+                getDisputeModule(),
+                address(erc20),
+                ARBITRATION_PRICE
+            );
+            console2.log("DeployHelper: Using Mock ArbitrationPolicySP");
+        }
+        if (d.royaltyPolicyLS) {
+            royaltyPolicyLS = new RoyaltyPolicyLS(
+                getRoyaltyModule(),
+                getLicensingModule(),
+                LIQUID_SPLIT_FACTORY,
+                LIQUID_SPLIT_MAIN
+            );
+            console2.log("DeployHelper: Using REAL RoyaltyPolicyLS");
+        } else {
+            mockRoyaltyPolicyLS = new MockRoyaltyPolicyLS(getRoyaltyModule());
+            console2.log("DeployHelper: Using Mock RoyaltyPolicyLS");
+        }
+    }
+
+    function _deployMiscConditionally(DeployMiscCondition memory d) public {
+        // Skip IPResolver here, called in `_deployIPResolverConditionally`
+        if (d.ipAssetRenderer) {
+            require(address(ipAssetRegistry) != address(0), "DeployHelper Misc: IPAssetRegistry required");
+            ipAssetRenderer = new IPAssetRenderer(
+                address(ipAssetRegistry),
+                getLicenseRegistry(),
+                getTaggingModule(),
+                getRoyaltyModule()
+            );
+            console2.log("DeployHelper: Using REAL IPAssetRenderer");
+        }
+        if (d.ipMetadataProvider) {
+            ipMetadataProvider = new IPMetadataProvider(getModuleRegistry());
+            console2.log("DeployHelper: Using REAL IPMetadataProvider");
+        }
+    }
+
+    /// @dev Get or deploy mock Access Controller.
+    function getAccessController() public returns (address) {
+        if (address(accessController) == address(0)) {
+            accessController = new MockAccessController();
+            // solhint-disable-next-line no-console
+            console2.log("DeployHelper: Using Mock AccessController");
+        }
+        if (!postDeployConditions.accessController_init) {
+            postDeployConditions.accessController_init = true;
+        }
+        return address(accessController);
+    }
+
+    /// @dev Get or deploy mock Dispute Module.
+    function getDisputeModule() public returns (address) {
+        if (address(disputeModule) == address(0)) {
+            disputeModule = new MockDisputeModule();
+            // solhint-disable-next-line no-console
+            console2.log("DeployHelper: Using Mock DisputeModule");
+        }
+        if (!postDeployConditions.disputeModule_configure) {
+            postDeployConditions.disputeModule_configure = true;
+        }
+        return address(disputeModule);
+    }
+
+    /// @dev Get or deploy mock Governance.
+    function getGovernance() public returns (address) {
+        if (address(governance) == address(0)) {
+            governance = new MockGovernance(governanceAdmin);
+            // solhint-disable-next-line no-console
+            console2.log("DeployHelper: Using Mock Governance");
+        }
+        return address(governance);
+    }
+
+    /// @dev Get or deploy mock Licensing Module.
+    function getLicensingModule() public returns (address) {
+        if (address(licensingModule) == address(0)) {
+            licensingModule = new MockLicensingModule(
+                getRoyaltyModule(),
+                getLicenseRegistry()
+            );
+            // solhint-disable-next-line no-console
+            console2.log("DeployHelper: Using Mock LicensingModule");
+        }
+        return address(licensingModule);
+    }
+
+    /// @dev Get or deploy mock License Registry.
+    function getLicenseRegistry() public returns (address) {
+        if (address(licenseRegistry) == address(0)) {
+            licenseRegistry = new MockLicenseRegistry();
+            // solhint-disable-next-line no-console
+            console2.log("DeployHelper: Using Mock LicenseRegistry");
+        }
+        return address(licenseRegistry);
+    }
+
+    /// @dev Get or deploy mock Module Registry.
+    function getModuleRegistry() public returns (address) {
+        if (address(moduleRegistry) == address(0)) {
+            moduleRegistry = new MockModuleRegistry();
+            // solhint-disable-next-line no-console
+            console2.log("DeployHelper: Using Mock ModuleRegistry");
+        }
+        if (!postDeployConditions.moduleRegistry_registerModules) {
+            postDeployConditions.moduleRegistry_registerModules = true;
+        }
+        return address(moduleRegistry);
+    }
+
+    /// @dev Get or deploy mock Royalty Module.
+    function getRoyaltyModule() public returns (address) {
+        if (address(royaltyModule) == address(0)) {
+            royaltyModule = new MockRoyaltyModule();
+            // solhint-disable-next-line no-console
+            console2.log("DeployHelper: Using Mock RoyaltyModule");
+        }
+        if (!postDeployConditions.royaltyModule_configure) {
+            postDeployConditions.royaltyModule_configure = true;
+        }
+        return address(royaltyModule);
+    }
+
+    /// @dev Get or deploy mock Tagging Module.
+    function getTaggingModule() public returns (address) {
+        if (address(taggingModule) == address(0)) {
+            taggingModule = new MockTaggingModule();
+            // solhint-disable-next-line no-console
+            console2.log("DeployHelper: Using Mock TaggingModule");
+        }
+        return address(taggingModule);
     }
 }
