@@ -42,8 +42,8 @@ import { BroadcastManager } from "../../../script/foundry/utils/BroadcastManager
 import { JsonDeploymentHandler } from "../../../script/foundry/utils/JsonDeploymentHandler.s.sol";
 
 // test
-import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
-import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { MockERC20 } from "test/foundry/mocks/token/MockERC20.sol";
+import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
 
 contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     using StringUtil for uint256;
@@ -238,12 +238,15 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         );
         _postdeploy(contractKey, address(disputeModule));
 
+        contractKey = "ArbitrationPolicySP";
+        _predeploy(contractKey);
         arbitrationPolicySP = new ArbitrationPolicySP(
             address(disputeModule),
             address(erc20),
             ARBITRATION_PRICE,
             address(governance)
         );
+        _postdeploy(contractKey, address(arbitrationPolicySP));
 
         contractKey = "RoyaltyPolicyLS";
         _predeploy(contractKey);
@@ -361,6 +364,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                         CREATE POLICY FRAMEWORK MANAGERS
         ////////////////////////////////////////////////////////////////*/
 
+        _predeploy("UMLPolicyFrameworkManager");
         UMLPolicyFrameworkManager umlPfm = new UMLPolicyFrameworkManager(
             address(accessController),
             address(ipAccountRegistry),
@@ -368,6 +372,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             "uml",
             "https://uml-license.com/{id}.json"
         );
+        _postdeploy("UMLPolicyFrameworkManager", address(umlPfm));
         licensingModule.registerPolicyFrameworkManager(address(umlPfm));
         frameworkAddrs["uml"] = address(umlPfm);
 
@@ -555,8 +560,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
             address[] memory accounts = new address[](2);
             // order matters, otherwise error: InvalidSplit__AccountsOutOfOrder
-            accounts[0] = ipAcct3_claimer;
-            accounts[1] = ipAcct[3];
+            accounts[1] = ipAcct3_claimer;
+            accounts[0] = ipAcct[3];
 
             royaltyPolicyLS.distributeFunds(ipAcct[3], address(erc20), accounts, address(0));
         }
