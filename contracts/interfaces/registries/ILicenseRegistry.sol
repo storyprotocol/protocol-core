@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
+import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+
 import { Licensing } from "../../lib/Licensing.sol";
 
 /// @title ILicenseRegistry
 
-interface ILicenseRegistry {
+interface ILicenseRegistry is IERC1155 {
     /// @notice Emitted when a license is minted
     /// @param creator The address that created the license
     /// @param receiver The address that received the license

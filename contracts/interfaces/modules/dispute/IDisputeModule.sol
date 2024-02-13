@@ -61,6 +61,32 @@ interface IDisputeModule {
     /// @param disputeId The dispute id
     event DisputeResolved(uint256 disputeId);
 
+    /// @notice Dispute id
+    function disputeId() external view returns (uint256);
+
+    /// @notice The address of the base arbitration policy
+    function baseArbitrationPolicy() external view returns (address);
+
+    /// @notice Indicates if a dispute tag is whitelisted
+    /// @param tag The dispute tag
+    function isWhitelistedDisputeTag(bytes32 tag) external view returns (bool allowed);
+
+    /// @notice Indicates if an arbitration policy is whitelisted
+    /// @param arbitrationPolicy The address of the arbitration policy
+    function isWhitelistedArbitrationPolicy(address arbitrationPolicy) external view returns (bool allowed);
+
+    /// @notice Indicates if an arbitration relayer is whitelisted for a given arbitration policy
+    /// @param arbitrationPolicy The address of the arbitration policy
+    /// @param arbitrationRelayer The address of the arbitration relayer
+    function isWhitelistedArbitrationRelayer(
+        address arbitrationPolicy,
+        address arbitrationRelayer
+    ) external view returns (bool allowed);
+
+    /// @notice Arbitration policy for a given ipId
+    /// @param ipId The ipId
+    function arbitrationPolicies(address ipId) external view returns (address policy);
+
     /// @notice Whitelists a dispute tag
     /// @param tag The dispute tag
     /// @param allowed Indicates if the dispute tag is whitelisted or not
