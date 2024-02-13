@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
-
 import { Errors } from "contracts/lib/Errors.sol";
 
 import { MODULE_TYPE_DEFAULT, MODULE_TYPE_HOOK } from "contracts/lib/modules/Module.sol";
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
 import { IHookModule } from "contracts/interfaces/modules/base/IHookModule.sol";
 
-import { MockAccessController } from "../mocks/access/MockAccessController.sol";
 import { MockModule } from "../mocks/module/MockModule.sol";
 import { ICustomModule, CustomModule } from "../mocks/CustomModuleType.sol";
 import { MockTokenGatedHook } from "../mocks/MockTokenGatedHook.sol";
@@ -22,10 +19,7 @@ contract ModuleRegistryTest is BaseTest {
 
     function setUp() public override {
         super.setUp();
-        buildDeployRegistryCondition(DeployRegistryCondition({
-            licenseRegistry: false,
-            moduleRegistry: true
-        }));
+        buildDeployRegistryCondition(DeployRegistryCondition({ licenseRegistry: false, moduleRegistry: true }));
         deployConditionally();
         postDeploymentSetup();
 

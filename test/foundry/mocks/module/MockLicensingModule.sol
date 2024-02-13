@@ -13,8 +13,8 @@ import { RoyaltyModule } from "../../../../contracts/modules/royalty-module/Roya
 import { BaseModule } from "../../../../contracts/modules/BaseModule.sol";
 
 contract MockLicensingModule is BaseModule, ILicensingModule {
-	using EnumerableSet for EnumerableSet.UintSet;
-	using EnumerableSet for EnumerableSet.AddressSet;
+    using EnumerableSet for EnumerableSet.UintSet;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
     struct PolicySetup {
         uint256 index;
@@ -23,9 +23,9 @@ contract MockLicensingModule is BaseModule, ILicensingModule {
         bool isInherited;
     }
 
-		RoyaltyModule public immutable ROYALTY_MODULE;
-		ILicenseRegistry public immutable LICENSE_REGISTRY;
-		string public constant name = "LICENSING_MODULE";
+    RoyaltyModule public immutable ROYALTY_MODULE;
+    ILicenseRegistry public immutable LICENSE_REGISTRY;
+    string public constant name = "LICENSING_MODULE";
 
     mapping(address framework => bool registered) private _registeredFrameworkManagers;
     mapping(bytes32 policyHash => uint256 policyId) private _hashedPolicies;
@@ -254,11 +254,11 @@ contract MockLicensingModule is BaseModule, ILicensingModule {
         return _ipIdParents[ipId].values();
     }
 
-	function totalParentsForIpId(address ipId) external view returns (uint256) {
-		return _ipIdParents[ipId].length();
-	}
+    function totalParentsForIpId(address ipId) external view returns (uint256) {
+        return _ipIdParents[ipId].length();
+    }
 
-	function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
-		return interfaceId == type(ILicensingModule).interfaceId || super.supportsInterface(interfaceId);
-	}
+    function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
+        return interfaceId == type(ILicensingModule).interfaceId || super.supportsInterface(interfaceId);
+    }
 }
