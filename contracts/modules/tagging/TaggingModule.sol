@@ -6,12 +6,14 @@ pragma solidity ^0.8.23;
 import { ShortString, ShortStrings } from "@openzeppelin/contracts/utils/ShortStrings.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 import { ShortStringOps } from "../../utils/ShortStringOps.sol";
 import { ITaggingModule } from "../../interfaces/modules/ITaggingModule.sol";
 import { TAGGING_MODULE_KEY } from "../../lib/modules/Module.sol";
+import { BaseModule } from "../BaseModule.sol";
 
-contract TaggingModule is ITaggingModule {
+contract TaggingModule is BaseModule, ITaggingModule {
     using ERC165Checker for address;
     using ShortStrings for *;
     using EnumerableSet for EnumerableSet.Bytes32Set;
@@ -54,7 +56,7 @@ contract TaggingModule is ITaggingModule {
         return ShortString.wrap(_tagsForIpIds[ipId].at(index)).toString();
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return interfaceId == type(ITaggingModule).interfaceId;
+    function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
+        return interfaceId == type(ITaggingModule).interfaceId || super.supportsInterface(interfaceId);
     }
 }
