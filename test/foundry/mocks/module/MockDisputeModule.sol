@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
+import { IModule } from "../../../../contracts/interfaces/modules/base/IModule.sol";
 import { IArbitrationPolicy } from "../../../../contracts/interfaces/modules/dispute/policies/IArbitrationPolicy.sol";
 import { IDisputeModule } from "../../../../contracts/interfaces/modules/dispute/IDisputeModule.sol";
 import { ShortStringOps } from "../../../../contracts/utils/ShortStringOps.sol";
 
-contract MockDisputeModule is IDisputeModule {
+contract MockDisputeModule is IDisputeModule, IModule {
 	bytes32 public constant IN_DISPUTE = bytes32("IN_DISPUTE");
 
 	struct Dispute {
@@ -17,6 +18,7 @@ contract MockDisputeModule is IDisputeModule {
 			bytes32 currentTag;
 	}
 
+	string public constant override name = "DISPUTE_MODULE";
 	uint256 public disputeId;
 	address public baseArbitrationPolicy;
 
@@ -26,8 +28,6 @@ contract MockDisputeModule is IDisputeModule {
 	mapping(address arbitrationPolicy => mapping(address arbitrationRelayer => bool allowed))
 			public isWhitelistedArbitrationRelayer;
 	mapping(address ipId => address arbitrationPolicy) public arbitrationPolicies;
-
-	constructor() {}
 
 	function whitelistDisputeTag(bytes32 _tag, bool _allowed) external {
 		isWhitelistedDisputeTag[_tag] = _allowed;
@@ -57,7 +57,7 @@ contract MockDisputeModule is IDisputeModule {
 		address _targetIpId,
 		string memory _linkToDisputeEvidence,
 		bytes32 _targetTag,
-		bytes calldata _data
+		bytes calldata
 	) public returns (uint256) {
 		bytes32 linkToDisputeEvidence = ShortStringOps.stringToBytes32(_linkToDisputeEvidence);
 		address arbitrationPolicy = arbitrationPolicies[_targetIpId];
@@ -82,15 +82,15 @@ contract MockDisputeModule is IDisputeModule {
 		string memory _linkToDisputeEvidence,
 		bytes32 _targetTag,
 		bytes calldata _data
-	) external returns (uint256) {
-		raiseDispute(_targetIpId, _linkToDisputeEvidence, _targetTag, _data);
+	) external returns (uint256 disputeId_) {
+		disputeId_ = raiseDispute(_targetIpId, _linkToDisputeEvidence, _targetTag, _data);
 
 		address arbitrationPolicy = arbitrationPolicies[_targetIpId];
 		if (!isWhitelistedArbitrationPolicy[arbitrationPolicy]) arbitrationPolicy = baseArbitrationPolicy;
 		IArbitrationPolicy(arbitrationPolicy).onRaiseDispute(msg.sender, _data);
 	}
 
-	function setDisputeJudgement(uint256 _disputeId, bool _decision, bytes calldata _data) public {
+	function setDisputeJudgement(uint256 _disputeId, bool _decision, bytes calldata) public {
 		Dispute memory dispute = disputes[_disputeId];
 		disputes[_disputeId].currentTag = _decision ? dispute.targetTag : bytes32(0);	
 	}
@@ -106,8 +106,7 @@ contract MockDisputeModule is IDisputeModule {
 		IArbitrationPolicy(dispute.arbitrationPolicy).onDisputeJudgement(_disputeId, _decision, _data);
 	}
 
-	function cancelDispute(uint256 _disputeId, bytes calldata _data) public {
-		Dispute memory dispute = disputes[_disputeId];
+	function cancelDispute(uint256 _disputeId, bytes calldata) public {
 		disputes[_disputeId].currentTag = bytes32(0);
 	}
 
@@ -119,7 +118,6 @@ contract MockDisputeModule is IDisputeModule {
 	}
 
 	function resolveDispute(uint256 _disputeId) external {
-		Dispute memory dispute = disputes[_disputeId];
 		disputes[_disputeId].currentTag = bytes32(0);
 	}
 }

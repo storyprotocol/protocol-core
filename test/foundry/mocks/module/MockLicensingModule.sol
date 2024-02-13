@@ -82,7 +82,7 @@ contract MockLicensingModule is BaseModule, ILicensingModule {
 		address newRoyaltyPolicy,
 		uint32 newMinRoyalty
 	) external returns (uint256 indexOnIpId) {
-		addPolicyToIp(ipId, polId);
+		indexOnIpId = addPolicyToIp(ipId, polId);
 		ROYALTY_MODULE.setRoyaltyPolicy(ipId, newRoyaltyPolicy, new address[](0), abi.encode(newMinRoyalty));
 	}
 
@@ -92,7 +92,6 @@ contract MockLicensingModule is BaseModule, ILicensingModule {
 		uint256 amount,
 		address receiver
 	) public returns (uint256 licenseId) {
-		bool isInherited = _policySetups[licensorIp][policyId].isInherited;
 		Licensing.Policy memory pol = policy(policyId);
 		licenseId = LICENSE_REGISTRY.mintLicense(policyId, licensorIp, pol.isLicenseTransferable, amount, receiver);
 	}
@@ -103,7 +102,7 @@ contract MockLicensingModule is BaseModule, ILicensingModule {
 		uint256 amount,
 		address receiver
 	) external returns (uint256 licenseId) {
-		mintLicense(policyId, licensorIp, amount, receiver);
+		licenseId = mintLicense(policyId, licensorIp, amount, receiver);
 		if (!ROYALTY_MODULE.isRoyaltyPolicyImmutable(licensorIp)) {
 			ROYALTY_MODULE.setRoyaltyPolicyImmutable(licensorIp);
 		}

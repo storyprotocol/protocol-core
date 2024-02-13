@@ -78,7 +78,7 @@ contract MockLicenseRegistry is ERC1155, ILicenseRegistry {
 		return _licenses[licenseId].policyId;
 	}
 
-	function uri(uint256 id) public view override returns (string memory) {
+	function uri(uint256 id) public pure override returns (string memory) {
 		// return uint256 id as string value
 		return string(abi.encodePacked("uri_", id));
 	}

@@ -46,11 +46,16 @@ contract MockRoyaltyModule is IRoyaltyModule {
 
 	function payRoyaltyOnBehalf(
 		address _receiverIpId,
-		address _payerIpId,
+		address,
 		address _token,
 		uint256 _amount
 	) external {
 		address royaltyPolicy = royaltyPolicies[_receiverIpId];
 		IRoyaltyPolicy(royaltyPolicy).onRoyaltyPayment(msg.sender, _receiverIpId, _token, _amount);
+	}
+
+	function minRoyaltyFromDescendants(address _ipId) external view returns (uint256) {
+		address royaltyPolicy = royaltyPolicies[_ipId];
+		return IRoyaltyPolicy(royaltyPolicy).minRoyaltyFromDescendants(_ipId);
 	}
 }

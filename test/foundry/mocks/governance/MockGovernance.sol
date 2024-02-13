@@ -21,7 +21,7 @@ contract MockGovernance is AccessControl, IGovernance {
 		return state;
 	}
 
-	function supportsInterface(bytes4 interfaceId) public view override returns (bool) {
+	function supportsInterface(bytes4) public pure override returns (bool) {
 		return true;
 	}
 }
