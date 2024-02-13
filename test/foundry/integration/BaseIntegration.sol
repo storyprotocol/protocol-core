@@ -21,7 +21,7 @@ import { BaseTest } from "test/foundry/utils/BaseTest.sol";
 
 contract BaseIntegration is BaseTest {
     function setUp() public virtual override(BaseTest) {
-        BaseTest.setUp();
+        super.setUp();
         // deploy everything as real contracts
         buildDeployAccessCondition(DeployAccessCondition({ governance: true, accessController: true }));
         buildDeployRegistryCondition(DeployRegistryCondition({ licenseRegistry: true, moduleRegistry: true }));

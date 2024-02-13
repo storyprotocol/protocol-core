@@ -82,7 +82,7 @@ contract MetadataProviderTest is BaseTest {
 
     /// @notice Initializes the IP metadata provider contract.
     function setUp() public virtual override {
-        BaseTest.setUp();
+        super.setUp();
         buildDeployModuleCondition(
             DeployModuleCondition({
                 registrationModule: true,

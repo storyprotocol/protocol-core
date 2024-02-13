@@ -54,7 +54,7 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
     }
 
     function setUp() public override {
-        BaseTest.setUp();
+        super.setUp();
         buildDeployRegistryCondition(DeployRegistryCondition({ licenseRegistry: true, moduleRegistry: false }));
         buildDeployModuleCondition(
             DeployModuleCondition({

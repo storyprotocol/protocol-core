@@ -17,7 +17,7 @@ contract TestLSClaimer is BaseTest {
     address internal ipAccount3 = address(0x111000ccc);
 
     function setUp() public override {
-        BaseTest.setUp();
+        super.setUp();
         buildDeployModuleCondition(
             DeployModuleCondition({
                 registrationModule: false,

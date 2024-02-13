@@ -18,7 +18,7 @@ contract TestRoyaltyModule is BaseTest {
     address internal ipAccount2 = address(0x111000bbb);
 
     function setUp() public override {
-        BaseTest.setUp();
+        super.setUp();
         buildDeployModuleCondition(
             DeployModuleCondition({
                 registrationModule: false,

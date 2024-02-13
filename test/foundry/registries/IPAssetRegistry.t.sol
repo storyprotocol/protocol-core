@@ -30,7 +30,7 @@ contract IPAssetRegistryTest is BaseTest {
 
     /// @notice Initializes the IP asset registry testing contract.
     function setUp() public virtual override {
-        BaseTest.setUp();
+        super.setUp();
         buildDeployRegistryCondition(
             DeployRegistryCondition({
                 licenseRegistry: false, // don't use
@@ -39,8 +39,6 @@ contract IPAssetRegistryTest is BaseTest {
         );
         deployConditionally();
         postDeploymentSetup();
-
-        // moduleRegistry.registerModule(LICENSING_MODULE_KEY, address(licensingModule));
 
         registry = ipAssetRegistry;
 

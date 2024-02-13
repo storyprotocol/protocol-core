@@ -172,7 +172,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration {
 
             USDC.approve(address(royaltyPolicyLS), royaltyAmount);
 
-            (address danSplitClone, address danClaimer, , ) = royaltyPolicyLS.royaltyData(ipAcct_Dan);
+            (address danSplitClone, , , ) = royaltyPolicyLS.royaltyData(ipAcct_Dan);
 
             vm.expectEmit(address(USDC));
             emit IERC20.Transfer(u.alice, address(danSplitClone), royaltyAmount); // destination of payment
@@ -191,7 +191,6 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration {
         {
             vm.startPrank(u.dan);
 
-            address ipAcct_Alice = ipAcct[1];
             address ipAcct_Dan = ipAcct[4];
             (, address danClaimer, , ) = royaltyPolicyLS.royaltyData(ipAcct_Dan);
 

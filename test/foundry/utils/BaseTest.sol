@@ -31,7 +31,6 @@ contract BaseTest is Test, DeployHelper, LicensingHelper {
     address internal bob;
     address internal carl;
     address internal dan;
-    address internal don; // don is dan, dan is don
 
     /// @dev Aliases for mock assets.
     /// NOTE: Must call `postDeploymentSetup` after `deployConditionally` to set these.
@@ -49,7 +48,6 @@ contract BaseTest is Test, DeployHelper, LicensingHelper {
         bob = u.bob;
         carl = u.carl;
         dan = u.dan;
-        don = dan;
 
         vm.label(LIQUID_SPLIT_FACTORY, "LIQUID_SPLIT_FACTORY");
         vm.label(LIQUID_SPLIT_MAIN, "LIQUID_SPLIT_MAIN");

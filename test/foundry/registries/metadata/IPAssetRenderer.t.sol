@@ -24,7 +24,7 @@ contract IPAssetRendererTest is BaseTest {
 
     /// @notice Initializes the base token contract for testing.
     function setUp() public virtual override(BaseTest) {
-        BaseTest.setUp();
+        super.setUp();
         buildDeployMiscCondition(
             DeployMiscCondition({ ipAssetRenderer: true, ipMetadataProvider: false, ipResolver: true })
         );

@@ -42,7 +42,7 @@ contract DisputeModuleTest is BaseTest {
     ArbitrationPolicySP internal arbitrationPolicySP2;
 
     function setUp() public override {
-        BaseTest.setUp();
+        super.setUp();
         buildDeployModuleCondition(
             DeployModuleCondition({
                 registrationModule: true,

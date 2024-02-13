@@ -31,7 +31,7 @@ contract TestLSClaimer is BaseTest {
     uint256[] internal nftIds;
 
     function setUp() public override {
-        BaseTest.setUp();
+        super.setUp();
         buildDeployModuleCondition(
             DeployModuleCondition({
                 registrationModule: true,

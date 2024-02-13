@@ -13,7 +13,7 @@ abstract contract ModuleBaseTest is BaseTest {
 
     /// @notice Initializes the base module for testing.
     function setUp() public virtual override(BaseTest) {
-        BaseTest.setUp();
+        super.setUp();
         buildDeployMiscCondition(
             DeployMiscCondition({ ipAssetRenderer: false, ipMetadataProvider: false, ipResolver: true })
         );

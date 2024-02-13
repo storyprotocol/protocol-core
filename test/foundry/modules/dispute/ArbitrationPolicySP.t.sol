@@ -22,7 +22,7 @@ contract TestArbitrationPolicySP is BaseTest {
     address internal arbitrationRelayer;
 
     function setUp() public override {
-        BaseTest.setUp();
+        super.setUp();
         buildDeployModuleCondition(
             DeployModuleCondition({
                 registrationModule: true,
