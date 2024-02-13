@@ -30,7 +30,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
         public
         withLFM_UML
         withLFM_MintPayment(erc20, 1)
-        withUMLPolicy_Commerical_Derivative(
+        withUMLPolicy_Commercial_Derivative(
             UMLPolicyGenericParams({
                 policyName: "cheap_flexible", // => uml_com_deriv_cheap_flexible
                 attribution: false,

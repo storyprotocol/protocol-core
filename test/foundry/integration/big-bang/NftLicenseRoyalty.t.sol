@@ -41,7 +41,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration {
     function test_Integration_NftLicenseRoyalty_SingleChain()
         public
         withLFM_UML
-        withUMLPolicy_Commerical_Derivative(
+        withUMLPolicy_Commercial_Derivative(
             UMLPolicyGenericParams({
                 policyName: "reciprocal", // => uml_com_deriv_reciprocal
                 attribution: false,
