@@ -16,7 +16,8 @@
     "lint:sol:fix": "prettier --log-level warn --ignore-path .gitignore '{contracts,test}/**/*.sol' --write",
     "solhint": "solhint '{contracts,test}/**/*.sol'",
     "test": "npx hardhat test",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "docgen": "hardhat docgen"
   },
   "author": "StoryProtocol",
   "license": "MIT",
@@ -41,6 +42,7 @@
     "hardhat-deploy": "^0.11.45",
     "hardhat-deploy-ethers": "^0.4.1",
     "hardhat-gas-reporter": "^1.0.10",
+    "husky": "^8.0.0",
     "minimatch": "^9.0.3",
     "mocha": "^10.2.0",
     "prettier": "^3.0.0",
@@ -49,9 +51,9 @@
     "solhint-community": "^3.7.0",
     "solhint-plugin-prettier": "^0.1.0",
     "solidity-coverage": "^0.8.6",
+    "solidity-docgen": "^0.6.0-beta.36",
     "ts-node": "^10.9.2",
-    "typechain": "^8.3.2",
-    "husky": "^8.0.0"
+    "typechain": "^8.3.2"
   },
   "dependencies": {
     "@openzeppelin/contracts": "5.0.1",

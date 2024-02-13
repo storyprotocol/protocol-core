@@ -7,10 +7,11 @@ import * as tdly from "@tenderly/hardhat-tenderly" // also import tdly for setup
 import "@typechain/hardhat"
 // import "@openzeppelin/hardhat-upgrades"
 import "hardhat-gas-reporter"
-import "solidity-coverage"
 import "hardhat-deploy"
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types"
 import "hardhat-contract-sizer" // npx hardhat size-contracts
+import "solidity-coverage"
+import "solidity-docgen"
 
 require("dotenv").config()
 
@@ -118,6 +119,10 @@ const config: HardhatUserConfig = {
     outDir: "typechain",
     target: "ethers-v6",
   },
+  docgen: {
+    outputDir: "./docs",
+    pages: "files"
+  }
 }
 
 export default config
