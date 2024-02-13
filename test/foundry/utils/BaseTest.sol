@@ -125,6 +125,8 @@ contract BaseTest is Test, DeployHelper, LicensingHelper {
     function registerModules() public {
         console2.log("BaseTest PostDeploymentSetup: Register Modules");
         vm.startPrank(u.admin);
+        // TODO: option to register "hookmodule", which will trigger the call below:
+        //       moduleRegistry.registerModuleType(MODULE_TYPE_HOOK, type(IHookModule).interfaceId);
         if (address(registrationModule) != address(0)) {
             moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
         }

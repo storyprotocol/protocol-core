@@ -292,7 +292,6 @@ contract DeployHelper {
             require(address(ipAssetRegistry) != address(0), "DeployHelper Module: IPAssetRegistry required");
             require(address(ipResolver) != address(0), "DeployHelper Module: IPResolver required");
             registrationModule = new RegistrationModule(
-                getAccessController(),
                 address(ipAssetRegistry),
                 getLicensingModule(),
                 address(ipResolver)
