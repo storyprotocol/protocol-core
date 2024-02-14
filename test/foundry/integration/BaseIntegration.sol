@@ -46,103 +46,7 @@ contract BaseIntegration is BaseTest {
 
         // Also deploy mock royalty policy LS
         mockRoyaltyPolicyLS = new MockRoyaltyPolicyLS(address(royaltyModule));
-
-        // _deployMockAssets(); // deploy mock assets first
-        // _deployContracts();
-        // _configDeployedContracts();
-        // _mintMockAssets();
-        // _approveRegistration();
-        // _configAccessControl();
     }
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                DEPLOYMENT LOGICS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    // function _deployContracts() internal {
-    //     governance = new Governance(u.admin);
-
-    //     accessController = new AccessController(address(governance));
-    //     erc6551Registry = new ERC6551Registry();
-    //     ipAccountImpl = new IPAccountImpl();
-
-    //     moduleRegistry = new ModuleRegistry(address(governance));
-    //     ipAccountRegistry = new IPAccountRegistry(
-    //         address(erc6551Registry),
-    //         address(accessController),
-    //         address(ipAccountImpl)
-    //     );
-    //     royaltyModule = new RoyaltyModule(address(governance));
-    //     ipAssetRegistry = new IPAssetRegistry(
-    //         address(accessController),
-    //         address(erc6551Registry),
-    //         address(ipAccountImpl),
-    //         address(moduleRegistry),
-    //         address(governance)
-    //     );
-    //     licenseRegistry = new LicenseRegistry();
-    //     licensingModule = new LicensingModule(
-    //         address(accessController),
-    //         address(ipAssetRegistry),
-    //         address(royaltyModule),
-    //         address(licenseRegistry)
-    //     );
-    //     licenseRegistry.setLicensingModule(address(licensingModule));
-    //     ipMetadataProvider = new IPMetadataProvider(address(moduleRegistry));
-    //     ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry));
-    //     registrationModule = new RegistrationModule(
-    //         address(accessController),
-    //         address(ipAssetRegistry),
-    //         address(licensingModule),
-    //         address(ipResolver)
-    //     );
-    //     taggingModule = new TaggingModule();
-    //     disputeModule = new DisputeModule(address(accessController), address(ipAssetRegistry), address(governance));
-    //     ipAssetRenderer = new IPAssetRenderer(
-    //         address(ipAssetRegistry),
-    //         address(licenseRegistry),
-    //         address(taggingModule),
-    //         address(royaltyModule)
-    //     );
-
-    //     arbitrationPolicySP = new ArbitrationPolicySP(
-    //         address(disputeModule),
-    //         address(USDC),
-    //         ARBITRATION_PRICE,
-    //         address(governance)
-    //     );
-    //     royaltyPolicyLS = new RoyaltyPolicyLS(
-    //         address(royaltyModule),
-    //         address(licensingModule),
-    //         LIQUID_SPLIT_FACTORY,
-    //         LIQUID_SPLIT_MAIN
-    //     );
-
-    //     vm.label(LIQUID_SPLIT_FACTORY, "LIQUID_SPLIT_FACTORY");
-    //     vm.label(LIQUID_SPLIT_MAIN, "LIQUID_SPLIT_MAIN");
-
-    //     mockRoyaltyPolicyLS = new MockRoyaltyPolicyLS(address(royaltyModule));
-    // }
-
-    // function _configDeployedContracts() internal {
-    //     vm.startPrank(u.admin);
-    //     accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-    //     royaltyModule.setLicensingModule(address(licensingModule));
-    //     ipAssetRegistry.setRegistrationModule(address(registrationModule));
-
-    //     moduleRegistry.registerModule(REGISTRATION_MODULE_KEY, address(registrationModule));
-    //     moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));
-    //     moduleRegistry.registerModule("LICENSING_MODULE", address(licensingModule));
-
-    //     // whitelist royalty policy
-    //     royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
-    //     royaltyModule.whitelistRoyaltyPolicy(address(mockRoyaltyPolicyLS), true);
-    //     // whitelist royalty token
-    //     royaltyModule.whitelistRoyaltyToken(address(USDC), true);
-    //     royaltyModule.whitelistRoyaltyToken(address(erc20), true);
-
-    //     vm.stopPrank();
-    // }
 
     function approveRegistration() internal {
         vm.prank(u.alice);
@@ -154,39 +58,6 @@ contract BaseIntegration is BaseTest {
         vm.prank(u.dan);
         ipAssetRegistry.setApprovalForAll(address(registrationModule), true);
     }
-
-    // function _mintMockAssets() internal {
-    //     erc20.mint(u.alice, 1000 * 10 ** erc20.decimals());
-    //     erc20.mint(u.bob, 1000 * 10 ** erc20.decimals());
-    //     erc20.mint(u.carl, 1000 * 10 ** erc20.decimals());
-    //     erc20.mint(u.dan, 1000 * 10 ** erc20.decimals());
-    //     USDC.mint(u.alice, 100_000 * 10 ** USDC.decimals());
-    //     USDC.mint(u.bob, 100_000 * 10 ** USDC.decimals());
-    //     USDC.mint(u.carl, 100_000 * 10 ** USDC.decimals());
-    //     USDC.mint(u.dan, 100_000 * 10 ** USDC.decimals());
-    //     // skip minting NFTs
-    // }
-
-    // function _configAccessControl() internal {
-    //     // Set global perm to allow Registration Module to call License Registry on all IPAccounts
-    //     vm.startPrank(u.admin); // admin of governance
-
-    //     accessController.setGlobalPermission(
-    //         address(registrationModule),
-    //         address(licensingModule),
-    //         bytes4(licensingModule.linkIpToParents.selector),
-    //         1 // AccessPermission.ALLOW
-    //     );
-
-    //     accessController.setGlobalPermission(
-    //         address(licensingModule),
-    //         address(royaltyModule),
-    //         bytes4(royaltyModule.setRoyaltyPolicy.selector),
-    //         1 // AccessPermission.ALLOW
-    //     );
-
-    //     vm.stopPrank();
-    // }
 
     /*//////////////////////////////////////////////////////////////////////////
                                       HELPERS
@@ -340,6 +211,7 @@ contract BaseIntegration is BaseTest {
         });
 
         // Note that below events are emitted in function that's called by the registration module.
+        // TODO: re-enable these events
         // for (uint256 i = 0; i < licenseIds.length; i++) {
         //     vm.expectEmit();
         //     emit ILicenseRegistry.PolicyAddedToIpId({
