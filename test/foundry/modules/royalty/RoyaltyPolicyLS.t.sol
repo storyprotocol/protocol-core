@@ -7,7 +7,7 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { RoyaltyPolicyLS } from "../../../../contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
 import { Errors } from "../../../../contracts/lib/Errors.sol";
 // tests
-import { BaseTest } from "../../utils/BaseTest.sol";
+import { BaseTest } from "../../utils/BaseTest.t.sol";
 
 contract TestLSClaimer is BaseTest {
     RoyaltyPolicyLS internal testRoyaltyPolicyLS;

@@ -12,8 +12,8 @@ import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/A
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 // test
 // solhint-disable-next-line max-line-length
-import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.sol";
-import { BaseTest } from "test/foundry/utils/BaseTest.sol";
+import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.t.sol";
+import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
 contract DisputeModuleTest is BaseTest {
     event TagWhitelistUpdated(bytes32 tag, bool allowed);

@@ -7,7 +7,7 @@ import { IRoyaltyModule } from "contracts/interfaces/modules/royalty/IRoyaltyMod
 import { Errors } from "contracts/lib/Errors.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
-import { BaseTest } from "test/foundry/utils/BaseTest.sol";
+import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
 contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
     UMLPolicyFrameworkManager internal umlFramework;

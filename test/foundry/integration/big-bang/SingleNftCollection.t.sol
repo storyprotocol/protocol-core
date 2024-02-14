@@ -10,10 +10,10 @@ import { IP } from "contracts/lib/IP.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
 // test
-import { BaseIntegration } from "test/foundry/integration/BaseIntegration.sol";
+import { BaseIntegration } from "test/foundry/integration/BaseIntegration.t.sol";
 import { MintPaymentPolicyFrameworkManager } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
 // solhint-disable-next-line max-line-length
-import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.sol";
+import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.t.sol";
 
 contract BigBang_Integration_SingleNftCollection is BaseIntegration {
     using EnumerableSet for EnumerableSet.UintSet;

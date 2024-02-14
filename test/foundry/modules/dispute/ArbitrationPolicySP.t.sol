@@ -10,8 +10,8 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
 // test
 // solhint-disable-next-line max-line-length
-import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.sol";
-import { BaseTest } from "test/foundry/utils/BaseTest.sol";
+import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.t.sol";
+import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
 contract TestArbitrationPolicySP is BaseTest {
     event GovernanceWithdrew(uint256 amount);

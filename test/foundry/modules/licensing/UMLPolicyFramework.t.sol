@@ -10,7 +10,7 @@ import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicy
 
 import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
 import { MockTokenGatedHook } from "test/foundry/mocks/MockTokenGatedHook.sol";
-import { BaseTest } from "test/foundry/utils/BaseTest.sol";
+import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
 contract UMLPolicyFrameworkTest is BaseTest {
     UMLPolicyFrameworkManager internal umlFramework;

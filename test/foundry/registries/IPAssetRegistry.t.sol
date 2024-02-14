@@ -7,7 +7,7 @@ import { IP } from "contracts/lib/IP.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
-import { BaseTest } from "../utils/BaseTest.sol";
+import { BaseTest } from "../utils/BaseTest.t.sol";
 
 /// @title IP Asset Registry Testing Contract
 /// @notice Contract for testing core IP registration.

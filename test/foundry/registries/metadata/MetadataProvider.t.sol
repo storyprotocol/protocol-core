@@ -6,7 +6,7 @@ import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProvid
 import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMetadataProvider.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
-import { BaseTest } from "test/foundry/utils/BaseTest.sol";
+import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 import { MockMetadataProviderV2 } from "test/foundry/mocks/MockMetadataProviderV2.sol";
 
 /// @title IP Metadata Provider Testing Contract

@@ -13,11 +13,11 @@ import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY, TA
 import { AccessPermission } from "../../../contracts/lib/AccessPermission.sol";
 
 // test
-import { DeployHelper } from "./DeployHelper.sol";
-import { LicensingHelper } from "./LicensingHelper.sol";
+import { DeployHelper } from "./DeployHelper.t.sol";
+import { LicensingHelper } from "./LicensingHelper.t.sol";
 import { MockERC20 } from "../mocks/token/MockERC20.sol";
 import { MockERC721 } from "../mocks/token/MockERC721.sol";
-import { Users, UsersLib } from "./Users.sol";
+import { Users, UsersLib } from "./Users.t.sol";
 
 /// @title Base Test Contract
 /// @notice This contract provides a set of protocol-related testing utilities

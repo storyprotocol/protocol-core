@@ -10,7 +10,7 @@ import { IHookModule } from "contracts/interfaces/modules/base/IHookModule.sol";
 import { MockModule } from "../mocks/module/MockModule.sol";
 import { ICustomModule, CustomModule } from "../mocks/CustomModuleType.sol";
 import { MockTokenGatedHook } from "../mocks/MockTokenGatedHook.sol";
-import { BaseTest } from "../utils/BaseTest.sol";
+import { BaseTest } from "../utils/BaseTest.t.sol";
 
 contract ModuleRegistryTest is BaseTest {
     MockModule public module;

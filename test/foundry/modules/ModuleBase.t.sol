@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
 
-import { BaseTest } from "test/foundry/utils/BaseTest.sol";
+import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
 /// @title Module Base Test Contract
 /// @notice Base contract for testing standard module functionality.

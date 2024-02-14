@@ -11,7 +11,7 @@ import { UMLPolicy } from "contracts/interfaces/modules/licensing/IUMLPolicyFram
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 
-import { BaseTest } from "test/foundry/utils/BaseTest.sol";
+import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
 contract UMLPolicyFrameworkMultiParentTest is BaseTest {
     UMLPolicyFrameworkManager internal umlFramework;

@@ -6,7 +6,7 @@ import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
 
 import { IP } from "contracts/lib/IP.sol";
 
-import { BaseTest } from "test/foundry/utils/BaseTest.sol";
+import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
 /// @title IP Asset Renderer Test Contract
 /// @notice Tests IP asset rendering functionality.

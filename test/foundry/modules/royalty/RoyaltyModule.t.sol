@@ -6,7 +6,7 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 
 // tests
-import { BaseTest } from "../../utils/BaseTest.sol";
+import { BaseTest } from "../../utils/BaseTest.t.sol";
 
 contract TestRoyaltyModule is BaseTest {
     event RoyaltyPolicyWhitelistUpdated(address royaltyPolicy, bool allowed);

@@ -13,9 +13,9 @@ import { IP } from "contracts/lib/IP.sol";
 import { LSClaimer } from "contracts/modules/royalty-module/policies/LSClaimer.sol";
 
 // test
-import { BaseIntegration } from "test/foundry/integration/BaseIntegration.sol";
+import { BaseIntegration } from "test/foundry/integration/BaseIntegration.t.sol";
 // solhint-disable-next-line max-line-length
-import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.sol";
+import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.t.sol";
 
 contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration {
     using EnumerableSet for EnumerableSet.UintSet;

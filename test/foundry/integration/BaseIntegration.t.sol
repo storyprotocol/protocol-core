@@ -17,7 +17,7 @@ import { IP } from "contracts/lib/IP.sol";
 // test
 import { MockRoyaltyPolicyLS } from "test/foundry/mocks/policy/MockRoyaltyPolicyLS.sol";
 import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
-import { BaseTest } from "test/foundry/utils/BaseTest.sol";
+import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
 contract BaseIntegration is BaseTest {
     function setUp() public virtual override(BaseTest) {

@@ -14,8 +14,8 @@ import { LSClaimer } from "contracts/modules/royalty-module/policies/LSClaimer.s
 
 // test
 // solhint-disable-next-line max-line-length
-import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.sol";
-import { BaseTest } from "test/foundry/utils/BaseTest.sol";
+import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.t.sol";
+import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
 contract TestLSClaimer is BaseTest {
     address[] public LONG_CHAIN = new address[](100);
