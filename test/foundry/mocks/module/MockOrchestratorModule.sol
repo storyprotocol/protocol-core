@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
-import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
-import { IIPAccountRegistry } from "contracts/interfaces/registries/IIPAccountRegistry.sol";
-import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
-import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
-import { BaseModule } from "../../../contracts/modules/BaseModule.sol";
+
+import { IIPAccount } from "../../../../contracts/interfaces/IIPAccount.sol";
+import { IModule } from "../../../../contracts/interfaces/modules/base/IModule.sol";
+import { IModuleRegistry } from "../../../../contracts/interfaces/registries/IModuleRegistry.sol";
+import { IIPAccountRegistry } from "../../../../contracts/interfaces/registries/IIPAccountRegistry.sol";
+import { IPAccountChecker } from "../../../../contracts/lib/registries/IPAccountChecker.sol";
+import { BaseModule } from "../../../../contracts/modules/BaseModule.sol";
 
 contract MockOrchestratorModule is BaseModule {
     using ERC165Checker for address;

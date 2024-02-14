@@ -1,25 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { BaseTest } from "test/foundry/utils/BaseTest.sol";
 import { IP } from "contracts/lib/IP.sol";
-import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-import { MockLicensingModule } from "test/foundry/mocks/licensing/MockLicensingModule.sol";
-import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
-import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
-import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
-import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
-import { MockMetadataProviderV2 } from "test/foundry/mocks/MockMetadataProviderV2.sol";
-import { AccessController } from "contracts/AccessController.sol";
-import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
-import { Governance } from "contracts/governance/Governance.sol";
 import { MetadataProviderV1 } from "contracts/registries/metadata/MetadataProviderV1.sol";
 import { IMetadataProvider } from "contracts/interfaces/registries/metadata/IMetadataProvider.sol";
 import { Errors } from "contracts/lib/Errors.sol";
-import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
+
+import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
+import { MockMetadataProviderV2 } from "test/foundry/mocks/MockMetadataProviderV2.sol";
 
 /// @title IP Metadata Provider Testing Contract
 /// @notice Contract for metadata provider settings.
@@ -92,12 +80,24 @@ contract MetadataProviderTest is BaseTest {
     /// @notice Mock IP account to use for testing.
     address public ipId;
 
-    /// @notice Protocol-wide IP registry used for testing metadata upgrades.
-    IPAssetRegistry public registry;
-
     /// @notice Initializes the IP metadata provider contract.
     function setUp() public virtual override {
-        BaseTest.setUp();
+        super.setUp();
+        buildDeployModuleCondition(
+            DeployModuleCondition({
+                registrationModule: true,
+                disputeModule: false,
+                royaltyModule: false,
+                taggingModule: false,
+                licensingModule: false
+            })
+        );
+        buildDeployMiscCondition(
+            DeployMiscCondition({ ipAssetRenderer: false, ipMetadataProvider: false, ipResolver: true })
+        );
+        deployConditionally();
+        postDeploymentSetup();
+
         v1Metadata = abi.encode(
             IP.MetadataV1({
                 name: IP_NAME,
@@ -108,54 +108,32 @@ contract MetadataProviderTest is BaseTest {
             })
         );
 
-        // TODO: Reuse this setup in all tests requiring IPAssetRegistry initialization.
-        Governance governance = new Governance(address(this));
-        AccessController accessController = new AccessController(address(governance));
-        ModuleRegistry moduleRegistry = new ModuleRegistry(address(governance));
-        MockLicensingModule licensingModule = new MockLicensingModule();
-
-        ERC6551Registry erc6551Registry = new ERC6551Registry();
-        IPAccountImpl ipAccountImpl = new IPAccountImpl();
-        IPAccountRegistry ipAccountRegistry = new IPAccountRegistry(
-            address(erc6551Registry),
-            address(accessController),
-            address(ipAccountImpl)
-        );
-        registry = new IPAssetRegistry(
-            address(accessController),
-            address(erc6551Registry),
-            address(ipAccountImpl),
-            address(licensingModule),
-            address(governance)
-        );
-        IPResolver ipResolver = new IPResolver(address(accessController), address(registry));
-        RegistrationModule registrationModule = new RegistrationModule(
-            address(registry),
-            address(licensingModule),
-            address(ipResolver)
-        );
-        accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-        registry.setRegistrationModule(address(registrationModule));
-        MockERC721 erc721 = new MockERC721("MockERC721");
-        uint256 tokenId = erc721.mintId(alice, 99);
+        uint256 tokenId = mockNFT.mintId(alice, 99);
         vm.prank(alice);
-        ipId = registry.register(block.chainid, address(erc721), tokenId, address(ipResolver), true, v1Metadata);
+        ipId = ipAssetRegistry.register(
+            block.chainid,
+            address(mockNFT),
+            tokenId,
+            address(ipResolver),
+            true,
+            v1Metadata
+        );
 
-        metadataProvider = MetadataProviderV1(registry.metadataProvider());
-        upgradedProvider = new MockMetadataProviderV2(address(registry));
+        metadataProvider = MetadataProviderV1(ipAssetRegistry.metadataProvider());
+        upgradedProvider = new MockMetadataProviderV2(address(ipAssetRegistry));
     }
 
     /// @notice Tests IP metadata provider initialization.
     function test_MetadataProvider_Constructor() public {
-        metadataProvider = new MetadataProviderV1(address(registry));
-        assertEq(address(metadataProvider.IP_ASSET_REGISTRY()), address(registry));
+        metadataProvider = new MetadataProviderV1(address(ipAssetRegistry));
+        assertEq(address(metadataProvider.IP_ASSET_REGISTRY()), address(ipAssetRegistry));
     }
 
     /// @notice Tests metadata is properly stored.
     function test_MetadataProvider_SetMetadata() public {
         vm.expectEmit(true, true, true, true);
         emit IMetadataProvider.MetadataSet(ipId, v1Metadata);
-        vm.prank(address(registry));
+        vm.prank(address(ipAssetRegistry));
         metadataProvider.setMetadata(ipId, v1Metadata);
         assertEq(metadataProvider.getMetadata(ipId), v1Metadata);
         assertEq(metadataProvider.name(ipId), IP_NAME);
@@ -177,15 +155,15 @@ contract MetadataProviderTest is BaseTest {
             })
         );
         vm.expectRevert(Errors.MetadataProvider__RegistrantInvalid.selector);
-        vm.prank(address(registry));
+        vm.prank(address(ipAssetRegistry));
         metadataProvider.setMetadata(ipId, v1Metadata);
     }
 
     /// @notice Checks that IP assets may be upgraded to the upgraded provider.
     function test_MetadataProvider_Upgrade() public {
-        vm.prank(address(registry));
+        vm.prank(address(ipAssetRegistry));
         metadataProvider.setMetadata(ipId, v1Metadata);
-        vm.prank(address(registry));
+        vm.prank(address(ipAssetRegistry));
         metadataProvider.setUpgradeProvider(address(upgradedProvider));
         bytes memory v2Metadata = abi.encode(
             ExpectedUpgradedMetadataV2({
@@ -218,7 +196,7 @@ contract MetadataProviderTest is BaseTest {
 
     /// @notice Checks that upgrades revert when called by a non IP asset owner.
     function test_MetadataProvider_Upgrade_Reverts_OwnerInvalid() public {
-        vm.prank(address(registry));
+        vm.prank(address(ipAssetRegistry));
         metadataProvider.setUpgradeProvider(address(upgradedProvider));
         vm.expectRevert(Errors.MetadataProvider__IPAssetOwnerInvalid.selector);
         vm.prank(bob);
@@ -228,7 +206,7 @@ contract MetadataProviderTest is BaseTest {
     /// @notice Checks upgrades revert when new metadata is incompatible.
     /// TODO: Add parameterized testing to vet across a suite of variants.
     function test_MetadataProvider_Upgrade_Reverts_DataIncompatible() public {
-        vm.prank(address(registry));
+        vm.prank(address(ipAssetRegistry));
         metadataProvider.setUpgradeProvider(address(upgradedProvider));
 
         bytes memory v2Metadata = abi.encode(
@@ -247,9 +225,9 @@ contract MetadataProviderTest is BaseTest {
         metadataProvider.upgrade(payable(ipId), v2Metadata);
     }
 
-    /// @notice Checks that metadata setting reverts if not called by the registry.
+    /// @notice Checks that metadata setting reverts if not called by the ipAssetRegistry.
     function test_MetadataProvider_SetUpgradeProvider() public {
-        vm.prank(address(registry));
+        vm.prank(address(ipAssetRegistry));
         metadataProvider.setUpgradeProvider(address(upgradedProvider));
         assertEq(address(metadataProvider.upgradeProvider()), address(upgradedProvider));
     }
@@ -257,11 +235,11 @@ contract MetadataProviderTest is BaseTest {
     /// @notice Checks that setting an invalid upgrade provider reverts.
     function test_MetadataProvider_SetUpgradeProvider_Reverts_ProviderInvalid() public {
         vm.expectRevert(Errors.MetadataProvider__UpgradeProviderInvalid.selector);
-        vm.prank(address(registry));
+        vm.prank(address(ipAssetRegistry));
         metadataProvider.setUpgradeProvider(address(0));
     }
 
-    /// @notice Checks that metadata setting reverts if not called by the registry.
+    /// @notice Checks that metadata setting reverts if not called by the ipAssetRegistry.
     function test_MetadataProvider_SetMetadata_Reverts_Unauthorized() public {
         vm.expectRevert(Errors.MetadataProvider__Unauthorized.selector);
         metadataProvider.setMetadata(ipId, "");

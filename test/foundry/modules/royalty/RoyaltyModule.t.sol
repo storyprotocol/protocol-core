@@ -2,29 +2,37 @@
 pragma solidity ^0.8.23;
 
 // contracts
-import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 import { Errors } from "contracts/lib/Errors.sol";
-// tests
-import { TestHelper } from "../../utils/TestHelper.sol";
+import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
 
-contract TestRoyaltyModule is TestHelper {
+// tests
+import { BaseTest } from "../../utils/BaseTest.t.sol";
+
+contract TestRoyaltyModule is BaseTest {
     event RoyaltyPolicyWhitelistUpdated(address royaltyPolicy, bool allowed);
     event RoyaltyTokenWhitelistUpdated(address token, bool allowed);
     event RoyaltyPolicySet(address ipId, address royaltyPolicy, bytes data);
     event RoyaltyPaid(address receiverIpId, address payerIpId, address sender, address token, uint256 amount);
 
+    address internal ipAccount1 = address(0x111000aaa);
+    address internal ipAccount2 = address(0x111000bbb);
+
     function setUp() public override {
         super.setUp();
+        buildDeployModuleCondition(
+            DeployModuleCondition({
+                registrationModule: false,
+                disputeModule: false,
+                royaltyModule: true,
+                taggingModule: false,
+                licensingModule: false
+            })
+        );
+        buildDeployPolicyCondition(DeployPolicyCondition({ arbitrationPolicySP: false, royaltyPolicyLS: true }));
+        deployConditionally();
+        postDeploymentSetup();
 
-        USDC.mint(ipAccount2, 1000 * 10 ** 6); // 1000 USDC
-
-        vm.startPrank(u.admin);
-        // whitelist royalty policy
-        royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
-
-        // whitelist royalty token
-        royaltyModule.whitelistRoyaltyToken(address(USDC), true);
-        vm.stopPrank();
+        USDC.mint(address(ipAccount2), 1000 * 10 ** 6); // 1000 USDC
     }
 
     function test_RoyaltyModule_setLicensingModule_revert_ZeroLicensingModule() public {

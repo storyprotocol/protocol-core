@@ -13,7 +13,7 @@ import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
-import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
 import { Governance } from "contracts/governance/Governance.sol";
 import { MockAccessControlledModule } from "test/foundry/mocks/MockAccessControlledModule.sol";
 

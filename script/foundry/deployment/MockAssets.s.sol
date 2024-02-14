@@ -10,8 +10,8 @@ import { stdJson } from "forge-std/StdJson.sol";
 import { BroadcastManager } from "../../../script/foundry/utils/BroadcastManager.s.sol";
 import { JsonDeploymentHandler } from "../../../script/foundry/utils/JsonDeploymentHandler.s.sol";
 // test
-import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
-import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { MockERC20 } from "test/foundry/mocks/token/MockERC20.sol";
+import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
 
 contract MockAssets is Script, BroadcastManager, JsonDeploymentHandler {
     using stdJson for string;

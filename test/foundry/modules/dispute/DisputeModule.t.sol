@@ -7,14 +7,15 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC6551AccountLib } from "@erc6551/lib/ERC6551AccountLib.sol";
 // contracts
 import { Errors } from "contracts/lib/Errors.sol";
+import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
+import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 // test
 // solhint-disable-next-line max-line-length
-import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
-import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { TestHelper } from "test/foundry/utils/TestHelper.sol";
+import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.t.sol";
+import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
-contract TestDisputeModule is TestHelper {
+contract DisputeModuleTest is BaseTest {
     event TagWhitelistUpdated(bytes32 tag, bool allowed);
     event ArbitrationPolicyWhitelistUpdated(address arbitrationPolicy, bool allowed);
     event ArbitrationRelayerWhitelistUpdated(address arbitrationPolicy, address arbitrationRelayer, bool allowed);
@@ -33,30 +34,49 @@ contract TestDisputeModule is TestHelper {
     event DefaultArbitrationPolicyUpdated(address arbitrationPolicy);
     event ArbitrationPolicySet(address ipId, address arbitrationPolicy);
 
-    address public ipAddr;
+    address internal ipAccount1 = address(0x111000aaa);
+    address internal ipAccount2 = address(0x111000bbb);
+
+    address internal ipAddr;
+    address internal arbitrationRelayer;
+    ArbitrationPolicySP internal arbitrationPolicySP2;
 
     function setUp() public override {
         super.setUp();
+        buildDeployModuleCondition(
+            DeployModuleCondition({
+                registrationModule: true,
+                disputeModule: true,
+                royaltyModule: false,
+                taggingModule: false,
+                licensingModule: false
+            })
+        );
+        buildDeployPolicyCondition(DeployPolicyCondition({ arbitrationPolicySP: true, royaltyPolicyLS: true }));
+        buildDeployMiscCondition(
+            DeployMiscCondition({ ipAssetRenderer: false, ipMetadataProvider: false, ipResolver: true })
+        );
+        deployConditionally();
+        postDeploymentSetup();
+
+        arbitrationRelayer = u.admin;
 
         USDC.mint(ipAccount1, 1000 * 10 ** 6);
 
+        // second arbitration policy
+        arbitrationPolicySP2 = new ArbitrationPolicySP(
+            getDisputeModule(),
+            address(USDC),
+            ARBITRATION_PRICE,
+            getGovernance()
+        );
+
         vm.startPrank(u.admin);
-        // whitelist dispute tag
-        disputeModule.whitelistDisputeTag("PLAGIARISM", true);
-
-        // whitelist arbitration policy
-        disputeModule.whitelistArbitrationPolicy(address(arbitrationPolicySP), true);
         disputeModule.whitelistArbitrationPolicy(address(arbitrationPolicySP2), true);
-
-        // whitelist arbitration relayer
-        disputeModule.whitelistArbitrationRelayer(address(arbitrationPolicySP), arbitrationRelayer, true);
-
-        // set base arbitration policy
         disputeModule.setBaseArbitrationPolicy(address(arbitrationPolicySP2));
         vm.stopPrank();
 
         _setUMLPolicyFrameworkManager();
-        nft = new MockERC721("mock");
         _addUMLPolicy(
             true,
             true,
@@ -83,23 +103,23 @@ contract TestDisputeModule is TestHelper {
             })
         );
 
-        nft.mintId(deployer, 0);
+        mockNFT.mintId(u.alice, 0);
 
         address expectedAddr = ERC6551AccountLib.computeAddress(
             address(erc6551Registry),
             address(ipAccountImpl),
             ipAccountRegistry.IP_ACCOUNT_SALT(),
             block.chainid,
-            address(nft),
+            address(mockNFT),
             0
         );
         vm.label(expectedAddr, string(abi.encodePacked("IPAccount", Strings.toString(0))));
 
-        vm.startPrank(deployer);
+        vm.startPrank(u.alice);
         ipAssetRegistry.setApprovalForAll(address(registrationModule), true);
         ipAddr = registrationModule.registerRootIp(
             policyIds["uml_cheap_flexible"],
-            address(nft),
+            address(mockNFT),
             0,
             "IPAccount1",
             bytes32("some of the best description"),
@@ -484,6 +504,6 @@ contract TestDisputeModule is TestHelper {
     }
 
     function test_DisputeModule_name() public {
-        assertEq(disputeModule.name(), "DISPUTE_MODULE");
+        assertEq(IModule(address(disputeModule)).name(), "DISPUTE_MODULE");
     }
 }

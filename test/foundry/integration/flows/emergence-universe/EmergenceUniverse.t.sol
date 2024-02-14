@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 import { Test } from "forge-std/Test.sol";
 
-import { Users, UsersLib } from "test/foundry/utils/Users.sol";
+import { Users, UsersLib } from "test/foundry/utils/Users.t.sol";
 
 contract Integration_Flow_EmergenceUniverse_Test is Test {
     Users internal u;

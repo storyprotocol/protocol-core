@@ -26,9 +26,9 @@ import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 // test
 // solhint-disable-next-line max-line-length
 import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy } from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
-import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
-import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { MockRoyaltyPolicyLS } from "test/foundry/mocks/MockRoyaltyPolicyLS.sol";
+import { MockAccessController } from "test/foundry/mocks/access/MockAccessController.sol";
+import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
+import { MockRoyaltyPolicyLS } from "test/foundry/mocks/policy/MockRoyaltyPolicyLS.sol";
 
 contract LicensingModuleTest is Test {
     using Strings for *;

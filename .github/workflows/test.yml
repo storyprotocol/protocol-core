@@ -47,10 +47,13 @@ jobs:
         run: |
           ls -R ${{ github.workspace }}          
 
+      # first, build contracts excluding the tests and scripts. Check contract sizes in this step.
+      # then, build contracts including the tests and scripts. Don't check contract sizes.
       - name: Run Forge build
         run: |
           forge --version
-          forge build --force --sizes
+          forge build --force --sizes --skip test --skip script
+          forge build
         id: build
 
       - name: Run Forge tests

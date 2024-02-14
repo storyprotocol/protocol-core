@@ -1,43 +1,34 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { Test } from "forge-std/Test.sol";
-
-import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
-
-import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
-import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
-import { MockAccessController } from "test/foundry/mocks/MockAccessController.sol";
-import { MockModule } from "test/foundry/mocks/MockModule.sol";
-import { ICustomModule, CustomModule } from "test/foundry/mocks/CustomModuleType.sol";
-import { Governance } from "contracts/governance/Governance.sol";
 import { MODULE_TYPE_DEFAULT, MODULE_TYPE_HOOK } from "contracts/lib/modules/Module.sol";
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
-import { IHookModule } from "../../contracts/interfaces/modules/base/IHookModule.sol";
-import { MockTokenGatedHook } from "test/foundry/mocks/MockTokenGatedHook.sol";
+import { IHookModule } from "contracts/interfaces/modules/base/IHookModule.sol";
 
-contract ModuleRegistryTest is Test {
-    IPAccountRegistry public registry;
-    IPAccountImpl public implementation;
-    ModuleRegistry public moduleRegistry;
-    ERC6551Registry public erc6551Registry = new ERC6551Registry();
-    MockAccessController public accessController = new MockAccessController();
+import { MockModule } from "../mocks/module/MockModule.sol";
+import { ICustomModule, CustomModule } from "../mocks/CustomModuleType.sol";
+import { MockTokenGatedHook } from "../mocks/MockTokenGatedHook.sol";
+import { BaseTest } from "../utils/BaseTest.t.sol";
+
+contract ModuleRegistryTest is BaseTest {
     MockModule public module;
     CustomModule public customModule;
     MockTokenGatedHook public tokenGatedHook;
-    Governance public governance;
 
-    function setUp() public {
-        governance = new Governance(address(this));
-        moduleRegistry = new ModuleRegistry(address(governance));
-        implementation = new IPAccountImpl();
-        registry = new IPAccountRegistry(address(erc6551Registry), address(accessController), address(implementation));
-        module = new MockModule(address(registry), address(moduleRegistry), "MockModule");
+    function setUp() public override {
+        super.setUp();
+        buildDeployRegistryCondition(DeployRegistryCondition({ licenseRegistry: false, moduleRegistry: true }));
+        deployConditionally();
+        postDeploymentSetup();
+
+        module = new MockModule(address(ipAccountRegistry), address(moduleRegistry), "MockModule");
         customModule = new CustomModule();
         tokenGatedHook = new MockTokenGatedHook();
+
+        // run tests as u.admin
+        changePrank(u.admin);
     }
 
     function test_ModuleRegistry_registerModule() public {
@@ -71,7 +62,7 @@ contract ModuleRegistryTest is Test {
 
     function test_ModuleRegistry_revert_registerModule_nameAlreadyRegistered() public {
         moduleRegistry.registerModule("MockModule", address(module));
-        MockModule newModule = new MockModule(address(registry), address(moduleRegistry), "NewMockModule");
+        MockModule newModule = new MockModule(address(ipAccountRegistry), address(moduleRegistry), "NewMockModule");
         vm.expectRevert(abi.encodeWithSelector(Errors.ModuleRegistry__NameAlreadyRegistered.selector));
         moduleRegistry.registerModule("MockModule", address(newModule));
     }

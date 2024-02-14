@@ -13,18 +13,15 @@ import { IP } from "contracts/lib/IP.sol";
 import { LSClaimer } from "contracts/modules/royalty-module/policies/LSClaimer.sol";
 
 // test
-import { BaseIntegration } from "test/foundry/integration/BaseIntegration.sol";
-import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
+import { BaseIntegration } from "test/foundry/integration/BaseIntegration.t.sol";
 // solhint-disable-next-line max-line-length
-import { Integration_Shared_LicensingHelper, UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
+import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.t.sol";
 
-contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_Shared_LicensingHelper {
+contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration {
     using EnumerableSet for EnumerableSet.UintSet;
 
     // TODO: import from ILiquidSplitMain in 0xSplits
     event DistributeERC20(address split, address token, uint256 amount, address distributorAddress);
-
-    MockERC721 internal nft;
 
     mapping(uint256 tokenId => address ipAccount) internal ipAcct;
 
@@ -34,26 +31,17 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
 
     function setUp() public override {
         BaseIntegration.setUp();
-        Integration_Shared_LicensingHelper.initLicenseFrameworkAndPolicy(
-            accessController,
-            ipAccountRegistry,
-            licensingModule,
-            royaltyModule,
-            mockRoyaltyPolicyLS // mock for MintPaymentPFM
-        );
 
-        nft = erc721.cat;
-
-        nft.mintId(u.alice, 1);
-        nft.mintId(u.bob, 2);
-        nft.mintId(u.carl, 3);
-        nft.mintId(u.dan, 4);
+        mockNFT.mintId(u.alice, 1);
+        mockNFT.mintId(u.bob, 2);
+        mockNFT.mintId(u.carl, 3);
+        mockNFT.mintId(u.dan, 4);
     }
 
     function test_Integration_NftLicenseRoyalty_SingleChain()
         public
         withLFM_UML
-        withUMLPolicy_Commerical_Derivative(
+        withUMLPolicy_Commercial_Derivative(
             UMLPolicyGenericParams({
                 policyName: "reciprocal", // => uml_com_deriv_reciprocal
                 attribution: false,
@@ -84,7 +72,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
         // Alice registers NFT 1 IPAccount
 
         vm.startPrank(u.alice);
-        ipAcct[1] = registerIpAccount(nft, 1, u.alice);
+        ipAcct[1] = registerIpAccount(mockNFT, 1, u.alice);
 
         /*///////////////////////////////////////////////////////////////
                             ADD POLICIES TO IP ACCOUNTS
@@ -109,7 +97,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
                 u.bob
             );
 
-            ipAcct[2] = registerIpAccount(nft, 2, u.bob);
+            ipAcct[2] = registerIpAccount(mockNFT, 2, u.bob);
             linkIpToParent(bob_license_from_root_alice, ipAcct[2], u.bob, 0);
 
             (, , , uint256 minRoyalty) = royaltyPolicyLS.royaltyData(ipAcct[2]);
@@ -128,7 +116,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
 
             ipAcct[3] = registerDerivativeIp(
                 carl_license_from_bob,
-                address(nft),
+                address(mockNFT),
                 3,
                 IP.MetadataV1({
                     name: "IP NAME",
@@ -157,7 +145,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
 
             ipAcct[4] = registerDerivativeIp(
                 dan_license_from_carl,
-                address(nft),
+                address(mockNFT),
                 4,
                 IP.MetadataV1({
                     name: "IP NAME",
@@ -184,7 +172,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
 
             USDC.approve(address(royaltyPolicyLS), royaltyAmount);
 
-            (address danSplitClone, address danClaimer, , ) = royaltyPolicyLS.royaltyData(ipAcct_Dan);
+            (address danSplitClone, , , ) = royaltyPolicyLS.royaltyData(ipAcct_Dan);
 
             vm.expectEmit(address(USDC));
             emit IERC20.Transfer(u.alice, address(danSplitClone), royaltyAmount); // destination of payment
@@ -203,7 +191,6 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
         {
             vm.startPrank(u.dan);
 
-            address ipAcct_Alice = ipAcct[1];
             address ipAcct_Dan = ipAcct[4];
             (, address danClaimer, , ) = royaltyPolicyLS.royaltyData(ipAcct_Dan);
 
@@ -251,12 +238,12 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration, Integration_S
 
             vm.expectEmit(address(danSplitClone));
             emit IERC1155.TransferSingle({ // rNFTs
-                operator: address(danClaimer),
-                from: address(danClaimer),
-                to: aliceSplitClone,
-                id: 0,
-                value: 250
-            });
+                    operator: address(danClaimer),
+                    from: address(danClaimer),
+                    to: aliceSplitClone,
+                    id: 0,
+                    value: 250
+                });
 
             vm.expectEmit(address(USDC));
             emit IERC20.Transfer(address(danClaimer), aliceSplitClone, 249999999); // alice should get 25% of 1000 USDC

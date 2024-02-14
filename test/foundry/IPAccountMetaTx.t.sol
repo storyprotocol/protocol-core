@@ -15,9 +15,9 @@ import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 import { Governance } from "contracts/governance/Governance.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
-import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
-import { MockModule } from "test/foundry/mocks/MockModule.sol";
-import { MockMetaTxModule } from "test/foundry/mocks/MockMetaTxModule.sol";
+import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
+import { MockModule } from "test/foundry/mocks/module/MockModule.sol";
+import { MockMetaTxModule } from "test/foundry/mocks/module/MockMetaTxModule.sol";
 
 contract IPAccountMetaTxTest is Test {
     IPAccountRegistry public registry;

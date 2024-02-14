@@ -7,18 +7,29 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { RoyaltyPolicyLS } from "../../../../contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
 import { Errors } from "../../../../contracts/lib/Errors.sol";
 // tests
-import { TestHelper } from "../../utils/TestHelper.sol";
+import { BaseTest } from "../../utils/BaseTest.t.sol";
 
-contract TestLSClaimer is TestHelper {
+contract TestLSClaimer is BaseTest {
     RoyaltyPolicyLS internal testRoyaltyPolicyLS;
+
+    address internal ipAccount1 = address(0x111000aaa);
+    address internal ipAccount2 = address(0x111000bbb);
+    address internal ipAccount3 = address(0x111000ccc);
 
     function setUp() public override {
         super.setUp();
-
-        vm.startPrank(u.admin);
-        // whitelist royalty policy
-        royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
-        vm.stopPrank();
+        buildDeployModuleCondition(
+            DeployModuleCondition({
+                registrationModule: false,
+                disputeModule: false,
+                royaltyModule: true,
+                taggingModule: false,
+                licensingModule: false
+            })
+        );
+        buildDeployPolicyCondition(DeployPolicyCondition({ arbitrationPolicySP: false, royaltyPolicyLS: true }));
+        deployConditionally();
+        postDeploymentSetup();
     }
 
     function test_RoyaltyPolicyLS_constructor_revert_ZeroRoyaltyModule() public {
@@ -221,8 +232,9 @@ contract TestLSClaimer is TestHelper {
         USDC.mint(splitClone2, royaltyAmount);
 
         address[] memory accounts = new address[](2);
-        accounts[1] = ipAccount2;
-        accounts[0] = claimer2;
+        // Switch the index 0 and 1 if facing `InvalidSplit__AccountsOutOfOrder` error
+        accounts[0] = ipAccount2;
+        accounts[1] = claimer2;
 
         uint256 splitClone2USDCBalBefore = USDC.balanceOf(splitClone2);
         uint256 splitMainUSDCBalBefore = USDC.balanceOf(royaltyPolicyLS.LIQUID_SPLIT_MAIN());
@@ -258,8 +270,9 @@ contract TestLSClaimer is TestHelper {
         USDC.mint(splitClone2, royaltyAmount);
 
         address[] memory accounts = new address[](2);
-        accounts[1] = ipAccount2;
-        accounts[0] = claimer2;
+        // Switch the index 0 and 1 if facing `InvalidSplit__AccountsOutOfOrder` error
+        accounts[0] = ipAccount2;
+        accounts[1] = claimer2;
 
         ERC20[] memory tokens = new ERC20[](1);
         tokens[0] = USDC;

@@ -1,22 +1,24 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
+import { IAccessController } from "contracts/interfaces/IAccessController.sol";
+import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
+import { IRoyaltyModule } from "contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
 import { UMLPolicy } from "contracts/interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
-import { TestHelper } from "test/foundry/utils/TestHelper.sol";
 
-contract UMLPolicyFrameworkMultiParentTest is TestHelper {
+import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
+
+contract UMLPolicyFrameworkMultiParentTest is BaseTest {
     UMLPolicyFrameworkManager internal umlFramework;
     string internal licenseUrl = "https://example.com/license";
-    address internal bob = address(0x111);
     address internal ipId1;
     address internal ipId2;
     address internal ipId3;
-    address internal alice = address(0x222);
     address internal ipId4;
 
     uint256[] internal licenses;
@@ -53,8 +55,25 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
 
     function setUp() public override {
         super.setUp();
+        buildDeployRegistryCondition(DeployRegistryCondition({ licenseRegistry: true, moduleRegistry: false }));
+        buildDeployModuleCondition(
+            DeployModuleCondition({
+                registrationModule: false,
+                disputeModule: false,
+                royaltyModule: false,
+                taggingModule: false,
+                licensingModule: true
+            })
+        );
+        deployConditionally();
+        postDeploymentSetup();
 
-        nft = erc721.ape;
+        // Call `getXXX` here to either deploy mock or use real contracted deploy via the
+        // deployConditionally() call above.
+        // TODO: three options, auto/mock/real in deploy condition, so no need to call getXXX
+        accessController = IAccessController(getAccessController());
+        licensingModule = ILicensingModule(getLicensingModule());
+        royaltyModule = IRoyaltyModule(getRoyaltyModule());
 
         umlFramework = new UMLPolicyFrameworkManager(
             address(accessController),
@@ -66,21 +85,19 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
 
         licensingModule.registerPolicyFrameworkManager(address(umlFramework));
 
-        nft.mintId(bob, 1);
-        nft.mintId(bob, 2);
-        nft.mintId(bob, 3);
-        nft.mintId(alice, 4);
+        mockNFT.mintId(bob, 1);
+        mockNFT.mintId(bob, 2);
+        mockNFT.mintId(bob, 3);
+        mockNFT.mintId(alice, 4);
 
-        ipId1 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 1);
+        ipId1 = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), 1);
         ipIdToOwner[ipId1] = bob;
-        ipId2 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 2);
+        ipId2 = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), 2);
         ipIdToOwner[ipId2] = bob;
-        ipId3 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 3);
+        ipId3 = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), 3);
         ipIdToOwner[ipId3] = bob;
-        ipId4 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 4);
+        ipId4 = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), 4);
         ipIdToOwner[ipId4] = alice;
-        vm.label(bob, "Bob");
-        vm.label(alice, "Alice");
         vm.label(ipId1, "IP1");
         vm.label(ipId2, "IP2");
         vm.label(ipId3, "IP3");
