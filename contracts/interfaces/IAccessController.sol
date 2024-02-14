@@ -12,12 +12,6 @@ interface IAccessController {
         uint8 permission
     );
 
-    /// @notice Initializes the access controller
-    /// @dev This function is called only once during the protocol initialization.
-    /// @param ipAccountRegistry The address of the IP account registry
-    /// @param moduleRegistry The address of the module registry
-    function initialize(address ipAccountRegistry, address moduleRegistry) external;
-
     /// @notice Sets the permission for a specific function call
     /// @dev Each policy is represented as a mapping from an IP account address to a signer address to a recipient
     /// address to a function selector to a permission level.

@@ -7,6 +7,7 @@ import { console2 } from "forge-std/console2.sol"; // console to indicate mock d
 import { Test } from "forge-std/Test.sol";
 
 // contracts
+import { AccessController } from "../../../contracts/AccessController.sol";
 // solhint-disable-next-line max-line-length
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY, TAGGING_MODULE_KEY, ROYALTY_MODULE_KEY, LICENSING_MODULE_KEY } from "../../../contracts/lib/modules/Module.sol";
 import { AccessPermission } from "../../../contracts/lib/AccessPermission.sol";
@@ -97,7 +98,9 @@ contract BaseTest is Test, DeployHelper, LicensingHelper {
         console2.log("BaseTest PostDeploymentSetup: Init Access Controller");
         require(address(ipAccountRegistry) != address(0), "ipAccountRegistry not set");
         vm.startPrank(u.admin);
-        accessController.initialize(address(ipAccountRegistry), getModuleRegistry());
+
+        // NOTE: accessController is IAccessController, which doesn't expose `initialize` function.
+        AccessController(address(accessController)).initialize(address(ipAccountRegistry), getModuleRegistry());
 
         // If REAL Registration Module and Licensing Module are deployed, set global permissions
         if (deployConditions.module.registrationModule && deployConditions.module.licensingModule) {
