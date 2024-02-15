@@ -391,6 +391,13 @@ contract DisputeModuleTest is BaseTest {
         assertEq(arbitrationPolicySPUSDCBalanceBefore - arbitrationPolicySPUSDCBalanceAfter, ARBITRATION_PRICE);
         assertEq(currentTagBefore, bytes32("IN_DISPUTE"));
         assertEq(currentTagAfter, bytes32("PLAGIARISM"));
+        assertTrue(disputeModule.isIpTaggedWith(ipAddr, bytes32("PLAGIARISM")));
+        assertTrue(disputeModule.isIpTagged(ipAddr));
+        bytes32[] memory ipTags = new bytes32[](1);
+        ipTags[0] = bytes32("PLAGIARISM");
+        assertEq(keccak256(abi.encode(disputeModule.ipTags(ipAddr))), keccak256(abi.encode(ipTags)));
+        assertEq(disputeModule.totalTagsForIp(ipAddr), 1);
+        assertEq(disputeModule.tagForIpAt(ipAddr, 0), bytes32("PLAGIARISM"));
     }
 
     function test_DisputeModule_PolicySP_setDisputeJudgement_False() public {
@@ -419,6 +426,11 @@ contract DisputeModuleTest is BaseTest {
         assertEq(arbitrationPolicySPUSDCBalanceBefore - arbitrationPolicySPUSDCBalanceAfter, 0);
         assertEq(currentTagBefore, bytes32("IN_DISPUTE"));
         assertEq(currentTagAfter, bytes32(0));
+        assertFalse(disputeModule.isIpTaggedWith(ipAddr, bytes32("PLAGIARISM")));
+        assertFalse(disputeModule.isIpTagged(ipAddr));
+        bytes32[] memory ipTags = new bytes32[](0);
+        assertEq(keccak256(abi.encode(disputeModule.ipTags(ipAddr))), keccak256(abi.encode(ipTags)));
+        assertEq(disputeModule.totalTagsForIp(ipAddr), 0);
     }
 
     function test_DisputeModule_PolicySP_cancelDispute_revert_NotDisputeInitiator() public {
@@ -457,6 +469,11 @@ contract DisputeModuleTest is BaseTest {
 
         assertEq(currentTagBeforeCancel, bytes32("IN_DISPUTE"));
         assertEq(currentTagAfterCancel, bytes32(0));
+        assertFalse(disputeModule.isIpTaggedWith(ipAddr, bytes32("PLAGIARISM")));
+        assertFalse(disputeModule.isIpTagged(ipAddr));
+        bytes32[] memory ipTags = new bytes32[](0);
+        assertEq(keccak256(abi.encode(disputeModule.ipTags(ipAddr))), keccak256(abi.encode(ipTags)));
+        assertEq(disputeModule.totalTagsForIp(ipAddr), 0);
     }
 
     function test_DisputeModule_resolveDispute_revert_NotDisputeInitiator() public {
@@ -501,6 +518,11 @@ contract DisputeModuleTest is BaseTest {
 
         assertEq(currentTagBeforeResolve, bytes32("PLAGIARISM"));
         assertEq(currentTagAfterResolve, bytes32(0));
+        assertFalse(disputeModule.isIpTaggedWith(ipAddr, bytes32("PLAGIARISM")));
+        assertFalse(disputeModule.isIpTagged(ipAddr));
+        bytes32[] memory ipTags = new bytes32[](0);
+        assertEq(keccak256(abi.encode(disputeModule.ipTags(ipAddr))), keccak256(abi.encode(ipTags)));
+        assertEq(disputeModule.totalTagsForIp(ipAddr), 0);
     }
 
     function test_DisputeModule_name() public {

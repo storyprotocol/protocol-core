@@ -84,17 +84,7 @@ contract LicensingHelper {
     //////////////////////////////////////////////////////////////////////////*/
 
     modifier withLFM_UML() {
-        BasePolicyFrameworkManager _pfm = BasePolicyFrameworkManager(
-            new UMLPolicyFrameworkManager(
-                address(accessController),
-                address(ipAccountRegistry),
-                address(licensingModule),
-                "uml",
-                "license Url"
-            )
-        );
-        licensingModule.registerPolicyFrameworkManager(address(_pfm));
-        pfm["uml"] = address(_pfm);
+        _deployLFM_UML();
         _;
     }
 
@@ -354,6 +344,12 @@ contract LicensingHelper {
         return policyIds[pName];
     }
 
+    function _registerUMLPolicyFromMapping(string memory name) internal returns (uint256) {
+        string memory pName = string(abi.encodePacked("uml_", name));
+        policyIds[pName] = UMLPolicyFrameworkManager(pfm["uml"]).registerPolicy(policies[pName]);
+        return policyIds[pName];
+    }
+
     function _getMappedUmlPolicy(string memory name) internal view returns (UMLPolicy storage) {
         string memory pName = string(abi.encodePacked("uml_", name));
         return policies[pName];
@@ -381,5 +377,19 @@ contract LicensingHelper {
                     })
                 )
             );
+    }
+
+    function _deployLFM_UML() internal {
+        BasePolicyFrameworkManager _pfm = BasePolicyFrameworkManager(
+            new UMLPolicyFrameworkManager(
+                address(accessController),
+                address(ipAccountRegistry),
+                address(licensingModule),
+                "uml",
+                "license Url"
+            )
+        );
+        licensingModule.registerPolicyFrameworkManager(address(_pfm));
+        pfm["uml"] = address(_pfm);
     }
 }

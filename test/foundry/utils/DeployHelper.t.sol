@@ -255,7 +255,7 @@ contract DeployHelper {
         console2.log("DeployHelper: Using REAL IPAssetRegistry");
 
         if (d.licenseRegistry) {
-            licenseRegistry = new LicenseRegistry();
+            licenseRegistry = new LicenseRegistry(getDisputeModule());
             console2.log("DeployHelper: Using REAL LicenseRegistry");
         }
     }
@@ -280,7 +280,8 @@ contract DeployHelper {
                 getAccessController(),
                 address(ipAccountRegistry),
                 getRoyaltyModule(),
-                getLicenseRegistry()
+                getLicenseRegistry(),
+                getDisputeModule()
             );
             console2.log("DeployHelper: Using REAL LicensingModule");
         }
