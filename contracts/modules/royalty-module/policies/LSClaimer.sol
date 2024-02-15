@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+/* // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -14,6 +14,7 @@ import { ILiquidSplitMain } from "../../../interfaces/modules/royalty/policies/I
 import { ILSClaimer } from "../../../interfaces/modules/royalty/policies/ILSClaimer.sol";
 import { Errors } from "../../../lib/Errors.sol";
 
+//TODO: eliminate contract (deprecated)
 /// @title Liquid Split Claimer
 /// @notice The liquid split claimer allows parents and grandparents to claim their share
 ///         the rnfts of their children and grandchildren along with any accrued royalties.
@@ -142,3 +143,4 @@ contract LSClaimer is ILSClaimer, ERC1155Holder, ReentrancyGuard {
         if (!callStatus) revert Errors.RoyaltyPolicyLS__TransferFailed();
     }
 }
+ */

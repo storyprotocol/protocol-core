@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+/* // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
 // external
@@ -132,9 +132,9 @@ contract TestLSClaimer is TestHelper {
             );
         }
 
-        // /*///////////////////////////////////////////////////////////////
+        // ///////////////////////////////////////////////////////////////
         //                     SET UP LSCLAIMER
-        // ////////////////////////////////////////////////////////////////*/
+        // ////////////////////////////////////////////////////////////////
 
         testRoyaltyPolicyLS = new RoyaltyPolicyLS(
             address(1),
@@ -319,3 +319,4 @@ contract TestLSClaimer is TestHelper {
         assertEq(claimerSplitRNFTBalAfter - claimerSplitRNFTBalBefore, minRoyalty100);
     }
 }
+ */

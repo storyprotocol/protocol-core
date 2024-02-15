@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+/* // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
 // external
@@ -93,9 +93,9 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         withMintPaymentPolicy("normal", true) // => mint_payment_normal
         withMintPaymentPolicy("fail", false) // => mint_payment_fail (always returns false even if payment is made)
     {
-        /*///////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////
                                 REGISTER IP ACCOUNTS
-        ////////////////////////////////////////////////////////////////*/
+        ////////////////////////////////////////////////////////////////
 
         // ipAcct[tokenId] => ipAccount address
         // owner is the vm.pranker
@@ -116,9 +116,9 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         nft.mintId(u.carl, 5);
         ipAcct[5] = registerIpAccount(nft, 5, u.carl);
 
-        /*///////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////
                             ADD POLICIES TO IP ACCOUNTS
-        ////////////////////////////////////////////////////////////////*/
+        ////////////////////////////////////////////////////////////////
 
         vm.startPrank(u.alice);
         licensingModule.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_cheap_flexible"]);
@@ -168,9 +168,9 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
             )
         );
 
-        /*///////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////
                                 MINT & USE LICENSES
-        ////////////////////////////////////////////////////////////////*/
+        ////////////////////////////////////////////////////////////////
 
         // Carl mints 1 license for policy "com_deriv_all_true" on Alice's NFT 1 IPAccount
         // Carl creates NFT 6 IPAccount
@@ -348,3 +348,4 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
         }
     }
 }
+ */

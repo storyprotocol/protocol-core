@@ -28,6 +28,9 @@ contract TestHelper is Test, DeployHelper {
     uint256 internal constant accountE = 5;
     uint256 internal constant accountF = 6;
     uint256 internal constant accountG = 7;
+    uint256 internal constant accountH = 8;
+    uint256 internal constant accountI = 9;
+    uint256 internal constant accountJ = 10;
 
     address internal deployer;
     address internal arbitrationRelayer;
@@ -35,6 +38,9 @@ contract TestHelper is Test, DeployHelper {
     address internal ipAccount2;
     address internal ipAccount3;
     address internal ipAccount4;
+    address internal ipAccount5;
+    address internal ipAccount6;
+    address internal ipAccount7;
 
     MockERC721 internal nft;
     uint256[] internal nftIds;
@@ -55,6 +61,9 @@ contract TestHelper is Test, DeployHelper {
         ipAccount2 = vm.addr(accountE);
         ipAccount3 = vm.addr(accountF);
         ipAccount4 = vm.addr(accountG);
+        ipAccount5 = vm.addr(accountH);
+        ipAccount6 = vm.addr(accountI);
+        ipAccount7 = vm.addr(accountJ);
 
         deploy();
 

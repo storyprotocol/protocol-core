@@ -1,4 +1,4 @@
-/* solhint-disable no-console */
+/* solhint-disable no-console 
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
@@ -355,9 +355,9 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         uint32 minRevShareIpAcct1 = 300; // 30%
 
-        /*///////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////
                         CREATE POLICY FRAMEWORK MANAGERS
-        ////////////////////////////////////////////////////////////////*/
+        ////////////////////////////////////////////////////////////////
 
         UMLPolicyFrameworkManager umlPfm = new UMLPolicyFrameworkManager(
             address(accessController),
@@ -369,9 +369,9 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         licensingModule.registerPolicyFrameworkManager(address(umlPfm));
         frameworkAddrs["uml"] = address(umlPfm);
 
-        /*///////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////
                                 CREATE POLICIES
-        ////////////////////////////////////////////////////////////////*/
+        ////////////////////////////////////////////////////////////////
 
         policyIds["uml_com_deriv_expensive"] = umlPfm.registerPolicy(
             UMLPolicy({
@@ -413,9 +413,9 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             })
         );
 
-        /*///////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////
                                 REGISTER IP ACCOUNTS
-        ////////////////////////////////////////////////////////////////*/
+        ////////////////////////////////////////////////////////////////
 
         // IPAccount1 (tokenId 1) with no initial policy
         vm.label(getIpId(erc721, 1), "IPAccount1");
@@ -468,18 +468,18 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             )
         );
 
-        /*///////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////
                             ADD POLICIES TO IPACCOUNTS
-        ////////////////////////////////////////////////////////////////*/
+        ////////////////////////////////////////////////////////////////
 
         // Add "uml_com_deriv_expensive" policy to IPAccount1
         licensingModule.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_expensive"]);
 
         // ROYALTY_MODULE.setRoyaltyPolicy(ipId, newRoyaltyPolicy, new address[](0), abi.encode(minRoyalty));
 
-        /*///////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////
                             MINT LICENSES ON POLICIES
-        ////////////////////////////////////////////////////////////////*/
+        ////////////////////////////////////////////////////////////////
 
         // Mint 2 license of policy "uml_com_deriv_expensive" on IPAccount1
         // Register derivative IP for NFT tokenId 3
@@ -501,9 +501,9 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             );
         }
 
-        /*///////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////
                     LINK IPACCOUNTS TO PARENTS USING LICENSES
-        ////////////////////////////////////////////////////////////////*/
+        ////////////////////////////////////////////////////////////////
 
         // Mint 1 license of policy "uml_noncom_deriv_reciprocal" on IPAccount2
         // Register derivative IP for NFT tokenId 4
@@ -531,9 +531,9 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             licensingModule.linkIpToParents(licenseIds, ipAcct[4], 0);
         }
 
-        /*///////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////
                             ROYALTY PAYMENT AND CLAIMS
-        ////////////////////////////////////////////////////////////////*/
+        ////////////////////////////////////////////////////////////////
 
         // IPAccount1 has commercial policy, of which IPAccount3 has used to mint a license.
         // Thus, any payment to IPAccount3 will get split to IPAccount1.
@@ -586,18 +586,18 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             });
         }
 
-        /*///////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////
                             TAGGING MODULE INTERACTIONS
-        ////////////////////////////////////////////////////////////////*/
+        ////////////////////////////////////////////////////////////////
 
         taggingModule.setTag("premium", ipAcct[1]);
         taggingModule.setTag("cheap", ipAcct[1]);
         taggingModule.removeTag("cheap", ipAcct[1]);
         taggingModule.setTag("luxury", ipAcct[1]);
 
-        /*///////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////
                             DISPUTE MODULE INTERACTIONS
-        ////////////////////////////////////////////////////////////////*/
+        ////////////////////////////////////////////////////////////////
 
         // Say, IPAccount4 is accused of plagiarism by IPAccount2
         // Then, a judge (deployer in this example) settles as true.
@@ -633,3 +633,4 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         return ipAssetRegistry.ipAccount(block.chainid, address(mnft), tokenId);
     }
 }
+ */

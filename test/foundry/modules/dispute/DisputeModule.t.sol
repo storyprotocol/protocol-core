@@ -72,7 +72,7 @@ contract TestDisputeModule is TestHelper {
                 commercialAttribution: true,
                 commercializers: new string[](0),
                 commercialRevShare: 10,
-                royaltyPolicy: address(royaltyPolicyLS)
+                royaltyPolicy: address(royaltyPolicyLAP)
             }),
             UMLPolicyDerivativeParams({
                 derivativesAttribution: true,

@@ -6,6 +6,7 @@ import { Test } from "forge-std/Test.sol";
 // external
 import { Test } from "forge-std/Test.sol";
 import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // contracts
 import { AccessController } from "contracts/AccessController.sol";
@@ -21,12 +22,12 @@ import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
-import { LSClaimer } from "contracts/modules/royalty-module/policies/LSClaimer.sol";
-import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
 import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
 import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
+import { RoyaltyPolicyLAP } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLAP.sol";
+//import { AncestorsVaultLAP } from "contracts/modules/royalty-module/policies/AncestorsVaultLAP.sol";
 
 // test
 import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
@@ -58,8 +59,7 @@ contract DeployHelper is Test {
     ArbitrationPolicySP internal arbitrationPolicySP;
     ArbitrationPolicySP internal arbitrationPolicySP2;
     RoyaltyModule internal royaltyModule;
-    RoyaltyPolicyLS internal royaltyPolicyLS;
-    LSClaimer internal lsClaimer;
+    RoyaltyPolicyLAP internal royaltyPolicyLAP;
     TaggingModule internal taggingModule;
     LicensingModule internal licensingModule;
 
@@ -83,6 +83,10 @@ contract DeployHelper is Test {
     // 0xSplits Liquid Split (Sepolia)
     address internal constant LIQUID_SPLIT_FACTORY = 0xF678Bae6091Ab6933425FE26Afc20Ee5F324c4aE;
     address internal constant LIQUID_SPLIT_MAIN = 0x57CBFA83f000a38C5b5881743E298819c503A559;
+
+    // Link token (Sepolia)
+    ERC20 internal constant LINK = ERC20(0x779877A7B0D9E8603169DdbD7836e478b4624789);
+    address internal constant LINK_RICH = 0x61E5E1ea8fF9Dc840e0A549c752FA7BDe9224e99;
 
     function deploy() public virtual {
         u = UsersLib.createMockUsers(vm);
@@ -156,12 +160,19 @@ contract DeployHelper is Test {
             address(governance)
         );
 
-        royaltyPolicyLS = new RoyaltyPolicyLS(
+        royaltyPolicyLAP = new RoyaltyPolicyLAP(
             address(royaltyModule),
             address(licensingModule),
             LIQUID_SPLIT_FACTORY,
-            LIQUID_SPLIT_MAIN
+            LIQUID_SPLIT_MAIN,
+            address(governance)
         );
+
+        //AncestorsVaultLAP ancestorsVaultImpl = new AncestorsVaultLAP(address(royaltyPolicyLAP));
+
+        vm.startPrank(u.admin);
+        //royaltyPolicyLAP.setAncestorsVaultImplementation(address(ancestorsVaultImpl));
+        vm.stopPrank();
 
         mockRoyaltyPolicyLS = new MockRoyaltyPolicyLS(address(royaltyModule));
     }
@@ -178,7 +189,7 @@ contract DeployHelper is Test {
         moduleRegistry.registerModule("LICENSING_MODULE", address(licensingModule));
         moduleRegistry.registerModule(DISPUTE_MODULE_KEY, address(disputeModule));
 
-        royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
+        royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLAP), true);
         royaltyModule.whitelistRoyaltyPolicy(address(mockRoyaltyPolicyLS), true);
         royaltyModule.whitelistRoyaltyToken(address(USDC), true);
         vm.stopPrank();

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+/* // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
 // external
@@ -9,7 +9,7 @@ import { Errors } from "../../../../contracts/lib/Errors.sol";
 // tests
 import { TestHelper } from "../../utils/TestHelper.sol";
 
-contract TestLSClaimer is TestHelper {
+contract TestRoyaltyPolicyLS is TestHelper {
     RoyaltyPolicyLS internal testRoyaltyPolicyLS;
 
     function setUp() public override {
@@ -269,3 +269,4 @@ contract TestLSClaimer is TestHelper {
         royaltyPolicyLS.claimRoyalties(ipAccount2, 0, tokens);
     }
 }
+ */

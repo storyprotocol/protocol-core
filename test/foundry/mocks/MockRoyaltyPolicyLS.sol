@@ -78,4 +78,8 @@ contract MockRoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     function LIQUID_SPLIT_MAIN() external pure returns (address) {
         return address(0xdead);
     }
+
+    function onLicenseMinting(address _ipId, address[] calldata _parentIpIds, bytes calldata _data) external{}
+
+    function onLinkToParents(address _ipId, address[] calldata _parentIpIds, bytes calldata _data) external{}
 }
