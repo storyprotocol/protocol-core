@@ -206,7 +206,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "LicenseRegistry";
         _predeploy(contractKey);
-        licenseRegistry = new LicenseRegistry(address(disputeModule));
+        licenseRegistry = new LicenseRegistry(address(governance));
         _postdeploy(contractKey, address(licenseRegistry));
 
         contractKey = "LicensingModule";
@@ -301,6 +301,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         ipMetadataProvider = IPMetadataProvider(ipAssetRegistry.metadataProvider());
         _postdeploy("IPMetadataProvider", address(ipMetadataProvider));
 
+        licenseRegistry.setDisputeModule(address(disputeModule));
         licenseRegistry.setLicensingModule(address(licensingModule));
         ipAssetRegistry.setRegistrationModule(address(registrationModule));
     }

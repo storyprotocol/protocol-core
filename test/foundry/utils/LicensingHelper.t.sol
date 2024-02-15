@@ -305,7 +305,7 @@ contract LicensingHelper {
             territories: emptyStringArray,
             distributionChannels: emptyStringArray,
             contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(royaltyPolicy)
+            royaltyPolicy: commercial ? address(royaltyPolicy) : address(0)
         });
     }
 

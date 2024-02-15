@@ -87,7 +87,7 @@ contract LicensingModuleTest is Test {
         );
         royaltyModule = new RoyaltyModule(address(governance));
         disputeModule = new MockDisputeModule();
-        licenseRegistry = new LicenseRegistry(address(disputeModule));
+        licenseRegistry = new LicenseRegistry(address(governance));
         licensingModule = new LicensingModule(
             address(accessController),
             address(ipAssetRegistry),
@@ -97,6 +97,7 @@ contract LicensingModuleTest is Test {
         );
         mockRoyaltyPolicyLS = new MockRoyaltyPolicyLS(address(royaltyModule));
 
+        licenseRegistry.setDisputeModule(address(disputeModule));
         licenseRegistry.setLicensingModule(address(licensingModule));
         // Setup Framework Managers (don't register PFM here, do in each test case)
         module1 = new MockPolicyFrameworkManager(
