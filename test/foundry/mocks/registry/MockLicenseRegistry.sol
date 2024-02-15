@@ -78,7 +78,7 @@ contract MockLicenseRegistry is ERC1155, ILicenseRegistry {
         return _licenses[licenseId].policyId;
     }
 
-    function isLicenseRevoked(uint256 licenseId) external pure returns (bool) {
+    function isLicenseRevoked(uint256) external pure returns (bool) {
         return false;
     }
 

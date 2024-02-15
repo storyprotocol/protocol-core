@@ -7,14 +7,10 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // contract
-import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { IP } from "contracts/lib/IP.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
 // test
 import { BaseIntegration } from "test/foundry/integration/BaseIntegration.t.sol";
-import { MintPaymentPolicyFrameworkManager } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
-import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.t.sol";
 
 contract Flows_Integration_Disputes is BaseIntegration {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -25,10 +21,10 @@ contract Flows_Integration_Disputes is BaseIntegration {
 
     function setUp() public override {
         super.setUp();
-        
+
         // Register UML Framework
         _deployLFM_UML();
-        
+
         // Register a License
         _mapUMLPolicySimple({
             name: "non-commercial-remix",

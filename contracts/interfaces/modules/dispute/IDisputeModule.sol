@@ -160,19 +160,19 @@ interface IDisputeModule {
     /// @param _ipId The ipId
     /// @param _tag The tag
     function isIpTaggedWith(address _ipId, bytes32 _tag) external view returns (bool);
-    
+
     /// @notice returns true if the ipId is tagged with any tag (meaning at least one dispute went through)
     /// @param _ipId The ipId
     function isIpTagged(address _ipId) external view returns (bool);
-    
+
     /// @notice returns the tags for a given ipId (note: this method could be expensive, use in frontends only)
     /// @param _ipId The ipId
     function ipTags(address _ipId) external view returns (bytes32[] memory);
-    
+
     /// @notice returns the total tags for a given ipId
     /// @param _ipId The ipId
     function totalTagsForIp(address _ipId) external view returns (uint256);
-    
+
     /// @notice returns the tag at a given index for a given ipId. No guarantees on ordering
     /// @param _ipId The ipId
     function tagForIpAt(address _ipId, uint256 _index) external view returns (bytes32);
