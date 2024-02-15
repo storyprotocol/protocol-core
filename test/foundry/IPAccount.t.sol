@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
-import { IERC6551Account } from "@erc6551/interfaces/IERC6551Account.sol";
+import { ERC6551Registry } from "erc6551/ERC6551Registry.sol";
+import { IERC6551Account } from "erc6551/interfaces/IERC6551Account.sol";
 import { Test } from "forge-std/Test.sol";
 
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
