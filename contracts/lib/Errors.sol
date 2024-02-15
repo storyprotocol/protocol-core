@@ -203,6 +203,7 @@ library Errors {
     error RoyaltyModule__ZeroLicensingModule();
     error RoyaltyModule__CanOnlyMintSelectedPolicy();
     error RoyaltyModule__NoParentsOnLinking();
+    error RoyaltyModule__NotRegisteredIpId();
 
     error RoyaltyPolicyLS__ZeroRoyaltyModule();
     error RoyaltyPolicyLS__ZeroLiquidSplitFactory();

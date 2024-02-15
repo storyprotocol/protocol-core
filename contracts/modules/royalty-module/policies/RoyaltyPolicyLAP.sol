@@ -107,14 +107,18 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
     }
 
     // TODO: the parentIpIds refer to the parents of the node that whose license is being minted (whether by itself or by a derivative node)
-    function onLicenseMinting(address _ipId, address[] calldata _parentIpIds, bytes calldata _data) external onlyRoyaltyModule {
+    function onLicenseMinting(address _ipId, bytes calldata _data) external onlyRoyaltyModule {
         (, uint32 newLicenseRoyalty) = abi.decode(_data, (InitParams, uint32));
         LAPRoyaltyData memory data = royaltyData[_ipId];
 
         if (data.royaltyStack + newLicenseRoyalty > TOTAL_RNFT_SUPPLY) revert Errors.RoyaltyPolicyLAP__AboveRoyaltyStackLimit();
         
         // if the policy is already initialized, it means that the ipId setup is already done
-        if (data.splitClone == address(0)) _initPolicy(_ipId, _parentIpIds, _data);        
+        // if not, it means that the license for this royalty policy is being minted for the first time
+        // parentIpIds are zero given that only roots can call _initPolicy() for the first time in onLicenseMinting()
+        // while derivatives already called _initPolicy() when linking to their parents with onLinkToParents() call
+        address[] memory rootParents = new address[](0);
+        if (data.splitClone == address(0)) _initPolicy(_ipId, rootParents, _data);        
     }
 
     function onLinkToParents(address _ipId, address[] calldata _parentIpIds, bytes calldata _data) external onlyRoyaltyModule {
