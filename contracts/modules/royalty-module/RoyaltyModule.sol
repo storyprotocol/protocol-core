@@ -76,7 +76,7 @@ contract RoyaltyModule is IRoyaltyModule, BaseModule, Governable, ReentrancyGuar
     /// @notice Executes royalty related logic on license minting
     /// @param _ipId The ipId whose license is being minted (licensor)
     /// @param _royaltyPolicy The royalty policy address of the license being minted
-    /// @param _data Additional data custom each to the royalty policy
+    /// @param _data Additional data custom to each the royalty policy
     function onLicenseMinting(address _ipId, address _royaltyPolicy, bytes calldata _data) external nonReentrant onlyLicensingModule {
         if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
         
