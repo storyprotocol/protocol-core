@@ -116,6 +116,8 @@ library Errors {
     error LicensingModule__CallerNotLicenseRegistry();
     /// @notice emitted when trying to transfer a license that is not transferable (by policy)
     error LicenseRegistry__NotTransferable();
+    /// @notice emitted on constructor if dispute module is not set
+    error LicenseRegistry__ZeroDisputeModule();
 
     ////////////////////////////////////////////////////////////////////////////
     //                            LicensingModule                             //
@@ -149,6 +151,10 @@ library Errors {
     error LicensingModule__DerivativeRevShareSumExceedsMaxRNFTSupply();
     error LicensingModule__MismatchBetweenCommercialRevenueShareAndMinRoyalty();
     error LicensingModule__MismatchBetweenRoyaltyPolicy();
+    /// @notice emitted when trying to interact with an IP that has been disputed in the DisputeModule
+    error LicensingModule__DisputedIpId();
+    /// @notice emitted when linking a license from a licensor that has been disputed in the DisputeModule
+    error LicensingModule__LinkingRevokedLicense();
 
     ////////////////////////////////////////////////////////////////////////////
     //                        LicensingModuleAware                            //

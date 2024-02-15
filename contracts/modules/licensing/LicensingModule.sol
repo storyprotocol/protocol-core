@@ -13,6 +13,7 @@ import { IPolicyFrameworkManager } from "../../interfaces/modules/licensing/IPol
 import { ILicenseRegistry } from "../../interfaces/registries/ILicenseRegistry.sol";
 import { ILicensingModule } from "../../interfaces/modules/licensing/ILicensingModule.sol";
 import { IIPAccountRegistry } from "../../interfaces/registries/IIPAccountRegistry.sol";
+import { IDisputeModule } from "../../interfaces/modules/dispute/IDisputeModule.sol";
 import { Errors } from "../../lib/Errors.sol";
 import { DataUniqueness } from "../../lib/DataUniqueness.sol";
 import { Licensing } from "../../lib/Licensing.sol";
@@ -40,6 +41,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
 
     RoyaltyModule public immutable ROYALTY_MODULE;
     ILicenseRegistry public immutable LICENSE_REGISTRY;
+    IDisputeModule public immutable DISPUTE_MODULE;
 
     string public constant override name = LICENSING_MODULE_KEY;
     mapping(address framework => bool registered) private _registeredFrameworkManagers;
@@ -63,10 +65,12 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         address accessController,
         address ipAccountRegistry,
         address royaltyModule,
-        address registry
+        address registry,
+        address disputeModule
     ) AccessControlled(accessController, ipAccountRegistry) {
         ROYALTY_MODULE = RoyaltyModule(royaltyModule);
         LICENSE_REGISTRY = ILicenseRegistry(registry);
+        DISPUTE_MODULE = IDisputeModule(disputeModule);
     }
 
     function licenseRegistry() external view returns (address) {
@@ -130,6 +134,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         if (!isPolicyDefined(polId)) {
             revert Errors.LicensingModule__PolicyNotFound();
         }
+        _verifyIpNotDisputed(ipId);
 
         indexOnIpId = _addPolicyIdToIp({ ipId: ipId, policyId: polId, isInherited: false, skipIfDuplicate: false });
 
@@ -171,10 +176,10 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         uint256 amount, // mint amount
         address receiver
     ) external nonReentrant returns (uint256 licenseId) {
-        // TODO: check if licensor has been tagged by disputer
         if (!IP_ACCOUNT_REGISTRY.isIpAccount(licensorIp)) {
             revert Errors.LicensingModule__LicensorNotRegistered();
         }
+        _verifyIpNotDisputed(licensorIp);
 
         bool isInherited = _policySetups[licensorIp][policyId].isInherited;
         Licensing.Policy memory pol = policy(policyId);
@@ -262,6 +267,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         address childIpId,
         uint32 minRoyalty
     ) external nonReentrant verifyPermission(childIpId) {
+        _verifyIpNotDisputed(childIpId);
         address holder = IIPAccount(payable(childIpId)).owner();
         address[] memory licensors = new address[](licenseIds.length);
         // If royalty policy address is address(0), this means no royalty policy to set.
@@ -271,6 +277,9 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
 
         for (uint256 i = 0; i < licenseIds.length; i++) {
             uint256 licenseId = licenseIds[i];
+            if (LICENSE_REGISTRY.isLicenseRevoked(licenseId)) {
+                revert Errors.LicensingModule__LinkingRevokedLicense();
+            }
             if (!LICENSE_REGISTRY.isLicensee(licenseId, holder)) {
                 revert Errors.LicensingModule__NotLicensee();
             }
@@ -555,5 +564,12 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
 
     function _policySetPerIpId(bool isInherited, address ipId) private view returns (EnumerableSet.UintSet storage) {
         return _policiesPerIpId[keccak256(abi.encode(isInherited, ipId))];
+    }
+
+    function _verifyIpNotDisputed(address ipId) private view {
+        // TODO: in beta, any tag means revocation, for mainnet we need more context
+        if (DISPUTE_MODULE.isIpTagged(ipId)) {
+            revert Errors.LicensingModule__DisputedIpId();
+        }
     }
 }

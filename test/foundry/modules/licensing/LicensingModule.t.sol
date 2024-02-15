@@ -29,6 +29,7 @@ import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy } fro
 import { MockAccessController } from "test/foundry/mocks/access/MockAccessController.sol";
 import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
 import { MockRoyaltyPolicyLS } from "test/foundry/mocks/policy/MockRoyaltyPolicyLS.sol";
+import { MockDisputeModule } from "test/foundry/mocks/module/MockDisputeModule.sol";
 
 contract LicensingModuleTest is Test {
     using Strings for *;
@@ -58,6 +59,8 @@ contract LicensingModuleTest is Test {
 
     MockRoyaltyPolicyLS internal mockRoyaltyPolicyLS;
 
+    MockDisputeModule internal disputeModule;
+
     string public licenseUrl = "https://example.com/license";
     address public ipId1;
     address public ipId2;
@@ -83,12 +86,14 @@ contract LicensingModuleTest is Test {
             address(governance)
         );
         royaltyModule = new RoyaltyModule(address(governance));
-        licenseRegistry = new LicenseRegistry();
+        disputeModule = new MockDisputeModule();
+        licenseRegistry = new LicenseRegistry(address(disputeModule));
         licensingModule = new LicensingModule(
             address(accessController),
             address(ipAssetRegistry),
             address(royaltyModule),
-            address(licenseRegistry)
+            address(licenseRegistry),
+            address(disputeModule)
         );
         mockRoyaltyPolicyLS = new MockRoyaltyPolicyLS(address(royaltyModule));
 
@@ -553,7 +558,7 @@ contract LicensingModuleTest is Test {
 
         /* solhint-disable */
         string
-            memory expectedJson = "eyJuYW1lIjogIlN0b3J5IFByb3RvY29sIExpY2Vuc2UgTkZUIiwgImRlc2NyaXB0aW9uIjogIkxpY2Vuc2UgYWdyZWVtZW50IHN0YXRpbmcgdGhlIHRlcm1zIG9mIGEgU3RvcnkgUHJvdG9jb2wgSVBBc3NldCIsICJhdHRyaWJ1dGVzIjogW3sidHJhaXRfdHlwZSI6ICJBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIlRyYW5zZmVyYWJsZSIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkNvbW1lcmljYWwgVXNlIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbEF0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbFJldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogImNvbW1lcmNpYWxpemVyQ2hlY2siLCAidmFsdWUiOiAiMHgxMGY3YWJkMDEyNmE5MDkzNWYzZjkwMDJmYTc5NzY3YWZjMGUzYzBkIn0sIHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc0FsbG93ZWQiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc0F0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBcHByb3ZhbCIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzUmVjaXByb2NhbCIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzUmV2U2hhcmUiLCAidmFsdWUiOiAwfSx7InRyYWl0X3R5cGUiOiAidGVycml0b3JpZXMiLCAidmFsdWUiOiBbInRlcnJpdG9yeTEiXX0sIHsidHJhaXRfdHlwZSI6ICJkaXN0cmlidXRpb25DaGFubmVscyIsICJ2YWx1ZSI6IFsiZGlzdHJpYnV0aW9uQ2hhbm5lbDEiXX1dfQ==";
+            memory expectedJson = "eyJuYW1lIjogIlN0b3J5IFByb3RvY29sIExpY2Vuc2UgTkZUIiwgImRlc2NyaXB0aW9uIjogIkxpY2Vuc2UgYWdyZWVtZW50IHN0YXRpbmcgdGhlIHRlcm1zIG9mIGEgU3RvcnkgUHJvdG9jb2wgSVBBc3NldCIsICJhdHRyaWJ1dGVzIjogW3sidHJhaXRfdHlwZSI6ICJBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIlRyYW5zZmVyYWJsZSIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkNvbW1lcmljYWwgVXNlIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbEF0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbFJldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogImNvbW1lcmNpYWxpemVyQ2hlY2siLCAidmFsdWUiOiAiMHgyMTA1MDNjMzE4ODU1MjU5OTgzMjk4YmE1ODA1NWEzOGQ1ZmY2M2UwIn0sIHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc0FsbG93ZWQiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc0F0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBcHByb3ZhbCIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzUmVjaXByb2NhbCIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzUmV2U2hhcmUiLCAidmFsdWUiOiAwfSx7InRyYWl0X3R5cGUiOiAidGVycml0b3JpZXMiLCAidmFsdWUiOiBbInRlcnJpdG9yeTEiXX0sIHsidHJhaXRfdHlwZSI6ICJkaXN0cmlidXRpb25DaGFubmVscyIsICJ2YWx1ZSI6IFsiZGlzdHJpYnV0aW9uQ2hhbm5lbDEiXX1dfQ==";
         /* solhint-enable */
 
         string memory expectedUri = string(abi.encodePacked("data:application/json;base64,", expectedJson));

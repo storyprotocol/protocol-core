@@ -6,6 +6,7 @@ import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import { IPolicyFrameworkManager } from "../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 import { ILicenseRegistry } from "../interfaces/registries/ILicenseRegistry.sol";
 import { ILicensingModule } from "../interfaces/modules/licensing/ILicensingModule.sol";
+import { IDisputeModule } from "../interfaces/modules/dispute/IDisputeModule.sol";
 import { Errors } from "../lib/Errors.sol";
 import { Licensing } from "../lib/Licensing.sol";
 import { DataUniqueness } from "../lib/DataUniqueness.sol";
@@ -15,6 +16,7 @@ import { DataUniqueness } from "../lib/DataUniqueness.sol";
 contract LicenseRegistry is ERC1155, ILicenseRegistry {
     // TODO: deploy with CREATE2 to make this immutable
     ILicensingModule private _licensingModule;
+    IDisputeModule public immutable DISPUTE_MODULE;
 
     mapping(bytes32 licenseHash => uint256 ids) private _hashedLicenses;
     mapping(uint256 licenseIds => Licensing.License licenseData) private _licenses;
@@ -31,7 +33,12 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         _;
     }
 
-    constructor() ERC1155("") {}
+    constructor(address disputeModule) ERC1155("") {
+        if (disputeModule == address(0)) {
+            revert Errors.LicenseRegistry__ZeroDisputeModule();
+        }
+        DISPUTE_MODULE = IDisputeModule(disputeModule);
+    }
 
     function setLicensingModule(address newLicensingModule) external {
         if (newLicensingModule == address(0)) {
@@ -111,6 +118,15 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
 
     function policyIdForLicense(uint256 licenseId) external view returns (uint256) {
         return _licenses[licenseId].policyId;
+    }
+
+    /// @notice Returns true if the license has been revoked (licensor tagged after a dispute in
+    /// the dispute module). If the tag is removed, the license is not revoked anymore.
+    /// @param licenseId The id of the license
+    function isLicenseRevoked(uint256 licenseId) external view returns (bool) {
+        // For beta, any tag means revocation, for mainnet we need more context.
+        // TODO: signal metadata update when tag changes.
+        return DISPUTE_MODULE.isIpTagged(_licenses[licenseId].licensorIpId);
     }
 
     /// @notice ERC1155 OpenSea metadata JSON representation of the LNFT parameters
