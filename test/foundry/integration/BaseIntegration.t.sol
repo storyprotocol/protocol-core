@@ -2,8 +2,8 @@
 pragma solidity ^0.8.23;
 
 // external
-import { IERC6551Registry } from "@erc6551/interfaces/IERC6551Registry.sol";
-import { ERC6551AccountLib } from "@erc6551/lib/ERC6551AccountLib.sol";
+import { IERC6551Registry } from "erc6551/interfaces/IERC6551Registry.sol";
+import { ERC6551AccountLib } from "erc6551/lib/ERC6551AccountLib.sol";
 import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 

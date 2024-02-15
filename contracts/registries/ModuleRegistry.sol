@@ -2,13 +2,13 @@
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
 
+import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 import { IModuleRegistry } from "../interfaces/registries/IModuleRegistry.sol";
 import { Errors } from "../lib/Errors.sol";
 import { IModule } from "../interfaces/modules/base/IModule.sol";
 import { Governable } from "../governance/Governable.sol";
-import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import { MODULE_TYPE_DEFAULT } from "../lib/modules/Module.sol";
 
 /// @title ModuleRegistry
