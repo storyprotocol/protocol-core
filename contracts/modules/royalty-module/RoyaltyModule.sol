@@ -27,9 +27,6 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
     /// @notice Indicates the royalty policy for a given ipId
     mapping(address ipId => address royaltyPolicy) public royaltyPolicies;
 
-    /// @notice Indicates if a royalty policy is immutable
-    mapping(address ipId => bool) public isRoyaltyPolicyImmutable;
-
     /// @notice Constructor
     /// @param _governance The address of the governance contract
     constructor(address _governance) Governable(_governance) {}
@@ -69,47 +66,37 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard {
         emit RoyaltyTokenWhitelistUpdated(_token, _allowed);
     }
 
-    // TODO: Ensure that the ipId that is passed in from license cannot be manipulated
-    //       - given ipId addresses are deterministic
-    /// @notice Sets the royalty policy for an ipId
-    /// @param _ipId The ipId
-    /// @param _royaltyPolicy The address of the royalty policy
-    /// @param _parentIpIds The parent ipIds
-    /// @param _data The data to initialize the policy
-    function setRoyaltyPolicy(
-        address _ipId,
-        address _royaltyPolicy,
-        address[] calldata _parentIpIds,
-        bytes calldata _data
-    ) external nonReentrant onlyLicensingModule {
-        if (isRoyaltyPolicyImmutable[_ipId]) revert Errors.RoyaltyModule__AlreadySetRoyaltyPolicy();
+    // TODO: Ensure that the ipId that is passed in from license cannot be manipulated - given ipId addresses are deterministic
+    // TODO: the parentIpIds refer to the parents of the node that whose license is being minted (whether by itself or by a derivative node)
+    function onLicenseMinting(address _ipId, address _royaltyPolicy, address[] calldata _parentIpIds, bytes calldata _data) external nonReentrant onlyLicensingModule {
         if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
+        
+        address royaltyPolicyIpId = royaltyPolicies[_ipId];
 
-        if (_parentIpIds.length > 0) isRoyaltyPolicyImmutable[_ipId] = true;
+        // if the node is a root node, then royaltyPolicyIpId will be address(0) and any type of royalty type can be selected to mint a license
+        // if the node is a derivative node, then the any minted licenses by the derivative node should have the same royalty policy as the parent node
+        // a derivative node set its royalty policy immutably in onLinkToParents() function below
+        if (royaltyPolicyIpId != _royaltyPolicy && royaltyPolicyIpId != address(0)) revert Errors.RoyaltyModule__CanOnlyMintSelectedPolicy();
 
-        // the loop below is limited to 100 iterations
+        IRoyaltyPolicy(_royaltyPolicy).onLicenseMinting(_ipId, _parentIpIds, _data);
+    }
+
+    // TODO: Ensure that the ipId that is passed in from license cannot be manipulated - given ipId addresses are deterministic
+    function onLinkToParents(address _ipId, address _royaltyPolicy, address[] calldata _parentIpIds, bytes calldata _data) external nonReentrant onlyLicensingModule {
+        if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
+        if (_parentIpIds.length == 0) revert Errors.RoyaltyModule__NoParentsOnLinking();
+
         for (uint32 i = 0; i < _parentIpIds.length; i++) {
-            if (royaltyPolicies[_parentIpIds[i]] != _royaltyPolicy)
-                revert Errors.RoyaltyModule__IncompatibleRoyaltyPolicy();
-            isRoyaltyPolicyImmutable[_parentIpIds[i]] = true;
+            address parentRoyaltyPolicy = royaltyPolicies[_parentIpIds[i]];
+            // if the parent node has a royalty policy set, then the derivative node should have the same royalty policy
+            // if the parent node does not have a royalty policy set, then the derivative node can set any type of royalty policy
+            // as long as the children node is burning a licensing with that royalty policy
+            if (parentRoyaltyPolicy != _royaltyPolicy && parentRoyaltyPolicy != address(0)) revert Errors.RoyaltyModule__IncompatibleRoyaltyPolicy();
         }
 
         royaltyPolicies[_ipId] = _royaltyPolicy;
 
-        IRoyaltyPolicy(_royaltyPolicy).initPolicy(_ipId, _parentIpIds, _data);
-
-        emit RoyaltyPolicySet(_ipId, _royaltyPolicy, _data);
-    }
-
-    function setRoyaltyPolicyImmutable(address _ipId) external onlyLicensingModule {
-        isRoyaltyPolicyImmutable[_ipId] = true;
-    }
-
-    function minRoyaltyFromDescendants(address _ipId) external view returns (uint256) {
-        address royaltyPolicy = royaltyPolicies[_ipId];
-        if (royaltyPolicy == address(0)) revert Errors.RoyaltyModule__NoRoyaltyPolicySet();
-
-        return IRoyaltyPolicy(royaltyPolicy).minRoyaltyFromDescendants(_ipId);
+        IRoyaltyPolicy(_royaltyPolicy).onLinkToParents(_ipId, _parentIpIds, _data);
     }
 
     /// @notice Allows a sender to to pay royalties on behalf of an ipId
