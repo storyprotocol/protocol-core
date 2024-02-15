@@ -33,6 +33,3 @@ typechain
 
 # converage
 lcov.info
-
-# forge lib folder
-lib/
