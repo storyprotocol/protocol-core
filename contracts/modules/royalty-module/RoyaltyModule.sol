@@ -92,6 +92,11 @@ contract RoyaltyModule is IRoyaltyModule, BaseModule, Governable, ReentrancyGuar
 
     // TODO: Ensure that the ipId that is passed in from license cannot be manipulated - given ipId addresses are deterministic
     // TODO: Ensure all licenses are burned before linking to a new parents all have the same royalty policy address
+    /// @notice Executes royalty related logic on linking to parents
+    /// @param _ipId The children ipId that is being linked to parents
+    /// @param _royaltyPolicy The common royalty policy address of all the licenses being burned
+    /// @param _parentIpIds The parent ipIds that the children ipId is being linked to
+    /// @param _data Additional data custom to each the royalty policy
     function onLinkToParents(address _ipId, address _royaltyPolicy, address[] calldata _parentIpIds, bytes calldata _data) external nonReentrant onlyLicensingModule {
         if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
         if (_parentIpIds.length == 0) revert Errors.RoyaltyModule__NoParentsOnLinking();
