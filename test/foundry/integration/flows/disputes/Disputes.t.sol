@@ -16,7 +16,7 @@ import { BaseIntegration } from "test/foundry/integration/BaseIntegration.t.sol"
 import { MintPaymentPolicyFrameworkManager } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
 import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.t.sol";
 
-contract DisputeIntegrationTest is BaseIntegration {
+contract Flows_Integration_Disputes is BaseIntegration {
     using EnumerableSet for EnumerableSet.UintSet;
     using Strings for *;
 
@@ -39,34 +39,84 @@ contract DisputeIntegrationTest is BaseIntegration {
             derivativesRevShare: 0
         });
         policyId = _registerUMLPolicyFromMapping("non-commercial-remix");
-        /*
+
         // Register an original work with both policies set
         mockNFT.mintId(u.alice, 1);
-        vm.startPrank(u.alice);
+        mockNFT.mintId(u.bob, 2);
+        mockNFT.mintId(u.carl, 3);
+
         ipAcct[1] = registerIpAccount(mockNFT, 1, u.alice);
-        licensingModule.addPolicyToIp(ipAcct[1], _getUmlPolicyId("non-commercial-remix"));
-        */
-    }
+        ipAcct[2] = registerIpAccount(mockNFT, 2, u.bob);
+        ipAcct[3] = registerIpAccount(mockNFT, 3, u.carl);
 
-    function test_Disputes_revert_cannotMintFromDisputedIp() public {
-        _disputeIp(ipAcct[1]);
         vm.startPrank(u.alice);
+        licensingModule.addPolicyToIp(ipAcct[1], _getUmlPolicyId("non-commercial-remix"));
+        vm.stopPrank();
+    }
+
+    function test_Integration_Disputes_revert_cannotMintFromDisputedIp() public {
+        assertEq(licenseRegistry.balanceOf(u.carl, policyId), 0);
+        vm.prank(u.carl);
+        licensingModule.mintLicense(policyId, ipAcct[1], 1, u.carl);
+        assertEq(licenseRegistry.balanceOf(u.carl, policyId), 1);
+
+        _disputeIp(u.bob, ipAcct[1]);
+
+        vm.prank(u.carl);
         vm.expectRevert(Errors.LicensingModule__DisputedIpId.selector);
-        licensingModule.mintLicense(policyId, ipAcct[1], 1, u.bob);
+        licensingModule.mintLicense(policyId, ipAcct[1], 1, u.carl);
     }
 
-    function test_Disputes_revert_cannotLinkDisputedIp() public {
+    function test_Integration_Disputes_revert_cannotLinkDisputedIp() public {
+        assertEq(licenseRegistry.balanceOf(u.carl, policyId), 0);
+        vm.prank(u.carl);
+        uint256 licenseId = licensingModule.mintLicense(policyId, ipAcct[1], 1, u.carl);
+        assertEq(licenseRegistry.balanceOf(u.carl, policyId), 1);
 
+        _disputeIp(u.bob, ipAcct[1]);
+
+        uint256[] memory licenseIds = new uint256[](1);
+        licenseIds[0] = licenseId;
+
+        vm.prank(u.carl);
+        vm.expectRevert(Errors.LicensingModule__LinkingRevokedLicense.selector);
+        licensingModule.linkIpToParents(licenseIds, ipAcct[3], 0); // 0, non-commercial
     }
 
-    function _disputeIp(address ipAddr) public {
-        vm.startPrank(u.bob);
+    // TODO: check if IPAccount is transferable even if disputed
+
+    function test_Integration_Disputes_transferLicenseAfterIpDispute() public {
+        assertEq(licenseRegistry.balanceOf(u.carl, policyId), 0);
+        vm.prank(u.carl);
+        uint256 licenseId = licensingModule.mintLicense(policyId, ipAcct[1], 1, u.carl);
+        assertEq(licenseRegistry.balanceOf(u.carl, policyId), 1);
+
+        _disputeIp(u.bob, ipAcct[1]);
+
+        // eEen if the IP asset is disputed, license owners can still transfer license NFTs
+        vm.prank(u.carl);
+        licenseRegistry.safeTransferFrom(u.carl, u.bob, licenseId, 1, "");
+    }
+
+    function test_Integration_Disputes_mintLicenseAfterDisputeIsResolved() public {
+        uint256 disputeId = _disputeIp(u.bob, ipAcct[1]);
+
+        vm.prank(u.bob);
+        disputeModule.resolveDispute(disputeId);
+
+        assertEq(licenseRegistry.balanceOf(u.carl, policyId), 0);
+        vm.prank(u.carl);
+        licensingModule.mintLicense(policyId, ipAcct[1], 1, u.carl);
+        assertEq(licenseRegistry.balanceOf(u.carl, policyId), 1);
+    }
+
+    function _disputeIp(address disputeInitiator, address ipAddrToDispute) internal returns (uint256 disputeId) {
+        vm.startPrank(disputeInitiator);
         IERC20(USDC).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
-        uint256 disputeId = disputeModule.raiseDispute(ipAddr, string("urlExample"), "PLAGIARISM", "");
+        disputeId = disputeModule.raiseDispute(ipAddrToDispute, string("urlExample"), "PLAGIARISM", "");
         vm.stopPrank();
 
-        vm.prank(u.admin);
+        vm.prank(u.admin); // admin is a judge
         disputeModule.setDisputeJudgement(disputeId, true, "");
     }
-
 }
