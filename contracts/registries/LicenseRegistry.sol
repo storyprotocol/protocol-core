@@ -7,16 +7,17 @@ import { IPolicyFrameworkManager } from "../interfaces/modules/licensing/IPolicy
 import { ILicenseRegistry } from "../interfaces/registries/ILicenseRegistry.sol";
 import { ILicensingModule } from "../interfaces/modules/licensing/ILicensingModule.sol";
 import { IDisputeModule } from "../interfaces/modules/dispute/IDisputeModule.sol";
+import { Governable } from "../governance/Governable.sol";
 import { Errors } from "../lib/Errors.sol";
 import { Licensing } from "../lib/Licensing.sol";
 import { DataUniqueness } from "../lib/DataUniqueness.sol";
 
 /// @title LicenseRegistry aka LNFT
 /// @notice Registry of License NFTs, which represent licenses granted by IP ID licensors to create derivative IPs.
-contract LicenseRegistry is ERC1155, ILicenseRegistry {
+contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
     // TODO: deploy with CREATE2 to make this immutable
     ILicensingModule private _licensingModule;
-    IDisputeModule public immutable DISPUTE_MODULE;
+    IDisputeModule public DISPUTE_MODULE;
 
     mapping(bytes32 licenseHash => uint256 ids) private _hashedLicenses;
     mapping(uint256 licenseIds => Licensing.License licenseData) private _licenses;
@@ -33,14 +34,16 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         _;
     }
 
-    constructor(address disputeModule) ERC1155("") {
-        if (disputeModule == address(0)) {
+    constructor(address governance) ERC1155("") Governable(governance) {}
+
+    function setDisputeModule(address newDisputeModule) external onlyProtocolAdmin {
+        if (newDisputeModule == address(0)) {
             revert Errors.LicenseRegistry__ZeroDisputeModule();
         }
-        DISPUTE_MODULE = IDisputeModule(disputeModule);
+        DISPUTE_MODULE = IDisputeModule(newDisputeModule);
     }
 
-    function setLicensingModule(address newLicensingModule) external {
+    function setLicensingModule(address newLicensingModule) external onlyProtocolAdmin {
         if (newLicensingModule == address(0)) {
             revert Errors.LicenseRegistry__ZeroLicensingModule();
         }

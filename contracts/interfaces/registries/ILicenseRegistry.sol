@@ -22,10 +22,6 @@ interface ILicenseRegistry is IERC1155 {
         Licensing.License licenseData
     );
 
-    /// @notice Set the licensing module
-    /// @param newLicensingModule The address of the licensing module
-    function setLicensingModule(address newLicensingModule) external;
-
     /// @notice Returns the address of the licensing module
     function licensingModule() external view returns (address);
 
