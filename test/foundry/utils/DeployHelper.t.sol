@@ -255,7 +255,7 @@ contract DeployHelper {
         console2.log("DeployHelper: Using REAL IPAssetRegistry");
 
         if (d.licenseRegistry) {
-            licenseRegistry = new LicenseRegistry(getDisputeModule());
+            licenseRegistry = new LicenseRegistry(getGovernance());
             console2.log("DeployHelper: Using REAL LicenseRegistry");
         }
     }
@@ -273,6 +273,12 @@ contract DeployHelper {
             royaltyModule = new RoyaltyModule(getGovernance());
             console2.log("DeployHelper: Using REAL RoyaltyModule");
             postDeployConditions.royaltyModule_configure = true;
+        }
+        if (d.disputeModule) {
+            require(address(ipAssetRegistry) != address(0), "DeployHelper Module: IPAssetRegistry required");
+            disputeModule = new DisputeModule(getAccessController(), address(ipAssetRegistry), getGovernance());
+            console2.log("DeployHelper: Using REAL DisputeModule");
+            postDeployConditions.disputeModule_configure = true;
         }
         if (d.licensingModule) {
             require(address(ipAccountRegistry) != address(0), "DeployHelper Module: IPAccountRegistry required");
@@ -298,12 +304,6 @@ contract DeployHelper {
                 address(ipResolver)
             );
             console2.log("DeployHelper: Using REAL RegistrationModule");
-        }
-        if (d.disputeModule) {
-            require(address(ipAssetRegistry) != address(0), "DeployHelper Module: IPAssetRegistry required");
-            disputeModule = new DisputeModule(getAccessController(), address(ipAssetRegistry), getGovernance());
-            console2.log("DeployHelper: Using REAL DisputeModule");
-            postDeployConditions.disputeModule_configure = true;
         }
     }
 
