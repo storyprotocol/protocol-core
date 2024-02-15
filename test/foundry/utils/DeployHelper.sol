@@ -115,7 +115,6 @@ contract DeployHelper is Test {
             address(accessController),
             address(ipAccountImpl)
         );
-        royaltyModule = new RoyaltyModule(address(accessController), address(ipAssetRegistry), address(governance));
         ipAssetRegistry = new IPAssetRegistry(
             address(accessController),
             address(erc6551Registry),
@@ -123,6 +122,7 @@ contract DeployHelper is Test {
             address(moduleRegistry),
             address(governance)
         );
+        royaltyModule = new RoyaltyModule(address(accessController), address(ipAssetRegistry), address(governance));
         licenseRegistry = new LicenseRegistry();
         licensingModule = new LicensingModule(
             address(accessController),

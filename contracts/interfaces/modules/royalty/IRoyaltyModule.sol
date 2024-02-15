@@ -43,9 +43,9 @@ interface IRoyaltyModule is IModule {
     /// @param allowed Indicates if the token is whitelisted or not
     function whitelistRoyaltyToken(address token, bool allowed) external;
 
-    function onLicenseMinting(address _ipId, address _royaltyPolicy, bytes calldata _data) external;
+    function onLicenseMinting(address _ipId, address _royaltyPolicy, bytes calldata _licenseData, bytes calldata _externalData) external;
     
-    function onLinkToParents(address _ipId, address _royaltyPolicy, address[] calldata _parentIpIds, bytes calldata _data) external;
+    function onLinkToParents(address _ipId, address _royaltyPolicy, address[] calldata _parentIpIds, bytes[] memory _licenseData, bytes calldata _externalData) external;
 
     /// @notice Allows a sender to to pay royalties on behalf of an ipId
     /// @param receiverIpId The ipId that receives the royalties

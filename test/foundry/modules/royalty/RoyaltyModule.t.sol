@@ -1,4 +1,4 @@
-/* // SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
 // contracts
@@ -28,7 +28,7 @@ contract TestRoyaltyModule is TestHelper {
     }
 
     function test_RoyaltyModule_setLicensingModule_revert_ZeroLicensingModule() public {
-        RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(governance));
+        RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(1), address(2), address(governance));
         vm.expectRevert(Errors.RoyaltyModule__ZeroLicensingModule.selector);
         vm.prank(u.admin);
         testRoyaltyModule.setLicensingModule(address(0));
@@ -36,7 +36,7 @@ contract TestRoyaltyModule is TestHelper {
 
     function test_RoyaltyModule_setLicensingModule() public {
         vm.startPrank(u.admin);
-        RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(governance));
+        RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(1), address(2), address(governance));
         testRoyaltyModule.setLicensingModule(address(licensingModule));
 
         assertEq(testRoyaltyModule.LICENSING_MODULE(), address(licensingModule));
@@ -80,15 +80,13 @@ contract TestRoyaltyModule is TestHelper {
         assertEq(royaltyModule.isWhitelistedRoyaltyToken(address(1)), true);
     }
 
-
-
-    function test_RoyaltyModule_payRoyaltyOnBehalf_revert_NoRoyaltyPolicySet() public {
+    /*function test_RoyaltyModule_payRoyaltyOnBehalf_revert_NoRoyaltyPolicySet() public {
         vm.expectRevert(Errors.RoyaltyModule__NoRoyaltyPolicySet.selector);
 
         royaltyModule.payRoyaltyOnBehalf(ipAccount1, ipAccount2, address(USDC), 100);
-    } */
+    }
 
-    /* function test_RoyaltyModule_payRoyaltyOnBehalf_revert_NotWhitelistedRoyaltyToken() public {
+    function test_RoyaltyModule_payRoyaltyOnBehalf_revert_NotWhitelistedRoyaltyToken() public {
         address[] memory parentIpIds1 = new address[](0);
         uint32 minRoyaltyIpAccount1 = 100; // 10%
         bytes memory data = abi.encode(minRoyaltyIpAccount1);
@@ -152,5 +150,5 @@ contract TestRoyaltyModule is TestHelper {
 
         assertEq(ipAccount2USDCBalBefore - ipAccount2USDCBalAfter, royaltyAmount);
         assertEq(splitClone1USDCBalAfter - splitClone1USDCBalBefore, royaltyAmount);
-    } 
-} */
+    } */
+} 

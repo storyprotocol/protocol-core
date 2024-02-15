@@ -861,4 +861,4 @@ contract TestRoyaltyPolicyLAP is TestHelper {
 
         royaltyPolicyLAP.claimAsFullRnftOwner(address(7), 1, address(USDC));
     }
-} */
+}  */

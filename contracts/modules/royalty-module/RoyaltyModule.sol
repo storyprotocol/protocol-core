@@ -76,8 +76,9 @@ contract RoyaltyModule is IRoyaltyModule, BaseModule, Governable, ReentrancyGuar
     /// @notice Executes royalty related logic on license minting
     /// @param _ipId The ipId whose license is being minted (licensor)
     /// @param _royaltyPolicy The royalty policy address of the license being minted
-    /// @param _data Additional data custom to each the royalty policy
-    function onLicenseMinting(address _ipId, address _royaltyPolicy, bytes calldata _data) external nonReentrant onlyLicensingModule {
+    /// @param _licenseData The license data custom to each the royalty policy
+    /// @param _externalData The external data custom to each the royalty policy
+    function onLicenseMinting(address _ipId, address _royaltyPolicy, bytes calldata _licenseData, bytes calldata _externalData) external nonReentrant onlyLicensingModule {
         if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
         
         address royaltyPolicyIpId = royaltyPolicies[_ipId];
@@ -87,7 +88,7 @@ contract RoyaltyModule is IRoyaltyModule, BaseModule, Governable, ReentrancyGuar
         // a derivative node set its royalty policy immutably in onLinkToParents() function below
         if (royaltyPolicyIpId != _royaltyPolicy && royaltyPolicyIpId != address(0)) revert Errors.RoyaltyModule__CanOnlyMintSelectedPolicy();
 
-        IRoyaltyPolicy(_royaltyPolicy).onLicenseMinting(_ipId, _data);
+        IRoyaltyPolicy(_royaltyPolicy).onLicenseMinting(_ipId, _licenseData, _externalData);
     }
 
     // TODO: Ensure that the ipId that is passed in from license cannot be manipulated - given ipId addresses are deterministic
@@ -96,8 +97,9 @@ contract RoyaltyModule is IRoyaltyModule, BaseModule, Governable, ReentrancyGuar
     /// @param _ipId The children ipId that is being linked to parents
     /// @param _royaltyPolicy The common royalty policy address of all the licenses being burned
     /// @param _parentIpIds The parent ipIds that the children ipId is being linked to
-    /// @param _data Additional data custom to each the royalty policy
-    function onLinkToParents(address _ipId, address _royaltyPolicy, address[] calldata _parentIpIds, bytes calldata _data) external nonReentrant onlyLicensingModule {
+    /// @param _licenseData The license data custom to each the royalty policy
+    /// @param _externalData The external data custom to each the royalty policy
+    function onLinkToParents(address _ipId, address _royaltyPolicy, address[] calldata _parentIpIds, bytes[] memory _licenseData, bytes calldata _externalData) external nonReentrant onlyLicensingModule {
         if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
         if (_parentIpIds.length == 0) revert Errors.RoyaltyModule__NoParentsOnLinking();
 
@@ -111,7 +113,7 @@ contract RoyaltyModule is IRoyaltyModule, BaseModule, Governable, ReentrancyGuar
 
         royaltyPolicies[_ipId] = _royaltyPolicy;
 
-        IRoyaltyPolicy(_royaltyPolicy).onLinkToParents(_ipId, _parentIpIds, _data);
+        IRoyaltyPolicy(_royaltyPolicy).onLinkToParents(_ipId, _parentIpIds, _licenseData, _externalData);
     }
 
     /// @notice Allows a sender to to pay royalties on behalf of an ipId

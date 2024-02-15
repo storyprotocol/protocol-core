@@ -79,7 +79,6 @@ contract MockRoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
         return address(0xdead);
     }
 
-    function onLicenseMinting(address _ipId, bytes calldata _data) external{}
-
-    function onLinkToParents(address _ipId, address[] calldata _parentIpIds, bytes calldata _data) external{}
+    function onLicenseMinting(address _ipId, bytes calldata _licenseData, bytes calldata _externalData) external{}
+    function onLinkToParents(address _ipId, address[] calldata _parentIpIds, bytes[] memory _licenseData, bytes calldata _externalData) external{}
 }

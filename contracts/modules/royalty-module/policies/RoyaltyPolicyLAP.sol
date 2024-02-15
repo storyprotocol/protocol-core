@@ -36,7 +36,6 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
     struct InitParams {
         address[] targetAncestors;
         uint32[] targetRoyaltyAmount;
-        uint32[] parentRoyalties;
         address[] parentAncestors1;
         address[] parentAncestors2;
         uint32[] parentAncestorsRoyalties1;
@@ -107,8 +106,8 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
     }
 
     // TODO: the parentIpIds refer to the parents of the node that whose license is being minted (whether by itself or by a derivative node)
-    function onLicenseMinting(address _ipId, bytes calldata _data) external onlyRoyaltyModule {
-        (, uint32 newLicenseRoyalty) = abi.decode(_data, (InitParams, uint32));
+    function onLicenseMinting(address _ipId, bytes calldata _licenseData, bytes calldata _externalData) external onlyRoyaltyModule {
+        uint32 newLicenseRoyalty = abi.decode(_licenseData, (uint32));
         LAPRoyaltyData memory data = royaltyData[_ipId];
 
         if (data.royaltyStack + newLicenseRoyalty > TOTAL_RNFT_SUPPLY) revert Errors.RoyaltyPolicyLAP__AboveRoyaltyStackLimit();
@@ -118,31 +117,39 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
         // parentIpIds are zero given that only roots can call _initPolicy() for the first time in the function onLicenseMinting()
         // while derivatives already called _initPolicy() when linking to their parents with onLinkToParents() call
         address[] memory rootParents = new address[](0);
-        if (data.splitClone == address(0)) _initPolicy(_ipId, rootParents, _data);        
+        bytes[] memory rootParentRoyalties = new bytes[](0);
+        if (data.splitClone == address(0)) _initPolicy(_ipId, rootParents, rootParentRoyalties, _externalData);        
     }
 
-    function onLinkToParents(address _ipId, address[] calldata _parentIpIds, bytes calldata _data) external onlyRoyaltyModule {
+    function onLinkToParents(address _ipId, address[] calldata _parentIpIds, bytes[] memory _licenseData, bytes calldata _externalData) external onlyRoyaltyModule {
         if (royaltyData[_ipId].isUnlinkableToParents) revert Errors.RoyaltyPolicyLAP__UnlinkableToParents();
 
-        _initPolicy(_ipId, _parentIpIds, _data);
+        _initPolicy(_ipId, _parentIpIds, _licenseData, _externalData);
     }
 
     /// @notice Initializes the royalty policy
     /// @param _ipId The ipId
     /// @param _parentIpIds The parent ipIds
-    /// @param _data The data to initialize the policy
+    /// @param _licenseData The license data
+    /// @param _externalData The external data
     function _initPolicy(
         address _ipId,
         address[] memory _parentIpIds,
-        bytes calldata _data
+        bytes[] memory _licenseData,
+        bytes calldata _externalData
     ) internal onlyRoyaltyModule {
-        (InitParams memory params,) = abi.decode(_data, (InitParams, uint32));
+        InitParams memory params = abi.decode(_externalData, (InitParams));
+        uint32[] memory parentRoyalties = new uint32[](_parentIpIds.length);
+        
+        for (uint256 i = 0; i < _parentIpIds.length; i++) {
+            parentRoyalties[i] = abi.decode(_licenseData[i], (uint32));
+        }
 
         if (params.targetAncestors.length > MAX_ANCESTORS) revert Errors.RoyaltyPolicyLAP__AboveAncestorsLimit();
         if (_parentIpIds.length > MAX_PARENTS) revert Errors.RoyaltyPolicyLAP__AboveParentLimit();
 
         // calculate new royalty stack
-        uint32 royaltyStack = _checkAncestorsDataIsValid(_ipId, _parentIpIds, params);
+        uint32 royaltyStack = _checkAncestorsDataIsValid(_ipId, _parentIpIds, parentRoyalties, params);
 
         // set the parents as unlinkable / loop limited to 2 parents
         for (uint256 i = 0; i < _parentIpIds.length; i++) {
@@ -253,12 +260,13 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
     function _checkAncestorsDataIsValid(
         address _ipId, 
         address[] memory _parentIpIds, 
+        uint32[] memory _parentRoyalties,
         InitParams memory _params
     ) internal returns (uint32) {
         if (_params.targetRoyaltyAmount.length != _params.targetAncestors.length) revert Errors.RoyaltyPolicyLAP__InvalidRoyaltyAmountLength();
-        if (_params.parentRoyalties.length != _parentIpIds.length) revert Errors.RoyaltyPolicyLAP__InvalidParentRoyaltiesLength();
+        if (_parentRoyalties.length != _parentIpIds.length) revert Errors.RoyaltyPolicyLAP__InvalidParentRoyaltiesLength();
 
-        (address[] memory newAncestors, uint32[] memory newAncestorsRoyalty, uint32 newAncestorsCount, uint32 newRoyaltyStack) = _getExpectedOutputs(_ipId, _parentIpIds, _params);
+        (address[] memory newAncestors, uint32[] memory newAncestorsRoyalty, uint32 newAncestorsCount, uint32 newRoyaltyStack) = _getExpectedOutputs(_ipId, _parentIpIds, _parentRoyalties, _params);
 
         if (_params.targetAncestors.length != newAncestorsCount) revert Errors.RoyaltyPolicyLAP__InvalidAncestorsLength();
         if (newRoyaltyStack > TOTAL_RNFT_SUPPLY) revert Errors.RoyaltyPolicyLAP__AboveRoyaltyStackLimit();
@@ -271,26 +279,26 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
         return newRoyaltyStack;
     }
 
-    function _getExpectedOutputs(address _ipId, address[] memory _parentIpIds, InitParams memory _params) internal view returns (address[] memory newAncestors, uint32[] memory newAncestorsRoyalty, uint32 ancestorsCount, uint32 royaltyStack) {
+    function _getExpectedOutputs(address _ipId, address[] memory _parentIpIds, uint32[] memory _parentRoyalties, InitParams memory _params) internal view returns (address[] memory newAncestors, uint32[] memory newAncestorsRoyalty, uint32 ancestorsCount, uint32 royaltyStack) {
         newAncestorsRoyalty = new uint32[](_params.targetRoyaltyAmount.length);
         newAncestors = new address[](_params.targetAncestors.length);
 
         for (uint256 i = 0; i < _parentIpIds.length; i++) {
             if (i==0) {
                 newAncestors[ancestorsCount] = _parentIpIds[i];
-                newAncestorsRoyalty[ancestorsCount] += _params.parentRoyalties[i];
-                royaltyStack += _params.parentRoyalties[i];
+                newAncestorsRoyalty[ancestorsCount] += _parentRoyalties[i];
+                royaltyStack += _parentRoyalties[i];
                 ancestorsCount++;
             } else if (i==1) {
                 (uint256 index, bool isIn) = ArrayUtils.indexOf(newAncestors, _parentIpIds[i]);
                 if (!isIn) {
                     newAncestors[ancestorsCount] = _parentIpIds[i];
-                    newAncestorsRoyalty[ancestorsCount] += _params.parentRoyalties[i];
-                    royaltyStack += _params.parentRoyalties[i];
+                    newAncestorsRoyalty[ancestorsCount] += _parentRoyalties[i];
+                    royaltyStack += _parentRoyalties[i];
                     ancestorsCount++;
                 } else {
-                    newAncestorsRoyalty[index] += _params.parentRoyalties[i];
-                    royaltyStack += _params.parentRoyalties[i];
+                    newAncestorsRoyalty[index] += _parentRoyalties[i];
+                    royaltyStack += _parentRoyalties[i];
                 }
             }
 
