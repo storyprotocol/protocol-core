@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 /// @title RoyaltyPolicy interface
 interface IRoyaltyPolicy {
-    function onLicenseMinting(address _ipId, address[] calldata _parentIpIds, bytes calldata _data) external;
+    function onLicenseMinting(address _ipId, bytes calldata _data) external;
 
     function onLinkToParents(address _ipId, address[] calldata _parentIpIds, bytes calldata _data) external;
 

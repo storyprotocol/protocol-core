@@ -91,6 +91,7 @@ contract RoyaltyModule is IRoyaltyModule, BaseModule, Governable, ReentrancyGuar
     }
 
     // TODO: Ensure that the ipId that is passed in from license cannot be manipulated - given ipId addresses are deterministic
+    // TODO: Ensure all licenses are burned before linking to a new parents all have the same royalty policy address
     function onLinkToParents(address _ipId, address _royaltyPolicy, address[] calldata _parentIpIds, bytes calldata _data) external nonReentrant onlyLicensingModule {
         if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
         if (_parentIpIds.length == 0) revert Errors.RoyaltyModule__NoParentsOnLinking();
@@ -99,7 +100,7 @@ contract RoyaltyModule is IRoyaltyModule, BaseModule, Governable, ReentrancyGuar
             address parentRoyaltyPolicy = royaltyPolicies[_parentIpIds[i]];
             // if the parent node has a royalty policy set, then the derivative node should have the same royalty policy
             // if the parent node does not have a royalty policy set, then the derivative node can set any type of royalty policy
-            // as long as the children node is burning a licensing with that royalty policy
+            // as long as the children ip obtained and is burning all licenses with that royalty type from each parent (was checked in licensing module before calling this function)
             if (parentRoyaltyPolicy != _royaltyPolicy && parentRoyaltyPolicy != address(0)) revert Errors.RoyaltyModule__IncompatibleRoyaltyPolicy();
         }
 

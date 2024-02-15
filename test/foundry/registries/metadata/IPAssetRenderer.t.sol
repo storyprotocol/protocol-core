@@ -98,7 +98,7 @@ contract IPAssetRendererTest is BaseTest {
             address(moduleRegistry),
             address(governance)
         );
-        RoyaltyModule royaltyModule = new RoyaltyModule(address(governance));
+        RoyaltyModule royaltyModule = new RoyaltyModule(address(accessController), address(ipAssetRegistry), address(governance));
         licenseRegistry = new LicenseRegistry();
         licensingModule = new LicensingModule(
             address(accessController),

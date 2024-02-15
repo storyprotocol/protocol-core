@@ -115,7 +115,7 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
         
         // if the policy is already initialized, it means that the ipId setup is already done
         // if not, it means that the license for this royalty policy is being minted for the first time
-        // parentIpIds are zero given that only roots can call _initPolicy() for the first time in onLicenseMinting()
+        // parentIpIds are zero given that only roots can call _initPolicy() for the first time in the function onLicenseMinting()
         // while derivatives already called _initPolicy() when linking to their parents with onLinkToParents() call
         address[] memory rootParents = new address[](0);
         if (data.splitClone == address(0)) _initPolicy(_ipId, rootParents, _data);        
@@ -133,7 +133,7 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
     /// @param _data The data to initialize the policy
     function _initPolicy(
         address _ipId,
-        address[] calldata _parentIpIds,
+        address[] memory _parentIpIds,
         bytes calldata _data
     ) internal onlyRoyaltyModule {
         (InitParams memory params,) = abi.decode(_data, (InitParams, uint32));
@@ -252,7 +252,7 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
 
     function _checkAncestorsDataIsValid(
         address _ipId, 
-        address[] calldata _parentIpIds, 
+        address[] memory _parentIpIds, 
         InitParams memory _params
     ) internal returns (uint32) {
         if (_params.targetRoyaltyAmount.length != _params.targetAncestors.length) revert Errors.RoyaltyPolicyLAP__InvalidRoyaltyAmountLength();
@@ -271,7 +271,7 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
         return newRoyaltyStack;
     }
 
-    function _getExpectedOutputs(address _ipId, address[] calldata _parentIpIds, InitParams memory _params) internal view returns (address[] memory newAncestors, uint32[] memory newAncestorsRoyalty, uint32 ancestorsCount, uint32 royaltyStack) {
+    function _getExpectedOutputs(address _ipId, address[] memory _parentIpIds, InitParams memory _params) internal view returns (address[] memory newAncestors, uint32[] memory newAncestorsRoyalty, uint32 ancestorsCount, uint32 royaltyStack) {
         newAncestorsRoyalty = new uint32[](_params.targetRoyaltyAmount.length);
         newAncestors = new address[](_params.targetAncestors.length);
 
