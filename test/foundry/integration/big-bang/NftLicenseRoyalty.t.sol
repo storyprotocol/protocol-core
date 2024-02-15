@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+/* // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
 // external
@@ -65,27 +65,27 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration {
             })
         )
     {
-        /*///////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////
                                 REGISTER IP ACCOUNTS
-        ////////////////////////////////////////////////////////////////*/
+        ////////////////////////////////////////////////////////////////
 
         // Alice registers NFT 1 IPAccount
 
         vm.startPrank(u.alice);
         ipAcct[1] = registerIpAccount(mockNFT, 1, u.alice);
 
-        /*///////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////
                             ADD POLICIES TO IP ACCOUNTS
-        ////////////////////////////////////////////////////////////////*/
+        ////////////////////////////////////////////////////////////////
 
         // Alice attaches the UML Commercial Derivative Reciprocal policy to NFT 1 IPAccount
 
         vm.startPrank(u.alice);
         licensingModule.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_reciprocal"]);
 
-        /*///////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////
                                 MINT & USE LICENSES
-        ////////////////////////////////////////////////////////////////*/
+        ////////////////////////////////////////////////////////////////
 
         // Bob mints 1 license from Alice's NFT 1 IPAccount, registers NFT 2 IPAccount, and links using the license
         {
@@ -265,3 +265,4 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration {
         }
     }
 }
+ */

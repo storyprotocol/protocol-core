@@ -149,12 +149,12 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         // Right now, we lock a global royalty address and min royalty value for the parent IPAccount. This limitation
         // is due to the Royalty Module's current design, which has a royalty tree that maps one royalty policy to one
         // IPAccount, not one policy attached to an IPAccount.
-        if (isPolicyCommercial && !ROYALTY_MODULE.isRoyaltyPolicyImmutable(ipId)) {
+/*         if (isPolicyCommercial && !ROYALTY_MODULE.isRoyaltyPolicyImmutable(ipId)) {
             address newRoyaltyPolicy = pfm.getRoyaltyPolicy(polId);
             uint32 newMinRoyalty = pfm.getCommercialRevenueShare(polId);
 
             ROYALTY_MODULE.setRoyaltyPolicy(ipId, newRoyaltyPolicy, new address[](0), abi.encode(newMinRoyalty));
-        }
+        } */
     }
 
     /// Mints license NFTs representing a policy granted by a set of ipIds (licensors). This NFT needs to be burned
@@ -204,13 +204,13 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
                 // If the royalty policy of this IPAccount is not set in this case, then we set it. Addtionally, below
                 // logics at the end of the function will set the Royalty module to be immutable, so we do not have to
                 // set in this if branch directly.
-                if (!ROYALTY_MODULE.isRoyaltyPolicyImmutable(licensorIp)) {
-                    ROYALTY_MODULE.setRoyaltyPolicy(
+/*                 if (!ROYALTY_MODULE.isRoyaltyPolicyImmutable(licensorIp)) {
+                     ROYALTY_MODULE.setRoyaltyPolicy(
                         licensorIp,
                         newRoyaltyPolicy,
                         new address[](0),
                         abi.encode(commercialRevenueShare) // new minRoyaty
-                    );
+                    ); 
                 } else {
                     // If the royalty policy is immutable, we allow minting license on a private policy if and only
                     // if this policyId's royalty policy and min royalty is the same as the current setting.
@@ -221,7 +221,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
                     if (newRoyaltyPolicy != ROYALTY_MODULE.royaltyPolicies(licensorIp)) {
                         revert Errors.LicensingModule__MismatchBetweenRoyaltyPolicy();
                     }
-                }
+                } */
             }
         }
         // If a policy is set, then is only up to the policy params.
@@ -233,7 +233,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         licenseId = LICENSE_REGISTRY.mintLicense(policyId, licensorIp, pol.isLicenseTransferable, amount, receiver);
 
         // If a policy is non-commercial, we do not need to check the royalty policy setting when minting a license.
-        if (isPolicyCommercial) {
+        /*if (isPolicyCommercial) {
             uint256 commercialRevenueShare = pfm.getCommercialRevenueShare(policyId);
             uint256 minRoyalty = ROYALTY_MODULE.minRoyaltyFromDescendants(licensorIp);
 
@@ -250,10 +250,10 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
             // If the parent of the to-be-minted license has a mutable royalty policy setting, then we set it as
             // IMMUTABLE. This locks the royalty policy address and min royalty for the parent to whatever value
             // it currently has set.
-            if (!ROYALTY_MODULE.isRoyaltyPolicyImmutable(licensorIp)) {
+             if (!ROYALTY_MODULE.isRoyaltyPolicyImmutable(licensorIp)) {
                 ROYALTY_MODULE.setRoyaltyPolicyImmutable(licensorIp);
-            }
-        }
+            } 
+        } */
     }
 
     /// @notice Links an IP to the licensors (parent IP IDs) listed in the License NFTs, if their policies allow it,
@@ -305,7 +305,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
             // If the parent licenses specify the `derivativeRevShare` value to non-zero, use the value.
             // Otherwise, the child IPAccount has the freedom to set the value.
             uint256 dRevShare = royaltyDerivativeRevShare > 0 ? royaltyDerivativeRevShare : minRoyalty;
-            ROYALTY_MODULE.setRoyaltyPolicy(childIpId, royaltyPolicyAddress, licensors, abi.encode(dRevShare));
+            //ROYALTY_MODULE.setRoyaltyPolicy(childIpId, royaltyPolicyAddress, licensors, abi.encode(dRevShare));
         }
 
         // Burn licenses

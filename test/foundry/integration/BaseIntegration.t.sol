@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+/* // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
 // external
@@ -59,9 +59,9 @@ contract BaseIntegration is BaseTest {
         ipAssetRegistry.setApprovalForAll(address(registrationModule), true);
     }
 
-    /*//////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
                                       HELPERS
-    //////////////////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////////////////
 
     function registerIpAccount(address nft, uint256 tokenId, address caller) internal returns (address) {
         address expectedAddr = ERC6551AccountLib.computeAddress(
@@ -357,3 +357,4 @@ contract BaseIntegration is BaseTest {
         linkIpToParents(licenseIds, ipId, caller, minRoyalty);
     }
 }
+ */

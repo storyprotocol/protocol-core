@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+/* // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -13,6 +13,7 @@ import { ILiquidSplitMain } from "../../../interfaces/modules/royalty/policies/I
 import { IRoyaltyPolicyLS } from "../../../interfaces/modules/royalty/policies/IRoyaltyPolicyLS.sol";
 import { Errors } from "../../../lib/Errors.sol";
 
+//TODO: eliminate contract (deprecated)
 /// @title Liquid Split Royalty Policy
 /// @notice The LiquidSplit royalty policy splits royalties in accordance with
 ///         the percentage of royalty NFTs owned by each account.
@@ -74,6 +75,10 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
         LIQUID_SPLIT_MAIN = _liquidSplitMain;
     }
 
+    function onLicenseMinting(address _ipId, address[] calldata _parentIpIds, bytes calldata _data) external onlyRoyaltyModule {}
+
+    function onLinkToParents(address _ipId, address[] calldata _parentIpIds, bytes calldata _data) external onlyRoyaltyModule {}
+    
     /// @notice Initializes the royalty policy
     /// @param _ipId The ipId
     /// @param _parentIpIds The parent ipIds
@@ -122,12 +127,6 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     ) external onlyRoyaltyModule {
         address destination = royaltyData[_ipId].splitClone;
         IERC20(_token).safeTransferFrom(_caller, destination, _amount);
-    }
-
-    /// @notice Returns the minimum royalty the IPAccount expects from descendants
-    /// @param _ipId The ipId
-    function minRoyaltyFromDescendants(address _ipId) external view override returns (uint32) {
-        return royaltyData[_ipId].minRoyalty;
     }
 
     /// @notice Distributes funds to the accounts in the LiquidSplitClone contract
@@ -198,3 +197,4 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
         return splitClone;
     }
 }
+ */

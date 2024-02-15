@@ -60,7 +60,7 @@ contract TestArbitrationPolicySP is BaseTest {
                 commercializerChecker: address(0),
                 commercializerCheckerData: "",
                 commercialRevShare: 10,
-                royaltyPolicy: address(royaltyPolicyLS)
+                royaltyPolicy: address(royaltyPolicyLAP)
             }),
             UMLPolicyDerivativeParams({
                 derivativesAttribution: true,

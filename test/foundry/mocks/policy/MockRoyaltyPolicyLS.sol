@@ -24,7 +24,7 @@ contract MockRoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
 
     /// @notice Restricts the calls to the royalty module
     modifier onlyRoyaltyModule() {
-        if (msg.sender != ROYALTY_MODULE) revert Errors.RoyaltyPolicyLS__NotRoyaltyModule();
+        if (msg.sender != ROYALTY_MODULE) revert Errors.RoyaltyPolicyLAP__NotRoyaltyModule();
         _;
     }
 
@@ -78,4 +78,7 @@ contract MockRoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     function LIQUID_SPLIT_MAIN() external pure returns (address) {
         return address(0xdead);
     }
+
+    function onLicenseMinting(address _ipId, bytes calldata _licenseData, bytes calldata _externalData) external{}
+    function onLinkToParents(address _ipId, address[] calldata _parentIpIds, bytes[] memory _licenseData, bytes calldata _externalData) external{}
 }

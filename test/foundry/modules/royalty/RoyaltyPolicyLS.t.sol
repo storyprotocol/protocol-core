@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+/* // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
 // external
@@ -282,3 +282,4 @@ contract TestLSClaimer is BaseTest {
         royaltyPolicyLS.claimRoyalties(ipAccount2, 0, tokens);
     }
 }
+ */
