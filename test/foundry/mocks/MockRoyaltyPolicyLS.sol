@@ -24,7 +24,7 @@ contract MockRoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
 
     /// @notice Restricts the calls to the royalty module
     modifier onlyRoyaltyModule() {
-        if (msg.sender != ROYALTY_MODULE) revert Errors.RoyaltyPolicyLS__NotRoyaltyModule();
+        if (msg.sender != ROYALTY_MODULE) revert Errors.RoyaltyPolicyLAP__NotRoyaltyModule();
         _;
     }
 

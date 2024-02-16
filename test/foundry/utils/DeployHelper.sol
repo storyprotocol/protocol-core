@@ -27,7 +27,7 @@ import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.so
 import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
 import { RoyaltyPolicyLAP } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLAP.sol";
-//import { AncestorsVaultLAP } from "contracts/modules/royalty-module/policies/AncestorsVaultLAP.sol";
+import { AncestorsVaultLAP } from "contracts/modules/royalty-module/policies/AncestorsVaultLAP.sol";
 
 // test
 import { MockERC20 } from "test/foundry/mocks/MockERC20.sol";
@@ -45,6 +45,7 @@ struct MockERC721s {
 contract DeployHelper is Test {
     ERC6551Registry internal erc6551Registry;
     IPAccountImpl internal ipAccountImpl;
+    IPAccountImpl internal ipAccountImpl2;
 
     // Registry
     IPAccountRegistry internal ipAccountRegistry;
@@ -60,6 +61,7 @@ contract DeployHelper is Test {
     ArbitrationPolicySP internal arbitrationPolicySP2;
     RoyaltyModule internal royaltyModule;
     RoyaltyPolicyLAP internal royaltyPolicyLAP;
+    RoyaltyPolicyLAP internal royaltyPolicyLAP2;
     TaggingModule internal taggingModule;
     LicensingModule internal licensingModule;
 
@@ -168,10 +170,20 @@ contract DeployHelper is Test {
             address(governance)
         );
 
-        //AncestorsVaultLAP ancestorsVaultImpl = new AncestorsVaultLAP(address(royaltyPolicyLAP));
+        royaltyPolicyLAP2 = new RoyaltyPolicyLAP(
+            address(royaltyModule),
+            address(licensingModule),
+            LIQUID_SPLIT_FACTORY,
+            LIQUID_SPLIT_MAIN,
+            address(governance)
+        );
+
+        AncestorsVaultLAP ancestorsVaultImpl = new AncestorsVaultLAP(address(royaltyPolicyLAP));
+        AncestorsVaultLAP ancestorsVaultImpl2 = new AncestorsVaultLAP(address(royaltyPolicyLAP2));
 
         vm.startPrank(u.admin);
-        //royaltyPolicyLAP.setAncestorsVaultImplementation(address(ancestorsVaultImpl));
+        royaltyPolicyLAP.setAncestorsVaultImplementation(address(ancestorsVaultImpl));
+        royaltyPolicyLAP2.setAncestorsVaultImplementation(address(ancestorsVaultImpl2));
         vm.stopPrank();
 
         mockRoyaltyPolicyLS = new MockRoyaltyPolicyLS(address(royaltyModule));
