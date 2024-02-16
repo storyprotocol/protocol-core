@@ -197,7 +197,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "LicenseRegistry";
         _predeploy(contractKey);
-        licenseRegistry = new LicenseRegistry();
+        licenseRegistry = new LicenseRegistry(address(governance));
         _postdeploy(contractKey, address(licenseRegistry));
 
         contractKey = "LicensingModule";
@@ -582,16 +582,16 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
             // Dan is paying 65% of 1000 erc20 royalty to parents (stored in Dan's Claimer).
             // The other 35% of 1000 erc20 royalty goes directly to Dan's IPAccount.
-            royaltyPolicyLS.claimRoyalties({ _account: ipAcct3_claimer, _withdrawETH: 0, _tokens: tokens });
+            royaltyPolicyLS.claimRoyalties({ account: ipAcct3_claimer, withdrawETH: 0, tokens: tokens });
 
             // Alice calls the claim her portion of rNFTs and tokens. She can only call `claim` once.
             // Afterwards, she will automatically receive money on revenue distribution.
 
             LSClaimer(ipAcct3_claimer).claim({
-                _path: chain_ipAcct1_to_ipAcct3,
-                _claimerIpId: ipAcct[1],
-                _withdrawETH: false,
-                _tokens: tokens
+                path: chain_ipAcct1_to_ipAcct3,
+                claimerIpId: ipAcct[1],
+                withdrawETH: false,
+                tokens: tokens
             });
         }
 
