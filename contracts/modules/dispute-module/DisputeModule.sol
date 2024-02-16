@@ -226,8 +226,9 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
     /// @param _disputeId The dispute id
     function resolveDispute(uint256 _disputeId) external {
         Dispute memory dispute = disputes[_disputeId];
-        if (dispute.currentTag == IN_DISPUTE || dispute.currentTag == bytes32(0)) revert Errors.DisputeModule__NotAbleToResolve();
+
         if (msg.sender != dispute.disputeInitiator) revert Errors.DisputeModule__NotDisputeInitiator();
+        if (dispute.currentTag == IN_DISPUTE || dispute.currentTag == bytes32(0)) revert Errors.DisputeModule__NotAbleToResolve();
 
         successfulDisputesPerIp[dispute.targetIpId]--;
         disputes[_disputeId].currentTag = bytes32(0);
