@@ -123,24 +123,8 @@ contract MockDisputeModule is BaseModule, IDisputeModule {
 
     // These methods are not really used in the mock. They are just here to satisfy the interface.
 
-    function isIpTaggedWith(address, bytes32) external pure returns (bool) {
-        return false;
-    }
-
     function isIpTagged(address) external pure returns (bool) {
         return false;
     }
 
-    function ipTags(address) external pure returns (bytes32[] memory) {
-        bytes32[] memory tags;
-        return tags;
-    }
-
-    function totalTagsForIp(address) external pure returns (uint256) {
-        return 0;
-    }
-
-    function tagForIpAt(address, uint256) external pure returns (bytes32) {
-        return bytes32(0);
-    }
 }
