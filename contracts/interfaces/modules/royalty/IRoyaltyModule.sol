@@ -43,9 +43,20 @@ interface IRoyaltyModule is IModule {
     /// @param allowed Indicates if the token is whitelisted or not
     function whitelistRoyaltyToken(address token, bool allowed) external;
 
-    function onLicenseMinting(address _ipId, address _royaltyPolicy, bytes calldata _licenseData, bytes calldata _externalData) external;
+    /// @notice Executes royalty related logic on license minting
+    /// @param ipId The ipId whose license is being minted (licensor)
+    /// @param royaltyPolicy The royalty policy address of the license being minted
+    /// @param licenseData The license data custom to each the royalty policy
+    /// @param externalData The external data custom to each the royalty policy
+    function onLicenseMinting(address ipId, address royaltyPolicy, bytes calldata licenseData, bytes calldata externalData) external;
     
-    function onLinkToParents(address _ipId, address _royaltyPolicy, address[] calldata _parentIpIds, bytes[] memory _licenseData, bytes calldata _externalData) external;
+    /// @notice Executes royalty related logic on linking to parents
+    /// @param ipId The children ipId that is being linked to parents
+    /// @param royaltyPolicy The common royalty policy address of all the licenses being burned
+    /// @param parentIpIds The parent ipIds that the children ipId is being linked to
+    /// @param licenseData The license data custom to each the royalty policy
+    /// @param externalData The external data custom to each the royalty policy
+    function onLinkToParents(address ipId, address royaltyPolicy, address[] calldata parentIpIds, bytes[] memory licenseData, bytes calldata externalData) external;
 
     /// @notice Allows a sender to to pay royalties on behalf of an ipId
     /// @param receiverIpId The ipId that receives the royalties
