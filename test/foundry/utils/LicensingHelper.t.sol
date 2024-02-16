@@ -17,8 +17,6 @@ import { UMLPolicyFrameworkManager, UMLPolicy } from "../../../contracts/modules
 // test
 // solhint-disable-next-line max-line-length
 import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig } from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
-// solhint-disable-next-line max-line-length
-import { MintPaymentPolicyFrameworkManager, MintPaymentPolicy } from "test/foundry/mocks/licensing/MintPaymentPolicyFrameworkManager.sol";
 
 struct UMLPolicyGenericParams {
     string policyName;
@@ -88,181 +86,127 @@ contract LicensingHelper {
         _;
     }
 
-    modifier withLFM_MintPayment(ERC20 erc20, uint256 paymentWithoutDecimals) {
-        BasePolicyFrameworkManager _pfm = BasePolicyFrameworkManager(
-            new MintPaymentPolicyFrameworkManager(
-                address(licensingModule),
-                address(royaltyPolicy),
-                "mint_payment",
-                "license url",
-                address(erc20),
-                paymentWithoutDecimals * 10 ** erc20.decimals() // `paymentWithoutDecimals` amount per license mint
-            )
-        );
-        licensingModule.registerPolicyFrameworkManager(address(_pfm));
-        pfm["mint_payment"] = address(_pfm);
-        _;
-    }
-
-    modifier withLFM_MockOnAll() {
-        BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(true, true);
-        licensingModule.registerPolicyFrameworkManager(address(_pfm));
-        pfm["mock_on_all"] = address(_pfm);
-        _;
-    }
-
-    modifier withLFM_MockOnLink() {
-        BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(true, false);
-        licensingModule.registerPolicyFrameworkManager(address(_pfm));
-        pfm["mock_on_link"] = address(_pfm);
-        _;
-    }
-
-    modifier withLFM_MockOnMint() {
-        BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(false, true);
-        licensingModule.registerPolicyFrameworkManager(address(_pfm));
-        pfm["mock_on_mint"] = address(_pfm);
-        _;
-    }
-
-    modifier withLFM_MockOnTransfer() {
-        BasePolicyFrameworkManager _pfm = _createMockPolicyFrameworkManager(false, false);
-        licensingModule.registerPolicyFrameworkManager(address(_pfm));
-        pfm["mock_on_transfer"] = address(_pfm);
-        _;
-    }
-
     /*//////////////////////////////////////////////////////////////////////////
                                 MODIFIERS: POLICY
     //////////////////////////////////////////////////////////////////////////*/
 
-    modifier withUMLPolicy_Commercial_Derivative(
-        UMLPolicyGenericParams memory gparams,
-        UMLPolicyCommercialParams memory cparams,
-        UMLPolicyDerivativeParams memory dparams
-    ) {
-        UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"]);
+    // modifier withUMLPolicy_Commercial_Derivative(
+    //     UMLPolicyGenericParams memory gparams,
+    //     UMLPolicyCommercialParams memory cparams,
+    //     UMLPolicyDerivativeParams memory dparams
+    // ) {
+    //     UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"]);
 
-        string memory pName = string(abi.encodePacked("uml_com_deriv_", gparams.policyName));
-        policyIds[pName] = _pfm.registerPolicy(
-            UMLPolicy({
-                transferable: gparams.transferable,
-                attribution: gparams.attribution,
-                commercialUse: true,
-                commercialAttribution: cparams.commercialAttribution,
-                commercializerChecker: cparams.commercializerChecker,
-                commercializerCheckerData: cparams.commercializerCheckerData,
-                commercialRevShare: cparams.commercialRevShare,
-                derivativesAllowed: true,
-                derivativesAttribution: dparams.derivativesAttribution,
-                derivativesApproval: dparams.derivativesApproval,
-                derivativesReciprocal: dparams.derivativesReciprocal,
-                derivativesRevShare: dparams.derivativesRevShare,
-                territories: gparams.territories,
-                contentRestrictions: gparams.contentRestrictions,
-                distributionChannels: gparams.distributionChannels,
-                royaltyPolicy: cparams.royaltyPolicy
-            })
-        );
-        _;
-    }
+    //     string memory pName = string(abi.encodePacked("uml_com_deriv_", gparams.policyName));
+    //     policyIds[pName] = _pfm.registerPolicy(
+    //         UMLPolicy({
+    //             transferable: gparams.transferable,
+    //             attribution: gparams.attribution,
+    //             commercialUse: true,
+    //             commercialAttribution: cparams.commercialAttribution,
+    //             commercializerChecker: cparams.commercializerChecker,
+    //             commercializerCheckerData: cparams.commercializerCheckerData,
+    //             commercialRevShare: cparams.commercialRevShare,
+    //             derivativesAllowed: true,
+    //             derivativesAttribution: dparams.derivativesAttribution,
+    //             derivativesApproval: dparams.derivativesApproval,
+    //             derivativesReciprocal: dparams.derivativesReciprocal,
+    //             derivativesRevShare: dparams.derivativesRevShare,
+    //             territories: gparams.territories,
+    //             contentRestrictions: gparams.contentRestrictions,
+    //             distributionChannels: gparams.distributionChannels,
+    //             royaltyPolicy: cparams.royaltyPolicy
+    //         })
+    //     );
+    //     _;
+    // }
 
-    modifier withUMLPolicy_Commerical_NonDerivative(
-        UMLPolicyGenericParams memory gparams,
-        UMLPolicyCommercialParams memory cparams
-    ) {
-        UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"]);
+    // modifier withUMLPolicy_Commerical_NonDerivative(
+    //     UMLPolicyGenericParams memory gparams,
+    //     UMLPolicyCommercialParams memory cparams
+    // ) {
+    //     UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"]);
 
-        string memory pName = string(abi.encodePacked("uml_com_nonderiv_", gparams.policyName));
-        policyIds[pName] = _pfm.registerPolicy(
-            UMLPolicy({
-                transferable: gparams.transferable,
-                attribution: gparams.attribution,
-                commercialUse: true,
-                commercialAttribution: cparams.commercialAttribution,
-                commercializerChecker: cparams.commercializerChecker,
-                commercializerCheckerData: cparams.commercializerCheckerData,
-                commercialRevShare: cparams.commercialRevShare,
-                derivativesAllowed: false,
-                derivativesAttribution: false,
-                derivativesApproval: false,
-                derivativesReciprocal: false,
-                derivativesRevShare: 0,
-                territories: gparams.territories,
-                contentRestrictions: gparams.contentRestrictions,
-                distributionChannels: gparams.distributionChannels,
-                royaltyPolicy: cparams.royaltyPolicy
-            })
-        );
-        _;
-    }
+    //     string memory pName = string(abi.encodePacked("uml_com_nonderiv_", gparams.policyName));
+    //     policyIds[pName] = _pfm.registerPolicy(
+    //         UMLPolicy({
+    //             transferable: gparams.transferable,
+    //             attribution: gparams.attribution,
+    //             commercialUse: true,
+    //             commercialAttribution: cparams.commercialAttribution,
+    //             commercializerChecker: cparams.commercializerChecker,
+    //             commercializerCheckerData: cparams.commercializerCheckerData,
+    //             commercialRevShare: cparams.commercialRevShare,
+    //             derivativesAllowed: false,
+    //             derivativesAttribution: false,
+    //             derivativesApproval: false,
+    //             derivativesReciprocal: false,
+    //             derivativesRevShare: 0,
+    //             territories: gparams.territories,
+    //             contentRestrictions: gparams.contentRestrictions,
+    //             distributionChannels: gparams.distributionChannels,
+    //             royaltyPolicy: cparams.royaltyPolicy
+    //         })
+    //     );
+    //     _;
+    // }
 
-    modifier withUMLPolicy_NonCommercial_Derivative(
-        UMLPolicyGenericParams memory gparams,
-        UMLPolicyDerivativeParams memory dparams
-    ) {
-        UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"]);
+    // modifier withUMLPolicy_NonCommercial_Derivative(
+    //     UMLPolicyGenericParams memory gparams,
+    //     UMLPolicyDerivativeParams memory dparams
+    // ) {
+    //     UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"]);
 
-        string memory pName = string(abi.encodePacked("uml_noncom_deriv_", gparams.policyName));
-        policyIds[pName] = _pfm.registerPolicy(
-            UMLPolicy({
-                transferable: gparams.transferable,
-                attribution: gparams.attribution,
-                commercialUse: false,
-                commercialAttribution: false,
-                commercializerChecker: address(0),
-                commercializerCheckerData: "",
-                commercialRevShare: 0,
-                derivativesAllowed: true,
-                derivativesAttribution: dparams.derivativesAttribution,
-                derivativesApproval: dparams.derivativesApproval,
-                derivativesReciprocal: dparams.derivativesReciprocal,
-                derivativesRevShare: dparams.derivativesRevShare,
-                territories: gparams.territories,
-                distributionChannels: gparams.distributionChannels,
-                contentRestrictions: gparams.contentRestrictions,
-                royaltyPolicy: address(0)
-            })
-        );
-        _;
-    }
+    //     string memory pName = string(abi.encodePacked("uml_noncom_deriv_", gparams.policyName));
+    //     policyIds[pName] = _pfm.registerPolicy(
+    //         UMLPolicy({
+    //             transferable: gparams.transferable,
+    //             attribution: gparams.attribution,
+    //             commercialUse: false,
+    //             commercialAttribution: false,
+    //             commercializerChecker: address(0),
+    //             commercializerCheckerData: "",
+    //             commercialRevShare: 0,
+    //             derivativesAllowed: true,
+    //             derivativesAttribution: dparams.derivativesAttribution,
+    //             derivativesApproval: dparams.derivativesApproval,
+    //             derivativesReciprocal: dparams.derivativesReciprocal,
+    //             derivativesRevShare: dparams.derivativesRevShare,
+    //             territories: gparams.territories,
+    //             distributionChannels: gparams.distributionChannels,
+    //             contentRestrictions: gparams.contentRestrictions,
+    //             royaltyPolicy: address(0)
+    //         })
+    //     );
+    //     _;
+    // }
 
-    modifier withUMLPolicy_NonCommercial_NonDerivative(UMLPolicyGenericParams memory gparams) {
-        UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"]);
+    // modifier withUMLPolicy_NonCommercial_NonDerivative(UMLPolicyGenericParams memory gparams) {
+    //     UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"]);
 
-        string memory pName = string(abi.encodePacked("uml_noncom_nonderiv_", gparams.policyName));
-        policyIds[pName] = _pfm.registerPolicy(
-            UMLPolicy({
-                transferable: gparams.transferable,
-                attribution: gparams.attribution,
-                commercialUse: false,
-                commercialAttribution: false,
-                commercializerChecker: address(0),
-                commercializerCheckerData: "",
-                commercialRevShare: 0,
-                derivativesAllowed: false,
-                derivativesAttribution: false,
-                derivativesApproval: false,
-                derivativesReciprocal: false,
-                derivativesRevShare: 0,
-                territories: gparams.territories,
-                contentRestrictions: gparams.contentRestrictions,
-                distributionChannels: gparams.distributionChannels,
-                royaltyPolicy: address(0)
-            })
-        );
-        _;
-    }
-
-    modifier withMintPaymentPolicy(string memory policyName, bool mustBeTrue) {
-        // NOTE: If `mustBeTrue` = true, then the policy will return `true` on successful payment.
-        //       Ttherwise (false), the policy will return `false` even on successful payment.
-        MintPaymentPolicyFrameworkManager _pfm = MintPaymentPolicyFrameworkManager(pfm["mint_payment"]);
-
-        string memory pName = string(abi.encodePacked("mint_payment_", policyName));
-        policyIds[pName] = _pfm.registerPolicy(MintPaymentPolicy({ mustBeTrue: mustBeTrue }));
-        _;
-    }
+    //     string memory pName = string(abi.encodePacked("uml_noncom_nonderiv_", gparams.policyName));
+    //     policyIds[pName] = _pfm.registerPolicy(
+    //         UMLPolicy({
+    //             transferable: gparams.transferable,
+    //             attribution: gparams.attribution,
+    //             commercialUse: false,
+    //             commercialAttribution: false,
+    //             commercializerChecker: address(0),
+    //             commercializerCheckerData: "",
+    //             commercialRevShare: 0,
+    //             derivativesAllowed: false,
+    //             derivativesAttribution: false,
+    //             derivativesApproval: false,
+    //             derivativesReciprocal: false,
+    //             derivativesRevShare: 0,
+    //             territories: gparams.territories,
+    //             contentRestrictions: gparams.contentRestrictions,
+    //             distributionChannels: gparams.distributionChannels,
+    //             royaltyPolicy: address(0)
+    //         })
+    //     );
+    //     _;
+    // }
 
     /*//////////////////////////////////////////////////////////////////////////
                                 HELPER FUNCTIONS
@@ -371,8 +315,6 @@ contract LicensingHelper {
                         licensingModule: address(licensingModule),
                         name: "mock",
                         licenseUrl: "license url",
-                        supportVerifyLink: supportVerifyLink,
-                        supportVerifyMint: supportVerifyMint,
                         royaltyPolicy: address(0xdeadbeef)
                     })
                 )

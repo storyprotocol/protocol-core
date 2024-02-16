@@ -132,7 +132,6 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModul
         address _token,
         uint256 _amount
     ) external nonReentrant {
-        if (!IP_ASSET_REGISTRY.isRegistered(_receiverIpId)) revert Errors.RoyaltyModule__NotRegisteredIpId();
         if (!isWhitelistedRoyaltyToken[_token]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyToken();
 
         address payerRoyaltyPolicy = royaltyPolicies[_payerIpId];

@@ -10,11 +10,12 @@ library Licensing {
     /// @param isLicenseTransferable Whether or not the license is transferable
     /// @param data Encoded data for the policy, specific to the policy framework
     struct Policy {
-        address policyFramework;
         bool isLicenseTransferable;
-        bytes data;
-    }
-
+        address policyFramework;
+        bytes frameworkData;
+        address royaltyPolicy;
+        bytes royaltyData;
+    }    
     /// @notice Data that define a License Agreement NFT
     /// @param policyId Id of the policy this license is based on, which will be set in the derivative IP when the
     /// license is burnt for linking

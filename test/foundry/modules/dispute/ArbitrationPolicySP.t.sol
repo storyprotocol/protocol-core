@@ -8,6 +8,7 @@ import { ERC6551AccountLib } from "erc6551/lib/ERC6551AccountLib.sol";
 // contracts
 import { Errors } from "contracts/lib/Errors.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
+import { UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 // test
 // solhint-disable-next-line max-line-length
 import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.t.sol";
@@ -45,28 +46,23 @@ contract TestArbitrationPolicySP is BaseTest {
 
         _setUMLPolicyFrameworkManager();
         _addUMLPolicy(
+            "cheap_flexible",
             true,
-            true,
-            UMLPolicyGenericParams({
-                policyName: "cheap_flexible", // => uml_cheap_flexible
+            address(royaltyPolicyLAP),
+            UMLPolicy ({
                 attribution: false,
-                transferable: true,
-                territories: new string[](0),
-                distributionChannels: new string[](0),
-                contentRestrictions: new string[](0)
-            }),
-            UMLPolicyCommercialParams({
+                commercialUse: true,
                 commercialAttribution: true,
                 commercializerChecker: address(0),
                 commercializerCheckerData: "",
                 commercialRevShare: 10,
-                royaltyPolicy: address(royaltyPolicyLAP)
-            }),
-            UMLPolicyDerivativeParams({
+                derivativesAllowed: true,
                 derivativesAttribution: true,
                 derivativesApproval: false,
                 derivativesReciprocal: false,
-                derivativesRevShare: 10
+                territories: new string[](0),
+                distributionChannels: new string[](0),
+                contentRestrictions: new string[](0)
             })
         );
 

@@ -61,7 +61,6 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration {
                 derivativesAttribution: true,
                 derivativesApproval: false,
                 derivativesReciprocal: true, // ==> reciprocal
-                derivativesRevShare: minRevShare
             })
         )
     {

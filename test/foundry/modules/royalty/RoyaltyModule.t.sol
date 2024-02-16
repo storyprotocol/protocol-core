@@ -393,55 +393,42 @@ contract TestRoyaltyModule is BaseTest {
         assertEq(royaltyModule.royaltyPolicies(newChild), address(royaltyPolicyLAP));
     }
 
-    /*     function test_RoyaltyModule_payRoyaltyOnBehalf_revert_NoRoyaltyPolicySet() public {
+    function test_RoyaltyModule_payRoyaltyOnBehalf_revert_NoRoyaltyPolicySet() public {
         vm.expectRevert(Errors.RoyaltyModule__NoRoyaltyPolicySet.selector);
 
         royaltyModule.payRoyaltyOnBehalf(ipAccount1, ipAccount2, address(USDC), 100);
     }
 
     function test_RoyaltyModule_payRoyaltyOnBehalf_revert_NotWhitelistedRoyaltyToken() public {
-        address[] memory parentIpIds1 = new address[](0);
-        uint32 minRoyaltyIpAccount1 = 100; // 10%
-        bytes memory data = abi.encode(minRoyaltyIpAccount1);
-
-        vm.startPrank(address(licensingModule));
-        royaltyModule.setRoyaltyPolicy(ipAccount1, address(royaltyPolicyLAP), parentIpIds1, data);
-        vm.stopPrank();
+        uint256 royaltyAmount = 100 * 10 ** 6;
+        address receiverIpId = address(7);
+        address payerIpId = address(3);
 
         vm.expectRevert(Errors.RoyaltyModule__NotWhitelistedRoyaltyToken.selector);
-        royaltyModule.payRoyaltyOnBehalf(ipAccount1, ipAccount2, address(1), 100);
+        royaltyModule.payRoyaltyOnBehalf(receiverIpId, payerIpId, address(1), royaltyAmount);
     }
 
     function test_RoyaltyModule_payRoyaltyOnBehalf_revert_NotWhitelistedRoyaltyPolicy() public {
-        address[] memory parentIpIds1 = new address[](0);
-        uint32 minRoyaltyIpAccount1 = 100; // 10%
-        bytes memory data = abi.encode(minRoyaltyIpAccount1);
-
-        vm.startPrank(address(licensingModule));
-        royaltyModule.setRoyaltyPolicy(ipAccount1, address(royaltyPolicyLAP), parentIpIds1, data);
-        vm.stopPrank();
+        uint256 royaltyAmount = 100 * 10 ** 6;
+        address receiverIpId = address(7);
+        address payerIpId = address(3);
 
         vm.startPrank(u.admin);
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLAP), false);
 
         vm.expectRevert(Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy.selector);
-        royaltyModule.payRoyaltyOnBehalf(ipAccount1, ipAccount2, address(USDC), 100);
+        royaltyModule.payRoyaltyOnBehalf(receiverIpId, payerIpId, address(USDC), royaltyAmount);
     }
 
     function test_RoyaltyModule_payRoyaltyOnBehalf() public {
         uint256 royaltyAmount = 100 * 10 ** 6;
-        address receiverIpId = bob;
+        address receiverIpId = address(7);
         address payerIpId = address(3);
 
         (,address splitClone, , , ) = royaltyPolicyLAP.royaltyData(receiverIpId);
 
-        vm.prank(alice);
-        registry.setApprovalForAll(bob, true);
-        bytes memory metadata = _generateMetadata();
-        vm.prank(bob);
-        registry.register(block.chainid, tokenAddress, tokenId, resolver, true, metadata);
-
         vm.startPrank(payerIpId);
+        USDC.mint(payerIpId, royaltyAmount);
         USDC.approve(address(royaltyPolicyLAP), royaltyAmount);
 
         uint256 payerIpIdUSDCBalBefore = USDC.balanceOf(payerIpId);
@@ -456,6 +443,6 @@ contract TestRoyaltyModule is BaseTest {
         uint256 splitCloneUSDCBalAfter = USDC.balanceOf(splitClone);
 
         assertEq(payerIpIdUSDCBalBefore - payerIpIdUSDCBalAfter, royaltyAmount);
-        assertEq(splitCloneUSDCBalAfter - splitCloneUSDCBalBefore, royaltyAmount); 
-    } */
+        assertEq(splitCloneUSDCBalAfter - splitCloneUSDCBalBefore, royaltyAmount);
+    } 
 } 
