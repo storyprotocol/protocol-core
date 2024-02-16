@@ -113,7 +113,7 @@ contract TestHelper is Test, DeployHelper {
         string memory pName = string(abi.encodePacked("uml_", name));
         policies[pName] = RegisterUMLPolicyParams({
             transferable: true,
-            royaltyPolicy: address(mockRoyaltyPolicyLS),
+            royaltyPolicy: commercial ? address(mockRoyaltyPolicyLS) : address(0),
             policy: UMLPolicy({
                 attribution: true,
                 commercialUse: commercial,

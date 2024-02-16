@@ -148,7 +148,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
     function test_UMLPolicyFrameworkManager__derivatives_valuesSetCorrectly() public {
         _mapUMLPolicySimple({
             name: "pol_a",
-            commercial: false,
+            commercial: true,
             derivatives: true,
             reciprocal: true,
             commercialRevShare: 123123
@@ -199,7 +199,7 @@ contract UMLPolicyFrameworkTest is TestHelper {
             commercial: false,
             derivatives: true,
             reciprocal: true,
-            commercialRevShare: 123123
+            commercialRevShare: 0
         });
         RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
         inputA.policy.derivativesApproval = true;
