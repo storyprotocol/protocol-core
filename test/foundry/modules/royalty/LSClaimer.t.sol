@@ -202,7 +202,7 @@ contract TestLSClaimer is BaseTest {
 
         assertEq(address(testLsClaimer.IP_ID()), address(1));
         assertEq(address(testLsClaimer.LICENSING_MODULE()), address(licensingModule));
-        assertEq(address(testLsClaimer.IROYALTY_POLICY_LS()), address(royaltyPolicyLS));
+        assertEq(address(testLsClaimer.ROYALTY_POLICY_LS()), address(royaltyPolicyLS));
     }
 
     function test_LSClaimer_claim_revert_AlreadyClaimed() public {

@@ -16,13 +16,6 @@ contract MockLicensingModule is BaseModule, ILicensingModule {
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    struct PolicySetup {
-        uint256 index;
-        bool isSet;
-        bool active;
-        bool isInherited;
-    }
-
     RoyaltyModule public immutable ROYALTY_MODULE;
     ILicenseRegistry public immutable LICENSE_REGISTRY;
     string public constant name = "LICENSING_MODULE";

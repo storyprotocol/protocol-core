@@ -10,13 +10,10 @@ import { Errors } from "contracts/lib/Errors.sol";
 
 contract MockRoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     address public ROYALTY_MODULE;
-
-    struct LSRoyaltyData {
-        address splitClone;
-        address claimer;
-        uint32 royaltyStack;
-        uint32 minRoyalty;
-    }
+    address public LICENSING_MODULE = address(0x0);
+    address public LIQUID_SPLIT_FACTORY = address(0x0);
+    address public LIQUID_SPLIT_MAIN = address(0x0);
+    uint32 public constant TOTAL_RNFT_SUPPLY = 1000;
 
     mapping(address ipId => LSRoyaltyData) public royaltyData;
 
@@ -73,9 +70,5 @@ contract MockRoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
 
     function _deploySplitClone(address, address, uint32) internal pure returns (address) {
         return address(0xbeef);
-    }
-
-    function LIQUID_SPLIT_MAIN() external pure returns (address) {
-        return address(0xdead);
     }
 }

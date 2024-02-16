@@ -83,7 +83,7 @@ contract LicensingModuleTest is Test {
             address(governance)
         );
         royaltyModule = new RoyaltyModule(address(governance));
-        licenseRegistry = new LicenseRegistry();
+        licenseRegistry = new LicenseRegistry(address(governance));
         licensingModule = new LicensingModule(
             address(accessController),
             address(ipAssetRegistry),

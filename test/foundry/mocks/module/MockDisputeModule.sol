@@ -9,17 +9,8 @@ import { ShortStringOps } from "../../../../contracts/utils/ShortStringOps.sol";
 contract MockDisputeModule is BaseModule, IDisputeModule {
     bytes32 public constant IN_DISPUTE = bytes32("IN_DISPUTE");
 
-    struct Dispute {
-        address targetIpId;
-        address disputeInitiator;
-        address arbitrationPolicy;
-        bytes32 linkToDisputeEvidence;
-        bytes32 targetTag;
-        bytes32 currentTag;
-    }
-
     string public constant override name = "DISPUTE_MODULE";
-    uint256 public disputeId;
+    uint256 public disputeCounter;
     address public baseArbitrationPolicy;
 
     mapping(uint256 disputeId => Dispute dispute) public disputes;
@@ -63,7 +54,7 @@ contract MockDisputeModule is BaseModule, IDisputeModule {
         address arbitrationPolicy = arbitrationPolicies[_targetIpId];
         if (!isWhitelistedArbitrationPolicy[arbitrationPolicy]) arbitrationPolicy = baseArbitrationPolicy;
 
-        uint256 disputeId_ = ++disputeId;
+        uint256 disputeId_ = ++disputeCounter;
 
         disputes[disputeId_] = Dispute({
             targetIpId: _targetIpId,

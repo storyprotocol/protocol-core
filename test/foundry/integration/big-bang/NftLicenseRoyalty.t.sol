@@ -231,7 +231,7 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration {
             // The other 35% of 1000 USDC royalty goes directly to Dan's IPAccount.
             vm.expectEmit(address(USDC));
             emit IERC20.Transfer(LIQUID_SPLIT_MAIN, address(danClaimer), 749999998);
-            royaltyPolicyLS.claimRoyalties({ _account: danClaimer, _withdrawETH: 0, _tokens: tokens });
+            royaltyPolicyLS.claimRoyalties({ account: danClaimer, withdrawETH: 0, tokens: tokens });
 
             // Alice calls the claim her portion of rNFTs and tokens. She can only call `claim` once.
             // Afterwards, she will automatically receive money on revenue distribution.
@@ -257,10 +257,10 @@ contract BigBang_Integration_NftLicenseRoyalty is BaseIntegration {
             });
 
             LSClaimer(danClaimer).claim({
-                _path: chain_alice_to_dan,
-                _claimerIpId: ipAcct_Alice,
-                _withdrawETH: false,
-                _tokens: tokens
+                path: chain_alice_to_dan,
+                claimerIpId: ipAcct_Alice,
+                withdrawETH: false,
+                tokens: tokens
             });
         }
     }
