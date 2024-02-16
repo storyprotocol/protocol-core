@@ -23,6 +23,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
 
     bytes internal emptyRoyaltyPolicyLAPInitParams;
 
+    uint32 internal constant derivCheapFlexibleRevShare = 10;
+
     function setUp() public override {
         super.setUp();
 
@@ -40,7 +42,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 commercialAttribution: true,
                 commercializerChecker: address(0),
                 commercializerCheckerData: "",
-                commercialRevShare: 10,
+                commercialRevShare: derivCheapFlexibleRevShare,
                 derivativesAllowed: true,
                 derivativesAttribution: true,
                 derivativesApproval: false,
@@ -149,12 +151,23 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 ipAcct[1],
                 1,
                 u.carl,
-                ""
+                emptyRoyaltyPolicyLAPInitParams
             );
 
             ipAcct[6] = registerIpAccount(mockNFT, 6, u.carl);
-            // minRoyalty = 0 gets overridden by the `derivativesRevShare` value of the linking licenses
-            linkIpToParents(carl_license_from_root_alice, ipAcct[6], u.carl, emptyRoyaltyPolicyLAPInitParams);
+
+            IRoyaltyPolicyLAP.InitParams memory params = IRoyaltyPolicyLAP.InitParams({
+                targetAncestors: new address[](1),
+                targetRoyaltyAmount: new uint32[](1),
+                parentAncestors1: new address[](0),
+                parentAncestors2: new address[](0),
+                parentAncestorsRoyalties1: new uint32[](0),
+                parentAncestorsRoyalties2: new uint32[](0)
+            });
+            params.targetAncestors[0] = ipAcct[1];
+            params.targetRoyaltyAmount[0] = derivCheapFlexibleRevShare;
+
+            linkIpToParents(carl_license_from_root_alice, ipAcct[6], u.carl, abi.encode(params));
         }
 
         // Carl mints 2 license for policy "uml_noncom_deriv_reciprocal_derivative" on Bob's NFT 3 IPAccount
@@ -169,12 +182,22 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 ipAcct[3],
                 1,
                 u.carl,
-                ""
+                emptyRoyaltyPolicyLAPInitParams
             );
 
+            IRoyaltyPolicyLAP.InitParams memory params = IRoyaltyPolicyLAP.InitParams({
+                targetAncestors: new address[](1),
+                targetRoyaltyAmount: new uint32[](1),
+                parentAncestors1: new address[](0),
+                parentAncestors2: new address[](0),
+                parentAncestorsRoyalties1: new uint32[](0),
+                parentAncestorsRoyalties2: new uint32[](0)
+            });
+            params.targetAncestors[0] = ipAcct[3];
+            params.targetRoyaltyAmount[0] = 0;
+
             ipAcct[7] = registerIpAccount(mockNFT, 7, u.carl);
-            // minRoyalty = 0 gets overridden by the `derivativesRevShare` value of the linking licenses
-            linkIpToParents(carl_license_from_root_bob, ipAcct[7], u.carl, emptyRoyaltyPolicyLAPInitParams);
+            linkIpToParents(carl_license_from_root_bob, ipAcct[7], u.carl, abi.encode(params));
         }
 
         // Alice mints 2 license for policy "uml_com_deriv_cheap_flexible" on Bob's NFT 3 IPAccount
@@ -192,11 +215,22 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 ipAcct[3],
                 mintAmount,
                 u.alice,
-                ""
+                emptyRoyaltyPolicyLAPInitParams
             );
 
+            IRoyaltyPolicyLAP.InitParams memory params = IRoyaltyPolicyLAP.InitParams({
+                targetAncestors: new address[](1),
+                targetRoyaltyAmount: new uint32[](1),
+                parentAncestors1: new address[](0),
+                parentAncestors2: new address[](0),
+                parentAncestorsRoyalties1: new uint32[](0),
+                parentAncestorsRoyalties2: new uint32[](0)
+            });
+            params.targetAncestors[0] = ipAcct[3];
+            params.targetRoyaltyAmount[0] = derivCheapFlexibleRevShare;
+
             ipAcct[2] = registerIpAccount(mockNFT, 2, u.alice);
-            linkIpToParents(alice_license_from_root_bob, ipAcct[2], u.alice, emptyRoyaltyPolicyLAPInitParams);
+            linkIpToParents(alice_license_from_root_bob, ipAcct[2], u.alice, abi.encode(params));
 
             uint256 tokenId = 99999999;
             mockNFT.mintId(u.alice, tokenId);
@@ -213,7 +247,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                     uri: "external URL"
                 }),
                 u.alice, // caller
-                ""
+                abi.encode(params)
             );
         }
 
@@ -248,7 +282,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 ipAcct[1],
                 100, // mint 100 licenses
                 u.carl,
-                ""
+                emptyRoyaltyPolicyLAPInitParams
             );
 
             // Non-commercial license
@@ -257,7 +291,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 ipAcct[3],
                 1,
                 u.carl,
-                ""
+                emptyRoyaltyPolicyLAPInitParams
             );
 
             // This should revert since license[0] is commercial but license[1] is non-commercial
@@ -280,8 +314,23 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 ipAcct[300],
                 1,
                 u.carl,
-                ""
+                emptyRoyaltyPolicyLAPInitParams
             );
+
+            // Linking 2 licenses, ID 1 and ID 4.
+            // These licenses are from 2 different parents, ipAcct[1] and ipAcct[300], respectively.
+            IRoyaltyPolicyLAP.InitParams memory params = IRoyaltyPolicyLAP.InitParams({
+                targetAncestors: new address[](2),
+                targetRoyaltyAmount: new uint32[](2),
+                parentAncestors1: new address[](0),
+                parentAncestors2: new address[](0),
+                parentAncestorsRoyalties1: new uint32[](0),
+                parentAncestorsRoyalties2: new uint32[](0)
+            });
+            params.targetAncestors[0] = ipAcct[1];
+            params.targetAncestors[1] = ipAcct[300];
+            params.targetRoyaltyAmount[0] = derivCheapFlexibleRevShare;
+            params.targetRoyaltyAmount[1] = derivCheapFlexibleRevShare;
 
             // This should succeed since both license[0] and license[1] are commercial
             registerDerivativeIps(
@@ -290,7 +339,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 tokenId,
                 metadata,
                 u.carl, // caller
-                ""
+                abi.encode(params)
             );
         }
     }
