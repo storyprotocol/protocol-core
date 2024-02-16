@@ -276,17 +276,19 @@ contract UMLPolicyFrameworkManager is
         uint256 count = policy.territories.length;
         for (uint256 i = 0; i < count; ++i) {
             json = string(abi.encodePacked(json, '"', policy.territories[i], '"'));
-            if (i != count - 1) { // skip comma for last element in the array
+            if (i != count - 1) {
+                // skip comma for last element in the array
                 json = string(abi.encodePacked(json, ","));
             }
         }
-        json = string(abi.encodePacked(json, ']},')); // close the trait_type: "Territories" array
+        json = string(abi.encodePacked(json, "]},")); // close the trait_type: "Territories" array
 
         json = string(abi.encodePacked(json, '{"trait_type": "Distribution Channels", "value": ['));
         count = policy.distributionChannels.length;
         for (uint256 i = 0; i < count; ++i) {
             json = string(abi.encodePacked(json, '"', policy.distributionChannels[i], '"'));
-            if (i != count - 1) { // skip comma for last element in the array
+            if (i != count - 1) {
+                // skip comma for last element in the array
                 json = string(abi.encodePacked(json, ","));
             }
         }
@@ -301,53 +303,61 @@ contract UMLPolicyFrameworkManager is
 
     /// @notice Encodes the commercial traits of UML policy into a JSON string for OpenSea
     function _policyCommercialTraitsToJson(UMLPolicy memory policy) internal pure returns (string memory) {
-        // NOTE: TOTAL_RNFT_SUPPLY = 1000 in trait with max_value. For numbers, don't add any display_type, so that 
+        /* solhint-disable */
+        // NOTE: TOTAL_RNFT_SUPPLY = 1000 in trait with max_value. For numbers, don't add any display_type, so that
         // they will show up in the "Ranking" section of the OpenSea UI.
-        return string(
-            abi.encodePacked(
-                '{"trait_type": "Attribution", "value": "',
-                policy.attribution ? "true" : "false",
-                '"},',
-                // Skip transferable, it's already added in the common attributes by the LicenseRegistry.
-                // Should be managed by the LicenseRegistry, not the PFM.
-                '{"trait_type": "Commerical Use", "value": "',
-                policy.commercialUse ? "true" : "false",
-                '"},',
-                '{"trait_type": "Commercial Attribution", "value": "',
-                policy.commercialAttribution ? "true" : "false",
-                '"},',
-                '{"trait_type": "Commercial Revenue Share", "max_value": 1000, "value": ',
-                policy.commercialRevShare.toString(),
-                "},",
-                '{"trait_type": "Commercializer Check", "value": "',
-                policy.commercializerChecker.toHexString(),
-                // Skip on commercializerCheckerData as it's bytes as irrelevant for the user metadata
-                '"},'
-            )
-        );
+        return
+            string(
+                abi.encodePacked(
+                    '{"trait_type": "Attribution", "value": "',
+                    policy.attribution ? "true" : "false",
+                    '"},',
+                    // Skip transferable, it's already added in the common attributes by the LicenseRegistry.
+                    // Should be managed by the LicenseRegistry, not the PFM.
+                    '{"trait_type": "Commerical Use", "value": "',
+                    policy.commercialUse ? "true" : "false",
+                    '"},',
+                    '{"trait_type": "Commercial Attribution", "value": "',
+                    policy.commercialAttribution ? "true" : "false",
+                    '"},',
+                    '{"trait_type": "Commercial Revenue Share", "max_value": 1000, "value": ',
+                    policy.commercialRevShare.toString(),
+                    "},",
+                    '{"trait_type": "Commercializer Check", "value": "',
+                    policy.commercializerChecker.toHexString(),
+                    // Skip on commercializerCheckerData as it's bytes as irrelevant for the user metadata
+                    '"},'
+                )
+            );
+        /* solhint-enable */
     }
 
     /// @notice Encodes the derivative traits of UML policy into a JSON string for OpenSea
     function _policyDerivativeTraitsToJson(UMLPolicy memory policy) internal pure returns (string memory) {
-        return string(
-            abi.encodePacked(
-                '{"trait_type": "Derivatives Allowed", "value": "',
-                policy.derivativesAllowed ? "true" : "false",
-                '"},',
-                '{"trait_type": "Derivatives Attribution", "value": "',
-                policy.derivativesAttribution ? "true" : "false",
-                '"},',
-                '{"trait_type": "Derivatives Approval", "value": "',
-                policy.derivativesApproval ? "true" : "false",
-                '"},',
-                '{"trait_type": "Derivatives Reciprocal", "value": "',
-                policy.derivativesReciprocal ? "true" : "false",
-                '"},',
-                '{"trait_type": "Derivatives Revenue Share", "max_value": 1000, "value": ',
-                policy.derivativesRevShare.toString(),
-                "},"
-            )
-        );
+        /* solhint-disable */
+        // NOTE: TOTAL_RNFT_SUPPLY = 1000 in trait with max_value. For numbers, don't add any display_type, so that
+        // they will show up in the "Ranking" section of the OpenSea UI.
+        return
+            string(
+                abi.encodePacked(
+                    '{"trait_type": "Derivatives Allowed", "value": "',
+                    policy.derivativesAllowed ? "true" : "false",
+                    '"},',
+                    '{"trait_type": "Derivatives Attribution", "value": "',
+                    policy.derivativesAttribution ? "true" : "false",
+                    '"},',
+                    '{"trait_type": "Derivatives Approval", "value": "',
+                    policy.derivativesApproval ? "true" : "false",
+                    '"},',
+                    '{"trait_type": "Derivatives Reciprocal", "value": "',
+                    policy.derivativesReciprocal ? "true" : "false",
+                    '"},',
+                    '{"trait_type": "Derivatives Revenue Share", "max_value": 1000, "value": ',
+                    policy.derivativesRevShare.toString(),
+                    "},"
+                )
+            );
+        /* solhint-enable */
     }
 
     /// Checks the configuration of commercial use and throws if the policy is not compliant
