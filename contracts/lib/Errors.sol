@@ -194,7 +194,6 @@ library Errors {
 
     error RoyaltyModule__ZeroRoyaltyPolicy();
     error RoyaltyModule__NotWhitelistedRoyaltyPolicy();
-    error RoyaltyModule__AlreadySetRoyaltyPolicy();
     error RoyaltyModule__ZeroRoyaltyToken();
     error RoyaltyModule__NotWhitelistedRoyaltyToken();
     error RoyaltyModule__NoRoyaltyPolicySet();
@@ -205,26 +204,6 @@ library Errors {
     error RoyaltyModule__NoParentsOnLinking();
     error RoyaltyModule__NotRegisteredIpId();
 
-    error RoyaltyPolicyLS__ZeroRoyaltyModule();
-    error RoyaltyPolicyLS__ZeroLiquidSplitFactory();
-    error RoyaltyPolicyLS__ZeroLiquidSplitMain();
-    error RoyaltyPolicyLS__NotRoyaltyModule();
-    error RoyaltyPolicyLS__TransferFailed();
-    error RoyaltyPolicyLS__InvalidMinRoyalty();
-    error RoyaltyPolicyLS__InvalidRoyaltyStack();
-    error RoyaltyPolicyLS__ZeroMinRoyalty();
-    error RoyaltyPolicyLS__ZeroLicensingModule();
-
-    error LSClaimer__InvalidPath();
-    error LSClaimer__InvalidPathFirstPosition();
-    error LSClaimer__InvalidPathLastPosition();
-    error LSClaimer__AlreadyClaimed();
-    error LSClaimer__ETHBalanceNotZero();
-    error LSClaimer__ERC20BalanceNotZero();
-    error LSClaimer__ZeroIpId();
-    error LSClaimer__ZeroLicensingModule();
-    error LSClaimer__ZeroRoyaltyPolicyLS();
-
     error RoyaltyPolicyLAP__ZeroRoyaltyModule();
     error RoyaltyPolicyLAP__ZeroLiquidSplitFactory();
     error RoyaltyPolicyLAP__ZeroLiquidSplitMain();
@@ -233,28 +212,26 @@ library Errors {
     error RoyaltyPolicyLAP__AboveParentLimit();
     error RoyaltyPolicyLAP__AboveAncestorsLimit();
     error RoyaltyPolicyLAP__AboveRoyaltyStackLimit();
-    error RoyaltyPolicyLAP__ZeroTargetRoyalty();
-    error RoyaltyPolicyLAP__ZeroClaimerImpl();
     error RoyaltyPolicyLAP__InvalidAncestorsLength();
     error RoyaltyPolicyLAP__InvalidAncestors();
     error RoyaltyPolicyLAP__InvalidRoyaltyAmountLength();
     error RoyaltyPolicyLAP__InvalidAncestorsHash();
     error RoyaltyPolicyLAP__InvalidParentRoyaltiesLength();
-    error RoyaltyPolicyLAP__InvalidAncestorsRoyaltyHash();
     error RoyaltyPolicyLAP__InvalidAncestorsRoyalty();
     error RoyaltyPolicyLAP__ImplementationAlreadySet();
     error RoyaltyPolicyLAP__ZeroAncestorsVaultImpl();
     error RoyaltyPolicyLAP__NotFullOwnership();
     error RoyaltyPolicyLAP__UnlinkableToParents();
+    error RoyaltyPolicyLAP__TransferFailed();
 
     error AncestorsVaultLAP__ZeroRoyaltyPolicyLAP();
     error AncestorsVaultLAP__AlreadyClaimed();
     error AncestorsVaultLAP__InvalidAncestorsHash();
     error AncestorsVaultLAP__InvalidClaimer();
-    error AncestorsVaultLAP__NotRoyaltyPolicyLAP();
     error AncestorsVaultLAP__ClaimerNotAnAncestor();
     error AncestorsVaultLAP__ETHBalanceNotZero();
     error AncestorsVaultLAP__ERC20BalanceNotZero();
+    error AncestorsVaultLAP__TransferFailed();
 
     ////////////////////////////////////////////////////////////////////////////
     //                             ModuleRegistry                             //
