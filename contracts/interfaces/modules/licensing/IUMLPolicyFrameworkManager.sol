@@ -8,7 +8,7 @@ import { IPolicyFrameworkManager } from "../../../interfaces/modules/licensing/I
 /// @param attribution Whether or not attribution is required when reproducing the work
 /// @param commercialUse Whether or not the work can be used commercially
 /// @param commercialAttribution Whether or not attribution is required when reproducing the work commercially
-/// @param commercializerChecker commericializers that are allowed to commercially exploit the work. If zero address, 
+/// @param commercializerChecker commericializers that are allowed to commercially exploit the work. If zero address,
 /// then no restrictions is enforced.
 /// @param commercialRevShare Percentage of revenue that must be shared with the licensor
 /// @param derivativesAllowed Whether or not the licensee can create derivatives of his work
@@ -39,11 +39,11 @@ struct UMLPolicy {
     address royaltyPolicy;
 }
 
-/// @notice Struct that accumulates values of inherited policies so we can verify compatibility when inheriting new 
+/// @notice Struct that accumulates values of inherited policies so we can verify compatibility when inheriting new
 /// policies
 /// @param commercial Whether or not there is a policy that allows commercial use
 /// @param derivatives Whether or not there is a policy that allows derivatives
-/// @param derivativesReciprocal Whether or not there is a policy that requires derivatives to be licensed under the 
+/// @param derivativesReciprocal Whether or not there is a policy that requires derivatives to be licensed under the
 /// same terms
 /// @param lastPolicyId The last policy ID that was added to the IP
 /// @param territoriesAcc The last hash of the territories array

@@ -113,8 +113,7 @@ contract LSClaimer is ILSClaimer, ERC1155Holder, ReentrancyGuard {
         for (uint256 i = 0; i < tokens.length; ++i) {
             // When withdrawing ERC20, 0xSplits sets the value to 1 to have warm storage access.
             // But this still means 0 amount left. So, in the check below, we use `> 1`.
-            if (splitMain.getERC20Balance(address(this), tokens[i]) > 1)
-                revert Errors.LSClaimer__ERC20BalanceNotZero();
+            if (splitMain.getERC20Balance(address(this), tokens[i]) > 1) revert Errors.LSClaimer__ERC20BalanceNotZero();
 
             IERC20 IToken = IERC20(tokens[i]);
             uint256 tokenBalance = IToken.balanceOf(address(this));

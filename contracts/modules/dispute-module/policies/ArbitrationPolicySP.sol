@@ -10,7 +10,7 @@ import { IArbitrationPolicy } from "../../../interfaces/modules/dispute/policies
 import { Errors } from "../../../lib/Errors.sol";
 
 /// @title Story Protocol Arbitration Policy
-/// @notice The Story Protocol arbitration policy is a simple policy that requires the dispute initiator to pay a fixed 
+/// @notice The Story Protocol arbitration policy is a simple policy that requires the dispute initiator to pay a fixed
 ///         amount of tokens to raise a dispute and refunds that amount if the dispute initiator wins the dispute.
 contract ArbitrationPolicySP is IArbitrationPolicy, Governable {
     using SafeERC20 for IERC20;

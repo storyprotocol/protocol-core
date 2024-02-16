@@ -17,7 +17,7 @@ interface IMetadataProviderMigratable is IMetadataProvider {
     /// @param provider The address of the new metadata provider to migrate to.
     function setUpgradeProvider(address provider) external;
 
-    /// @notice Updates the provider used by the IP asset, migrating existing metadata to the new provider, and adding 
+    /// @notice Updates the provider used by the IP asset, migrating existing metadata to the new provider, and adding
     /// new metadata.
     /// @param ipId The address identifier of the IP asset.
     /// @param extraMetadata Additional metadata in bytes used by the new metadata provider.

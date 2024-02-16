@@ -49,7 +49,7 @@ abstract contract MetadataProviderBase is IMetadataProviderMigratable {
         upgradeProvider = IMetadataProviderMigratable(provider);
     }
 
-    /// @notice Updates the provider used by the IP asset, migrating existing metadata to the new provider, and adding 
+    /// @notice Updates the provider used by the IP asset, migrating existing metadata to the new provider, and adding
     /// new metadata.
     /// @param ipId The address identifier of the IP asset.
     /// @param metadata Additional metadata in bytes used by the new metadata provider.

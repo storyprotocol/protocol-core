@@ -3,7 +3,7 @@
 pragma solidity ^0.8.23;
 
 import { ResolverBase } from "./ResolverBase.sol";
-import { KeyValueResolver, IKeyValueResolver } from "../resolvers/KeyValueResolver.sol";
+import { KeyValueResolver } from "../resolvers/KeyValueResolver.sol";
 import { IP_RESOLVER_MODULE_KEY } from "../lib/modules/Module.sol";
 
 /// @title IP Resolver

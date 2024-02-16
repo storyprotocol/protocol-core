@@ -31,7 +31,7 @@ import { Governable } from "../governance/Governable.sol";
 contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
     /// @notice The canonical module registry used by the protocol.
     IModuleRegistry public immutable MODULE_REGISTRY;
-    
+
     /// @notice The registration module that interacts with IPAssetRegistry.
     IRegistrationModule public REGISTRATION_MODULE;
 
@@ -74,7 +74,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
         REGISTRATION_MODULE = IRegistrationModule(registrationModule);
     }
 
-    /// @dev Sets the provider for storage of new IP metadata, while enabling existing IP assets to migrate their 
+    /// @dev Sets the provider for storage of new IP metadata, while enabling existing IP assets to migrate their
     /// metadata to the new provider.
     /// @param newMetadataProvider Address of the new metadata provider contract.
     function setMetadataProvider(address newMetadataProvider) external onlyProtocolAdmin {
@@ -122,7 +122,16 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
         bool createAccount,
         bytes calldata metadata_
     ) external returns (address ipId_) {
-        ipId_ = _register(licenseIds, minRoyalty, chainId, tokenContract, tokenId, resolverAddr, createAccount, metadata_);
+        ipId_ = _register(
+            licenseIds,
+            minRoyalty,
+            chainId,
+            tokenContract,
+            tokenId,
+            resolverAddr,
+            createAccount,
+            metadata_
+        );
         emit IPRegistered(ipId_, chainId, tokenContract, tokenId, resolverAddr, address(_metadataProvider), metadata_);
     }
 
@@ -174,7 +183,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
     }
 
     /// @notice Sets the underlying metadata for an IP asset.
-    /// @dev As metadata is immutable but additive, this will only be used when an IP migrates from a new provider that 
+    /// @dev As metadata is immutable but additive, this will only be used when an IP migrates from a new provider that
     /// introduces new attributes.
     /// @param id The canonical ID of the IP.
     /// @param data Canonical metadata to associate with the IP.

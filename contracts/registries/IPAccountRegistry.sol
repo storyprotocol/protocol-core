@@ -13,13 +13,13 @@ import { Errors } from "../lib/Errors.sol";
 contract IPAccountRegistry is IIPAccountRegistry {
     /// @notice Returns the IPAccount implementation address
     address public immutable IP_ACCOUNT_IMPL;
-    
+
     /// @notice Returns the IPAccount salt
     bytes32 public immutable IP_ACCOUNT_SALT;
-    
+
     /// @notice Returns the public ERC6551 registry address
     address public immutable ERC6551_PUBLIC_REGISTRY;
-    
+
     /// @notice Returns the access controller address
     address public immutable ACCESS_CONTROLLER;
 

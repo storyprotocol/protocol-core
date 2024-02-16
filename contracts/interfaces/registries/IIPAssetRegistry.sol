@@ -146,7 +146,7 @@ interface IIPAssetRegistry is IIPAccountRegistry {
     function metadata(address id) external view returns (bytes memory);
 
     /// @notice Sets the underlying metadata for an IP asset.
-    /// @dev As metadata is immutable but additive, this will only be used when an IP migrates from a new provider that 
+    /// @dev As metadata is immutable but additive, this will only be used when an IP migrates from a new provider that
     /// introduces new attributes.
     /// @param id The canonical ID of the IP.
     /// @param data Canonical metadata to associate with the IP.

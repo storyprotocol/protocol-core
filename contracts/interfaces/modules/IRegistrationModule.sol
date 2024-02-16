@@ -19,8 +19,8 @@ interface IRegistrationModule {
     /// @notice Returns the metadata resolver used by the registration module.
     function ipResolver() external view returns (IPResolver);
 
-    /// @notice Registers a root-level IP into the protocol. Root-level IPs can be thought of as organizational hubs 
-    /// for encapsulating policies that actual IPs can use to register through. As such, a root-level IP is not an 
+    /// @notice Registers a root-level IP into the protocol. Root-level IPs can be thought of as organizational hubs
+    /// for encapsulating policies that actual IPs can use to register through. As such, a root-level IP is not an
     /// actual IP, but a container for IP policy management for their child IP assets.
     /// @param policyId The policy that identifies the licensing terms of the IP.
     /// @param tokenContract The address of the NFT bound to the root-level IP.

@@ -25,8 +25,8 @@ interface ILicenseRegistry is IERC1155 {
     /// @notice Returns the address of the licensing module
     function LICENSING_MODULE() external view returns (ILicensingModule);
 
-    /// @notice Mints license NFTs representing a policy granted by a set of ipIds (licensors). This NFT needs to be 
-    /// burned in order to link a derivative IP with its parents. If this is the first combination of policy and 
+    /// @notice Mints license NFTs representing a policy granted by a set of ipIds (licensors). This NFT needs to be
+    /// burned in order to link a derivative IP with its parents. If this is the first combination of policy and
     /// licensors, a new licenseId will be created. If not, the license is fungible and an id will be reused.
     /// @dev Only callable by the licensing module.
     /// @param policyId The ID of the policy to be minted
@@ -57,7 +57,7 @@ interface ILicenseRegistry is IERC1155 {
     function mintedLicenses() external view returns (uint256);
 
     /// @notice Returns true if holder has positive balance for the given license ID.
-    /// @return isLicensee True if holder is the licensee for the license (owner of the license NFT), or derivative IP 
+    /// @return isLicensee True if holder is the licensee for the license (owner of the license NFT), or derivative IP
     /// owner if the license was added to the IP by linking (burning a license).
     function isLicensee(uint256 licenseId, address holder) external view returns (bool);
 

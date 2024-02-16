@@ -3,17 +3,15 @@ pragma solidity ^0.8.23;
 
 import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
 
-import { ILicensingModule } from "./ILicensingModule.sol";
-
 /// @title IPolicyFrameworkManager
-/// @notice Interface to define a policy framework contract, that will register itself into the LicenseRegistry to 
+/// @notice Interface to define a policy framework contract, that will register itself into the LicenseRegistry to
 /// format policy into the LicenseRegistry
 interface IPolicyFrameworkManager is IERC165 {
     /// @notice Response struct when verifying a link of an IP asset to a parent IP asset using a license NFT
     /// @param isLinkingAllowed Whether or not the linking is allowed
     /// @param isRoyaltyRequired Whether or not the royalty is required
     /// @param royaltyPolicy The address of the royalty policy, if required. Otherwise, must be zero address.
-    /// @param royaltyDerivativeRevShare The derivative revenue share of the royalty policy, if royalty is required. 
+    /// @param royaltyDerivativeRevShare The derivative revenue share of the royalty policy, if royalty is required.
     /// Otherwise, must be zero.
     struct VerifyLinkResponse {
         bool isLinkingAllowed;
@@ -49,7 +47,7 @@ interface IPolicyFrameworkManager is IERC165 {
     /// @return isCommercial True if the policy is commercial
     function isPolicyCommercial(uint256 policyId) external view returns (bool);
 
-    /// @notice Verify the compatibility of a policy with the current state of the IP asset, when inheriting from a 
+    /// @notice Verify the compatibility of a policy with the current state of the IP asset, when inheriting from a
     /// parent IP. The current state of the IP asset, represented as the encoded aggregator bytes, is the combination
     /// of all policies previously attached to the IP asset.
     /// @dev Enforced to be only callable by the LicenseRegistry.

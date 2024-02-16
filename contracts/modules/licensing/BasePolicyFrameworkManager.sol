@@ -14,7 +14,7 @@ import { LicensingModuleAware } from "../../modules/licensing/LicensingModuleAwa
 abstract contract BasePolicyFrameworkManager is IPolicyFrameworkManager, ERC165, LicensingModuleAware {
     /// @notice Returns the name to be show in license NFT (LNFT) metadata
     string public override name;
-    
+
     /// @notice Returns the URL to the off chain legal agreement template text
     string public override licenseTextUrl;
 

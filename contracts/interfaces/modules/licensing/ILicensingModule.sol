@@ -61,15 +61,15 @@ interface ILicensingModule is IModule {
     /// @param manager the address of the manager. Will be ERC165 checked for IPolicyFrameworkManager
     function registerPolicyFrameworkManager(address manager) external;
 
-    /// @notice Registers a policy into the contract. MUST be called by a registered framework or it will revert. 
+    /// @notice Registers a policy into the contract. MUST be called by a registered framework or it will revert.
     /// The policy data and its integrity must be verified by the policy framework manager.
     /// @param isLicenseTransferable True if the license is transferable
     /// @param data The policy data
     /// @return policyId The id of the policy
     function registerPolicy(bool isLicenseTransferable, bytes memory data) external returns (uint256 policyId);
 
-    /// Adds a policy to an ipId, which can be used to mint licenses. Licenses are tradable permissions for ipIds to be 
-    /// derivatives (children). If policyId is not defined in the LicensingModule, reverts. Also reverts if ipId 
+    /// Adds a policy to an ipId, which can be used to mint licenses. Licenses are tradable permissions for ipIds to be
+    /// derivatives (children). If policyId is not defined in the LicensingModule, reverts. Also reverts if ipId
     /// already has the same policy
     /// @param ipId The id of the IP asset
     /// @param polId The id of the policy
@@ -93,7 +93,7 @@ interface ILicensingModule is IModule {
     /// NFTs in the proccess. The caller must be the owner of the IP asset and license NFTs.
     /// @param licenseIds The id of the licenses to burn
     /// @param childIpId The id of the child IP to be linked
-    /// @param minRoyalty The minimum derivative rev share that the child wants from its descendants. The value is 
+    /// @param minRoyalty The minimum derivative rev share that the child wants from its descendants. The value is
     /// overriden by the `derivativesRevShare` value of the linking licenses.
     function linkIpToParents(uint256[] calldata licenseIds, address childIpId, uint32 minRoyalty) external;
 

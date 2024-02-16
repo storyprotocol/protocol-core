@@ -59,7 +59,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
     /// @dev Total amount of distinct licensing policies in LicenseRegistry
     uint256 private _totalPolicies;
 
-    /// @dev internal mapping to track if a policy was set by linking or minting, and the index of the policy in the 
+    /// @dev internal mapping to track if a policy was set by linking or minting, and the index of the policy in the
     /// ipId policy set. Policies can't be removed, but they can be deactivated by setting active to false.
     mapping(address ipId => mapping(uint256 policyId => PolicySetup setup)) private _policySetups;
 
@@ -156,9 +156,9 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
     }
 
     /// @inheritdoc ILicensingModule
-    /// @notice A minted license NFT needs to be burned to link a derivative IP with its parents. If this is the first 
-    /// combination of a policy and licensors, a new licenseId will be created (by incrementing totalLicenses). If not, 
-    /// the license NFT is fungible so an id will be reused. The licensing terms that regulate creating new licenses 
+    /// @notice A minted license NFT needs to be burned to link a derivative IP with its parents. If this is the first
+    /// combination of a policy and licensors, a new licenseId will be created (by incrementing totalLicenses). If not,
+    /// the license NFT is fungible so an id will be reused. The licensing terms that regulate creating new licenses
     /// will be verified to allow minting. Reverts if caller is not authorized by licensors.
     // solhint-disable-next-line code-complexity
     function mintLicense(

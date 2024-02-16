@@ -19,7 +19,7 @@ import { Errors } from "./lib/Errors.sol";
 contract IPAccountImpl is IERC165, IIPAccount {
     /// @notice Returns the address of the protocol-wide access controller.
     address public ACCESS_CONTROLLER;
-    
+
     /// @notice Returns the IPAccount's internal nonce for transaction ordering.
     uint256 public state;
 

@@ -23,7 +23,7 @@ contract LicenseRegistry is ERC1155, Governable, ILicenseRegistry {
 
     /// @dev Tracks the license data for each licenseId
     mapping(uint256 licenseIds => Licensing.License licenseData) private _licenses;
-    
+
     /// @dev Tracks the number of licenses registered in the protocol, it will not decrease when a license is burnt.
     uint256 private _mintedLicenses;
 
@@ -48,8 +48,8 @@ contract LicenseRegistry is ERC1155, Governable, ILicenseRegistry {
         LICENSING_MODULE = ILicensingModule(newLicensingModule);
     }
 
-    /// @notice Mints license NFTs representing a policy granted by a set of ipIds (licensors). This NFT needs to be 
-    /// burned in order to link a derivative IP with its parents. If this is the first combination of policy and 
+    /// @notice Mints license NFTs representing a policy granted by a set of ipIds (licensors). This NFT needs to be
+    /// burned in order to link a derivative IP with its parents. If this is the first combination of policy and
     /// licensors, a new licenseId will be created. If not, the license is fungible and an id will be reused.
     /// @dev Only callable by the licensing module.
     /// @param policyId The ID of the policy to be minted
@@ -104,7 +104,7 @@ contract LicenseRegistry is ERC1155, Governable, ILicenseRegistry {
     }
 
     /// @notice Returns true if holder has positive balance for the given license ID.
-    /// @return isLicensee True if holder is the licensee for the license (owner of the license NFT), or derivative IP 
+    /// @return isLicensee True if holder is the licensee for the license (owner of the license NFT), or derivative IP
     /// owner if the license was added to the IP by linking (burning a license).
     function isLicensee(uint256 licenseId, address holder) external view returns (bool) {
         return balanceOf(holder, licenseId) > 0;

@@ -76,12 +76,7 @@ contract AccessController is IAccessController, Governable {
     /// @param to The address that can be called by the `signer` (currently only modules can be `to`)
     /// @param func The function selector of `to` that can be called by the `signer` on behalf of the `ipAccount`
     /// @param permission The new permission level
-    function setGlobalPermission(
-        address signer,
-        address to,
-        bytes4 func,
-        uint8 permission
-    ) external onlyProtocolAdmin {
+    function setGlobalPermission(address signer, address to, bytes4 func, uint8 permission) external onlyProtocolAdmin {
         if (signer == address(0)) {
             revert Errors.AccessController__SignerIsZeroAddress();
         }
@@ -95,7 +90,7 @@ contract AccessController is IAccessController, Governable {
 
     /// @notice Sets the permission for a specific function call
     /// @dev Each policy is represented as a mapping from an IP account address to a signer address to a recipient
-    /// address to a function selector to a permission level. The permission level can be 0 (ABSTAIN), 1 (ALLOW), or 
+    /// address to a function selector to a permission level. The permission level can be 0 (ABSTAIN), 1 (ALLOW), or
     /// 2 (DENY).
     /// @dev By default, all policies are set to 0 (ABSTAIN), which means that the permission is not set.
     /// The owner of ipAccount by default has all permission.
@@ -136,7 +131,7 @@ contract AccessController is IAccessController, Governable {
         emit PermissionSet(ipAccount, signer, to, func, permission);
     }
 
-    /// @notice Checks the permission level for a specific function call. Reverts if permission is not granted. 
+    /// @notice Checks the permission level for a specific function call. Reverts if permission is not granted.
     /// Otherwise, the function is a noop.
     /// @dev This function checks the permission level for a specific function call.
     /// If a specific permission is set, it overrides the general (wildcard) permission.
@@ -146,12 +141,7 @@ contract AccessController is IAccessController, Governable {
     /// @param to The address that can be called by the `signer` (currently only modules can be `to`)
     /// @param func The function selector of `to` that can be called by the `signer` on behalf of the `ipAccount`
     // solhint-disable code-complexity
-    function checkPermission(
-        address ipAccount,
-        address signer,
-        address to,
-        bytes4 func
-    ) external view whenNotPaused {
+    function checkPermission(address ipAccount, address signer, address to, bytes4 func) external view whenNotPaused {
         // ipAccount can only call registered modules or set Permissions
         if (to != address(this) && !IModuleRegistry(MODULE_REGISTRY).isRegistered(to)) {
             revert Errors.AccessController__RecipientIsNotRegisteredModule(to);

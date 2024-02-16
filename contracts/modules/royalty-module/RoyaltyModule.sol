@@ -6,7 +6,6 @@ import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC16
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 import { Governable } from "../../governance/Governable.sol";
-import { IModule } from "../../interfaces/modules/base/IModule.sol";
 import { IRoyaltyModule } from "../../interfaces/modules/royalty/IRoyaltyModule.sol";
 import { IRoyaltyPolicy } from "../../interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
 import { Errors } from "../../lib/Errors.sol";
@@ -14,7 +13,7 @@ import { ROYALTY_MODULE_KEY } from "../../lib/modules/Module.sol";
 import { BaseModule } from "../BaseModule.sol";
 
 /// @title Story Protocol Royalty Module
-/// @notice The Story Protocol royalty module allows to set royalty policies an IP asset and pay royalties as a 
+/// @notice The Story Protocol royalty module allows to set royalty policies an IP asset and pay royalties as a
 ///         derivative IP.
 contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModule {
     using ERC165Checker for address;
@@ -28,7 +27,7 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModul
     mapping(address royaltyPolicy => bool isWhitelisted) public isWhitelistedRoyaltyPolicy;
 
     /// @notice Indicates if a royalty token is whitelisted
-    mapping(address token => bool) public isWhitelistedRoyaltyToken;        
+    mapping(address token => bool) public isWhitelistedRoyaltyToken;
 
     /// @notice Indicates the royalty policy for a given IP asset
     mapping(address ipId => address royaltyPolicy) public royaltyPolicies;

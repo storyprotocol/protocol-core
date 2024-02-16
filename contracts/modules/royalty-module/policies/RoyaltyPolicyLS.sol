@@ -24,7 +24,7 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
 
     /// @notice Returns the royalty module address
     address public immutable ROYALTY_MODULE;
-    
+
     /// @notice Returns the licensing module address
     address public immutable LICENSING_MODULE;
 
@@ -43,12 +43,7 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
         _;
     }
 
-    constructor(
-        address royaltyModule,
-        address licensingModule,
-        address liquidSplitFactory,
-        address liquidSplitMain
-    ) {
+    constructor(address royaltyModule, address licensingModule, address liquidSplitFactory, address liquidSplitMain) {
         if (royaltyModule == address(0)) revert Errors.RoyaltyPolicyLS__ZeroRoyaltyModule();
         if (licensingModule == address(0)) revert Errors.RoyaltyPolicyLS__ZeroLicensingModule();
         if (liquidSplitFactory == address(0)) revert Errors.RoyaltyPolicyLS__ZeroLiquidSplitFactory();
@@ -65,11 +60,7 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     /// @param ipId The ID of the IP asset
     /// @param parentIpIds List of parent IP asset IDs
     /// @param data The encoded data that will be used by the royalty policy
-    function initPolicy(
-        address ipId,
-        address[] calldata parentIpIds,
-        bytes calldata data
-    ) external onlyRoyaltyModule {
+    function initPolicy(address ipId, address[] calldata parentIpIds, bytes calldata data) external onlyRoyaltyModule {
         uint32 minRoyalty = abi.decode(data, (uint32));
         // root you can choose 0% but children have to choose at least 1%
         if (minRoyalty == 0 && parentIpIds.length > 0) revert Errors.RoyaltyPolicyLS__ZeroMinRoyalty();
@@ -103,12 +94,7 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     /// @param ipId The ID of the IP asset to find the royalty policy data
     /// @param token The ERC20 token to pay
     /// @param amount The token amount to pay to the splitClone defined in the royalty policy data of ipId
-    function onRoyaltyPayment(
-        address caller,
-        address ipId,
-        address token,
-        uint256 amount
-    ) external onlyRoyaltyModule {
+    function onRoyaltyPayment(address caller, address ipId, address token, uint256 amount) external onlyRoyaltyModule {
         address destination = royaltyData[ipId].splitClone;
         IERC20(token).safeTransferFrom(caller, destination, amount);
     }

@@ -21,7 +21,7 @@ import { BasePolicyFrameworkManager } from "../../modules/licensing/BasePolicyFr
 import { LicensorApprovalChecker } from "../../modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
 
 /// @title UMLPolicyFrameworkManager
-/// @notice UML Policy Framework Manager implements the UML Policy Framework logic for encoding and decoding UML 
+/// @notice UML Policy Framework Manager implements the UML Policy Framework logic for encoding and decoding UML
 /// policies into the LicenseRegistry and verifying the licensing parameters for linking, minting, and transferring.
 contract UMLPolicyFrameworkManager is
     IUMLPolicyFrameworkManager,
@@ -202,7 +202,7 @@ contract UMLPolicyFrameworkManager is
         return getPolicy(policyId).commercialUse;
     }
 
-    /// @notice Verify the compatibility of a policy with the current state of the IP asset, when inheriting from a 
+    /// @notice Verify the compatibility of a policy with the current state of the IP asset, when inheriting from a
     /// parent IP. The current state of the IP asset, represented as the encoded aggregator bytes, is the combination
     /// of all policies previously attached to the IP asset.
     /// @dev Enforced to be only callable by the LicenseRegistry.

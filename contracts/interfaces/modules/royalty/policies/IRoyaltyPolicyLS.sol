@@ -60,12 +60,7 @@ interface IRoyaltyPolicyLS is IRoyaltyPolicy {
     /// @param ipId The ID of the IP asset to find the royalty policy data
     /// @param token The ERC20 token to pay
     /// @param amount The token amount to pay to the splitClone defined in the royalty policy data of ipId
-    function onRoyaltyPayment(
-        address caller,
-        address ipId,
-        address token,
-        uint256 amount
-    ) external;
+    function onRoyaltyPayment(address caller, address ipId, address token, uint256 amount) external;
 
     /// @notice Distributes funds to the accounts in the LiquidSplitClone contract
     /// @param ipId The ID of the IP asset

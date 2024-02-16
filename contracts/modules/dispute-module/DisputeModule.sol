@@ -14,14 +14,14 @@ import { Errors } from "../../lib/Errors.sol";
 import { ShortStringOps } from "../../utils/ShortStringOps.sol";
 
 /// @title Dispute Module
-/// @notice The dispute module acts as an enforcement layer for IP assets that allows raising and resolving disputes 
+/// @notice The dispute module acts as an enforcement layer for IP assets that allows raising and resolving disputes
 /// through arbitration by judges.
 contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuard, AccessControlled {
     string public constant override name = DISPUTE_MODULE_KEY;
-    
+
     /// @notice Tag to represent the dispute is in dispute state waiting for judgement
     bytes32 public constant IN_DISPUTE = bytes32("IN_DISPUTE");
-    
+
     /// @notice Tag to represent the dispute is in dispute state waiting for judgement
     IIPAssetRegistry public IP_ASSET_REGISTRY;
 
