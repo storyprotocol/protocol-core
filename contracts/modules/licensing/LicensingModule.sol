@@ -179,17 +179,20 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
 
         IPolicyFrameworkManager pfm = IPolicyFrameworkManager(pol.policyFramework);
 
-        // If the IP ID doesn't have a policy (meaning, no derivatives)
+        // If the IP ID doesn't have a policy (meaning, no derivatives), this means the caller is attempting to mint a
+        // license on a private policy. IP account can mint license NFTs on a globally registerd policy (via PFM) 
+        // without attaching the policy to the IP account, thus making it a private policy licenses.
         if (!_policySetPerIpId(isInherited, licensorIp).contains(policyId)) {
             // We have to check if the caller is licensor or authorized to mint.
             if (!_hasPermission(licensorIp)) {
                 revert Errors.LicensingModule__CallerNotLicensorAndPolicyNotSet();
             }
-
-            if (pol.royaltyPolicy != address(0)) {
-                ROYALTY_MODULE.onLicenseMinting(licensorIp, pol.royaltyPolicy, pol.royaltyData, royaltyContext);
-            }
         }
+        
+        if (pol.royaltyPolicy != address(0)) {
+            ROYALTY_MODULE.onLicenseMinting(licensorIp, pol.royaltyPolicy, pol.royaltyData, royaltyContext);
+        }
+
         // If a policy is set, then is only up to the policy params.
         // Verify minting param
         if (!pfm.verifyMint(msg.sender, isInherited, licensorIp, receiver, amount, pol.frameworkData)) {
