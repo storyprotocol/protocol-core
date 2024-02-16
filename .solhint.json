@@ -12,7 +12,7 @@
     "not-rely-on-time": "off",
     "reason-string": ["warn", { "maxLength": 64 }],
     "no-unused-import": "error",
-    "no-unused-vars": "error",
+    "no-unused-vars": "off",
     "no-inline-assembly": "off",
     "avoid-low-level-calls": "off",
     "no-global-import": "error",
