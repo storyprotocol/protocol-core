@@ -1,4 +1,4 @@
-/* // SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -20,7 +20,6 @@ contract TestAncestorsVaultLAP is TestHelper {
     struct InitParams {
         address[] targetAncestors;
         uint32[] targetRoyaltyAmount;
-        uint32[] parentRoyalties;
         address[] parentAncestors1;
         address[] parentAncestors2;
         uint32[] parentAncestorsRoyalties1;
@@ -30,10 +29,10 @@ contract TestAncestorsVaultLAP is TestHelper {
     RoyaltyPolicyLAP internal testRoyaltyPolicyLAP;
 
     InitParams initParamsMax;
-    address[] MAX_ANCESTORS_;
-    uint32[] MAX_ANCESTORS_ROYALTY_;
     bytes MAX_ANCESTORS;
-    address[] parentsIpIds1;
+    address[] MAX_ANCESTORS_ = new address[](14);
+    uint32[] MAX_ANCESTORS_ROYALTY_ = new uint32[](14);
+    address[] parentsIpIds100;
 
     AncestorsVaultLAP ancestorsVault100;
     AncestorsVaultLAP ancestorsVault1;
@@ -59,9 +58,22 @@ contract TestAncestorsVaultLAP is TestHelper {
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLAP), true);
         vm.stopPrank();
 
+        vm.startPrank(address(royaltyModule));
         _setupMaxUniqueTree();
 
         // setup ancestors vault 100 data
+        parentsIpIds100 = new address[](2);
+        parentsIpIds100[0] = address(1);
+        parentsIpIds100[1] = address(2);
+
+        bytes[] memory encodedLicenseData = new bytes[](2);
+        for (uint32 i = 0; i < parentsIpIds100.length; i++) {
+            encodedLicenseData[i] = abi.encode(parentsIpIds100[i]);
+        }
+
+        royaltyPolicyLAP.onLinkToParents(address(100), parentsIpIds100, encodedLicenseData, MAX_ANCESTORS);
+        vm.stopPrank();
+
         (,splitClone100, ancestorsVaultAddr100, royaltyStack100,) = royaltyPolicyLAP.royaltyData(address(100));
         ancestorsVault100 = AncestorsVaultLAP(ancestorsVaultAddr100);
 
@@ -91,7 +103,6 @@ contract TestAncestorsVaultLAP is TestHelper {
     }
 
     function _setupMaxUniqueTree() internal {
-        vm.startPrank(address(royaltyModule));
         // init royalty policy for roots
         address[] memory nullTargetAncestors = new address[](0);
         uint32[] memory nullTargetRoyaltyAmount = new uint32[](0);
@@ -103,27 +114,27 @@ contract TestAncestorsVaultLAP is TestHelper {
         InitParams memory nullInitParams = InitParams({
             targetAncestors: nullTargetAncestors,
             targetRoyaltyAmount: nullTargetRoyaltyAmount,
-            parentRoyalties: parentRoyalties,
             parentAncestors1: nullParentAncestors1,
             parentAncestors2: nullParentAncestors2,
             parentAncestorsRoyalties1: nullParentAncestorsRoyalties1,
             parentAncestorsRoyalties2: nullParentAncestorsRoyalties2
         });
         bytes memory nullBytes = abi.encode(nullInitParams);
-        royaltyPolicyLAP.initPolicy(address(7), new address[](0), nullBytes);
-        royaltyPolicyLAP.initPolicy(address(8), new address[](0), nullBytes);
-        royaltyPolicyLAP.initPolicy(address(9), new address[](0), nullBytes);
-        royaltyPolicyLAP.initPolicy(address(10), new address[](0), nullBytes);
-        royaltyPolicyLAP.initPolicy(address(11), new address[](0), nullBytes);
-        royaltyPolicyLAP.initPolicy(address(12), new address[](0), nullBytes);
-        royaltyPolicyLAP.initPolicy(address(13), new address[](0), nullBytes);
-        royaltyPolicyLAP.initPolicy(address(14), new address[](0), nullBytes);
+        royaltyPolicyLAP.onLicenseMinting(address(7), abi.encode(uint32(7)), nullBytes);
+        royaltyPolicyLAP.onLicenseMinting(address(8), abi.encode(uint32(8)), nullBytes);
+        royaltyPolicyLAP.onLicenseMinting(address(9), abi.encode(uint32(9)), nullBytes);
+        royaltyPolicyLAP.onLicenseMinting(address(10), abi.encode(uint32(10)), nullBytes);
+        royaltyPolicyLAP.onLicenseMinting(address(11), abi.encode(uint32(11)), nullBytes);
+        royaltyPolicyLAP.onLicenseMinting(address(12), abi.encode(uint32(12)), nullBytes);
+        royaltyPolicyLAP.onLicenseMinting(address(13), abi.encode(uint32(13)), nullBytes);
+        royaltyPolicyLAP.onLicenseMinting(address(14), abi.encode(uint32(14)), nullBytes);
  
         // init 2nd level with children
         address[] memory parents = new address[](2);
         address[] memory targetAncestors1 = new address[](2);
         uint32[] memory targetRoyaltyAmount1 = new uint32[](2);
         uint32[] memory parentRoyalties1 = new uint32[](2);
+        bytes[] memory encodedLicenseData = new bytes[](2);
 
         // 3 is child of 7 and 8
         parents[0] = address(7);
@@ -137,14 +148,16 @@ contract TestAncestorsVaultLAP is TestHelper {
         InitParams memory initParams = InitParams({
             targetAncestors: targetAncestors1,
             targetRoyaltyAmount: targetRoyaltyAmount1,
-            parentRoyalties: parentRoyalties1,
             parentAncestors1: nullParentAncestors1,
             parentAncestors2: nullParentAncestors2,
             parentAncestorsRoyalties1: nullParentAncestorsRoyalties1,
             parentAncestorsRoyalties2: nullParentAncestorsRoyalties2
         });
+        for (uint32 i = 0; i < parentRoyalties1.length; i++) {
+            encodedLicenseData[i] = abi.encode(parentRoyalties1[i]);
+        }
         bytes memory encodedBytes = abi.encode(initParams);
-        royaltyPolicyLAP.initPolicy(address(3), parents, encodedBytes);
+        royaltyPolicyLAP.onLinkToParents(address(3), parents, encodedLicenseData, encodedBytes);
 
         // 4 is child of 9 and 10
         parents[0] = address(9);
@@ -158,14 +171,16 @@ contract TestAncestorsVaultLAP is TestHelper {
         initParams = InitParams({
             targetAncestors: targetAncestors1,
             targetRoyaltyAmount: targetRoyaltyAmount1,
-            parentRoyalties: parentRoyalties1,
             parentAncestors1: nullParentAncestors1,
             parentAncestors2: nullParentAncestors2,
             parentAncestorsRoyalties1: nullParentAncestorsRoyalties1,
             parentAncestorsRoyalties2: nullParentAncestorsRoyalties2
         });
+        for (uint32 i = 0; i < parentRoyalties1.length; i++) {
+            encodedLicenseData[i] = abi.encode(parentRoyalties1[i]);
+        }
         encodedBytes = abi.encode(initParams);
-        royaltyPolicyLAP.initPolicy(address(4), parents, encodedBytes);
+        royaltyPolicyLAP.onLinkToParents(address(4), parents, encodedLicenseData, encodedBytes);
 
         // 5 is child of 11 and 12
         parents[0] = address(11);
@@ -179,17 +194,19 @@ contract TestAncestorsVaultLAP is TestHelper {
         initParams = InitParams({
             targetAncestors: targetAncestors1,
             targetRoyaltyAmount: targetRoyaltyAmount1,
-            parentRoyalties: parentRoyalties1,
             parentAncestors1: nullParentAncestors1,
             parentAncestors2: nullParentAncestors2,
             parentAncestorsRoyalties1: nullParentAncestorsRoyalties1,
             parentAncestorsRoyalties2: nullParentAncestorsRoyalties2
         });
+        for (uint32 i = 0; i < parentRoyalties1.length; i++) {
+            encodedLicenseData[i] = abi.encode(parentRoyalties1[i]);
+        }
         encodedBytes = abi.encode(initParams);
-        royaltyPolicyLAP.initPolicy(address(5), parents, encodedBytes);
+        royaltyPolicyLAP.onLinkToParents(address(5), parents, encodedLicenseData, encodedBytes);
 
         
-        // 6 is child of 13 and 14
+         // 6 is child of 13 and 14
         parents[0] = address(13);
         parents[1] = address(14);
         parentRoyalties1[0] = 13;
@@ -201,14 +218,16 @@ contract TestAncestorsVaultLAP is TestHelper {
         initParams = InitParams({
             targetAncestors: targetAncestors1,
             targetRoyaltyAmount: targetRoyaltyAmount1,
-            parentRoyalties: parentRoyalties1,
             parentAncestors1: nullParentAncestors1,
             parentAncestors2: nullParentAncestors2,
             parentAncestorsRoyalties1: nullParentAncestorsRoyalties1,
             parentAncestorsRoyalties2: nullParentAncestorsRoyalties2
         });
+        for (uint32 i = 0; i < parentRoyalties1.length; i++) {
+            encodedLicenseData[i] = abi.encode(parentRoyalties1[i]);
+        }
         encodedBytes = abi.encode(initParams);
-        royaltyPolicyLAP.initPolicy(address(6), parents, encodedBytes);
+        royaltyPolicyLAP.onLinkToParents(address(6), parents, encodedLicenseData, encodedBytes);
 
 
         // init 3rd level with children
@@ -247,14 +266,16 @@ contract TestAncestorsVaultLAP is TestHelper {
         initParams = InitParams({
             targetAncestors: targetAncestors2,
             targetRoyaltyAmount: targetRoyaltyAmount2,
-            parentRoyalties: parentRoyalties1,
             parentAncestors1: parentAncestors1,
             parentAncestors2: parentAncestors2,
             parentAncestorsRoyalties1: parentAncestorsRoyalties1,
             parentAncestorsRoyalties2: parentAncestorsRoyalties2
         });
+        for (uint32 i = 0; i < parentRoyalties1.length; i++) {
+            encodedLicenseData[i] = abi.encode(parentRoyalties1[i]);
+        }
         encodedBytes = abi.encode(initParams);
-        royaltyPolicyLAP.initPolicy(address(1), parents, encodedBytes);
+        royaltyPolicyLAP.onLinkToParents(address(1), parents, encodedLicenseData, encodedBytes);
 
         // 2 is child of 5 and 6
         parents[0] = address(5);
@@ -284,17 +305,17 @@ contract TestAncestorsVaultLAP is TestHelper {
         initParams = InitParams({
             targetAncestors: targetAncestors2,
             targetRoyaltyAmount: targetRoyaltyAmount2,
-            parentRoyalties: parentRoyalties1,
             parentAncestors1: parentAncestors1,
             parentAncestors2: parentAncestors2,
             parentAncestorsRoyalties1: parentAncestorsRoyalties1,
             parentAncestorsRoyalties2: parentAncestorsRoyalties2
         });
+        for (uint32 i = 0; i < parentRoyalties1.length; i++) {
+            encodedLicenseData[i] = abi.encode(parentRoyalties1[i]);
+        }
         encodedBytes = abi.encode(initParams);
-        royaltyPolicyLAP.initPolicy(address(2), parents, encodedBytes);
+        royaltyPolicyLAP.onLinkToParents(address(2), parents, encodedLicenseData, encodedBytes);
 
-        MAX_ANCESTORS_ = new address[](14);
-        MAX_ANCESTORS_ROYALTY_ = new uint32[](14);
         address[] memory parentAncestors3 = new address[](6);
         address[] memory parentAncestors4 = new address[](6);
         uint32[] memory parentAncestorsRoyalties3 = new uint32[](6);
@@ -365,7 +386,6 @@ contract TestAncestorsVaultLAP is TestHelper {
         initParamsMax = InitParams({
             targetAncestors: MAX_ANCESTORS_,
             targetRoyaltyAmount: MAX_ANCESTORS_ROYALTY_,
-            parentRoyalties: parentRoyalties3,
             parentAncestors1: parentAncestors3,
             parentAncestors2: parentAncestors4,
             parentAncestorsRoyalties1: parentAncestorsRoyalties3,
@@ -373,12 +393,6 @@ contract TestAncestorsVaultLAP is TestHelper {
         });
 
         MAX_ANCESTORS = abi.encode(initParamsMax);
-
-        parentsIpIds1 = new address[](2);
-        parentsIpIds1[0] = address(1);
-        parentsIpIds1[1] = address(2);
-
-        royaltyPolicyLAP.initPolicy(address(100), parentsIpIds1, MAX_ANCESTORS);
     }
 
     function test_AncestorsVaultLAP_claim_AlreadyClaimed() public {
@@ -424,7 +438,7 @@ contract TestAncestorsVaultLAP is TestHelper {
         ancestorsVault100.claim(ipIdToClaim, claimerIpId7, MAX_ANCESTORS_, MAX_ANCESTORS_ROYALTY_, true, tokens);
     }
 
-    function test_AncestorsVaultLAP_claim_AncestorsVaultLAP__ERC20BalanceNotZero() public {
+    function test_AncestorsVaultLAP_claim_ERC20BalanceNotZero() public {
         USDC.mint(address(splitClone100), 1000 * 10 ** 6);
 
         address[] memory ancestors = new address[](2);
@@ -474,7 +488,7 @@ contract TestAncestorsVaultLAP is TestHelper {
         assertEq(claimerETHBalAfter - claimerETHBalBefore, (ethAccrued * expectedRnft7) / (royaltyStack100));
     }
 
-    function test_AncestorsVaultLAP_claim_multipleClaims() public {
+    function test_AncestorsVaultLAP_claim_MultipleClaims() public {
         ancestorsVault100.claim(ipIdToClaim, claimerIpId10, MAX_ANCESTORS_, MAX_ANCESTORS_ROYALTY_, true, tokens);
 
         // address 7 as the root will claim from address 100
@@ -508,4 +522,4 @@ contract TestAncestorsVaultLAP is TestHelper {
         assertEq(ancestorsVaultETHBalBefore - ancestorsVaultETHBalAfter, (ethAccrued * expectedRnft7) / (royaltyStack100));
         assertEq(claimerETHBalAfter - claimerETHBalBefore, (ethAccrued * expectedRnft7) / (royaltyStack100));
     }
-} */
+}
