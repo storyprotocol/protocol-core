@@ -143,6 +143,8 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
         Licensing.License memory licenseData = _licenses[id];
         Licensing.Policy memory pol = _licensingModule.policy(licenseData.policyId);
 
+        string memory licensorIpIdHex = licenseData.licensorIpId.toHexString();
+
         /* solhint-disable */
         // Follows the OpenSea standard for JSON metadata
 
@@ -152,7 +154,9 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
                 "{",
                 '"name": "Story Protocol License NFT",',
                 '"description": "License agreement stating the terms of a Story Protocol IPAsset",',
-                '"external_url": "https://storyprotocol.xyz",',
+                '"external_url": "https://protocol.storyprotocol.xyz/ipa/',
+                licensorIpIdHex,
+                '",',
                 // solhint-disable-next-line max-length
                 '"image": "https://images.ctfassets.net/5ei3wx54t1dp/1WXOHnPLROsGiBsI46zECe/4f38a95c58d3b0329af3085b36d720c8/Story_Protocol_Icon.png",',
                 '"attributes": ['
@@ -170,7 +174,7 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
             abi.encodePacked(
                 json,
                 '{"trait_type": "Licensor", "value": "',
-                licenseData.licensorIpId.toHexString(),
+                licensorIpIdHex,
                 '"},',
                 '{"trait_type": "Policy Framework", "value": "',
                 pol.policyFramework.toHexString(),
