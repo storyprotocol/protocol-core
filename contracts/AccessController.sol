@@ -197,7 +197,7 @@ contract AccessController is IAccessController, Governable {
         address signer,
         address to,
         bytes4 func
-    ) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(ipAccount, signer, to, func));
+    ) internal view returns (bytes32) {
+        return keccak256(abi.encode(IIPAccount(payable(ipAccount)).owner(), ipAccount, signer, to, func));
     }
 }
