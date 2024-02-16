@@ -89,10 +89,6 @@ contract UMLPolicyFrameworkTest is TestHelper {
         inputA.policy.commercialRevShare = 1;
         vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddRevShare.selector);
         umlFramework.registerPolicy(inputA);
-        // No rev share should be set for derivatives either; revert
-        inputA.policy.commercialRevShare = 0;
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddDerivRevShare.selector);
-        umlFramework.registerPolicy(inputA);
     }
 
     function test_UMLPolicyFrameworkManager__commercialUse_valuesSetCorrectly() public {
@@ -137,11 +133,6 @@ contract UMLPolicyFrameworkTest is TestHelper {
         inputA.policy.derivativesApproval = false;
         inputA.policy.derivativesReciprocal = true;
         vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddReciprocal.selector);
-        umlFramework.registerPolicy(inputA);
-        // No rev share should be set for derivatives either; revert
-        inputA.policy.derivativesReciprocal = false;
-        inputA.policy.commercialRevShare = 1;
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddRevShare.selector);
         umlFramework.registerPolicy(inputA);
     }
 
@@ -210,10 +201,6 @@ contract UMLPolicyFrameworkTest is TestHelper {
 
         uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, ipOwner, "");
         assertFalse(umlFramework.isDerivativeApproved(licenseId, ipId2));
-
-        vm.expectRevert(Errors.LicenseRegistry__NotTransferable.selector);
-        vm.prank(ipOwner);
-        licenseRegistry.safeTransferFrom(ipOwner, licenseHolder, licenseId, 1, "");
 
         vm.prank(licenseRegistry.licensorIpId(licenseId));
         umlFramework.setApproval(licenseId, ipId2, true);

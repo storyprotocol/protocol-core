@@ -255,7 +255,7 @@ contract UMLPolicyFrameworkMultiParentTest is TestHelper {
 
         // TODO: passing in two different royaltyPolicy addresses
         // solhint-disable-next-line max-line-length
-        _testRevertCompat(inputA, inputB, Errors.LicensingModule__IncompatibleRoyaltyPolicyDerivativeRevShare.selector);
+        _testRevertCompat(inputA, inputB, UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesValueMismatch.selector);
     }
 
     function test_UMLPolicyFramework_multiParent_NonReciprocalTerritories() public {

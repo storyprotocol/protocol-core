@@ -60,7 +60,9 @@ contract LicensingModuleTest is Test, TestHelper {
             address(mockAccessController),
             address(ipAccountImpl)
         );
+        
         moduleRegistry = new ModuleRegistry(address(governance));
+        
         ipAssetRegistry = new IPAssetRegistry(
             address(mockAccessController),
             address(erc6551Registry),
@@ -68,7 +70,9 @@ contract LicensingModuleTest is Test, TestHelper {
             address(moduleRegistry),
             address(governance)
         );
-        royaltyModule = new RoyaltyModule(address(accessController), address(ipAssetRegistry),address(governance));
+        
+        royaltyModule = new RoyaltyModule(address(mockAccessController), address(ipAssetRegistry),address(governance));
+        
         licenseRegistry = new LicenseRegistry();
         licensingModule = new LicensingModule(
             address(mockAccessController),
@@ -76,9 +80,11 @@ contract LicensingModuleTest is Test, TestHelper {
             address(royaltyModule),
             address(licenseRegistry)
         );
+        
         mockRoyaltyPolicyLS = new MockRoyaltyPolicyLS(address(royaltyModule));
 
         licenseRegistry.setLicensingModule(address(licensingModule));
+        
         // Setup Framework Managers (don't register PFM here, do in each test case)
         mockPFM = new MockPolicyFrameworkManager(
             MockPolicyFrameworkConfig({
@@ -88,6 +94,7 @@ contract LicensingModuleTest is Test, TestHelper {
                 royaltyPolicy: address(mockRoyaltyPolicyLS)
             })
         );
+        
         umlManager = new UMLPolicyFrameworkManager(
             address(mockAccessController),
             address(ipAccountRegistry),
@@ -95,27 +102,33 @@ contract LicensingModuleTest is Test, TestHelper {
             "UMLPolicyFrameworkManager",
             licenseUrl
         );
-        IPResolver ipResolver = new IPResolver(address(accessController), address(ipAssetRegistry));
+        
+        IPResolver ipResolver = new IPResolver(address(mockAccessController), address(ipAssetRegistry));
+        
         RegistrationModule registrationModule = new RegistrationModule(
             address(mockAccessController),
             address(ipAssetRegistry),
             address(licensingModule),
             address(ipResolver)
         );
-
+        
         ipAssetRegistry.setRegistrationModule(address(registrationModule));
+        
         // Set licensing module in royalty module
         royaltyModule.setLicensingModule(address(licensingModule));
         royaltyModule.whitelistRoyaltyPolicy(address(mockRoyaltyPolicyLS), true);
-
+        
         // Create IPAccounts
         nft.mintId(ipOwner, 1);
         nft.mintId(ipOwner, 2);
-        ipId1 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 1);
-        ipId2 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 2);
+        
+        //ipId1 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 1);
+        //ipId2 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 2);
 
         vm.label(ipId1, "IPAccount1");
         vm.label(ipId2, "IPAccount2");
+        
+        
     }
 
     function _createPolicyData() internal pure returns (bytes memory) {

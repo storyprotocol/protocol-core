@@ -12,11 +12,9 @@ library UMLFrameworkErrors {
     error UMLPolicyFrameworkManager__CommecialDisabled_CantAddAttribution();
     error UMLPolicyFrameworkManager__CommercialDisabled_CantAddCommercializers();
     error UMLPolicyFrameworkManager__CommecialDisabled_CantAddRevShare();
-    error UMLPolicyFrameworkManager__CommecialDisabled_CantAddDerivRevShare();
     error UMLPolicyFrameworkManager__DerivativesDisabled_CantAddAttribution();
     error UMLPolicyFrameworkManager__DerivativesDisabled_CantAddApproval();
     error UMLPolicyFrameworkManager__DerivativesDisabled_CantAddReciprocal();
-    error UMLPolicyFrameworkManager__DerivativesDisabled_CantAddRevShare();
     error UMLPolicyFrameworkManager__RightsNotFound();
     error UMLPolicyFrameworkManager__CommercialDisabled_CantAddRoyaltyPolicy();
     error UMLPolicyFrameworkManager__CommecialEnabled_RoyaltyPolicyRequired();
