@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-//import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
 import { ERC1155Holder } from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -13,20 +12,19 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 import { IAncestorsVaultLAP } from "../../../interfaces/modules/royalty/policies/IAncestorsVaultLAP.sol";
 import { Governable } from "../../../../contracts/governance/Governable.sol";
 import { IRoyaltyPolicyLAP } from "../../../interfaces/modules/royalty/policies/IRoyaltyPolicyLAP.sol";
-import { AccessControlled } from "../../../access/AccessControlled.sol";
 import { ArrayUtils } from "../../../lib/ArrayUtils.sol";
 import { ILiquidSplitFactory } from "../../../interfaces/modules/royalty/policies/ILiquidSplitFactory.sol";
 import { ILiquidSplitMain } from "../../../interfaces/modules/royalty/policies/ILiquidSplitMain.sol";
 import { ILiquidSplitClone } from "../../../interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
 import { Errors } from "../../../lib/Errors.sol";
 
-import "forge-std/console.sol"; 
-
+/// @title Liquid Absolute Percentage Royalty Policy
+/// @notice Defines the logic for splitting royalties for a given ipId using a liquid absolute percentage mechanism
 contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     struct LAPRoyaltyData {
-        bool isUnlinkableToParents; // indicates if the ipId is unlinkable to its parents
+        bool isUnlinkableToParents; // indicates if the ipId is unlinkable to new parents
         address splitClone; // address of the liquid split clone contract for a given ipId
         address ancestorsVault; // address of the ancestors vault contract for a given ipId
         uint32 royaltyStack; // royalty stack for a given ipId is the sum of the royalties to be paid to all its parents
@@ -34,19 +32,21 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
     }
 
     struct InitParams {
-        address[] targetAncestors;
-        uint32[] targetRoyaltyAmount;
-        address[] parentAncestors1;
-        address[] parentAncestors2;
-        uint32[] parentAncestorsRoyalties1;
-        uint32[] parentAncestorsRoyalties2;
+        address[] targetAncestors; // the expected ancestors of an ipId
+        uint32[] targetRoyaltyAmount; // the expected royalties of each of the ancestors for an ipId
+        address[] parentAncestors1; // all the ancestors of the first parent
+        address[] parentAncestors2; // all the ancestors of the second parent
+        uint32[] parentAncestorsRoyalties1; // the royalties of each of the ancestors for the first parent
+        uint32[] parentAncestorsRoyalties2; // the royalties of each of the ancestors for the second parent
     }
 
     /// @notice Percentage scale - 1000 rnfts represents 100%
     uint32 public constant TOTAL_RNFT_SUPPLY = 1000;
 
+    /// @notice Maximum number of parents
     uint256 public constant MAX_PARENTS = 2;
 
+    /// @notice Maximum number of total ancestors
     uint256 public constant MAX_ANCESTORS = 14;
 
     /// @notice RoyaltyModule address
@@ -78,6 +78,7 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
     /// @param _licensingModule Address of the LicensingModule contract
     /// @param _liquidSplitFactory Address of the LiquidSplitFactory contract
     /// @param _liquidSplitMain Address of the LiquidSplitMain contract
+    /// @param _governance Address of the governance contract
     constructor(
         address _royaltyModule,
         address _licensingModule,
@@ -106,6 +107,10 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
     }
 
     // TODO: the parentIpIds refer to the parents of the node that whose license is being minted (whether by itself or by a derivative node)
+    /// @notice Executes royalty related logic on minting a license
+    /// @param _ipId The children ipId that is being linked to parents
+    /// @param _licenseData The license data custom to each the royalty policy
+    /// @param _externalData The external data custom to each the royalty policy
     function onLicenseMinting(address _ipId, bytes calldata _licenseData, bytes calldata _externalData) external onlyRoyaltyModule {
         uint32 newLicenseRoyalty = abi.decode(_licenseData, (uint32));
         LAPRoyaltyData memory data = royaltyData[_ipId];
@@ -121,6 +126,11 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
         if (data.splitClone == address(0)) _initPolicy(_ipId, rootParents, rootParentRoyalties, _externalData);        
     }
 
+    /// @notice Executes royalty related logic on linking to parents
+    /// @param _ipId The children ipId that is being linked to parents
+    /// @param _parentIpIds The selected parent ipIds
+    /// @param _licenseData The license data custom to each the royalty policy
+    /// @param _externalData The external data custom to each the royalty policy
     function onLinkToParents(address _ipId, address[] calldata _parentIpIds, bytes[] memory _licenseData, bytes calldata _externalData) external onlyRoyaltyModule {
         if (royaltyData[_ipId].isUnlinkableToParents) revert Errors.RoyaltyPolicyLAP__UnlinkableToParents();
 
@@ -129,18 +139,18 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
 
     /// @notice Initializes the royalty policy
     /// @param _ipId The ipId
-    /// @param _parentIpIds The parent ipIds
-    /// @param _licenseData The license data
-    /// @param _externalData The external data
+    /// @param _parentIpIds The selected parent ipIds
+    /// @param _licenseData The license data custom to each the royalty policy
+    /// @param _externalData The external data custom to each the royalty policy
     function _initPolicy(
         address _ipId,
         address[] memory _parentIpIds,
         bytes[] memory _licenseData,
         bytes calldata _externalData
     ) internal onlyRoyaltyModule {
+        // decode license and external data
         InitParams memory params = abi.decode(_externalData, (InitParams));
         uint32[] memory parentRoyalties = new uint32[](_parentIpIds.length);
-        
         for (uint256 i = 0; i < _parentIpIds.length; i++) {
             parentRoyalties[i] = abi.decode(_licenseData[i], (uint32));
         }
@@ -149,7 +159,7 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
         if (_parentIpIds.length > MAX_PARENTS) revert Errors.RoyaltyPolicyLAP__AboveParentLimit();
 
         // calculate new royalty stack
-        uint32 royaltyStack = _checkAncestorsDataIsValid(_ipId, _parentIpIds, parentRoyalties, params);
+        uint32 royaltyStack = _checkAncestorsDataIsValid(_parentIpIds, parentRoyalties, params);
 
         // set the parents as unlinkable / loop limited to 2 parents
         for (uint256 i = 0; i < _parentIpIds.length; i++) {
@@ -211,11 +221,15 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
         ILiquidSplitMain(LIQUID_SPLIT_MAIN).withdraw(_account, _withdrawETH, _tokens);
     }
 
-    function claimAsFullRnftOwner(address _ipId, uint256 _withdrawETH, address _token) external nonReentrant {
+    /// @notice Claims the available royalties for a given address that holds all the royalty nfts of an ipId
+    /// @param _ipId The ipId
+    /// @param _withdrawETH The amount of ETH to withdraw
+    /// @param _token The token to withdraw
+    function claimFromIpPoolAsTotalRnftOwner(address _ipId, uint256 _withdrawETH, address _token) external nonReentrant {
         ILiquidSplitClone splitClone = ILiquidSplitClone(royaltyData[_ipId].splitClone);
         ILiquidSplitMain splitMain = ILiquidSplitMain(LIQUID_SPLIT_MAIN);
 
-        if (splitClone.balanceOf(msg.sender, 0) < 1000) revert Errors.RoyaltyPolicyLAP__NotFullOwnership();
+        if (splitClone.balanceOf(msg.sender, 0) < TOTAL_RNFT_SUPPLY) revert Errors.RoyaltyPolicyLAP__NotFullOwnership();
 
         splitClone.safeTransferFrom(msg.sender, address(this), 0, 1, "0x0");
 
@@ -244,6 +258,13 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
         }
     }
 
+    /// @notice Claims all available royalty nfts and accrued royalties for an ancestor of a given ipId
+    /// @param _ipId The ipId
+    /// @param _claimerIpId The claimer ipId
+    /// @param _ancestors The ancestors of the IP
+    /// @param _ancestorsRoyalties The royalties of the ancestors
+    /// @param _withdrawETH Indicates if the claimer wants to withdraw ETH
+    /// @param _tokens The ERC20 tokens to withdraw
     function claimFromAncestorsVault(        
         address _ipId,
         address _claimerIpId,
@@ -257,16 +278,20 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
 
     receive() external payable {}
 
+    /// @notice Checks if the ancestors data is valid
+    /// @param _parentIpIds The parent ipIds
+    /// @param _parentRoyalties The parent royalties
+    /// @param _params The init params
+    /// @return newRoyaltyStack The new royalty stack
     function _checkAncestorsDataIsValid(
-        address _ipId, 
         address[] memory _parentIpIds, 
         uint32[] memory _parentRoyalties,
         InitParams memory _params
-    ) internal returns (uint32) {
+    ) internal view returns (uint32) {
         if (_params.targetRoyaltyAmount.length != _params.targetAncestors.length) revert Errors.RoyaltyPolicyLAP__InvalidRoyaltyAmountLength();
         if (_parentRoyalties.length != _parentIpIds.length) revert Errors.RoyaltyPolicyLAP__InvalidParentRoyaltiesLength();
 
-        (address[] memory newAncestors, uint32[] memory newAncestorsRoyalty, uint32 newAncestorsCount, uint32 newRoyaltyStack) = _getExpectedOutputs(_ipId, _parentIpIds, _parentRoyalties, _params);
+        (address[] memory newAncestors, uint32[] memory newAncestorsRoyalty, uint32 newAncestorsCount, uint32 newRoyaltyStack) = _getExpectedOutputs(_parentIpIds, _parentRoyalties, _params);
 
         if (_params.targetAncestors.length != newAncestorsCount) revert Errors.RoyaltyPolicyLAP__InvalidAncestorsLength();
         if (newRoyaltyStack > TOTAL_RNFT_SUPPLY) revert Errors.RoyaltyPolicyLAP__AboveRoyaltyStackLimit();
@@ -279,7 +304,19 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
         return newRoyaltyStack;
     }
 
-    function _getExpectedOutputs(address _ipId, address[] memory _parentIpIds, uint32[] memory _parentRoyalties, InitParams memory _params) internal view returns (address[] memory newAncestors, uint32[] memory newAncestorsRoyalty, uint32 ancestorsCount, uint32 royaltyStack) {
+    /// @notice Gets the expected outputs for the ancestors and ancestors royalties
+    /// @param _parentIpIds The parent ipIds
+    /// @param _parentRoyalties The parent royalties
+    /// @param _params The init params
+    /// @return newAncestors The new ancestors
+    ///         newAncestorsRoyalty The new ancestors royalty
+    ///         ancestorsCount The number of ancestors
+    ///         royaltyStack The royalty stack   
+    function _getExpectedOutputs(
+        address[] memory _parentIpIds, 
+        uint32[] memory _parentRoyalties, 
+        InitParams memory _params
+    ) internal view returns (address[] memory newAncestors, uint32[] memory newAncestorsRoyalty, uint32 ancestorsCount, uint32 royaltyStack) {
         newAncestorsRoyalty = new uint32[](_params.targetRoyaltyAmount.length);
         newAncestors = new address[](_params.targetAncestors.length);
 
@@ -304,7 +341,7 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
 
             address[] memory parentAncestors = i == 0 ? _params.parentAncestors1 : _params.parentAncestors2;
             uint32[] memory parentAncestorsRoyalties = i == 0 ? _params.parentAncestorsRoyalties1 : _params.parentAncestorsRoyalties2;
-            if(keccak256(abi.encodePacked(parentAncestors, parentAncestorsRoyalties)) != royaltyData[_parentIpIds[i]].ancestorsHash) revert Errors.RoyaltyPolicyLAP__InvalidAncestorsHash();
+            if (keccak256(abi.encodePacked(parentAncestors, parentAncestorsRoyalties)) != royaltyData[_parentIpIds[i]].ancestorsHash) revert Errors.RoyaltyPolicyLAP__InvalidAncestorsHash();
 
             for (uint256 j = 0; j < parentAncestors.length; j++) {
                 if (i==0) {
@@ -363,6 +400,6 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
             callStatus := call(gas(), _to, _amount, 0, 0, 0, 0)
         }
 
-        if (!callStatus) revert Errors.RoyaltyPolicyLS__TransferFailed();
+        if (!callStatus) revert Errors.RoyaltyPolicyLAP__TransferFailed();
     }
 }

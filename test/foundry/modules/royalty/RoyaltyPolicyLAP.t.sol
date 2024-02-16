@@ -1,4 +1,4 @@
-/* // SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -19,7 +19,6 @@ contract TestRoyaltyPolicyLAP is TestHelper {
     struct InitParams {
         address[] targetAncestors;
         uint32[] targetRoyaltyAmount;
-        uint32[] parentRoyalties;
         address[] parentAncestors1;
         address[] parentAncestors2;
         uint32[] parentAncestorsRoyalties1;
@@ -34,12 +33,6 @@ contract TestRoyaltyPolicyLAP is TestHelper {
     uint32[] MAX_ANCESTORS_ROYALTY_ = new uint32[](14);
     address[] parentsIpIds100;
 
-    InitParams initParamsDuplicates;
-    bytes DUPLICATE_ANCESTORS;
-    address[] DUPLICATE_ANCESTORS_ = new address[](3);
-    uint32[] DUPLICATE_ANCESTORS_ROYALTY_ = new uint32[](3);
-    address[] parentsIpIds200;
-
     function setUp() public override {
         super.setUp();
 
@@ -50,7 +43,7 @@ contract TestRoyaltyPolicyLAP is TestHelper {
 
         vm.startPrank(address(royaltyModule));
         _setupMaxUniqueTree();
-        _setupDuplicatesTree();
+        //_setupDuplicatesTree();
     }
 
     function _setupMaxUniqueTree() internal {
@@ -65,27 +58,27 @@ contract TestRoyaltyPolicyLAP is TestHelper {
         InitParams memory nullInitParams = InitParams({
             targetAncestors: nullTargetAncestors,
             targetRoyaltyAmount: nullTargetRoyaltyAmount,
-            parentRoyalties: parentRoyalties,
             parentAncestors1: nullParentAncestors1,
             parentAncestors2: nullParentAncestors2,
             parentAncestorsRoyalties1: nullParentAncestorsRoyalties1,
             parentAncestorsRoyalties2: nullParentAncestorsRoyalties2
         });
         bytes memory nullBytes = abi.encode(nullInitParams);
-        royaltyPolicyLAP.initPolicy(address(7), new address[](0), nullBytes);
-        royaltyPolicyLAP.initPolicy(address(8), new address[](0), nullBytes);
-        royaltyPolicyLAP.initPolicy(address(9), new address[](0), nullBytes);
-        royaltyPolicyLAP.initPolicy(address(10), new address[](0), nullBytes);
-        royaltyPolicyLAP.initPolicy(address(11), new address[](0), nullBytes);
-        royaltyPolicyLAP.initPolicy(address(12), new address[](0), nullBytes);
-        royaltyPolicyLAP.initPolicy(address(13), new address[](0), nullBytes);
-        royaltyPolicyLAP.initPolicy(address(14), new address[](0), nullBytes);
+        royaltyPolicyLAP.onLicenseMinting(address(7), abi.encode(uint32(7)), nullBytes);
+        royaltyPolicyLAP.onLicenseMinting(address(8), abi.encode(uint32(8)), nullBytes);
+        royaltyPolicyLAP.onLicenseMinting(address(9), abi.encode(uint32(9)), nullBytes);
+        royaltyPolicyLAP.onLicenseMinting(address(10), abi.encode(uint32(10)), nullBytes);
+        royaltyPolicyLAP.onLicenseMinting(address(11), abi.encode(uint32(11)), nullBytes);
+        royaltyPolicyLAP.onLicenseMinting(address(12), abi.encode(uint32(12)), nullBytes);
+        royaltyPolicyLAP.onLicenseMinting(address(13), abi.encode(uint32(13)), nullBytes);
+        royaltyPolicyLAP.onLicenseMinting(address(14), abi.encode(uint32(14)), nullBytes);
  
         // init 2nd level with children
         address[] memory parents = new address[](2);
         address[] memory targetAncestors1 = new address[](2);
         uint32[] memory targetRoyaltyAmount1 = new uint32[](2);
         uint32[] memory parentRoyalties1 = new uint32[](2);
+        bytes[] memory encodedLicenseData = new bytes[](2);
 
         // 3 is child of 7 and 8
         parents[0] = address(7);
@@ -99,14 +92,16 @@ contract TestRoyaltyPolicyLAP is TestHelper {
         InitParams memory initParams = InitParams({
             targetAncestors: targetAncestors1,
             targetRoyaltyAmount: targetRoyaltyAmount1,
-            parentRoyalties: parentRoyalties1,
             parentAncestors1: nullParentAncestors1,
             parentAncestors2: nullParentAncestors2,
             parentAncestorsRoyalties1: nullParentAncestorsRoyalties1,
             parentAncestorsRoyalties2: nullParentAncestorsRoyalties2
         });
+        for (uint32 i = 0; i < parentRoyalties1.length; i++) {
+            encodedLicenseData[i] = abi.encode(parentRoyalties1[i]);
+        }
         bytes memory encodedBytes = abi.encode(initParams);
-        royaltyPolicyLAP.initPolicy(address(3), parents, encodedBytes);
+        royaltyPolicyLAP.onLinkToParents(address(3), parents, encodedLicenseData, encodedBytes);
 
         // 4 is child of 9 and 10
         parents[0] = address(9);
@@ -120,14 +115,16 @@ contract TestRoyaltyPolicyLAP is TestHelper {
         initParams = InitParams({
             targetAncestors: targetAncestors1,
             targetRoyaltyAmount: targetRoyaltyAmount1,
-            parentRoyalties: parentRoyalties1,
             parentAncestors1: nullParentAncestors1,
             parentAncestors2: nullParentAncestors2,
             parentAncestorsRoyalties1: nullParentAncestorsRoyalties1,
             parentAncestorsRoyalties2: nullParentAncestorsRoyalties2
         });
+        for (uint32 i = 0; i < parentRoyalties1.length; i++) {
+            encodedLicenseData[i] = abi.encode(parentRoyalties1[i]);
+        }
         encodedBytes = abi.encode(initParams);
-        royaltyPolicyLAP.initPolicy(address(4), parents, encodedBytes);
+        royaltyPolicyLAP.onLinkToParents(address(4), parents, encodedLicenseData, encodedBytes);
 
         // 5 is child of 11 and 12
         parents[0] = address(11);
@@ -141,17 +138,19 @@ contract TestRoyaltyPolicyLAP is TestHelper {
         initParams = InitParams({
             targetAncestors: targetAncestors1,
             targetRoyaltyAmount: targetRoyaltyAmount1,
-            parentRoyalties: parentRoyalties1,
             parentAncestors1: nullParentAncestors1,
             parentAncestors2: nullParentAncestors2,
             parentAncestorsRoyalties1: nullParentAncestorsRoyalties1,
             parentAncestorsRoyalties2: nullParentAncestorsRoyalties2
         });
+        for (uint32 i = 0; i < parentRoyalties1.length; i++) {
+            encodedLicenseData[i] = abi.encode(parentRoyalties1[i]);
+        }
         encodedBytes = abi.encode(initParams);
-        royaltyPolicyLAP.initPolicy(address(5), parents, encodedBytes);
+        royaltyPolicyLAP.onLinkToParents(address(5), parents, encodedLicenseData, encodedBytes);
 
         
-        // 6 is child of 13 and 14
+         // 6 is child of 13 and 14
         parents[0] = address(13);
         parents[1] = address(14);
         parentRoyalties1[0] = 13;
@@ -163,14 +162,16 @@ contract TestRoyaltyPolicyLAP is TestHelper {
         initParams = InitParams({
             targetAncestors: targetAncestors1,
             targetRoyaltyAmount: targetRoyaltyAmount1,
-            parentRoyalties: parentRoyalties1,
             parentAncestors1: nullParentAncestors1,
             parentAncestors2: nullParentAncestors2,
             parentAncestorsRoyalties1: nullParentAncestorsRoyalties1,
             parentAncestorsRoyalties2: nullParentAncestorsRoyalties2
         });
+        for (uint32 i = 0; i < parentRoyalties1.length; i++) {
+            encodedLicenseData[i] = abi.encode(parentRoyalties1[i]);
+        }
         encodedBytes = abi.encode(initParams);
-        royaltyPolicyLAP.initPolicy(address(6), parents, encodedBytes);
+        royaltyPolicyLAP.onLinkToParents(address(6), parents, encodedLicenseData, encodedBytes);
 
 
         // init 3rd level with children
@@ -209,14 +210,16 @@ contract TestRoyaltyPolicyLAP is TestHelper {
         initParams = InitParams({
             targetAncestors: targetAncestors2,
             targetRoyaltyAmount: targetRoyaltyAmount2,
-            parentRoyalties: parentRoyalties1,
             parentAncestors1: parentAncestors1,
             parentAncestors2: parentAncestors2,
             parentAncestorsRoyalties1: parentAncestorsRoyalties1,
             parentAncestorsRoyalties2: parentAncestorsRoyalties2
         });
+        for (uint32 i = 0; i < parentRoyalties1.length; i++) {
+            encodedLicenseData[i] = abi.encode(parentRoyalties1[i]);
+        }
         encodedBytes = abi.encode(initParams);
-        royaltyPolicyLAP.initPolicy(address(1), parents, encodedBytes);
+        royaltyPolicyLAP.onLinkToParents(address(1), parents, encodedLicenseData, encodedBytes);
 
         // 2 is child of 5 and 6
         parents[0] = address(5);
@@ -246,14 +249,16 @@ contract TestRoyaltyPolicyLAP is TestHelper {
         initParams = InitParams({
             targetAncestors: targetAncestors2,
             targetRoyaltyAmount: targetRoyaltyAmount2,
-            parentRoyalties: parentRoyalties1,
             parentAncestors1: parentAncestors1,
             parentAncestors2: parentAncestors2,
             parentAncestorsRoyalties1: parentAncestorsRoyalties1,
             parentAncestorsRoyalties2: parentAncestorsRoyalties2
         });
+        for (uint32 i = 0; i < parentRoyalties1.length; i++) {
+            encodedLicenseData[i] = abi.encode(parentRoyalties1[i]);
+        }
         encodedBytes = abi.encode(initParams);
-        royaltyPolicyLAP.initPolicy(address(2), parents, encodedBytes);
+        royaltyPolicyLAP.onLinkToParents(address(2), parents, encodedLicenseData, encodedBytes);
 
         address[] memory parentAncestors3 = new address[](6);
         address[] memory parentAncestors4 = new address[](6);
@@ -325,7 +330,6 @@ contract TestRoyaltyPolicyLAP is TestHelper {
         initParamsMax = InitParams({
             targetAncestors: MAX_ANCESTORS_,
             targetRoyaltyAmount: MAX_ANCESTORS_ROYALTY_,
-            parentRoyalties: parentRoyalties3,
             parentAncestors1: parentAncestors3,
             parentAncestors2: parentAncestors4,
             parentAncestorsRoyalties1: parentAncestorsRoyalties3,
@@ -339,122 +343,19 @@ contract TestRoyaltyPolicyLAP is TestHelper {
         parentsIpIds100[1] = address(2);
     }
 
-    function _setupDuplicatesTree() internal {
-        // init royalty policy for roots
-        address[] memory nullTargetAncestors = new address[](0);
-        uint32[] memory nullTargetRoyaltyAmount = new uint32[](0);
-        uint32[] memory parentRoyalties = new uint32[](0);
-        address[] memory nullParentAncestors1 = new address[](0);
-        address[] memory nullParentAncestors2 = new address[](0);
-        uint32[] memory nullParentAncestorsRoyalties1 = new uint32[](0);
-        uint32[] memory nullParentAncestorsRoyalties2 = new uint32[](0);
-        InitParams memory nullInitParams = InitParams({
-            targetAncestors: nullTargetAncestors,
-            targetRoyaltyAmount: nullTargetRoyaltyAmount,
-            parentRoyalties: parentRoyalties,
-            parentAncestors1: nullParentAncestors1,
-            parentAncestors2: nullParentAncestors2,
-            parentAncestorsRoyalties1: nullParentAncestorsRoyalties1,
-            parentAncestorsRoyalties2: nullParentAncestorsRoyalties2
-        });
-        bytes memory nullBytes = abi.encode(nullInitParams);
-        royaltyPolicyLAP.initPolicy(address(15), new address[](0), nullBytes);
-
-        // init 2nd level with children
-        address[] memory parents5 = new address[](1);
-        address[] memory targetAncestors5 = new address[](1);
-        uint32[] memory targetRoyaltyAmount5 = new uint32[](1);
-        uint32[] memory parentRoyalties5 = new uint32[](1);
-
-        // 16 is child of 15 with 5% royalty
-        parents5[0] = address(15);
-        parentRoyalties5[0] = 50;
-        targetAncestors5[0] = address(15);
-        targetRoyaltyAmount5[0] = 50;
-        InitParams memory initParams = InitParams({
-            targetAncestors: targetAncestors5,
-            targetRoyaltyAmount: targetRoyaltyAmount5,
-            parentRoyalties: parentRoyalties5,
-            parentAncestors1: nullParentAncestors1,
-            parentAncestors2: nullParentAncestors2,
-            parentAncestorsRoyalties1: nullParentAncestorsRoyalties1,
-            parentAncestorsRoyalties2: nullParentAncestorsRoyalties2
-        });
-        bytes memory encodedBytes = abi.encode(initParams);
-        royaltyPolicyLAP.initPolicy(address(16), parents5, encodedBytes);
-
-        // 17 is child of 15 with 10% royalty
-        parents5[0] = address(15);
-        parentRoyalties5[0] = 100;
-        targetAncestors5[0] = address(15);
-        targetRoyaltyAmount5[0] = 100;
-        initParams = InitParams({
-            targetAncestors: targetAncestors5,
-            targetRoyaltyAmount: targetRoyaltyAmount5,
-            parentRoyalties: parentRoyalties5,
-            parentAncestors1: nullParentAncestors1,
-            parentAncestors2: nullParentAncestors2,
-            parentAncestorsRoyalties1: nullParentAncestorsRoyalties1,
-            parentAncestorsRoyalties2: nullParentAncestorsRoyalties2
-        });
-        encodedBytes = abi.encode(initParams);
-        royaltyPolicyLAP.initPolicy(address(17), parents5, encodedBytes);
-
-        address[] memory parentAncestors16 = new address[](1);
-        address[] memory parentAncestors17 = new address[](1);
-        uint32[] memory parentAncestorsRoyalties16 = new uint32[](1);
-        uint32[] memory parentAncestorsRoyalties17 = new uint32[](1);
-        uint32[] memory parentRoyalties200 = new uint32[](2);
-
-        DUPLICATE_ANCESTORS_[0] = address(16);
-        DUPLICATE_ANCESTORS_[1] = address(15);
-        DUPLICATE_ANCESTORS_[2] = address(17);
-
-        DUPLICATE_ANCESTORS_ROYALTY_[0] = 50;
-        DUPLICATE_ANCESTORS_ROYALTY_[1] = 150;
-        DUPLICATE_ANCESTORS_ROYALTY_[2] = 20;
-
-        parentAncestors16[0] = address(15);
-
-        parentAncestors17[0] = address(15);
-
-        parentAncestorsRoyalties16[0] = 50;
-
-        parentAncestorsRoyalties17[0] = 100;
-
-        parentRoyalties200[0] = 50;
-        parentRoyalties200[1] = 20;
-
-        initParamsDuplicates = InitParams({
-            targetAncestors: DUPLICATE_ANCESTORS_,
-            targetRoyaltyAmount: DUPLICATE_ANCESTORS_ROYALTY_,
-            parentRoyalties: parentRoyalties200,
-            parentAncestors1: parentAncestors16,
-            parentAncestors2: parentAncestors17,
-            parentAncestorsRoyalties1: parentAncestorsRoyalties16,
-            parentAncestorsRoyalties2: parentAncestorsRoyalties17
-        });
-
-        DUPLICATE_ANCESTORS = abi.encode(initParamsDuplicates);
-
-        parentsIpIds200 = new address[](2);
-        parentsIpIds200[0] = address(16);
-        parentsIpIds200[1] = address(17);
-    }
-
-    function test_setAncestorsVaultImplementation_ZeroAncestorsVaultImpl() public {
+    function test_RoyaltyPolicyLAP_setAncestorsVaultImplementation_ZeroAncestorsVaultImpl() public {
         vm.startPrank(u.admin);
         vm.expectRevert(Errors.RoyaltyPolicyLAP__ZeroAncestorsVaultImpl.selector);
         royaltyPolicyLAP.setAncestorsVaultImplementation(address(0));
     }
 
-    function test_setAncestorsVaultImplementation_ImplementationAlreadySet() public {
+    function test_RoyaltyPolicyLAP_setAncestorsVaultImplementation_ImplementationAlreadySet() public {
         vm.startPrank(u.admin);
         vm.expectRevert(Errors.RoyaltyPolicyLAP__ImplementationAlreadySet.selector);
         royaltyPolicyLAP.setAncestorsVaultImplementation(address(2));
     }
 
-    function test_setAncestorsVaultImplementation() public {
+    function test_RoyaltyPolicyLAP_setAncestorsVaultImplementation() public {
         RoyaltyPolicyLAP royaltyPolicyLAP2 = new RoyaltyPolicyLAP(address(1), address(2), address(3), address(4), address(governance));
         
         vm.startPrank(u.admin);
@@ -466,7 +367,6 @@ contract TestRoyaltyPolicyLAP is TestHelper {
     function test_RoyaltyPolicyLAP_initPolicy_AboveAncestorsLimit() public {
         address[] memory targetAncestors = new address[](15);
         uint32[] memory targetRoyaltyAmount = new uint32[](0);
-        uint32[] memory parentRoyalties = new uint32[](0);
         address[] memory parentAncestors1 = new address[](0);
         address[] memory parentAncestors2 = new address[](0);
         uint32[] memory parentAncestorsRoyalties1 = new uint32[](0);
@@ -474,7 +374,6 @@ contract TestRoyaltyPolicyLAP is TestHelper {
         InitParams memory initParams = InitParams({
             targetAncestors: targetAncestors,
             targetRoyaltyAmount: targetRoyaltyAmount,
-            parentRoyalties: parentRoyalties,
             parentAncestors1: parentAncestors1,
             parentAncestors2: parentAncestors2,
             parentAncestorsRoyalties1: parentAncestorsRoyalties1,
@@ -483,13 +382,18 @@ contract TestRoyaltyPolicyLAP is TestHelper {
         bytes memory inputBytes = abi.encode(initParams);
 
         vm.expectRevert(Errors.RoyaltyPolicyLAP__AboveAncestorsLimit.selector);
-        royaltyPolicyLAP.initPolicy(address(30), new address[](0), inputBytes);
+        royaltyPolicyLAP.onLicenseMinting(address(30), abi.encode(uint32(0)), inputBytes);
     }
 
-    function test_RoyaltyPolicyLAP_initPolicy_AboveParentLimit() public {
+    function test_RoyaltyPolicyLAP_onLicenseMinting_revert_NotRoyaltyModule() public {
+        vm.stopPrank();
+        vm.expectRevert(Errors.RoyaltyPolicyLAP__NotRoyaltyModule.selector);
+        royaltyPolicyLAP.onLicenseMinting(address(1), abi.encode(uint32(0)), abi.encode(uint32(0)));
+    }
+
+    function test_RoyaltyPolicyLAP_onLicenseMinting_revert_AboveRoyaltyStackLimit() public {
         address[] memory targetAncestors = new address[](0);
         uint32[] memory targetRoyaltyAmount = new uint32[](0);
-        uint32[] memory parentRoyalties = new uint32[](0);
         address[] memory parentAncestors1 = new address[](0);
         address[] memory parentAncestors2 = new address[](0);
         uint32[] memory parentAncestorsRoyalties1 = new uint32[](0);
@@ -497,270 +401,67 @@ contract TestRoyaltyPolicyLAP is TestHelper {
         InitParams memory initParams = InitParams({
             targetAncestors: targetAncestors,
             targetRoyaltyAmount: targetRoyaltyAmount,
-            parentRoyalties: parentRoyalties,
             parentAncestors1: parentAncestors1,
             parentAncestors2: parentAncestors2,
             parentAncestorsRoyalties1: parentAncestorsRoyalties1,
             parentAncestorsRoyalties2: parentAncestorsRoyalties2
         });
         bytes memory inputBytes = abi.encode(initParams);
-
-        vm.expectRevert(Errors.RoyaltyPolicyLAP__AboveParentLimit.selector);
-        royaltyPolicyLAP.initPolicy(address(30), new address[](3), inputBytes);
-    }
-
-    function test_RoyaltyPolicyLAP_initPolicy_InvalidRoyaltyAmountLength() public {
-        address[] memory targetAncestors = new address[](0);
-        uint32[] memory targetRoyaltyAmount = new uint32[](1);
-        uint32[] memory parentRoyalties = new uint32[](0);
-        address[] memory parentAncestors1 = new address[](0);
-        address[] memory parentAncestors2 = new address[](0);
-        uint32[] memory parentAncestorsRoyalties1 = new uint32[](0);
-        uint32[] memory parentAncestorsRoyalties2 = new uint32[](0);
-        InitParams memory initParams = InitParams({
-            targetAncestors: targetAncestors,
-            targetRoyaltyAmount: targetRoyaltyAmount,
-            parentRoyalties: parentRoyalties,
-            parentAncestors1: parentAncestors1,
-            parentAncestors2: parentAncestors2,
-            parentAncestorsRoyalties1: parentAncestorsRoyalties1,
-            parentAncestorsRoyalties2: parentAncestorsRoyalties2
-        });
-        bytes memory inputBytes = abi.encode(initParams);
-
-        vm.expectRevert(Errors.RoyaltyPolicyLAP__InvalidRoyaltyAmountLength.selector);
-        royaltyPolicyLAP.initPolicy(address(30), new address[](0), inputBytes);
-    }
-
-    function test_RoyaltyPolicyLAP_initPolicy_InvalidParentRoyaltiesLength() public {
-        address[] memory targetAncestors = new address[](0);
-        uint32[] memory targetRoyaltyAmount = new uint32[](0);
-        uint32[] memory parentRoyalties = new uint32[](1);
-        address[] memory parentAncestors1 = new address[](0);
-        address[] memory parentAncestors2 = new address[](0);
-        uint32[] memory parentAncestorsRoyalties1 = new uint32[](0);
-        uint32[] memory parentAncestorsRoyalties2 = new uint32[](0);
-        InitParams memory initParams = InitParams({
-            targetAncestors: targetAncestors,
-            targetRoyaltyAmount: targetRoyaltyAmount,
-            parentRoyalties: parentRoyalties,
-            parentAncestors1: parentAncestors1,
-            parentAncestors2: parentAncestors2,
-            parentAncestorsRoyalties1: parentAncestorsRoyalties1,
-            parentAncestorsRoyalties2: parentAncestorsRoyalties2
-        });
-        bytes memory inputBytes = abi.encode(initParams);
-
-        vm.expectRevert(Errors.RoyaltyPolicyLAP__InvalidParentRoyaltiesLength.selector);
-        royaltyPolicyLAP.initPolicy(address(30), new address[](0), inputBytes);
-    }
-
-    function test_RoyaltyPolicyLAP_initPolicy_InvalidAncestorsLength() public {
-        address[] memory parentAncestors16 = new address[](1);
-        address[] memory parentAncestors17 = new address[](1);
-        uint32[] memory parentAncestorsRoyalties16 = new uint32[](1);
-        uint32[] memory parentAncestorsRoyalties17 = new uint32[](1);
-        uint32[] memory parentRoyalties200 = new uint32[](2);
-
-        address[] memory INVALID_SHORT_ANCESTORS = new address[](4);
-        uint32[] memory INVALID_SHORT_ANCESTORS_ROYALTY = new uint32[](4);
-
-        INVALID_SHORT_ANCESTORS[0] = address(16);
-        INVALID_SHORT_ANCESTORS[1] = address(15);
-        INVALID_SHORT_ANCESTORS[2] = address(17);
-
-        INVALID_SHORT_ANCESTORS_ROYALTY[0] = 50;
-        INVALID_SHORT_ANCESTORS_ROYALTY[1] = 150;
-        INVALID_SHORT_ANCESTORS_ROYALTY[2] = 20;
-
-        parentAncestors16[0] = address(15);
-
-        parentAncestors17[0] = address(15);
-
-        parentAncestorsRoyalties16[0] = 50;
-
-        parentAncestorsRoyalties17[0] = 100;
-
-        parentRoyalties200[0] = 50;
-        parentRoyalties200[1] = 20;
-
-        initParamsDuplicates = InitParams({
-            targetAncestors: INVALID_SHORT_ANCESTORS,
-            targetRoyaltyAmount: INVALID_SHORT_ANCESTORS_ROYALTY,
-            parentRoyalties: parentRoyalties200,
-            parentAncestors1: parentAncestors16,
-            parentAncestors2: parentAncestors17,
-            parentAncestorsRoyalties1: parentAncestorsRoyalties16,
-            parentAncestorsRoyalties2: parentAncestorsRoyalties17
-        });
-
-        DUPLICATE_ANCESTORS = abi.encode(initParamsDuplicates);
-
-        parentsIpIds200 = new address[](2);
-        parentsIpIds200[0] = address(16);
-        parentsIpIds200[1] = address(17);
-
-        vm.expectRevert(Errors.RoyaltyPolicyLAP__InvalidAncestorsLength.selector);
-        royaltyPolicyLAP.initPolicy(address(200), parentsIpIds200, DUPLICATE_ANCESTORS);
-    }
-
-    function test_RoyaltyPolicyLAP_initPolicy_InvalidAncestors() public {
-        address[] memory parentAncestors16 = new address[](1);
-        address[] memory parentAncestors17 = new address[](1);
-        uint32[] memory parentAncestorsRoyalties16 = new uint32[](1);
-        uint32[] memory parentAncestorsRoyalties17 = new uint32[](1);
-        uint32[] memory parentRoyalties200 = new uint32[](2);
-
-        DUPLICATE_ANCESTORS_[0] = address(16);
-        DUPLICATE_ANCESTORS_[1] = address(150000000);
-        DUPLICATE_ANCESTORS_[2] = address(17);
-
-        DUPLICATE_ANCESTORS_ROYALTY_[0] = 50;
-        DUPLICATE_ANCESTORS_ROYALTY_[1] = 150;
-        DUPLICATE_ANCESTORS_ROYALTY_[2] = 20;
-
-        parentAncestors16[0] = address(15);
-
-        parentAncestors17[0] = address(15);
-
-        parentAncestorsRoyalties16[0] = 50;
-
-        parentAncestorsRoyalties17[0] = 100;
-
-        parentRoyalties200[0] = 50;
-        parentRoyalties200[1] = 20;
-
-        initParamsDuplicates = InitParams({
-            targetAncestors: DUPLICATE_ANCESTORS_,
-            targetRoyaltyAmount: DUPLICATE_ANCESTORS_ROYALTY_,
-            parentRoyalties: parentRoyalties200,
-            parentAncestors1: parentAncestors16,
-            parentAncestors2: parentAncestors17,
-            parentAncestorsRoyalties1: parentAncestorsRoyalties16,
-            parentAncestorsRoyalties2: parentAncestorsRoyalties17
-        });
-
-        DUPLICATE_ANCESTORS = abi.encode(initParamsDuplicates);
-
-        vm.expectRevert(Errors.RoyaltyPolicyLAP__InvalidAncestors.selector);
-        royaltyPolicyLAP.initPolicy(address(200), parentsIpIds200, DUPLICATE_ANCESTORS);
-    }
-
-    function test_RoyaltyPolicyLAP_initPolicy_InvalidAncestorsRoyalty() public {
-        address[] memory parentAncestors16 = new address[](1);
-        address[] memory parentAncestors17 = new address[](1);
-        uint32[] memory parentAncestorsRoyalties16 = new uint32[](1);
-        uint32[] memory parentAncestorsRoyalties17 = new uint32[](1);
-        uint32[] memory parentRoyalties200 = new uint32[](2);
-
-        DUPLICATE_ANCESTORS_[0] = address(16);
-        DUPLICATE_ANCESTORS_[1] = address(15);
-        DUPLICATE_ANCESTORS_[2] = address(17);
-
-        DUPLICATE_ANCESTORS_ROYALTY_[0] = 50;
-        DUPLICATE_ANCESTORS_ROYALTY_[1] = 1500;
-        DUPLICATE_ANCESTORS_ROYALTY_[2] = 20;
-
-        parentAncestors16[0] = address(15);
-
-        parentAncestors17[0] = address(15);
-
-        parentAncestorsRoyalties16[0] = 50;
-
-        parentAncestorsRoyalties17[0] = 100;
-
-        parentRoyalties200[0] = 50;
-        parentRoyalties200[1] = 20;
-
-        initParamsDuplicates = InitParams({
-            targetAncestors: DUPLICATE_ANCESTORS_,
-            targetRoyaltyAmount: DUPLICATE_ANCESTORS_ROYALTY_,
-            parentRoyalties: parentRoyalties200,
-            parentAncestors1: parentAncestors16,
-            parentAncestors2: parentAncestors17,
-            parentAncestorsRoyalties1: parentAncestorsRoyalties16,
-            parentAncestorsRoyalties2: parentAncestorsRoyalties17
-        });
-
-        DUPLICATE_ANCESTORS = abi.encode(initParamsDuplicates);
-
-        vm.expectRevert(Errors.RoyaltyPolicyLAP__InvalidAncestorsRoyalty.selector);
-        royaltyPolicyLAP.initPolicy(address(200), parentsIpIds200, DUPLICATE_ANCESTORS);
-    }
-
-    function test_RoyaltyPolicyLAP_initPolicy_AboveRoyaltyStackLimit() public {
-        address[] memory parentAncestors16 = new address[](1);
-        address[] memory parentAncestors17 = new address[](1);
-        uint32[] memory parentAncestorsRoyalties16 = new uint32[](1);
-        uint32[] memory parentAncestorsRoyalties17 = new uint32[](1);
-        uint32[] memory parentRoyalties200 = new uint32[](2);
-
-        DUPLICATE_ANCESTORS_[0] = address(16);
-        DUPLICATE_ANCESTORS_[1] = address(15);
-        DUPLICATE_ANCESTORS_[2] = address(17);
-
-        DUPLICATE_ANCESTORS_ROYALTY_[0] = 50;
-        DUPLICATE_ANCESTORS_ROYALTY_[1] = 150;
-        DUPLICATE_ANCESTORS_ROYALTY_[2] = 20;
-
-        parentAncestors16[0] = address(15);
-
-        parentAncestors17[0] = address(15);
-
-        parentAncestorsRoyalties16[0] = 50;
-
-        parentAncestorsRoyalties17[0] = 100;
-
-        parentRoyalties200[0] = 5000;
-        parentRoyalties200[1] = 20;
-
-        initParamsDuplicates = InitParams({
-            targetAncestors: DUPLICATE_ANCESTORS_,
-            targetRoyaltyAmount: DUPLICATE_ANCESTORS_ROYALTY_,
-            parentRoyalties: parentRoyalties200,
-            parentAncestors1: parentAncestors16,
-            parentAncestors2: parentAncestors17,
-            parentAncestorsRoyalties1: parentAncestorsRoyalties16,
-            parentAncestorsRoyalties2: parentAncestorsRoyalties17
-        });
-
-        DUPLICATE_ANCESTORS = abi.encode(initParamsDuplicates);
-
-        parentsIpIds200 = new address[](2);
-        parentsIpIds200[0] = address(16);
-        parentsIpIds200[1] = address(17);
 
         vm.expectRevert(Errors.RoyaltyPolicyLAP__AboveRoyaltyStackLimit.selector);
-        royaltyPolicyLAP.initPolicy(address(200), parentsIpIds200, DUPLICATE_ANCESTORS);
+        royaltyPolicyLAP.onLicenseMinting(address(100), abi.encode(uint32(1001)), inputBytes);
     }
 
-    function test_RoyaltyPolicyLAP_initPolicy_MaxAncestors() public {
-        royaltyPolicyLAP.initPolicy(address(100), parentsIpIds100, MAX_ANCESTORS);
+    function test_RoyaltyPolicyLAP_onLicenseMinting() public {
+        address[] memory targetAncestors = new address[](0);
+        uint32[] memory targetRoyaltyAmount = new uint32[](0);
+        address[] memory parentAncestors1 = new address[](0);
+        address[] memory parentAncestors2 = new address[](0);
+        uint32[] memory parentAncestorsRoyalties1 = new uint32[](0);
+        uint32[] memory parentAncestorsRoyalties2 = new uint32[](0);
+        InitParams memory initParams = InitParams({
+            targetAncestors: targetAncestors,
+            targetRoyaltyAmount: targetRoyaltyAmount,
+            parentAncestors1: parentAncestors1,
+            parentAncestors2: parentAncestors2,
+            parentAncestorsRoyalties1: parentAncestorsRoyalties1,
+            parentAncestorsRoyalties2: parentAncestorsRoyalties2
+        });
+        bytes memory inputBytes = abi.encode(initParams);
+
+        royaltyPolicyLAP.onLicenseMinting(address(100), abi.encode(uint32(0)), inputBytes);
+
+        (,address splitClone, address ancestorsVault, uint32 royaltyStack, bytes32 ancestorsHash) = royaltyPolicyLAP.royaltyData(address(100));
+
+        assertEq(royaltyStack, 0);
+        assertEq(ancestorsHash, keccak256(abi.encodePacked(targetAncestors, targetRoyaltyAmount)));
+        assertFalse(splitClone == address(0));
+        assertEq(ancestorsVault, address(royaltyPolicyLAP));
+    }
+
+    function test_RoyaltyPolicyLAP_onLinkToParents_revert_NotRoyaltyModule() public {
+        bytes[] memory encodedLicenseData = new bytes[](2);
+        for (uint32 i = 0; i < parentsIpIds100.length; i++) {
+            encodedLicenseData[i] = abi.encode(parentsIpIds100[i]);
+        }
+
+        vm.stopPrank();
+        vm.expectRevert(Errors.RoyaltyPolicyLAP__NotRoyaltyModule.selector);
+        royaltyPolicyLAP.onLinkToParents(address(100), parentsIpIds100, encodedLicenseData, MAX_ANCESTORS);
+    }
+
+    function test_RoyaltyPolicyLAP_onLinkToParents() public {
+        bytes[] memory encodedLicenseData = new bytes[](2);
+        for (uint32 i = 0; i < parentsIpIds100.length; i++) {
+            encodedLicenseData[i] = abi.encode(parentsIpIds100[i]);
+        }
+
+        royaltyPolicyLAP.onLinkToParents(address(100), parentsIpIds100, encodedLicenseData, MAX_ANCESTORS);
 
         (,address splitClone, address ancestorsVault, uint32 royaltyStack, bytes32 ancestorsHash) = royaltyPolicyLAP.royaltyData(address(100));
 
         assertEq(royaltyStack, 105);
         assertEq(ancestorsHash, keccak256(abi.encodePacked(MAX_ANCESTORS_, MAX_ANCESTORS_ROYALTY_)));
-        assertFalse(splitClone == address(0));
-        assertFalse(ancestorsVault == address(0));
-    }
-    
-    function test_RoyaltyPolicyLAP_initPolicy_Root() public {
-        (,address splitClone, address ancestorsVault, uint32 royaltyStack, bytes32 ancestorsHash) = royaltyPolicyLAP.royaltyData(address(7));
-
-        assertEq(royaltyStack, 0);
-        assertEq(ancestorsHash, keccak256(abi.encodePacked(new address[](0), new uint32[](0))));
-        assertFalse(splitClone == address(0));
-        assertEq(ancestorsVault, address(royaltyPolicyLAP));
-    }
-
-    function test_RoyaltyPolicyLAP_initPolicy_WithDuplicates() public {
-        royaltyPolicyLAP.initPolicy(address(200), parentsIpIds200, DUPLICATE_ANCESTORS);
-
-        (,address splitClone, address ancestorsVault, uint32 royaltyStack, bytes32 ancestorsHash) = royaltyPolicyLAP.royaltyData(address(200));
-
-        assertEq(royaltyStack, 220);
-        assertEq(ancestorsHash, keccak256(abi.encodePacked(DUPLICATE_ANCESTORS_, DUPLICATE_ANCESTORS_ROYALTY_)));
         assertFalse(splitClone == address(0));
         assertFalse(ancestorsVault == address(0));
     }
@@ -859,6 +560,6 @@ contract TestRoyaltyPolicyLAP is TestHelper {
         vm.startPrank(address(7));
         ERC1155(address(splitClone7)).setApprovalForAll(address(royaltyPolicyLAP), true);
 
-        royaltyPolicyLAP.claimAsFullRnftOwner(address(7), 1, address(USDC));
+        royaltyPolicyLAP.claimFromIpPoolAsTotalRnftOwner(address(7), 1, address(USDC));
     }
-}  */
+}
