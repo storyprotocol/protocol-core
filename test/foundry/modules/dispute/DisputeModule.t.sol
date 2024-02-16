@@ -478,10 +478,6 @@ contract DisputeModuleTest is BaseTest {
         vm.expectRevert(Errors.DisputeModule__NotAbleToResolve.selector);
         disputeModule.resolveDispute(1);
 
-        // Also if the dispute is already resolved or non-existent
-        vm.startPrank(ipAccount1);
-        vm.expectRevert(Errors.DisputeModule__NotAbleToResolve.selector);
-        disputeModule.resolveDispute(2);
     }
 
     function test_DisputeModule_resolveDispute() public {
@@ -510,6 +506,11 @@ contract DisputeModuleTest is BaseTest {
         assertEq(currentTagBeforeResolve, bytes32("PLAGIARISM"));
         assertEq(currentTagAfterResolve, bytes32(0));
         assertFalse(disputeModule.isIpTagged(ipAddr));
+
+        // Cant resolve again
+        vm.expectRevert(Errors.DisputeModule__NotAbleToResolve.selector);
+        disputeModule.resolveDispute(1);
+        vm.stopPrank();
     }
 
     function test_DisputeModule_name() public {
