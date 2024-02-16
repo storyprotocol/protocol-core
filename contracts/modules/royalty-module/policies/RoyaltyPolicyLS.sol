@@ -19,31 +19,22 @@ import { Errors } from "../../../lib/Errors.sol";
 contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
     using SafeERC20 for IERC20;
 
-    struct LSRoyaltyData {
-        address splitClone; // address of the liquid split clone contract for a given ipId
-        address claimer; // address of the claimer contract for a given ipId
-        uint32 royaltyStack; // royalty stack for a given ipId is the sum of the minRoyalty of all its parents
-        // (number between 0 and 1000)
-        uint32 minRoyalty; // minimum royalty the ipId will receive from its children and grandchildren
-        // (number between 0 and 1000)
-    }
-
-    /// @notice Percentage scale - 1000 rnfts represents 100%
+    /// @notice Percentage scale - 1000 rnfts represents 100%.
     uint32 public constant TOTAL_RNFT_SUPPLY = 1000;
 
-    /// @notice RoyaltyModule address
+    /// @notice Returns the royalty module address
     address public immutable ROYALTY_MODULE;
-
-    /// @notice LicensingModule address
+    
+    /// @notice Returns the licensing module address
     address public immutable LICENSING_MODULE;
 
-    /// @notice LiquidSplitFactory address
+    /// @notice Returns the liquid split factory address
     address public immutable LIQUID_SPLIT_FACTORY;
 
-    /// @notice LiquidSplitMain address
+    /// @notice Returns the liquid split main address
     address public immutable LIQUID_SPLIT_MAIN;
 
-    /// @notice Links the ipId to its royalty data
+    /// @notice Returns the royalty data for a given IP asset
     mapping(address ipId => LSRoyaltyData) public royaltyData;
 
     /// @notice Restricts the calls to the royalty module
@@ -52,56 +43,52 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
         _;
     }
 
-    /// @notice Constructor
-    /// @param _royaltyModule Address of the RoyaltyModule contract
-    /// @param _licensingModule Address of the LicensingModule contract
-    /// @param _liquidSplitFactory Address of the LiquidSplitFactory contract
-    /// @param _liquidSplitMain Address of the LiquidSplitMain contract
     constructor(
-        address _royaltyModule,
-        address _licensingModule,
-        address _liquidSplitFactory,
-        address _liquidSplitMain
+        address royaltyModule,
+        address licensingModule,
+        address liquidSplitFactory,
+        address liquidSplitMain
     ) {
-        if (_royaltyModule == address(0)) revert Errors.RoyaltyPolicyLS__ZeroRoyaltyModule();
-        if (_licensingModule == address(0)) revert Errors.RoyaltyPolicyLS__ZeroLicensingModule();
-        if (_liquidSplitFactory == address(0)) revert Errors.RoyaltyPolicyLS__ZeroLiquidSplitFactory();
-        if (_liquidSplitMain == address(0)) revert Errors.RoyaltyPolicyLS__ZeroLiquidSplitMain();
+        if (royaltyModule == address(0)) revert Errors.RoyaltyPolicyLS__ZeroRoyaltyModule();
+        if (licensingModule == address(0)) revert Errors.RoyaltyPolicyLS__ZeroLicensingModule();
+        if (liquidSplitFactory == address(0)) revert Errors.RoyaltyPolicyLS__ZeroLiquidSplitFactory();
+        if (liquidSplitMain == address(0)) revert Errors.RoyaltyPolicyLS__ZeroLiquidSplitMain();
 
-        ROYALTY_MODULE = _royaltyModule;
-        LICENSING_MODULE = _licensingModule;
-        LIQUID_SPLIT_FACTORY = _liquidSplitFactory;
-        LIQUID_SPLIT_MAIN = _liquidSplitMain;
+        ROYALTY_MODULE = royaltyModule;
+        LICENSING_MODULE = licensingModule;
+        LIQUID_SPLIT_FACTORY = liquidSplitFactory;
+        LIQUID_SPLIT_MAIN = liquidSplitMain;
     }
 
-    /// @notice Initializes the royalty policy
-    /// @param _ipId The ipId
-    /// @param _parentIpIds The parent ipIds
-    /// @param _data The data to initialize the policy
+    /// @notice Initializes the royalty policy for the given IP asset
+    /// @dev Enforced to be only callable by the royalty module
+    /// @param ipId The ID of the IP asset
+    /// @param parentIpIds List of parent IP asset IDs
+    /// @param data The encoded data that will be used by the royalty policy
     function initPolicy(
-        address _ipId,
-        address[] calldata _parentIpIds,
-        bytes calldata _data
+        address ipId,
+        address[] calldata parentIpIds,
+        bytes calldata data
     ) external onlyRoyaltyModule {
-        uint32 minRoyalty = abi.decode(_data, (uint32));
+        uint32 minRoyalty = abi.decode(data, (uint32));
         // root you can choose 0% but children have to choose at least 1%
-        if (minRoyalty == 0 && _parentIpIds.length > 0) revert Errors.RoyaltyPolicyLS__ZeroMinRoyalty();
+        if (minRoyalty == 0 && parentIpIds.length > 0) revert Errors.RoyaltyPolicyLS__ZeroMinRoyalty();
         // minRoyalty has to be a multiple of 1% and given that there are 1000 royalty nfts
         // then minRoyalty has to be a multiple of 10
         if (minRoyalty % 10 != 0) revert Errors.RoyaltyPolicyLS__InvalidMinRoyalty();
 
         // calculates the new royalty stack and checks if it is valid
-        (uint32 royaltyStack, uint32 newRoyaltyStack) = _checkRoyaltyStackIsValid(_parentIpIds, minRoyalty);
+        (uint32 royaltyStack, uint32 newRoyaltyStack) = _checkRoyaltyStackIsValid(parentIpIds, minRoyalty);
 
         // deploy claimer if not root ip
         address claimer = address(this); // 0xSplit requires two addresses to allow a split so
         // for root ip address(this) is used as the second address
-        if (_parentIpIds.length > 0) claimer = address(new LSClaimer(_ipId, LICENSING_MODULE, address(this)));
+        if (parentIpIds.length > 0) claimer = address(new LSClaimer(ipId, LICENSING_MODULE, address(this)));
 
         // deploy split clone
-        address splitClone = _deploySplitClone(_ipId, claimer, royaltyStack);
+        address splitClone = _deploySplitClone(ipId, claimer, royaltyStack);
 
-        royaltyData[_ipId] = LSRoyaltyData({
+        royaltyData[ipId] = LSRoyaltyData({
             splitClone: splitClone,
             claimer: claimer,
             royaltyStack: newRoyaltyStack,
@@ -109,63 +96,67 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
         });
     }
 
-    /// @notice Allows to pay a royalty
-    /// @param _caller The caller
-    /// @param _ipId The ipId
-    /// @param _token The token to pay
-    /// @param _amount The amount to pay
+    /// @notice Transfers royalty payment according to an IP asset's royalty policy data. Triggered on royalty payment
+    /// from the royalty module.
+    /// @dev Enforced to be only callable by the royalty module
+    /// @param caller The caller to pay the royalty
+    /// @param ipId The ID of the IP asset to find the royalty policy data
+    /// @param token The ERC20 token to pay
+    /// @param amount The token amount to pay to the splitClone defined in the royalty policy data of ipId
     function onRoyaltyPayment(
-        address _caller,
-        address _ipId,
-        address _token,
-        uint256 _amount
+        address caller,
+        address ipId,
+        address token,
+        uint256 amount
     ) external onlyRoyaltyModule {
-        address destination = royaltyData[_ipId].splitClone;
-        IERC20(_token).safeTransferFrom(_caller, destination, _amount);
+        address destination = royaltyData[ipId].splitClone;
+        IERC20(token).safeTransferFrom(caller, destination, amount);
     }
 
+    // TODO: deprecate
     /// @notice Returns the minimum royalty the IPAccount expects from descendants
-    /// @param _ipId The ipId
-    function minRoyaltyFromDescendants(address _ipId) external view override returns (uint32) {
-        return royaltyData[_ipId].minRoyalty;
+    /// @param ipId The ipId
+    /// @return minRoyalty The minimum royalty the IPAccount expects from descendants
+    function minRoyaltyFromDescendants(address ipId) external view override returns (uint32) {
+        return royaltyData[ipId].minRoyalty;
     }
 
     /// @notice Distributes funds to the accounts in the LiquidSplitClone contract
-    /// @param _ipId The ipId
-    /// @param _token The token to distribute
-    /// @param _accounts The accounts to distribute to
-    /// @param _distributorAddress The distributor address
+    /// @param ipId The ID of the IP asset
+    /// @param token The ERC20 token to distribute
+    /// @param accounts The accounts to distribute to
+    /// @param distributorAddress The distributor address
     function distributeFunds(
-        address _ipId,
-        address _token,
-        address[] calldata _accounts,
-        address _distributorAddress
+        address ipId,
+        address token,
+        address[] calldata accounts,
+        address distributorAddress
     ) external {
-        ILiquidSplitClone(royaltyData[_ipId].splitClone).distributeFunds(_token, _accounts, _distributorAddress);
+        ILiquidSplitClone(royaltyData[ipId].splitClone).distributeFunds(token, accounts, distributorAddress);
     }
 
-    /// @notice Claims the available royalties for a given account
-    /// @param _account The account to claim for
-    /// @param _withdrawETH The amount of ETH to withdraw
-    /// @param _tokens The tokens to withdraw
-    function claimRoyalties(address _account, uint256 _withdrawETH, ERC20[] calldata _tokens) external {
-        ILiquidSplitMain(LIQUID_SPLIT_MAIN).withdraw(_account, _withdrawETH, _tokens);
+    /// @notice Claims the available royalties for a given IP account
+    /// @param account The IP account to claim for
+    /// @param withdrawETH The amount of ETH to withdraw
+    /// @param tokens The tokens to withdraw
+    function claimRoyalties(address account, uint256 withdrawETH, ERC20[] calldata tokens) external {
+        ILiquidSplitMain(LIQUID_SPLIT_MAIN).withdraw(account, withdrawETH, tokens);
     }
 
-    /// @notice Checks if the royalty stack is valid
-    /// @param _parentIpIds The parent ipIds
+    /// @notice Checks if the royalty stack is valid.
+    /// @param parentIpIds List of parent IP asset IDs
     /// @param _minRoyalty The minimum royalty
-    /// @return royaltyStack The royalty stack
-    ///         newRoyaltyStack The new royalty stack
+    /// @return royaltyStack The current royalty stack
+    /// @return newRoyaltyStack The new royalty stack
     function _checkRoyaltyStackIsValid(
-        address[] calldata _parentIpIds,
+        address[] calldata parentIpIds,
         uint32 _minRoyalty
     ) internal view returns (uint32, uint32) {
         // the loop below is limited to a length of 100 parents
         // given the minimum royalty step of 1% and a cap of 100%
         uint32 royaltyStack;
-        for (uint32 i = 0; i < _parentIpIds.length; i++) {
-            royaltyStack += royaltyData[_parentIpIds[i]].royaltyStack;
+        for (uint32 i = 0; i < parentIpIds.length; i++) {
+            royaltyStack += royaltyData[parentIpIds[i]].royaltyStack;
         }
 
         uint32 newRoyaltyStack = royaltyStack + _minRoyalty;
@@ -174,14 +165,14 @@ contract RoyaltyPolicyLS is IRoyaltyPolicyLS, ERC1155Holder {
         return (royaltyStack, newRoyaltyStack);
     }
 
-    /// @notice Deploys a liquid split clone contract
-    /// @param _ipId The ipId
-    /// @param _claimer The claimer address
-    /// @param royaltyStack The number of rnfts that the ipId has to give to its parents and/or grandparents
-    /// @return The address of the deployed liquid split clone contract
-    function _deploySplitClone(address _ipId, address _claimer, uint32 royaltyStack) internal returns (address) {
+    /// @notice Deploys a liquid split clone contract for a given IP asset.
+    /// @param ipId The ID of the IP asset
+    /// @param _claimer The claimer address associated with the IP asset
+    /// @param royaltyStack The number of Royalty NFTs that this IP asset has to give to its ancestors
+    /// @return splitClone The address of the deployed liquid split clone contract for this IP asset
+    function _deploySplitClone(address ipId, address _claimer, uint32 royaltyStack) internal returns (address) {
         address[] memory accounts = new address[](2);
-        accounts[0] = _ipId;
+        accounts[0] = ipId;
         accounts[1] = _claimer;
 
         uint32[] memory initAllocations = new uint32[](2);

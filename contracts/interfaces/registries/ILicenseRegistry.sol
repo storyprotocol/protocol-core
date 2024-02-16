@@ -4,14 +4,14 @@ pragma solidity ^0.8.23;
 import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 import { Licensing } from "../../lib/Licensing.sol";
+import { ILicensingModule } from "../modules/licensing/ILicensingModule.sol";
 
 /// @title ILicenseRegistry
-
 interface ILicenseRegistry is IERC1155 {
     /// @notice Emitted when a license is minted
     /// @param creator The address that created the license
     /// @param receiver The address that received the license
-    /// @param licenseId The id of the license
+    /// @param licenseId The ID of the license
     /// @param amount The amount of licenses minted
     /// @param licenseData The license data
     event LicenseMinted(
@@ -22,22 +22,22 @@ interface ILicenseRegistry is IERC1155 {
         Licensing.License licenseData
     );
 
-    /// @notice Set the licensing module
-    /// @param newLicensingModule The address of the licensing module
-    function setLicensingModule(address newLicensingModule) external;
-
     /// @notice Returns the address of the licensing module
-    function licensingModule() external view returns (address);
+    function LICENSING_MODULE() external view returns (ILicensingModule);
 
-    /// @notice Mints a license to create derivative IP
-    /// @param policyId The id of the policy with the licensing parameters
-    /// @param licensorIpId The id of the licensor IP
+    /// @notice Mints license NFTs representing a policy granted by a set of ipIds (licensors). This NFT needs to be 
+    /// burned in order to link a derivative IP with its parents. If this is the first combination of policy and 
+    /// licensors, a new licenseId will be created. If not, the license is fungible and an id will be reused.
+    /// @dev Only callable by the licensing module.
+    /// @param policyId The ID of the policy to be minted
+    /// @param licensorIpId_ The ID of the IP granting the license (ie. licensor)
     /// @param transferable True if the license is transferable
-    /// @param amount The amount of licenses to mint
-    /// @param receiver The address that will receive the license
+    /// @param amount Number of licenses to mint. License NFT is fungible for same policy and same licensors
+    /// @param receiver Receiver address of the minted license NFT(s).
+    /// @return licenseId The ID of the minted license NFT(s).
     function mintLicense(
         uint256 policyId,
-        address licensorIpId,
+        address licensorIpId_,
         bool transferable,
         uint256 amount,
         address receiver
@@ -52,17 +52,27 @@ interface ILicenseRegistry is IERC1155 {
     /// Getters
     ///
 
+    /// @notice Returns the number of licenses registered in the protocol.
+    /// @dev Token ID counter.
     function mintedLicenses() external view returns (uint256);
 
-    /// @notice True if holder is the licensee for the license (owner of the license NFT), or derivative IP owner if
-    /// the license was added to the IP by linking (burning a license)
+    /// @notice Returns true if holder has positive balance for the given license ID.
+    /// @return isLicensee True if holder is the licensee for the license (owner of the license NFT), or derivative IP 
+    /// owner if the license was added to the IP by linking (burning a license).
     function isLicensee(uint256 licenseId, address holder) external view returns (bool);
 
-    /// @notice IP ID of the licensor for the license (parent IP)
+    /// @notice Returns the license data for the given license ID
+    /// @param licenseId The ID of the license
+    /// @return licenseData The license data
+    function license(uint256 licenseId) external view returns (Licensing.License memory);
+
+    /// @notice Returns the ID of the IP asset that is the licensor of the given license ID
+    /// @param licenseId The ID of the license
+    /// @return licensorIpId The ID of the licensor
     function licensorIpId(uint256 licenseId) external view returns (address);
 
+    /// @notice Returns the policy ID for the given license ID
+    /// @param licenseId The ID of the license
+    /// @return policyId The ID of the policy
     function policyIdForLicense(uint256 licenseId) external view returns (uint256);
-
-    /// @notice License data (licensor, policy...) for the license id
-    function license(uint256 licenseId) external view returns (Licensing.License memory);
 }

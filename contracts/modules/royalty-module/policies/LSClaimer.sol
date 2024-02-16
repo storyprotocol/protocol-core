@@ -20,123 +20,119 @@ import { Errors } from "../../../lib/Errors.sol";
 contract LSClaimer is ILSClaimer, ERC1155Holder, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    /// @notice The licensing module interface
+    /// @notice Returns the licensing module.
     ILicensingModule public immutable LICENSING_MODULE;
 
-    /// @notice The liquid split royalty policy interface
-    IRoyaltyPolicyLS public immutable IROYALTY_POLICY_LS;
+    /// @notice Returns the royalty policy.
+    IRoyaltyPolicyLS public immutable ROYALTY_POLICY_LS;
 
-    /// @notice The ipId of the IP that this contract is associated with
+    /// @notice Returns the ID of the IP asset with which this LSClaimer is associated.
     address public immutable IP_ID;
 
-    /// @notice The paths between parent and children that have already been claimed
-    mapping(bytes32 pathHash => bool) public claimedPaths;
+    /// @notice Returns if the path between an ancestor/parent IP and a child IP has been claimed.
+    mapping(bytes32 pathHash => bool isClaimed) public claimedPaths;
 
-    /// @notice Constructor
-    /// @param _ipId The ipId of the IP that this contract is associated with
-    /// @param _licensingModule The licensing module address
-    /// @param _royaltyPolicyLS The liquid split royalty policy address
-    constructor(address _ipId, address _licensingModule, address _royaltyPolicyLS) {
-        if (_ipId == address(0)) revert Errors.LSClaimer__ZeroIpId();
-        if (_licensingModule == address(0)) revert Errors.LSClaimer__ZeroLicensingModule();
-        if (_royaltyPolicyLS == address(0)) revert Errors.LSClaimer__ZeroRoyaltyPolicyLS();
+    constructor(address ipId, address licensingModule, address royaltyPolicyLS) {
+        if (ipId == address(0)) revert Errors.LSClaimer__ZeroIpId();
+        if (licensingModule == address(0)) revert Errors.LSClaimer__ZeroLicensingModule();
+        if (royaltyPolicyLS == address(0)) revert Errors.LSClaimer__ZeroRoyaltyPolicyLS();
 
-        IP_ID = _ipId;
-        LICENSING_MODULE = ILicensingModule(_licensingModule);
-        IROYALTY_POLICY_LS = IRoyaltyPolicyLS(_royaltyPolicyLS);
+        IP_ID = ipId;
+        LICENSING_MODULE = ILicensingModule(licensingModule);
+        ROYALTY_POLICY_LS = IRoyaltyPolicyLS(royaltyPolicyLS);
     }
 
-    /// @notice Allows an parent or grandparent ipId to claim their rnfts and accrued royalties
-    /// @param _path The path between the IP_ID and the parent or grandparent ipId
-    /// @param _claimerIpId The ipId of the claimer
-    /// @param _withdrawETH Indicates if the claimer wants to withdraw ETH
-    /// @param _tokens The ERC20 tokens to withdraw
+    /// @notice Allows an ancestor/parent IP asset to claim its Royalty NFTs (RNFTs) and any accrued royalties.
+    /// @param path The path from an ancestor IP to a child IP
+    /// @param claimerIpId The ID of the claimer's IP asset
+    /// @param withdrawETH Indicates if the claimer wants to withdraw ETH
+    /// @param tokens The ERC20 tokens to withdraw
     function claim(
-        address[] calldata _path,
-        address _claimerIpId,
-        bool _withdrawETH,
-        ERC20[] calldata _tokens
+        address[] calldata path,
+        address claimerIpId,
+        bool withdrawETH,
+        ERC20[] calldata tokens
     ) external nonReentrant {
-        bytes32 pathHash = keccak256(abi.encodePacked(_path));
+        bytes32 pathHash = keccak256(abi.encodePacked(path));
         if (claimedPaths[pathHash]) revert Errors.LSClaimer__AlreadyClaimed();
 
         // check if path is valid
-        if (_path[0] != _claimerIpId) revert Errors.LSClaimer__InvalidPathFirstPosition();
-        if (_path[_path.length - 1] != IP_ID) revert Errors.LSClaimer__InvalidPathLastPosition();
-        _checkIfPathIsValid(_path);
+        if (path[0] != claimerIpId) revert Errors.LSClaimer__InvalidPathFirstPosition();
+        if (path[path.length - 1] != IP_ID) revert Errors.LSClaimer__InvalidPathLastPosition();
+        _checkIfPathIsValid(path);
 
         // claim rnfts
-        (address rnftAddr, , , ) = IROYALTY_POLICY_LS.royaltyData(IP_ID);
+        (address rnftAddr, , , ) = ROYALTY_POLICY_LS.royaltyData(IP_ID);
         ILiquidSplitClone rnft = ILiquidSplitClone(rnftAddr);
         uint256 totalUnclaimedRnfts = rnft.balanceOf(address(this), 0);
-        (address claimerSplitClone, , , uint32 rnftClaimAmount) = IROYALTY_POLICY_LS.royaltyData(_claimerIpId);
+        (address claimerSplitClone, , , uint32 rnftClaimAmount) = ROYALTY_POLICY_LS.royaltyData(claimerIpId);
         rnft.safeTransferFrom(address(this), claimerSplitClone, 0, rnftClaimAmount, "");
 
         // claim accrued tokens (if any)
-        _claimAccruedTokens(rnftClaimAmount, totalUnclaimedRnfts, claimerSplitClone, _withdrawETH, _tokens);
+        _claimAccruedTokens(rnftClaimAmount, totalUnclaimedRnfts, claimerSplitClone, withdrawETH, tokens);
 
         claimedPaths[pathHash] = true;
 
-        emit Claimed(_path, _claimerIpId, _withdrawETH, _tokens);
+        emit Claimed(path, claimerIpId, withdrawETH, tokens);
     }
 
-    /// @notice Checks if a claiming path is valid
-    /// @param _path The path between the IP_ID and the parent or grandparent ipId
-    function _checkIfPathIsValid(address[] calldata _path) internal view {
+    /// @notice Checks if a claiming path is valid.
+    /// @param path The path from an ancestor IP to a child IP
+    function _checkIfPathIsValid(address[] calldata path) internal view {
         // the loop below is limited to no more than 100 parents
         // given the minimum royalty step of 1% and there is a cap of 100%
-        for (uint256 i = 0; i < _path.length - 1; i++) {
-            if (!LICENSING_MODULE.isParent(_path[i], _path[i + 1])) revert Errors.LSClaimer__InvalidPath();
+        for (uint256 i = 0; i < path.length - 1; i++) {
+            if (!LICENSING_MODULE.isParent(path[i], path[i + 1])) revert Errors.LSClaimer__InvalidPath();
         }
     }
 
-    /// @notice Claims the accrued tokens (if any)
-    /// @param _rnftClaimAmount The amount of rnfts to claim
-    /// @param _totalUnclaimedRnfts The total unclaimed rnfts
-    /// @param _claimerSplitClone The claimer's split clone
-    /// @param _withdrawETH Indicates if the claimer wants to withdraw ETH
-    /// @param _tokens The ERC20 tokens to withdraw
+    /// @notice Claims the accrued tokens (if any).
+    /// @param rnftClaimAmount The amount of rnfts to claim
+    /// @param totalUnclaimedRnfts The total unclaimed rnfts
+    /// @param claimerSplitClone The claimer's split clone
+    /// @param withdrawETH Indicates if the claimer wants to withdraw ETH
+    /// @param tokens The ERC20 tokens to withdraw
     function _claimAccruedTokens(
-        uint256 _rnftClaimAmount,
-        uint256 _totalUnclaimedRnfts,
-        address _claimerSplitClone,
-        bool _withdrawETH,
-        ERC20[] calldata _tokens
+        uint256 rnftClaimAmount,
+        uint256 totalUnclaimedRnfts,
+        address claimerSplitClone,
+        bool withdrawETH,
+        ERC20[] calldata tokens
     ) internal {
-        ILiquidSplitMain splitMain = ILiquidSplitMain(IROYALTY_POLICY_LS.LIQUID_SPLIT_MAIN());
+        ILiquidSplitMain splitMain = ILiquidSplitMain(ROYALTY_POLICY_LS.LIQUID_SPLIT_MAIN());
 
-        if (_withdrawETH) {
+        if (withdrawETH) {
             if (splitMain.getETHBalance(address(this)) != 0) revert Errors.LSClaimer__ETHBalanceNotZero();
 
             uint256 ethBalance = address(this).balance;
-            uint256 ethClaimAmount = (ethBalance * _rnftClaimAmount) / _totalUnclaimedRnfts;
+            uint256 ethClaimAmount = (ethBalance * rnftClaimAmount) / totalUnclaimedRnfts;
 
-            _safeTransferETH(_claimerSplitClone, ethClaimAmount);
+            _safeTransferETH(claimerSplitClone, ethClaimAmount);
         }
 
-        for (uint256 i = 0; i < _tokens.length; ++i) {
+        for (uint256 i = 0; i < tokens.length; ++i) {
             // When withdrawing ERC20, 0xSplits sets the value to 1 to have warm storage access.
             // But this still means 0 amount left. So, in the check below, we use `> 1`.
-            if (splitMain.getERC20Balance(address(this), _tokens[i]) > 1)
+            if (splitMain.getERC20Balance(address(this), tokens[i]) > 1)
                 revert Errors.LSClaimer__ERC20BalanceNotZero();
 
-            IERC20 IToken = IERC20(_tokens[i]);
+            IERC20 IToken = IERC20(tokens[i]);
             uint256 tokenBalance = IToken.balanceOf(address(this));
-            uint256 tokenClaimAmount = (tokenBalance * _rnftClaimAmount) / _totalUnclaimedRnfts;
+            uint256 tokenClaimAmount = (tokenBalance * rnftClaimAmount) / totalUnclaimedRnfts;
 
-            IToken.safeTransfer(_claimerSplitClone, tokenClaimAmount);
+            IToken.safeTransfer(claimerSplitClone, tokenClaimAmount);
         }
     }
 
-    /// @notice Allows to transfers ETH
-    /// @param _to The address to transfer to
-    /// @param _amount The amount to transfer
-    function _safeTransferETH(address _to, uint256 _amount) internal {
+    /// @notice Allows to transfers ETH.
+    /// @param to The address to transfer to
+    /// @param amount The amount to transfer
+    function _safeTransferETH(address to, uint256 amount) internal {
         bool callStatus;
 
         assembly {
             // Transfer the ETH and store if it succeeded or not.
-            callStatus := call(gas(), _to, _amount, 0, 0, 0, 0)
+            callStatus := call(gas(), to, amount, 0, 0, 0, 0)
         }
 
         if (!callStatus) revert Errors.RoyaltyPolicyLS__TransferFailed();

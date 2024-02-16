@@ -18,5 +18,6 @@ interface IRoyaltyPolicy {
 
     /// @notice Returns the minimum royalty the IPAccount expects from descendants
     /// @param ipId The ipId
+    /// @return minRoyalty The minimum royalty the IPAccount expects from descendants
     function minRoyaltyFromDescendants(address ipId) external view returns (uint32);
 }

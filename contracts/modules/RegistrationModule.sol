@@ -19,29 +19,31 @@ import { IIPAssetRegistry } from "../interfaces/registries/IIPAssetRegistry.sol"
 ///         into the protocol, create a resolver, and bind to it any licenses
 ///         and terms specified by the IP registrant (IP account owner).
 contract RegistrationModule is BaseModule, IRegistrationModule {
-    /// @notice The metadata resolver used by the registration module.
-    IPResolver public resolver;
+    string public constant override name = REGISTRATION_MODULE_KEY;
+    
+    /// @notice Returns the metadata resolver used by the registration module.
+    IPResolver public ipResolver;
+
+    /// @dev The canonical protocol-wide IP Asset Registry
     IIPAssetRegistry private _IP_ASSET_REGISTRY;
+
+    /// @dev The canonical protocol-wide Licensing Module
     ILicensingModule private _LICENSING_MODULE;
 
-    /// @notice Initializes the registration module contract.
-    /// @param assetRegistry The address of the IP asset registry.
     constructor(address assetRegistry, address licensingModule, address resolverAddr) {
-        resolver = IPResolver(resolverAddr);
+        ipResolver = IPResolver(resolverAddr);
         _LICENSING_MODULE = ILicensingModule(licensingModule);
         _IP_ASSET_REGISTRY = IIPAssetRegistry(assetRegistry);
     }
 
-    /// @notice Registers a root-level IP into the protocol. Root-level IPs can
-    ///         be thought of as organizational hubs for encapsulating policies
-    ///         that actual IPs can use to register through. As such, a
-    ///         root-level IP is not an actual IP, but a container for IP policy
-    ///         management for their child IP assets.
-    /// TODO: Rethink the semantics behind "root-level IPs" vs. "normal IPs".
-    /// TODO: Update function parameters to utilize a struct instead.
-    /// TODO: Revisit requiring binding an existing NFT to a "root-level IP".
-    ///       If root-level IPs are an organizational primitive, why require NFTs?
-    /// TODO: Change to a different resolver optimized for root IP metadata.
+    // TODO: Rethink the semantics behind "root-level IPs" vs. "normal IPs".
+    // TODO: Update function parameters to utilize a struct instead.
+    // TODO: Revisit requiring binding an existing NFT to a "root-level IP".
+    // If root-level IPs are an organizational primitive, why require NFTs?
+    // TODO: Change to a different resolver optimized for root IP metadata.
+    /// @notice Registers a root-level IP into the protocol. Root-level IPs can be thought of as organizational hubs 
+    /// for encapsulating policies that actual IPs can use to register through. As such, a root-level IP is not an 
+    /// actual IP, but a container for IP policy management for their child IP assets.
     /// @param policyId The policy that identifies the licensing terms of the IP.
     /// @param tokenContract The address of the NFT bound to the root-level IP.
     /// @param tokenId The token id of the NFT bound to the root-level IP.
@@ -80,7 +82,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
             block.chainid,
             tokenContract,
             tokenId,
-            address(resolver),
+            address(ipResolver),
             true,
             metadata
         );
@@ -97,6 +99,8 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         return ipId;
     }
 
+    // TODO: Replace all metadata with a generic bytes parameter type, and do encoding on the periphery contract 
+    // level instead.
     /// @notice Registers IP derivatives into the protocol.
     /// @param licenseIds The licenses to incorporate for the new IP.
     /// @param tokenContract The address of the NFT bound to the derivative IP.
@@ -104,8 +108,6 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
     /// @param ipName The name assigned to the new IP.
     /// @param contentHash The content hash of the IP being registered.
     /// @param externalURL An external URI to link to the IP.
-    /// TODO: Replace all metadata with a generic bytes parameter type, and do
-    ///       encoding on the periphery contract level instead.
     function registerDerivativeIp(
         uint256[] calldata licenseIds,
         address tokenContract,
@@ -136,7 +138,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
             block.chainid,
             tokenContract,
             tokenId,
-            address(resolver),
+            address(ipResolver),
             true,
             metadata
         );
@@ -145,10 +147,5 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         _LICENSING_MODULE.linkIpToParents(licenseIds, ipId, minRoyalty);
 
         emit DerivativeIPRegistered(msg.sender, ipId, licenseIds);
-    }
-
-    /// @notice Gets the protocol-wide module identifier for this module.
-    function name() public pure override returns (string memory) {
-        return REGISTRATION_MODULE_KEY;
     }
 }

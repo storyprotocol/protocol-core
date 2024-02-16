@@ -21,9 +21,8 @@ import { BasePolicyFrameworkManager } from "../../modules/licensing/BasePolicyFr
 import { LicensorApprovalChecker } from "../../modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
 
 /// @title UMLPolicyFrameworkManager
-/// @notice This is the UML Policy Framework Manager, which implements the UML Policy Framework
-/// logic for encoding and decoding UML policies into the LicenseRegistry and verifying
-/// the licensing parameters for linking, minting, and transferring.
+/// @notice UML Policy Framework Manager implements the UML Policy Framework logic for encoding and decoding UML 
+/// policies into the LicenseRegistry and verifying the licensing parameters for linking, minting, and transferring.
 contract UMLPolicyFrameworkManager is
     IUMLPolicyFrameworkManager,
     BasePolicyFrameworkManager,
@@ -33,6 +32,7 @@ contract UMLPolicyFrameworkManager is
     using ERC165Checker for address;
     using Strings for *;
 
+    /// @dev Hash of an empty string array
     bytes32 private constant _EMPTY_STRING_ARRAY_HASH =
         0x569e75fc77c1a856f6daaf9e69d8a9566ca34aa47f9133711ce065a571af0cfd;
 
@@ -44,12 +44,17 @@ contract UMLPolicyFrameworkManager is
         string memory licenseUrl_
     )
         BasePolicyFrameworkManager(licensing, name_, licenseUrl_)
-        LicensorApprovalChecker(accessController, ipAccountRegistry, ILicensingModule(licensing).licenseRegistry())
+        LicensorApprovalChecker(
+            accessController,
+            ipAccountRegistry,
+            address(ILicensingModule(licensing).LICENSE_REGISTRY())
+        )
     {}
 
-    /// @notice Re a new policy to the registry
-    /// @dev Must encode the policy into bytes to be stored in the LicensingModule
+    /// @notice Registers a new policy to the registry
+    /// @dev Must encode the policy into bytes to be stored in the LicenseRegistry
     /// @param umlPolicy UMLPolicy compliant licensing term values
+    /// @return policyId The ID of the newly registered policy
     function registerPolicy(UMLPolicy calldata umlPolicy) external nonReentrant returns (uint256 policyId) {
         _verifyComercialUse(umlPolicy);
         _verifyDerivatives(umlPolicy);
@@ -58,16 +63,19 @@ contract UMLPolicyFrameworkManager is
         return LICENSING_MODULE.registerPolicy(umlPolicy.transferable, abi.encode(umlPolicy));
     }
 
-    /// Called by licenseRegistry to verify policy parameters for linking an IP
-    /// with the licensor's IP ID
-    /// @param licenseId the ID of the license
-    /// @param ipId the IP ID of the IP being linked
-    /// @param policyData the licensing policy to verify
+    /// @notice Verifies the given policy paramters when linking an IP asset with a parent IP asset.
+    /// @dev Enforced to be only callable by the LicenseRegistry.
+    /// @param licenseId The ID of the license NFT used for linking to parent IP
+    /// @param caller The address of the caller
+    /// @param ipId The ID of the child IP asset being linked to parent IP
+    /// @param parentIpId The ID of the parent IP asset being linked to
+    /// @param policyData The encoded licensing policy data to be decoded by the PFM for verification
+    /// @return verifyLinkResponse The response of the linking verification
     function verifyLink(
         uint256 licenseId,
         address caller,
         address ipId,
-        address, // parentIpId
+        address parentIpId,
         bytes calldata policyData
     ) external override nonReentrant onlyLicensingModule returns (IPolicyFrameworkManager.VerifyLinkResponse memory) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
@@ -104,15 +112,21 @@ contract UMLPolicyFrameworkManager is
         return response;
     }
 
-    /// Called by licenseRegistry to verify policy parameters for minting a license
-    /// @param policyWasInherited check if IP is subjected to it's parent's policy
-    /// @param policyData the licensing policy to verify
+    /// @notice Verifies the given policy paramters when minting a license NFT from an IP asset.
+    /// @dev Enforced to be only callable by the LicenseRegistry.
+    /// @param caller The address of the caller
+    /// @param policyWasInherited Whether or not the policy was inherited from a parent IP asset
+    /// @param licensor The address of the licensor (IP asset with the policy)
+    /// @param receiver The address of the receiver to receive the minted license NFT
+    /// @param mintAmount The amount of license NFTs to mint
+    /// @param policyData The encoded licensing policy data to be decoded by the PFM for verification
+    /// @return isMintAllowed True if the verification passed and minting is allowed
     function verifyMint(
         address caller,
         bool policyWasInherited,
-        address,
-        address,
-        uint256,
+        address licensor,
+        address receiver,
+        uint256 mintAmount,
         bytes memory policyData
     ) external nonReentrant onlyLicensingModule returns (bool) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
@@ -137,8 +151,8 @@ contract UMLPolicyFrameworkManager is
         return true;
     }
 
-    /// @notice Fetchs a policy from the registry, decoding the raw bytes into a UMLPolicy struct
-    /// @param policyId  The ID of the policy to fetch
+    /// @notice Returns a policy from the registry, decoding the raw bytes into a UMLPolicy struct
+    /// @param policyId The ID of the policy to fetch
     /// @return policy The UMLPolicy struct
     function getPolicy(uint256 policyId) public view returns (UMLPolicy memory policy) {
         Licensing.Policy memory protocolPolicy = LICENSING_MODULE.policy(policyId);
@@ -149,7 +163,16 @@ contract UMLPolicyFrameworkManager is
         policy = abi.decode(protocolPolicy.data, (UMLPolicy));
     }
 
-    /// @notice gets the aggregation data for inherited policies, decoded for the framework
+    /// @notice Returns the policy ID for the given policy data, or 0 if not found
+    /// @param umlPolicy The UMLPolicy struct to get the ID for
+    /// @return policyId The ID of the policy
+    function getPolicyId(UMLPolicy calldata umlPolicy) external view returns (uint256 policyId) {
+        return LICENSING_MODULE.getPolicyId(address(this), umlPolicy.transferable, abi.encode(umlPolicy));
+    }
+
+    /// @notice Returns the aggregation data for inherited policies of an IP asset.
+    /// @param ipId The ID of the IP asset to get the aggregator for
+    /// @return rights The UMLAggregator struct
     function getAggregator(address ipId) external view returns (UMLAggregator memory rights) {
         bytes memory policyAggregatorData = LICENSING_MODULE.policyAggregatorData(address(this), ipId);
         if (policyAggregatorData.length == 0) {
@@ -158,29 +181,36 @@ contract UMLPolicyFrameworkManager is
         rights = abi.decode(policyAggregatorData, (UMLAggregator));
     }
 
-    function getPolicyId(UMLPolicy calldata umlPolicy) external view returns (uint256 policyId) {
-        return LICENSING_MODULE.getPolicyId(address(this), umlPolicy.transferable, abi.encode(umlPolicy));
-    }
-
+    /// @notice Returns the royalty policy address of a policy ID belonging to the PFM
+    /// @param policyId The policy ID to get
+    /// @return royaltyPolicy The royalty policy address
     function getRoyaltyPolicy(uint256 policyId) external view returns (address) {
         return getPolicy(policyId).royaltyPolicy;
     }
 
+    /// @notice Returns the commercial revenue share of a policy ID belonging to the PFM
+    /// @param policyId The policy ID to get
+    /// @return commercialRevenueShare The commercial revenue share of the policy
     function getCommercialRevenueShare(uint256 policyId) external view returns (uint32) {
         return getPolicy(policyId).commercialRevShare;
     }
 
+    /// @notice Returns whether the policyId belonging to the PFM is commercial or non-commercial
+    /// @param policyId The policy ID to check
+    /// @return isCommercial True if the policy is commercial
     function isPolicyCommercial(uint256 policyId) external view returns (bool) {
         return getPolicy(policyId).commercialUse;
     }
 
-    /// Called by licenseRegistry to verify compatibility when inheriting from a parent IP
-    /// The objective is to verify compatibility of multiple policies.
-    /// @param aggregator common state of the policies for the IP
-    /// @param policyId the ID of the policy being inherited
-    /// @param policy the policy to inherit
-    /// @return changedAgg  true if the aggregator was changed
-    /// @return newAggregator the new aggregator
+    /// @notice Verify the compatibility of a policy with the current state of the IP asset, when inheriting from a 
+    /// parent IP. The current state of the IP asset, represented as the encoded aggregator bytes, is the combination
+    /// of all policies previously attached to the IP asset.
+    /// @dev Enforced to be only callable by the LicenseRegistry.
+    /// @param aggregator The common state of the policies for the given IP asset
+    /// @param policyId The ID of the new policy being inherited
+    /// @param policy The encoded policy data of the policyId to inherit
+    /// @return changedAgg True if the aggregator was changed
+    /// @return newAggregator The new aggregator data, encoded
     // solhint-disable-next-line code-complexity
     function processInheritedPolicies(
         bytes memory aggregator,
@@ -254,6 +284,10 @@ contract UMLPolicyFrameworkManager is
         return (changedAgg, abi.encode(agg));
     }
 
+    /// @notice called by the LicenseRegistry uri(uint256) method.
+    /// @dev Must return ERC1155 OpenSea standard compliant metadata.
+    /// @param policyData The encoded licensing policy data to be decoded by the PFM
+    /// @return string The OpenSea-compliant metadata URI of the policy
     function policyToJson(bytes memory policyData) public pure returns (string memory) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
 
@@ -340,7 +374,7 @@ contract UMLPolicyFrameworkManager is
         return string(abi.encodePacked("data:application/json;base64,", Base64.encode(bytes(json))));
     }
 
-    /// Checks the configuration of commercial use and throws if the policy is not compliant
+    /// @notice Checks the configuration of commercial use and throws if the policy is not compliant
     /// @param policy The policy to verify
     // solhint-disable code-complexity
     function _verifyComercialUse(UMLPolicy calldata policy) internal view {
@@ -376,7 +410,7 @@ contract UMLPolicyFrameworkManager is
         }
     }
 
-    /// Checks the configuration of derivative parameters and throws if the policy is not compliant
+    /// @notice Checks the configuration of derivative parameters and throws if the policy is not compliant
     /// @param policy The policy to verify
     function _verifyDerivatives(UMLPolicy calldata policy) internal pure {
         if (!policy.derivativesAllowed) {
@@ -396,7 +430,7 @@ contract UMLPolicyFrameworkManager is
         }
     }
 
-    /// Verifies compatibility for params where the valid options are either permissive value, or equal params
+    /// @notice Verifies compatibility for params where the valid options are either permissive value, or equal params
     /// @param oldHash hash of the old param
     /// @param newHash hash of the new param
     /// @param permissive hash of the most permissive param

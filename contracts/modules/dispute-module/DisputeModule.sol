@@ -13,32 +13,25 @@ import { IArbitrationPolicy } from "../../interfaces/modules/dispute/policies/IA
 import { Errors } from "../../lib/Errors.sol";
 import { ShortStringOps } from "../../utils/ShortStringOps.sol";
 
-/// @title Story Protocol Dispute Module
-/// @notice The Story Protocol dispute module acts as an enforcement layer for
-///         that allows to raise disputes and resolve them through arbitration.
+/// @title Dispute Module
+/// @notice The dispute module acts as an enforcement layer for IP assets that allows raising and resolving disputes 
+/// through arbitration by judges.
 contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuard, AccessControlled {
-    /// @notice tag to represent the dispute is in dispute state waiting for judgement
+    string public constant override name = DISPUTE_MODULE_KEY;
+    
+    /// @notice Tag to represent the dispute is in dispute state waiting for judgement
     bytes32 public constant IN_DISPUTE = bytes32("IN_DISPUTE");
-
+    
+    /// @notice Tag to represent the dispute is in dispute state waiting for judgement
     IIPAssetRegistry public IP_ASSET_REGISTRY;
 
-    /// @notice Dispute struct
-    struct Dispute {
-        address targetIpId; // The ipId that is the target of the dispute
-        address disputeInitiator; // The address of the dispute initiator
-        address arbitrationPolicy; // The address of the arbitration policy
-        bytes32 linkToDisputeEvidence; // The link of the dispute evidence
-        bytes32 targetTag; // The target tag of the dispute
-        bytes32 currentTag; // The current tag of the dispute
-    }
-
-    /// @notice Dispute id
-    uint256 public disputeId;
+    /// @notice Dispute ID counter
+    uint256 public disputeCounter;
 
     /// @notice The address of the base arbitration policy
     address public baseArbitrationPolicy;
 
-    /// @notice Contains the dispute information for a given dispute id
+    /// @notice Returns the dispute information for a given dispute id
     mapping(uint256 disputeId => Dispute dispute) public disputes;
 
     /// @notice Indicates if a dispute tag is whitelisted
@@ -54,10 +47,6 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
     /// @notice Arbitration policy for a given ipId
     mapping(address ipId => address arbitrationPolicy) public arbitrationPolicies;
 
-    /// @notice Initializes the registration module contract
-    /// @param _controller The access controller used for IP authorization
-    /// @param _assetRegistry The address of the IP asset registry
-    /// @param _governance The address of the governance contract
     constructor(
         address _controller,
         address _assetRegistry,
@@ -67,169 +56,163 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
     }
 
     /// @notice Whitelists a dispute tag
-    /// @param _tag The dispute tag
-    /// @param _allowed Indicates if the dispute tag is whitelisted or not
-    function whitelistDisputeTag(bytes32 _tag, bool _allowed) external onlyProtocolAdmin {
-        if (_tag == bytes32(0)) revert Errors.DisputeModule__ZeroDisputeTag();
+    /// @param tag The dispute tag
+    /// @param allowed Indicates if the dispute tag is whitelisted or not
+    function whitelistDisputeTag(bytes32 tag, bool allowed) external onlyProtocolAdmin {
+        if (tag == bytes32(0)) revert Errors.DisputeModule__ZeroDisputeTag();
 
-        isWhitelistedDisputeTag[_tag] = _allowed;
+        isWhitelistedDisputeTag[tag] = allowed;
 
-        emit TagWhitelistUpdated(_tag, _allowed);
+        emit TagWhitelistUpdated(tag, allowed);
     }
 
     /// @notice Whitelists an arbitration policy
-    /// @param _arbitrationPolicy The address of the arbitration policy
-    /// @param _allowed Indicates if the arbitration policy is whitelisted or not
-    function whitelistArbitrationPolicy(address _arbitrationPolicy, bool _allowed) external onlyProtocolAdmin {
-        if (_arbitrationPolicy == address(0)) revert Errors.DisputeModule__ZeroArbitrationPolicy();
+    /// @param arbitrationPolicy The address of the arbitration policy
+    /// @param allowed Indicates if the arbitration policy is whitelisted or not
+    function whitelistArbitrationPolicy(address arbitrationPolicy, bool allowed) external onlyProtocolAdmin {
+        if (arbitrationPolicy == address(0)) revert Errors.DisputeModule__ZeroArbitrationPolicy();
 
-        isWhitelistedArbitrationPolicy[_arbitrationPolicy] = _allowed;
+        isWhitelistedArbitrationPolicy[arbitrationPolicy] = allowed;
 
-        emit ArbitrationPolicyWhitelistUpdated(_arbitrationPolicy, _allowed);
+        emit ArbitrationPolicyWhitelistUpdated(arbitrationPolicy, allowed);
     }
 
     /// @notice Whitelists an arbitration relayer for a given arbitration policy
-    /// @param _arbitrationPolicy The address of the arbitration policy
-    /// @param _arbPolicyRelayer The address of the arbitration relayer
-    /// @param _allowed Indicates if the arbitration relayer is whitelisted or not
+    /// @param arbitrationPolicy The address of the arbitration policy
+    /// @param arbPolicyRelayer The address of the arbitration relayer
+    /// @param allowed Indicates if the arbitration relayer is whitelisted or not
     function whitelistArbitrationRelayer(
-        address _arbitrationPolicy,
-        address _arbPolicyRelayer,
-        bool _allowed
+        address arbitrationPolicy,
+        address arbPolicyRelayer,
+        bool allowed
     ) external onlyProtocolAdmin {
-        if (_arbitrationPolicy == address(0)) revert Errors.DisputeModule__ZeroArbitrationPolicy();
-        if (_arbPolicyRelayer == address(0)) revert Errors.DisputeModule__ZeroArbitrationRelayer();
+        if (arbitrationPolicy == address(0)) revert Errors.DisputeModule__ZeroArbitrationPolicy();
+        if (arbPolicyRelayer == address(0)) revert Errors.DisputeModule__ZeroArbitrationRelayer();
 
-        isWhitelistedArbitrationRelayer[_arbitrationPolicy][_arbPolicyRelayer] = _allowed;
+        isWhitelistedArbitrationRelayer[arbitrationPolicy][arbPolicyRelayer] = allowed;
 
-        emit ArbitrationRelayerWhitelistUpdated(_arbitrationPolicy, _arbPolicyRelayer, _allowed);
+        emit ArbitrationRelayerWhitelistUpdated(arbitrationPolicy, arbPolicyRelayer, allowed);
     }
 
     /// @notice Sets the base arbitration policy
-    /// @param _arbitrationPolicy The address of the arbitration policy
-    function setBaseArbitrationPolicy(address _arbitrationPolicy) external onlyProtocolAdmin {
-        if (!isWhitelistedArbitrationPolicy[_arbitrationPolicy])
+    /// @param arbitrationPolicy The address of the arbitration policy
+    function setBaseArbitrationPolicy(address arbitrationPolicy) external onlyProtocolAdmin {
+        if (!isWhitelistedArbitrationPolicy[arbitrationPolicy])
             revert Errors.DisputeModule__NotWhitelistedArbitrationPolicy();
 
-        baseArbitrationPolicy = _arbitrationPolicy;
+        baseArbitrationPolicy = arbitrationPolicy;
 
-        emit DefaultArbitrationPolicyUpdated(_arbitrationPolicy);
+        emit DefaultArbitrationPolicyUpdated(arbitrationPolicy);
     }
 
     /// @notice Sets the arbitration policy for an ipId
-    /// @param _ipId The ipId
-    /// @param _arbitrationPolicy The address of the arbitration policy
-    function setArbitrationPolicy(address _ipId, address _arbitrationPolicy) external verifyPermission(_ipId) {
-        if (!isWhitelistedArbitrationPolicy[_arbitrationPolicy])
+    /// @param ipId The ipId
+    /// @param arbitrationPolicy The address of the arbitration policy
+    function setArbitrationPolicy(address ipId, address arbitrationPolicy) external verifyPermission(ipId) {
+        if (!isWhitelistedArbitrationPolicy[arbitrationPolicy])
             revert Errors.DisputeModule__NotWhitelistedArbitrationPolicy();
 
-        arbitrationPolicies[_ipId] = _arbitrationPolicy;
+        arbitrationPolicies[ipId] = arbitrationPolicy;
 
-        emit ArbitrationPolicySet(_ipId, _arbitrationPolicy);
+        emit ArbitrationPolicySet(ipId, arbitrationPolicy);
     }
 
     /// @notice Raises a dispute
-    /// @param _targetIpId The ipId that is the target of the dispute
-    /// @param _linkToDisputeEvidence The link of the dispute evidence
-    /// @param _targetTag The target tag of the dispute
-    /// @param _data The data to initialize the policy
-    /// @return disputeId The dispute id
+    /// @param targetIpId The ipId that is the target of the dispute
+    /// @param linkToDisputeEvidence The link of the dispute evidence
+    /// @param targetTag The target tag of the dispute
+    /// @param data The data to initialize the policy
+    /// @return disputeId The id of the newly raised dispute
     function raiseDispute(
-        address _targetIpId,
-        string memory _linkToDisputeEvidence,
-        bytes32 _targetTag,
-        bytes calldata _data
+        address targetIpId,
+        string memory linkToDisputeEvidence,
+        bytes32 targetTag,
+        bytes calldata data
     ) external nonReentrant returns (uint256) {
-        if (!IP_ASSET_REGISTRY.isRegistered(_targetIpId)) revert Errors.DisputeModule__NotRegisteredIpId();
-        if (!isWhitelistedDisputeTag[_targetTag]) revert Errors.DisputeModule__NotWhitelistedDisputeTag();
+        if (!IP_ASSET_REGISTRY.isRegistered(targetIpId)) revert Errors.DisputeModule__NotRegisteredIpId();
+        if (!isWhitelistedDisputeTag[targetTag]) revert Errors.DisputeModule__NotWhitelistedDisputeTag();
 
-        bytes32 linkToDisputeEvidence = ShortStringOps.stringToBytes32(_linkToDisputeEvidence);
-        if (linkToDisputeEvidence == bytes32(0)) revert Errors.DisputeModule__ZeroLinkToDisputeEvidence();
+        bytes32 linkToDisputeEvidenceBytes = ShortStringOps.stringToBytes32(linkToDisputeEvidence);
+        if (linkToDisputeEvidenceBytes == bytes32(0)) revert Errors.DisputeModule__ZeroLinkToDisputeEvidence();
 
-        address arbitrationPolicy = arbitrationPolicies[_targetIpId];
+        address arbitrationPolicy = arbitrationPolicies[targetIpId];
         if (!isWhitelistedArbitrationPolicy[arbitrationPolicy]) arbitrationPolicy = baseArbitrationPolicy;
 
-        uint256 disputeId_ = ++disputeId;
+        uint256 disputeId_ = ++disputeCounter;
 
         disputes[disputeId_] = Dispute({
-            targetIpId: _targetIpId,
+            targetIpId: targetIpId,
             disputeInitiator: msg.sender,
             arbitrationPolicy: arbitrationPolicy,
-            linkToDisputeEvidence: linkToDisputeEvidence,
-            targetTag: _targetTag,
+            linkToDisputeEvidence: linkToDisputeEvidenceBytes,
+            targetTag: targetTag,
             currentTag: IN_DISPUTE
         });
 
-        IArbitrationPolicy(arbitrationPolicy).onRaiseDispute(msg.sender, _data);
+        IArbitrationPolicy(arbitrationPolicy).onRaiseDispute(msg.sender, data);
 
         emit DisputeRaised(
             disputeId_,
-            _targetIpId,
+            targetIpId,
             msg.sender,
             arbitrationPolicy,
-            linkToDisputeEvidence,
-            _targetTag,
-            _data
+            linkToDisputeEvidenceBytes,
+            targetTag,
+            data
         );
 
         return disputeId_;
     }
 
     /// @notice Sets the dispute judgement
-    /// @param _disputeId The dispute id
-    /// @param _decision The decision of the dispute
-    /// @param _data The data to set the dispute judgement
-    function setDisputeJudgement(uint256 _disputeId, bool _decision, bytes calldata _data) external nonReentrant {
-        Dispute memory dispute = disputes[_disputeId];
+    /// @param disputeId The dispute id
+    /// @param decision The decision of the dispute
+    /// @param data The data to set the dispute judgement
+    function setDisputeJudgement(uint256 disputeId, bool decision, bytes calldata data) external nonReentrant {
+        Dispute memory dispute = disputes[disputeId];
 
         if (dispute.currentTag != IN_DISPUTE) revert Errors.DisputeModule__NotInDisputeState();
         if (!isWhitelistedArbitrationRelayer[dispute.arbitrationPolicy][msg.sender]) {
             revert Errors.DisputeModule__NotWhitelistedArbitrationRelayer();
         }
 
-        if (_decision) {
-            disputes[_disputeId].currentTag = dispute.targetTag;
+        if (decision) {
+            disputes[disputeId].currentTag = dispute.targetTag;
         } else {
-            disputes[_disputeId].currentTag = bytes32(0);
+            disputes[disputeId].currentTag = bytes32(0);
         }
 
-        IArbitrationPolicy(dispute.arbitrationPolicy).onDisputeJudgement(_disputeId, _decision, _data);
+        IArbitrationPolicy(dispute.arbitrationPolicy).onDisputeJudgement(disputeId, decision, data);
 
-        emit DisputeJudgementSet(_disputeId, _decision, _data);
+        emit DisputeJudgementSet(disputeId, decision, data);
     }
 
     /// @notice Cancels an ongoing dispute
-    /// @param _disputeId The dispute id
-    /// @param _data The data to cancel the dispute
-    function cancelDispute(uint256 _disputeId, bytes calldata _data) external nonReentrant {
-        Dispute memory dispute = disputes[_disputeId];
+    /// @param disputeId The dispute id
+    /// @param data The data to cancel the dispute
+    function cancelDispute(uint256 disputeId, bytes calldata data) external nonReentrant {
+        Dispute memory dispute = disputes[disputeId];
 
         if (dispute.currentTag != IN_DISPUTE) revert Errors.DisputeModule__NotInDisputeState();
         if (msg.sender != dispute.disputeInitiator) revert Errors.DisputeModule__NotDisputeInitiator();
 
-        IArbitrationPolicy(dispute.arbitrationPolicy).onDisputeCancel(msg.sender, _disputeId, _data);
+        IArbitrationPolicy(dispute.arbitrationPolicy).onDisputeCancel(msg.sender, disputeId, data);
 
-        disputes[_disputeId].currentTag = bytes32(0);
+        disputes[disputeId].currentTag = bytes32(0);
 
-        emit DisputeCancelled(_disputeId, _data);
+        emit DisputeCancelled(disputeId, data);
     }
 
     /// @notice Resolves a dispute after it has been judged
-    /// @param _disputeId The dispute id
-    function resolveDispute(uint256 _disputeId) external {
-        Dispute memory dispute = disputes[_disputeId];
+    /// @param disputeId The dispute id
+    function resolveDispute(uint256 disputeId) external {
+        Dispute memory dispute = disputes[disputeId];
 
         if (dispute.currentTag == IN_DISPUTE) revert Errors.DisputeModule__NotAbleToResolve();
         if (msg.sender != dispute.disputeInitiator) revert Errors.DisputeModule__NotDisputeInitiator();
 
-        disputes[_disputeId].currentTag = bytes32(0);
+        disputes[disputeId].currentTag = bytes32(0);
 
-        emit DisputeResolved(_disputeId);
-    }
-
-    /// @notice Gets the protocol-wide module identifier for this module
-    /// @return The dispute module key
-    function name() public pure override returns (string memory) {
-        return DISPUTE_MODULE_KEY;
+        emit DisputeResolved(disputeId);
     }
 }

@@ -51,7 +51,7 @@ abstract contract Governable is IGovernable {
     }
 
     /// @notice Returns the current governance address.
-    /// @return The address of the current governance.
+    /// @return governance The address of the current governance.
     function getGovernance() external view returns (address) {
         return governance;
     }

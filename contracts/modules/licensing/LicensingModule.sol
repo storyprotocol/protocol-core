@@ -10,9 +10,10 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 
 import { IIPAccount } from "../../interfaces/IIPAccount.sol";
 import { IPolicyFrameworkManager } from "../../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
-import { ILicenseRegistry } from "../../interfaces/registries/ILicenseRegistry.sol";
+import { IModule } from "../../interfaces/modules/base/IModule.sol";
 import { ILicensingModule } from "../../interfaces/modules/licensing/ILicensingModule.sol";
 import { IIPAccountRegistry } from "../../interfaces/registries/IIPAccountRegistry.sol";
+import { ILicenseRegistry } from "../../interfaces/registries/ILicenseRegistry.sol";
 import { Errors } from "../../lib/Errors.sol";
 import { DataUniqueness } from "../../lib/DataUniqueness.sol";
 import { Licensing } from "../../lib/Licensing.sol";
@@ -23,6 +24,14 @@ import { LICENSING_MODULE_KEY } from "../../lib/modules/Module.sol";
 import { BaseModule } from "../BaseModule.sol";
 
 // TODO: consider disabling operators/approvals on creation
+/// @title Licensing Module
+/// @notice Licensing module is the main entry point for the licensing system. It is responsible for:
+/// - Registering policy frameworks
+/// - Registering policies
+/// - Minting licenses
+/// - Linking IP to its parent
+/// - Verifying linking parameters
+/// - Verifying policy parameters
 contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, ReentrancyGuard {
     using ERC165Checker for address;
     using IPAccountChecker for IIPAccountRegistry;
@@ -31,29 +40,39 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
     using Licensing for *;
     using Strings for *;
 
-    struct PolicySetup {
-        uint256 index;
-        bool isSet;
-        bool active;
-        bool isInherited;
-    }
-
+    /// @inheritdoc IModule
+    string public constant override name = LICENSING_MODULE_KEY;
+    /// @inheritdoc ILicensingModule
     RoyaltyModule public immutable ROYALTY_MODULE;
+    /// @inheritdoc ILicensingModule
     ILicenseRegistry public immutable LICENSE_REGISTRY;
 
-    string public constant override name = LICENSING_MODULE_KEY;
+    /// @dev Returns if a framework is registered or not
     mapping(address framework => bool registered) private _registeredFrameworkManagers;
+
+    /// @dev Returns the policy id for the given policy data (hashed)
     mapping(bytes32 policyHash => uint256 policyId) private _hashedPolicies;
+
+    /// @dev Returns the policy data for the given policy id
     mapping(uint256 policyId => Licensing.Policy policyData) private _policies;
+
+    /// @dev Total amount of distinct licensing policies in LicenseRegistry
     uint256 private _totalPolicies;
-    /// @notice internal mapping to track if a policy was set by linking or minting, and the
-    /// index of the policy in the ipId policy set
-    /// Policies can't be removed, but they can be deactivated by setting active to false
+
+    /// @dev internal mapping to track if a policy was set by linking or minting, and the index of the policy in the 
+    /// ipId policy set. Policies can't be removed, but they can be deactivated by setting active to false.
     mapping(address ipId => mapping(uint256 policyId => PolicySetup setup)) private _policySetups;
+
+    /// @dev Returns the set of policy ids attached to the given ipId
     mapping(bytes32 hashIpIdAnInherited => EnumerableSet.UintSet policyIds) private _policiesPerIpId;
+
+    /// @dev Returns the set of parent policy ids for the given ipId
     mapping(address ipId => EnumerableSet.AddressSet parentIpIds) private _ipIdParents;
+
+    /// @dev Returns the policy aggregator data for the given ipId in a framework
     mapping(address framework => mapping(address ipId => bytes policyAggregatorData)) private _ipRights;
 
+    /// @notice Modifier to allow only LicenseRegistry as the caller
     modifier onlyLicenseRegistry() {
         if (msg.sender == address(LICENSE_REGISTRY)) revert Errors.LicensingModule__CallerNotLicenseRegistry();
         _;
@@ -69,13 +88,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         LICENSE_REGISTRY = ILicenseRegistry(registry);
     }
 
-    function licenseRegistry() external view returns (address) {
-        return address(LICENSE_REGISTRY);
-    }
-
-    /// @notice registers a policy framework manager into the contract, so it can add policy data for
-    /// licenses.
-    /// @param manager the address of the manager. Will be ERC165 checked for IPolicyFrameworkManager
+    /// @inheritdoc ILicensingModule
     function registerPolicyFrameworkManager(address manager) external {
         if (!ERC165Checker.supportsInterface(manager, type(IPolicyFrameworkManager).interfaceId)) {
             revert Errors.LicensingModule__InvalidPolicyFramework();
@@ -90,11 +103,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         emit PolicyFrameworkRegistered(manager, fwManager.name(), licenseUrl);
     }
 
-    /// @notice Registers a policy into the contract. MUST be called by a registered
-    /// framework or it will revert. The policy data and its integrity must be
-    /// verified by the policy framework manager.
-    /// @param isLicenseTransferable True if the license is transferable
-    /// @param data The policy data
+    /// @inheritdoc ILicensingModule
     function registerPolicy(bool isLicenseTransferable, bytes memory data) external returns (uint256 policyId) {
         _verifyRegisteredFramework(address(msg.sender));
         Licensing.Policy memory pol = Licensing.Policy({
@@ -116,13 +125,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         return polId;
     }
 
-    /// Adds a policy to an ipId, which can be used to mint licenses.
-    /// Licnses are permissions for ipIds to be derivatives (children).
-    /// if policyId is not defined in LicenseRegistry, reverts.
-    /// Will revert if ipId already has the same policy
-    /// @param ipId to receive the policy
-    /// @param polId id of the policy data
-    /// @return indexOnIpId position of policy within the ipIds policy set
+    /// @inheritdoc ILicensingModule
     function addPolicyToIp(
         address ipId,
         uint256 polId
@@ -152,23 +155,16 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         }
     }
 
-    /// Mints license NFTs representing a policy granted by a set of ipIds (licensors). This NFT needs to be burned
-    /// in order to link a derivative IP with its parents.
-    /// If this is the first combination of policy and licensors, a new licenseId
-    /// will be created (by incrementing prev totalLicenses).
-    /// If not, the license is fungible and an id will be reused.
-    /// The licensing terms that regulate creating new licenses will be verified to allow minting.
-    /// Reverts if caller is not authorized by licensors.
-    /// @param policyId id of the policy to be minted
-    /// @param licensorIp IP Id granting the license
-    /// @param amount of licenses to be minted. License NFT is fungible for same policy and same licensors
-    /// @param receiver of the License NFT(s).
-    /// @return licenseId of the NFT(s).
+    /// @inheritdoc ILicensingModule
+    /// @notice A minted license NFT needs to be burned to link a derivative IP with its parents. If this is the first 
+    /// combination of a policy and licensors, a new licenseId will be created (by incrementing totalLicenses). If not, 
+    /// the license NFT is fungible so an id will be reused. The licensing terms that regulate creating new licenses 
+    /// will be verified to allow minting. Reverts if caller is not authorized by licensors.
     // solhint-disable-next-line code-complexity
     function mintLicense(
         uint256 policyId,
         address licensorIp,
-        uint256 amount, // mint amount
+        uint256 amount,
         address receiver
     ) external nonReentrant returns (uint256 licenseId) {
         // TODO: check if licensor has been tagged by disputer
@@ -251,12 +247,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         }
     }
 
-    /// @notice Links an IP to the licensors (parent IP IDs) listed in the License NFTs, if their policies allow it,
-    /// burning the NFTs in the proccess. The caller must be the owner of the NFTs and the IP owner.
-    /// @param licenseIds The id of the licenses to burn
-    /// @param childIpId The id of the child IP to be linked
-    /// @param minRoyalty The minimum derivative rev share that the child wants from its descendants. The value is
-    /// overriden by the `derivativesRevShare` value of the linking licenses.
+    /// @inheritdoc ILicensingModule
     function linkIpToParents(
         uint256[] calldata licenseIds,
         address childIpId,
@@ -303,28 +294,29 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         LICENSE_REGISTRY.burnLicenses(holder, licenseIds);
     }
 
+    /// @inheritdoc IERC165
     function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
         return interfaceId == type(ILicensingModule).interfaceId || super.supportsInterface(interfaceId);
     }
 
-    /// @notice True if the framework address is registered in LicenseRegistry
+    /// @inheritdoc ILicensingModule
     function isFrameworkRegistered(address policyFramework) external view returns (bool) {
         return _registeredFrameworkManagers[policyFramework];
     }
 
-    /// Returns amount of distinct licensing policies in LicenseRegistry
+    /// @inheritdoc ILicensingModule
     function totalPolicies() external view returns (uint256) {
         return _totalPolicies;
     }
 
-    /// Gets policy data for policyId, reverts if not found
+    /// @inheritdoc ILicensingModule
     function policy(uint256 policyId) public view returns (Licensing.Policy memory pol) {
         pol = _policies[policyId];
         _verifyPolicy(pol);
         return pol;
     }
 
-    /// @notice gets the policy id for the given data, or 0 if not found
+    /// @inheritdoc ILicensingModule
     function getPolicyId(
         address framework,
         bool isLicenseTransferable,
@@ -338,29 +330,33 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         return _hashedPolicies[keccak256(abi.encode(pol))];
     }
 
+    /// @inheritdoc ILicensingModule
     function policyAggregatorData(address framework, address ipId) external view returns (bytes memory) {
         return _ipRights[framework][ipId];
     }
 
-    /// Returns true if policyId is defined in LicenseRegistry, false otherwise.
+    /// @inheritdoc ILicensingModule
     function isPolicyDefined(uint256 policyId) public view returns (bool) {
         return _policies[policyId].policyFramework != address(0);
     }
 
-    /// Gets the policy set for an IpId
-    /// @dev potentially expensive operation, use with care
+    /// @inheritdoc ILicensingModule
+    /// @dev Potentially gas-intensive operation, use with care.
     function policyIdsForIp(bool isInherited, address ipId) external view returns (uint256[] memory policyIds) {
         return _policySetPerIpId(isInherited, ipId).values();
     }
 
+    /// @inheritdoc ILicensingModule
     function totalPoliciesForIp(bool isInherited, address ipId) public view returns (uint256) {
         return _policySetPerIpId(isInherited, ipId).length();
     }
 
+    /// @inheritdoc ILicensingModule
     function isPolicyIdSetForIp(bool isInherited, address ipId, uint256 policyId) external view returns (bool) {
         return _policySetPerIpId(isInherited, ipId).contains(policyId);
     }
 
+    /// @inheritdoc ILicensingModule
     function policyIdForIpAtIndex(
         bool isInherited,
         address ipId,
@@ -369,6 +365,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         return _policySetPerIpId(isInherited, ipId).at(index);
     }
 
+    /// @inheritdoc ILicensingModule
     function policyForIpAtIndex(
         bool isInherited,
         address ipId,
@@ -377,6 +374,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         return _policies[_policySetPerIpId(isInherited, ipId).at(index)];
     }
 
+    /// @inheritdoc ILicensingModule
     function policyStatus(
         address ipId,
         uint256 policyId
@@ -385,36 +383,34 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         return (setup.index, setup.isInherited, setup.active);
     }
 
+    /// @inheritdoc ILicensingModule
     function isPolicyInherited(address ipId, uint256 policyId) external view returns (bool) {
         return _policySetups[ipId][policyId].isInherited;
     }
 
-    /// Returns true if the child is derivative from the parent, by at least 1 policy.
+    /// @inheritdoc ILicensingModule
     function isParent(address parentIpId, address childIpId) external view returns (bool) {
         return _ipIdParents[childIpId].contains(parentIpId);
     }
 
+    /// @inheritdoc ILicensingModule
     function parentIpIds(address ipId) external view returns (address[] memory) {
         return _ipIdParents[ipId].values();
     }
 
+    /// @inheritdoc ILicensingModule
     function totalParentsForIpId(address ipId) external view returns (uint256) {
         return _ipIdParents[ipId].length();
     }
 
+    /// @notice Verifies that the framework is registered in the LicensingModule
     function _verifyRegisteredFramework(address policyFramework) private view {
         if (!_registeredFrameworkManagers[policyFramework]) {
             revert Errors.LicensingModule__FrameworkNotFound();
         }
     }
 
-    /// Adds a policy id to the ipId policy set
-    /// Will revert if policy set already has policyId
-    /// @param ipId the IP identifier
-    /// @param policyId id of the policy data
-    /// @param isInherited true if set in linkIpToParent, false otherwise
-    /// @param skipIfDuplicate if true, will skip if policyId is already set
-    /// @return index of the policy added to the set
+    /// @notice Adds a policy id to the ipId policy set. Reverts if policy set already has policyId
     function _addPolicyIdToIp(
         address ipId,
         uint256 policyId,
@@ -444,6 +440,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         return index;
     }
 
+    /// @notice Link IP to a parent IP using the license NFT.
     function _linkIpToParent(
         uint256 iteration,
         uint256 licenseId,
@@ -520,6 +517,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         _ipIdParents[childIpId].add(licensor);
     }
 
+    /// @notice Verifies if the policyId can be added to the IP
     function _verifyCanAddPolicy(uint256 policyId, address ipId, bool isInherited) private {
         bool ipIdIsDerivative = _policySetPerIpId(true, ipId).length() > 0;
         if (
@@ -547,12 +545,14 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         }
     }
 
+    /// @notice Verifies if the policy is set
     function _verifyPolicy(Licensing.Policy memory pol) private pure {
         if (pol.policyFramework == address(0)) {
             revert Errors.LicensingModule__PolicyNotFound();
         }
     }
 
+    /// @notice Returns the policy set for the given ipId
     function _policySetPerIpId(bool isInherited, address ipId) private view returns (EnumerableSet.UintSet storage) {
         return _policiesPerIpId[keccak256(abi.encode(isInherited, ipId))];
     }

@@ -4,17 +4,17 @@ pragma solidity ^0.8.23;
 
 import { IIPAccount } from "../../interfaces/IIPAccount.sol";
 import { IMetadataProvider } from "../../interfaces/registries/metadata/IMetadataProvider.sol";
+import { IIPAssetRegistry } from "../../interfaces/registries/IIPAssetRegistry.sol";
 import { IMetadataProviderMigratable } from "../../interfaces/registries/metadata/IMetadataProviderMigratable.sol";
 import { Errors } from "../../lib/Errors.sol";
-import { IPAssetRegistry } from "../../registries/IPAssetRegistry.sol";
 
 /// @title IP Metadata Provider Base Contract
 /// @notice Metadata provider base contract for storing canonical IP metadata.
 abstract contract MetadataProviderBase is IMetadataProviderMigratable {
-    /// @notice Gets the protocol-wide IP asset registry.
-    IPAssetRegistry public immutable IP_ASSET_REGISTRY;
+    /// @notice Returns the protocol-wide IP asset registry.
+    IIPAssetRegistry public immutable IP_ASSET_REGISTRY;
 
-    /// @notice Returns the new metadata provider users may migrate to.
+    /// @notice Returns the new metadata provider IP assets may migrate to.
     IMetadataProvider public upgradeProvider;
 
     /// @notice Maps IP assets (via their IP ID) to their canonical metadata.
@@ -28,14 +28,13 @@ abstract contract MetadataProviderBase is IMetadataProviderMigratable {
         _;
     }
 
-    /// @notice Initializes the metadata provider contract.
-    /// @param ipAssetRegistry The protocol-wide IP asset registry.
     constructor(address ipAssetRegistry) {
-        IP_ASSET_REGISTRY = IPAssetRegistry(ipAssetRegistry);
+        IP_ASSET_REGISTRY = IIPAssetRegistry(ipAssetRegistry);
     }
 
-    /// @notice Gets the IP metadata associated with an IP asset based on its IP ID.
-    /// @param ipId The IP id of the target IP asset.
+    /// @notice Gets the metadata associated with an IP asset.
+    /// @param ipId The address identifier of the IP asset.
+    /// @return metadata The encoded metadata associated with the IP asset.
     function getMetadata(address ipId) external view virtual override returns (bytes memory) {
         return _ipMetadata[ipId];
     }
@@ -50,9 +49,10 @@ abstract contract MetadataProviderBase is IMetadataProviderMigratable {
         upgradeProvider = IMetadataProviderMigratable(provider);
     }
 
-    /// @notice Upgrades the metadata provider of an IP asset.
-    /// @param ipId The IP id of the target IP asset.
-    /// @param metadata The existing metadata paired with new metadata to add.
+    /// @notice Updates the provider used by the IP asset, migrating existing metadata to the new provider, and adding 
+    /// new metadata.
+    /// @param ipId The address identifier of the IP asset.
+    /// @param metadata Additional metadata in bytes used by the new metadata provider.
     function upgrade(address payable ipId, bytes memory metadata) external override {
         if (address(upgradeProvider) == address(0)) {
             revert Errors.MetadataProvider__UpgradeUnavailable();
@@ -67,18 +67,19 @@ abstract contract MetadataProviderBase is IMetadataProviderMigratable {
         IP_ASSET_REGISTRY.setMetadata(ipId, address(upgradeProvider), metadata);
     }
 
-    /// @notice Sets the IP metadata associated with an IP asset based on its IP ID.
-    /// @param ipId The IP id of the IP asset to set metadata for.
-    /// @param data The metadata in bytes to set for the IP asset.
-    function setMetadata(address ipId, bytes memory data) external virtual onlyIPAssetRegistry {
-        _verifyMetadata(data);
-        _ipMetadata[ipId] = data;
-        emit MetadataSet(ipId, data);
+    /// @notice Sets the metadata associated with an IP asset.
+    /// @dev Enforced to be only callable by the IP asset registry.
+    /// @param ipId The address identifier of the IP asset.
+    /// @param metadata The metadata in bytes to associate with the IP asset.
+    function setMetadata(address ipId, bytes memory metadata) external virtual onlyIPAssetRegistry {
+        _verifyMetadata(metadata);
+        _ipMetadata[ipId] = metadata;
+        emit MetadataSet(ipId, metadata);
     }
 
     /// @dev Checks that the data conforms to the canonical metadata standards.
-    /// @param data The canonical metadata in bytes to verify.
-    function _verifyMetadata(bytes memory data) internal virtual;
+    /// @param metadata The canonical metadata in bytes to verify.
+    function _verifyMetadata(bytes memory metadata) internal virtual;
 
     /// @dev Checks whether two sets of metadata are compatible with one another.
     /// @param m1 The first set of bytes metadata being compared.

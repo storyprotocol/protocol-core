@@ -3,13 +3,13 @@ pragma solidity ^0.8.23;
 
 import { IPolicyFrameworkManager } from "../../../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 
-/// @notice Licensing parameters for the UML standard
+/// @notice Licensing parameters for the Universal Media License v1 (UML) standard
 /// @param transferable Whether or not the license is transferable
 /// @param attribution Whether or not attribution is required when reproducing the work
 /// @param commercialUse Whether or not the work can be used commercially
 /// @param commercialAttribution Whether or not attribution is required when reproducing the work commercially
-/// @param commercializerChecker commericializers that are allowed to commercially exploit the work. If zero
-/// address then no restrictions.
+/// @param commercializerChecker commericializers that are allowed to commercially exploit the work. If zero address, 
+/// then no restrictions is enforced.
 /// @param commercialRevShare Percentage of revenue that must be shared with the licensor
 /// @param derivativesAllowed Whether or not the licensee can create derivatives of his work
 /// @param derivativesAttribution Whether or not attribution is required for derivatives of the work
@@ -39,12 +39,12 @@ struct UMLPolicy {
     address royaltyPolicy;
 }
 
-/// @notice Struct that accumulates values of inherited policies
-/// so we can verify compatibility when inheriting new policies
+/// @notice Struct that accumulates values of inherited policies so we can verify compatibility when inheriting new 
+/// policies
 /// @param commercial Whether or not there is a policy that allows commercial use
 /// @param derivatives Whether or not there is a policy that allows derivatives
-/// @param derivativesReciprocal Whether or not there is a policy that requires derivatives
-/// to be licensed under the same terms
+/// @param derivativesReciprocal Whether or not there is a policy that requires derivatives to be licensed under the 
+/// same terms
 /// @param lastPolicyId The last policy ID that was added to the IP
 /// @param territoriesAcc The last hash of the territories array
 /// @param distributionChannelsAcc The last hash of the distributionChannels array
@@ -65,15 +65,21 @@ interface IUMLPolicyFrameworkManager is IPolicyFrameworkManager {
     /// @notice Registers a new policy to the registry
     /// @dev Must encode the policy into bytes to be stored in the LicenseRegistry
     /// @param umlPolicy UMLPolicy compliant licensing term values
+    /// @return policyId The ID of the newly registered policy
     function registerPolicy(UMLPolicy calldata umlPolicy) external returns (uint256 policyId);
-    /// @notice Fetchs a policy from the registry, decoding the raw bytes into a UMLPolicy struct
-    /// @param policyId  The ID of the policy to fetch
+
+    /// @notice Returns a policy from the registry, decoding the raw bytes into a UMLPolicy struct
+    /// @param policyId The ID of the policy to fetch
     /// @return policy The UMLPolicy struct
     function getPolicy(uint256 policyId) external view returns (UMLPolicy memory policy);
 
-    /// @notice gets the policy ID for the given policy data, or 0 if not found
+    /// @notice Returns the policy ID for the given policy data, or 0 if not found
+    /// @param umlPolicy The UMLPolicy struct to get the ID for
+    /// @return policyId The ID of the policy
     function getPolicyId(UMLPolicy calldata umlPolicy) external view returns (uint256 policyId);
 
-    /// @notice gets the aggregation data for inherited policies.
+    /// @notice Returns the aggregation data for inherited policies of an IP asset.
+    /// @param ipId The ID of the IP asset to get the aggregator for
+    /// @return rights The UMLAggregator struct
     function getAggregator(address ipId) external view returns (UMLAggregator memory rights);
 }

@@ -8,10 +8,7 @@ import { IModule } from "../interfaces/modules/base/IModule.sol";
 /// @title BaseModule
 /// @notice Base implementation for all modules in Story Protocol.
 abstract contract BaseModule is ERC165, IModule {
-    /// @notice Checks if the contract implements an interface.
-    /// @dev Overrides ERC165's `supportsInterface` to include support for IModule interface.
-    /// @param interfaceId The interface identifier, as specified in ERC-165.
-    /// @return True if the contract implements `interfaceId`, false otherwise.
+    /// @notice IERC165 interface support.
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
         return interfaceId == type(IModule).interfaceId || super.supportsInterface(interfaceId);
     }

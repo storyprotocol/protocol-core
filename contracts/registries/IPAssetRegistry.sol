@@ -29,18 +29,9 @@ import { Governable } from "../governance/Governable.sol";
 ///         IMPORTANT: The IP account address, besides being used for protocol
 ///                    auth, is also the canonical IP identifier for the IP NFT.
 contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
-    /// @notice Attributes for the IP asset type.
-    struct Record {
-        // Metadata provider for Story Protocol canonicalized metadata.
-        IMetadataProviderMigratable metadataProvider;
-        // Metadata resolver for custom metadata added by the IP owner.
-        // TODO: Deprecate this in favor of consolidation through the provider.
-        address resolver;
-    }
-
     /// @notice The canonical module registry used by the protocol.
     IModuleRegistry public immutable MODULE_REGISTRY;
-
+    
     /// @notice The registration module that interacts with IPAssetRegistry.
     IRegistrationModule public REGISTRATION_MODULE;
 
@@ -53,15 +44,9 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
     /// @dev Maps an IP, identified by its IP ID, to an IP record.
     mapping(address => Record) internal _records;
 
-    /// @notice Tracks the current metadata provider used for IP registrations.
+    /// @dev Tracks the current metadata provider used for IP registrations.
     IMetadataProviderMigratable internal _metadataProvider;
 
-    /// @notice Initializes the IP Asset Registry.
-    /// @param erc6551Registry The address of the ERC6551 registry.
-    /// @param accessController The address of the access controller.
-    /// @param ipAccountImpl The address of the IP account implementation.
-    /// @param moduleRegistry The address of the module registry.
-    /// @param governance The address of the governance contract.
     /// TODO: Utilize module registry for fetching different modules.
     constructor(
         address accessController,
@@ -74,38 +59,47 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
         _metadataProvider = IMetadataProviderMigratable(new MetadataProviderV1(address(this)));
     }
 
+    // TODO: Switch to access controller for centralizing this auth mechanism.
     /// @notice Enables third party operators to register on behalf of an NFT owner.
     /// @param operator The address of the operator the sender authorizes.
     /// @param approved Whether or not to approve that operator for registration.
-    /// TODO: Switch to access controller for centralizing this auth mechanism.
     function setApprovalForAll(address operator, bool approved) external {
         isApprovedForAll[msg.sender][operator] = approved;
         emit ApprovalForAll(msg.sender, operator, approved);
     }
 
-    /// @notice Sets the registration module that interacts with IPAssetRegistry.
+    /// @dev Sets the registration module that interacts with IPAssetRegistry.
     /// @param registrationModule The address of the registration module.
     function setRegistrationModule(address registrationModule) external onlyProtocolAdmin {
         REGISTRATION_MODULE = IRegistrationModule(registrationModule);
     }
 
-    /// @notice Registers an NFT as an IP asset.
+    /// @dev Sets the provider for storage of new IP metadata, while enabling existing IP assets to migrate their 
+    /// metadata to the new provider.
+    /// @param newMetadataProvider Address of the new metadata provider contract.
+    function setMetadataProvider(address newMetadataProvider) external onlyProtocolAdmin {
+        _metadataProvider.setUpgradeProvider(newMetadataProvider);
+        _metadataProvider = IMetadataProviderMigratable(newMetadataProvider);
+    }
+
+    /// @notice Registers an NFT as IP, creating a corresponding IP record.
     /// @param chainId The chain identifier of where the NFT resides.
     /// @param tokenContract The address of the NFT.
     /// @param tokenId The token identifier of the NFT.
     /// @param resolverAddr The address of the resolver to associate with the IP.
     /// @param createAccount Whether to create an IP account when registering.
-    /// @param data Canonical metadata to associate with the IP.
+    /// @param metadata_ Metadata in bytes to associate with the IP.
+    /// @return ipId_ The address of the newly registered IP.
     function register(
         uint256 chainId,
         address tokenContract,
         uint256 tokenId,
         address resolverAddr,
         bool createAccount,
-        bytes calldata data
-    ) external returns (address id) {
-        id = _register(new uint256[](0), 0, chainId, tokenContract, tokenId, resolverAddr, createAccount, data);
-        emit IPRegistered(id, chainId, tokenContract, tokenId, resolverAddr, address(_metadataProvider), data);
+        bytes calldata metadata_
+    ) external returns (address ipId_) {
+        ipId_ = _register(new uint256[](0), 0, chainId, tokenContract, tokenId, resolverAddr, createAccount, metadata_);
+        emit IPRegistered(ipId_, chainId, tokenContract, tokenId, resolverAddr, address(_metadataProvider), metadata_);
     }
 
     /// @notice Registers an NFT as an IP using licenses derived from parent IP asset(s).
@@ -114,8 +108,10 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
     /// @param chainId The chain identifier of where the NFT resides.
     /// @param tokenContract The address of the NFT.
     /// @param tokenId The token identifier of the NFT.
+    /// @param resolverAddr The address of the resolver to associate with the IP.
     /// @param createAccount Whether to create an IP account when registering.
-    /// @param data Canonical metadata to associate with the IP.
+    /// @param metadata_ Metadata in bytes to associate with the IP.
+    /// @return ipId_ The address of the newly registered IP.
     function register(
         uint256[] calldata licenseIds,
         uint32 minRoyalty,
@@ -124,10 +120,10 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
         uint256 tokenId,
         address resolverAddr,
         bool createAccount,
-        bytes calldata data
-    ) external returns (address id) {
-        id = _register(licenseIds, minRoyalty, chainId, tokenContract, tokenId, resolverAddr, createAccount, data);
-        emit IPRegistered(id, chainId, tokenContract, tokenId, resolverAddr, address(_metadataProvider), data);
+        bytes calldata metadata_
+    ) external returns (address ipId_) {
+        ipId_ = _register(licenseIds, minRoyalty, chainId, tokenContract, tokenId, resolverAddr, createAccount, metadata_);
+        emit IPRegistered(ipId_, chainId, tokenContract, tokenId, resolverAddr, address(_metadataProvider), metadata_);
     }
 
     /// @notice Gets the canonical IP identifier associated with an IP NFT.
@@ -135,40 +131,41 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
     /// @param chainId The chain identifier of where the IP resides.
     /// @param tokenContract The address of the IP.
     /// @param tokenId The token identifier of the IP.
-    /// @return The IP's canonical address identifier.
+    /// @return ipId The IP's canonical address identifier.
     function ipId(uint256 chainId, address tokenContract, uint256 tokenId) public view returns (address) {
         return super.ipAccount(chainId, tokenContract, tokenId);
     }
 
     /// @notice Checks whether an IP was registered based on its ID.
     /// @param id The canonical identifier for the IP.
-    /// @return Whether the IP was registered into the protocol.
+    /// @return isRegistered Whether the IP was registered into the protocol.
     function isRegistered(address id) external view returns (bool) {
         return _records[id].resolver != address(0);
     }
 
     /// @notice Gets the resolver bound to an IP based on its ID.
     /// @param id The canonical identifier for the IP.
-    /// @return The IP resolver address if registered, else the zero address.
+    /// @return resolver The IP resolver address if registered, else the zero address.
     function resolver(address id) external view returns (address) {
         return _records[id].resolver;
     }
 
     /// @notice Gets the metadata provider used for new metadata registrations.
-    /// @return The address of the metadata provider used for new IP registrations.
+    /// @return metadataProvider The address of the metadata provider used for new IP registrations.
     function metadataProvider() external view returns (address) {
         return address(_metadataProvider);
     }
 
     /// @notice Gets the metadata provider linked to an IP based on its ID.
     /// @param id The canonical identifier for the IP.
-    /// @return The metadata provider that was bound to this IP at creation time.
+    /// @return metadataProvider The metadata provider that was bound to this IP at creation time.
     function metadataProvider(address id) external view returns (address) {
         return address(_records[id].metadataProvider);
     }
 
     /// @notice Gets the underlying canonical metadata linked to an IP asset.
     /// @param id The canonical ID of the IP asset.
+    /// @return metadata The metadata that was bound to this IP at creation time.
     function metadata(address id) external view returns (bytes memory) {
         if (address(_records[id].metadataProvider) == address(0)) {
             revert Errors.IPAssetRegistry__NotYetRegistered();
@@ -176,17 +173,9 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
         return _records[id].metadataProvider.getMetadata(id);
     }
 
-    /// @notice Sets the provider for storage of new IP metadata, while enabling
-    ///         existing IP assets to migrate their metadata to the new provider.
-    /// @param newMetadataProvider Address of the new metadata provider contract.
-    function setMetadataProvider(address newMetadataProvider) external onlyProtocolAdmin {
-        _metadataProvider.setUpgradeProvider(newMetadataProvider);
-        _metadataProvider = IMetadataProviderMigratable(newMetadataProvider);
-    }
-
     /// @notice Sets the underlying metadata for an IP asset.
-    /// @dev As metadata is immutable but additive, this will only be used when
-    ///      an IP migrates from a new provider that introduces new attributes.
+    /// @dev As metadata is immutable but additive, this will only be used when an IP migrates from a new provider that 
+    /// introduces new attributes.
     /// @param id The canonical ID of the IP.
     /// @param data Canonical metadata to associate with the IP.
     function setMetadata(address id, address provider, bytes calldata data) external {

@@ -16,9 +16,20 @@ import { IERC6551Account } from "erc6551/interfaces/IERC6551Account.sol";
 /// IPAccount is core identity for all actions.
 interface IIPAccount is IERC6551Account, IERC721Receiver, IERC1155Receiver {
     /// @notice Emitted when a transaction is executed.
+    /// @param to The recipient of the transaction.
+    /// @param value The amount of Ether sent.
+    /// @param data The data sent along with the transaction.
+    /// @param nonce The nonce of the transaction.
     event Executed(address indexed to, uint256 value, bytes data, uint256 nonce);
 
     /// @notice Emitted when a transaction is executed on behalf of the signer.
+    /// @param to The recipient of the transaction.
+    /// @param value The amount of Ether sent.
+    /// @param data The data sent along with the transaction.
+    /// @param nonce The nonce of the transaction.
+    /// @param deadline The deadline of the transaction signature.
+    /// @param signer The signer of the transaction.
+    /// @param signature The signature of the transaction, EIP-712 encoded.
     event ExecutedWithSig(
         address indexed to,
         uint256 value,
@@ -29,12 +40,27 @@ interface IIPAccount is IERC6551Account, IERC721Receiver, IERC1155Receiver {
         bytes signature
     );
 
-    /// @notice Executes a transaction from the IP Account.
-    /// @param to_ The recipient of the transaction.
-    /// @param value_ The amount of Ether to send.
-    /// @param data_ The data to send along with the transaction.
-    /// @return The return data from the transaction.
-    function execute(address to_, uint256 value_, bytes calldata data_) external payable returns (bytes memory);
+    /// @notice Returns the address of the protocol-wide access controller.
+    function ACCESS_CONTROLLER() external view returns (address);
+
+    /// @notice Returns the IPAccount's internal nonce for transaction ordering.
+    function state() external view returns (uint256);
+
+    /// @notice Returns the identifier of the non-fungible token which owns the account
+    /// @return chainId The EIP-155 ID of the chain the token exists on
+    /// @return tokenContract The contract address of the token
+    /// @return tokenId The ID of the token
+    function token() external view returns (uint256, address, uint256);
+
+    /// @notice Checks if the signer is valid for the given data
+    /// @param signer The signer to check
+    /// @param data The data to check against
+    /// @return The function selector if the signer is valid, 0 otherwise
+    function isValidSigner(address signer, bytes calldata data) external view returns (bytes4);
+
+    /// @notice Returns the owner of the IP Account.
+    /// @return owner The address of the owner.
+    function owner() external view returns (address);
 
     /// @notice Executes a transaction from the IP Account on behalf of the signer.
     /// @param to The recipient of the transaction.
@@ -43,6 +69,7 @@ interface IIPAccount is IERC6551Account, IERC721Receiver, IERC1155Receiver {
     /// @param signer The signer of the transaction.
     /// @param deadline The deadline of the transaction signature.
     /// @param signature The signature of the transaction, EIP-712 encoded.
+    /// @return result The return data from the transaction.
     function executeWithSig(
         address to,
         uint256 value,
@@ -52,7 +79,10 @@ interface IIPAccount is IERC6551Account, IERC721Receiver, IERC1155Receiver {
         bytes calldata signature
     ) external payable returns (bytes memory);
 
-    /// @notice Returns the owner of the IP Account.
-    /// @return The address of the owner.
-    function owner() external view returns (address);
+    /// @notice Executes a transaction from the IP Account.
+    /// @param to The recipient of the transaction.
+    /// @param value The amount of Ether to send.
+    /// @param data The data to send along with the transaction.
+    /// @return result The return data from the transaction.
+    function execute(address to, uint256 value, bytes calldata data) external payable returns (bytes memory);
 }

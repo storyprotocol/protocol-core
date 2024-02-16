@@ -12,23 +12,19 @@ import { LicensingModuleAware } from "../../modules/licensing/LicensingModuleAwa
 /// @title BasePolicyFrameworkManager
 /// @notice Base contract for policy framework managers.
 abstract contract BasePolicyFrameworkManager is IPolicyFrameworkManager, ERC165, LicensingModuleAware {
+    /// @notice Returns the name to be show in license NFT (LNFT) metadata
     string public override name;
+    
+    /// @notice Returns the URL to the off chain legal agreement template text
     string public override licenseTextUrl;
 
-    /// @notice Initializes the base contract.
-    /// @param licensing The address of the license LicensingModule.
     constructor(address licensing, string memory name_, string memory licenseTextUrl_) LicensingModuleAware(licensing) {
         name = name_;
         licenseTextUrl = licenseTextUrl_;
     }
 
-    /// @notice ERC165 interface identifier for the policy framework manager.
+    /// @notice IERC165 interface support.
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
         return interfaceId == type(IPolicyFrameworkManager).interfaceId || super.supportsInterface(interfaceId);
-    }
-
-    /// @notice returns the address of the license registry
-    function licensingModule() external view virtual override returns (address) {
-        return address(LICENSING_MODULE);
     }
 }
