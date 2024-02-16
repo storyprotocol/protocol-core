@@ -477,6 +477,11 @@ contract DisputeModuleTest is BaseTest {
         vm.startPrank(ipAccount1);
         vm.expectRevert(Errors.DisputeModule__NotAbleToResolve.selector);
         disputeModule.resolveDispute(1);
+
+        // Also if the dispute is already resolved or non-existent
+        vm.startPrank(ipAccount1);
+        vm.expectRevert(Errors.DisputeModule__NotAbleToResolve.selector);
+        disputeModule.resolveDispute(2);
     }
 
     function test_DisputeModule_resolveDispute() public {
