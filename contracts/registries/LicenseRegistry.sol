@@ -160,7 +160,7 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
         );
 
         // append the policy specific attributes (last attribute added by PFM should have a comma at the end)
-        // TODO: Safeguard mechanism to make sure the attributes added by PFM do NOT overlap with the common traits 
+        // TODO: Safeguard mechanism to make sure the attributes added by PFM do NOT overlap with the common traits
         // defined above. Currently, we add the common license attributes after adding the PFM attributes to override.
         // But OpenSea might take the value of the first duplicate.
         json = string(abi.encodePacked(json, IPolicyFrameworkManager(pol.policyFramework).policyToJson(pol.data)));

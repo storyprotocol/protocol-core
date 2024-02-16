@@ -16,7 +16,7 @@ library Licensing {
     }
 
     /// @notice Data that define a License Agreement NFT
-    /// @param policyId Id of the policy this license is based on, which will be set in the derivative IP when the 
+    /// @param policyId Id of the policy this license is based on, which will be set in the derivative IP when the
     /// license is burnt for linking
     /// @param licensorIpId Id of the IP this license is for
     /// @param transferable Whether or not the license is transferable
