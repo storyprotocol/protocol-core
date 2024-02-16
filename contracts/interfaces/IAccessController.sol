@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 // See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
 pragma solidity ^0.8.23;
-import { AccessPermission } from "contracts/lib/AccessPermission.sol";
+
+import { AccessPermission } from "../lib/AccessPermission.sol";
 
 interface IAccessController {
     event PermissionSet(

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
+import { ERC6551Registry } from "erc6551/ERC6551Registry.sol";
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { Test } from "forge-std/Test.sol";
 
