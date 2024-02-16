@@ -56,7 +56,10 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
     /// @notice Arbitration policy for a given ipId
     mapping(address ipId => address arbitrationPolicy) public arbitrationPolicies;
 
-    mapping(address ipId => EnumerableSet.Bytes32Set) private _taggedIpIds;
+    /// @notice counter of successful disputes per ipId
+    /// @dev BETA feature, for mainnet tag semantics must influence effect in other modules. For now
+    /// any successful dispute will affect the IP protocol wide
+    mapping(address ipId => uint256) private successfulDisputesPerIp;
 
     /// @notice Initializes the registration module contract
     /// @param _controller The access controller used for IP authorization
@@ -193,8 +196,7 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
 
         if (_decision) {
             disputes[_disputeId].currentTag = dispute.targetTag;
-            // We ignore the result of add(), we don't care if the tag is already there
-            _taggedIpIds[dispute.targetIpId].add(dispute.targetTag);
+            successfulDisputesPerIp[dispute.targetIpId]++;
         } else {
             disputes[_disputeId].currentTag = bytes32(0);
         }
@@ -228,43 +230,17 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
         if (dispute.currentTag == IN_DISPUTE) revert Errors.DisputeModule__NotAbleToResolve();
         if (msg.sender != dispute.disputeInitiator) revert Errors.DisputeModule__NotDisputeInitiator();
 
-        // Ignore the result of remove(), resolveDispute can only be called once when there's a dispute tag.
-        // Once resolveDispute is called, the tag will be removed and calling this fn again will throw an error.
-        _taggedIpIds[dispute.targetIpId].remove(dispute.currentTag);
+        successfulDisputesPerIp[dispute.targetIpId]--;
         disputes[_disputeId].currentTag = bytes32(0);
 
         emit DisputeResolved(_disputeId);
     }
 
-    /// @notice returns true if the ipId is tagged with the tag (meaning the dispute went through)
-    /// @param _ipId The ipId
-    /// @param _tag The tag
-    function isIpTaggedWith(address _ipId, bytes32 _tag) external view returns (bool) {
-        return _taggedIpIds[_ipId].contains(_tag);
-    }
 
     /// @notice returns true if the ipId is tagged with any tag (meaning at least one dispute went through)
     /// @param _ipId The ipId
     function isIpTagged(address _ipId) external view returns (bool) {
-        return _taggedIpIds[_ipId].length() > 0;
-    }
-
-    /// @notice returns the tags for a given ipId (note: this method could be expensive, use in frontends only)
-    /// @param _ipId The ipId
-    function ipTags(address _ipId) external view returns (bytes32[] memory) {
-        return _taggedIpIds[_ipId].values();
-    }
-
-    /// @notice returns the total tags for a given ipId
-    /// @param _ipId The ipId
-    function totalTagsForIp(address _ipId) external view returns (uint256) {
-        return _taggedIpIds[_ipId].length();
-    }
-
-    /// @notice returns the tag at a given index for a given ipId. No guarantees on ordering
-    /// @param _ipId The ipId
-    function tagForIpAt(address _ipId, uint256 _index) external view returns (bytes32) {
-        return _taggedIpIds[_ipId].at(_index);
+        return successfulDisputesPerIp[_ipId] > 0;
     }
 
     /// @notice Gets the protocol-wide module identifier for this module
