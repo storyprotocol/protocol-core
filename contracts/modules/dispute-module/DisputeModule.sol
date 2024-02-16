@@ -228,7 +228,8 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
         if (dispute.currentTag == IN_DISPUTE) revert Errors.DisputeModule__NotAbleToResolve();
         if (msg.sender != dispute.disputeInitiator) revert Errors.DisputeModule__NotDisputeInitiator();
 
-        // We ignore the result of remove()
+        // Ignore the result of remove(), resolveDispute can only be called once when there's a dispute tag.
+        // Once resolveDispute is called, the tag will be removed and calling this fn again will throw an error.
         _taggedIpIds[dispute.targetIpId].remove(dispute.currentTag);
         disputes[_disputeId].currentTag = bytes32(0);
 
