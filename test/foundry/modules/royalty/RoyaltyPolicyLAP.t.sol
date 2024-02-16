@@ -1,20 +1,24 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 
 import { RoyaltyPolicyLAP } from "../../../../contracts/modules/royalty-module/policies/RoyaltyPolicyLAP.sol";
 import { ILiquidSplitMain } from "../../../../contracts/interfaces/modules/royalty/policies/ILiquidSplitMain.sol";
 import { Errors } from "../../../../contracts/lib/Errors.sol";
-// tests
-import { TestHelper } from "../../utils/TestHelper.sol";
-import { console2 } from "forge-std/console2.sol";
 
+import { BaseTest } from "../../utils/BaseTest.t.sol";
 
-contract TestRoyaltyPolicyLAP is TestHelper {
-    event PolicyInitialized(address ipId, address splitClone, address claimer, uint32 royaltyStack, address[] targetAncestors, uint32[] targetRoyaltyAmount);
+contract TestRoyaltyPolicyLAP is BaseTest {
+    event PolicyInitialized(
+        address ipId,
+        address splitClone,
+        address claimer,
+        uint32 royaltyStack,
+        address[] targetAncestors,
+        uint32[] targetRoyaltyAmount
+    );
 
     struct InitParams {
         address[] targetAncestors;
@@ -35,6 +39,18 @@ contract TestRoyaltyPolicyLAP is TestHelper {
 
     function setUp() public override {
         super.setUp();
+        buildDeployModuleCondition(
+            DeployModuleCondition({
+                registrationModule: false,
+                disputeModule: false,
+                royaltyModule: true,
+                taggingModule: false,
+                licensingModule: false
+            })
+        );
+        buildDeployPolicyCondition(DeployPolicyCondition({ arbitrationPolicySP: false, royaltyPolicyLAP: true }));
+        deployConditionally();
+        postDeploymentSetup();
 
         vm.startPrank(u.admin);
         // whitelist royalty policy
@@ -72,7 +88,7 @@ contract TestRoyaltyPolicyLAP is TestHelper {
         royaltyPolicyLAP.onLicenseMinting(address(12), abi.encode(uint32(12)), nullBytes);
         royaltyPolicyLAP.onLicenseMinting(address(13), abi.encode(uint32(13)), nullBytes);
         royaltyPolicyLAP.onLicenseMinting(address(14), abi.encode(uint32(14)), nullBytes);
- 
+
         // init 2nd level with children
         address[] memory parents = new address[](2);
         address[] memory targetAncestors1 = new address[](2);
@@ -149,8 +165,7 @@ contract TestRoyaltyPolicyLAP is TestHelper {
         encodedBytes = abi.encode(initParams);
         royaltyPolicyLAP.onLinkToParents(address(5), parents, encodedLicenseData, encodedBytes);
 
-        
-         // 6 is child of 13 and 14
+        // 6 is child of 13 and 14
         parents[0] = address(13);
         parents[1] = address(14);
         parentRoyalties1[0] = 13;
@@ -172,7 +187,6 @@ contract TestRoyaltyPolicyLAP is TestHelper {
         }
         encodedBytes = abi.encode(initParams);
         royaltyPolicyLAP.onLinkToParents(address(6), parents, encodedLicenseData, encodedBytes);
-
 
         // init 3rd level with children
         address[] memory targetAncestors2 = new address[](6);
@@ -356,8 +370,14 @@ contract TestRoyaltyPolicyLAP is TestHelper {
     }
 
     function test_RoyaltyPolicyLAP_setAncestorsVaultImplementation() public {
-        RoyaltyPolicyLAP royaltyPolicyLAP2 = new RoyaltyPolicyLAP(address(1), address(2), address(3), address(4), address(governance));
-        
+        RoyaltyPolicyLAP royaltyPolicyLAP2 = new RoyaltyPolicyLAP(
+            address(1),
+            address(2),
+            address(3),
+            address(4),
+            address(governance)
+        );
+
         vm.startPrank(u.admin);
         royaltyPolicyLAP2.setAncestorsVaultImplementation(address(2));
 
@@ -431,7 +451,8 @@ contract TestRoyaltyPolicyLAP is TestHelper {
 
         royaltyPolicyLAP.onLicenseMinting(address(100), abi.encode(uint32(0)), inputBytes);
 
-        (,address splitClone, address ancestorsVault, uint32 royaltyStack, bytes32 ancestorsHash) = royaltyPolicyLAP.royaltyData(address(100));
+        (, address splitClone, address ancestorsVault, uint32 royaltyStack, bytes32 ancestorsHash) = royaltyPolicyLAP
+            .royaltyData(address(100));
 
         assertEq(royaltyStack, 0);
         assertEq(ancestorsHash, keccak256(abi.encodePacked(targetAncestors, targetRoyaltyAmount)));
@@ -458,7 +479,8 @@ contract TestRoyaltyPolicyLAP is TestHelper {
 
         royaltyPolicyLAP.onLinkToParents(address(100), parentsIpIds100, encodedLicenseData, MAX_ANCESTORS);
 
-        (,address splitClone, address ancestorsVault, uint32 royaltyStack, bytes32 ancestorsHash) = royaltyPolicyLAP.royaltyData(address(100));
+        (, address splitClone, address ancestorsVault, uint32 royaltyStack, bytes32 ancestorsHash) = royaltyPolicyLAP
+            .royaltyData(address(100));
 
         assertEq(royaltyStack, 105);
         assertEq(ancestorsHash, keccak256(abi.encodePacked(MAX_ANCESTORS_, MAX_ANCESTORS_ROYALTY_)));
@@ -473,7 +495,7 @@ contract TestRoyaltyPolicyLAP is TestHelper {
     }
 
     function test_RoyaltyPolicyLAP_onRoyaltyPayment() public {
-        (,address splitClone2, , , ) = royaltyPolicyLAP.royaltyData(address(2));
+        (, address splitClone2, , , ) = royaltyPolicyLAP.royaltyData(address(2));
         uint256 royaltyAmount = 1000 * 10 ** 6;
         USDC.mint(address(1), royaltyAmount);
         vm.stopPrank();
@@ -497,8 +519,8 @@ contract TestRoyaltyPolicyLAP is TestHelper {
     }
 
     function test_RoyaltyPolicyLAP_distributeIpPoolFunds() public {
-        (,address splitClone2, address ancestorsVault2, , ) = royaltyPolicyLAP.royaltyData(address(2));
-        
+        (, address splitClone2, address ancestorsVault2, , ) = royaltyPolicyLAP.royaltyData(address(2));
+
         // send USDC to 0xSplitClone
         uint256 royaltyAmount = 1000 * 10 ** 6;
         USDC.mint(splitClone2, royaltyAmount);
@@ -520,8 +542,8 @@ contract TestRoyaltyPolicyLAP is TestHelper {
     }
 
     function test_RoyaltyPolicyLAP_claimFromIpPool() public {
-        (,address splitClone2, address ancestorsVault2, , ) = royaltyPolicyLAP.royaltyData(address(2));
-        
+        (, address splitClone2, address ancestorsVault2, , ) = royaltyPolicyLAP.royaltyData(address(2));
+
         // send USDC to 0xSplitClone
         uint256 royaltyAmount = 1000 * 10 ** 6;
         USDC.mint(splitClone2, royaltyAmount);
@@ -532,7 +554,10 @@ contract TestRoyaltyPolicyLAP is TestHelper {
 
         royaltyPolicyLAP.distributeIpPoolFunds(address(2), address(USDC), accounts, address(0));
 
-        uint256 expectedAmountToBeClaimed = ILiquidSplitMain(royaltyPolicyLAP.LIQUID_SPLIT_MAIN()).getERC20Balance(address(2), USDC);
+        uint256 expectedAmountToBeClaimed = ILiquidSplitMain(royaltyPolicyLAP.LIQUID_SPLIT_MAIN()).getERC20Balance(
+            address(2),
+            USDC
+        );
 
         ERC20[] memory tokens = new ERC20[](1);
         tokens[0] = USDC;
@@ -550,7 +575,7 @@ contract TestRoyaltyPolicyLAP is TestHelper {
     }
 
     function test_RoyaltyPolicyLAP_claimAsFullRnftOwner() public {
-        (,address splitClone7, , , ) = royaltyPolicyLAP.royaltyData(address(7));
+        (, address splitClone7, , , ) = royaltyPolicyLAP.royaltyData(address(7));
 
         uint256 royaltyAmountUSDC = 100 * 10 ** 6;
         USDC.mint(address(splitClone7), royaltyAmountUSDC);

@@ -15,7 +15,6 @@ import { Errors } from "../../lib/Errors.sol";
 import { UMLFrameworkErrors } from "../../lib/UMLFrameworkErrors.sol";
 // solhint-disable-next-line max-line-length
 import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator, RegisterUMLPolicyParams } from "../../interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
-import { IPolicyFrameworkManager } from "../../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 import { BasePolicyFrameworkManager } from "../../modules/licensing/BasePolicyFrameworkManager.sol";
 import { LicensorApprovalChecker } from "../../modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
 
@@ -56,12 +55,13 @@ contract UMLPolicyFrameworkManager is
         /// TODO: DO NOT deploy on production networks without hashing string[] values instead of storing them
 
         // No need to emit here, as the LicensingModule will emit the event
-        return LICENSING_MODULE.registerPolicy(
-            params.transferable,
-            params.royaltyPolicy,
-            abi.encode(params.policy.commercialRevShare), // TODO: this should be encoded by the royalty policy
-            abi.encode(params.policy)
-        );
+        return
+            LICENSING_MODULE.registerPolicy(
+                params.transferable,
+                params.royaltyPolicy,
+                abi.encode(params.policy.commercialRevShare), // TODO: this should be encoded by the royalty policy
+                abi.encode(params.policy)
+            );
     }
 
     /// Called by licenseRegistry to verify policy parameters for linking an IP
@@ -77,7 +77,7 @@ contract UMLPolicyFrameworkManager is
         bytes calldata policyData
     ) external override nonReentrant onlyLicensingModule returns (bool) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
-        
+
         // If the policy defines the licensor must approve derivatives, check if the
         // derivative is approved by the licensor
         if (policy.derivativesApproval) {
@@ -91,7 +91,7 @@ contract UMLPolicyFrameworkManager is
             }
 
             if (!IHookModule(policy.commercializerChecker).verify(caller, policy.commercializerCheckerData)) {
-                response.isLinkingAllowed = false;
+                return false;
             }
         }
 
@@ -130,7 +130,6 @@ contract UMLPolicyFrameworkManager is
 
         return true;
     }
-
 
     /// @notice gets the aggregation data for inherited policies, decoded for the framework
     function getAggregator(address ipId) external view returns (UMLAggregator memory rights) {
@@ -335,6 +334,7 @@ contract UMLPolicyFrameworkManager is
 
     /// Checks the configuration of commercial use and throws if the policy is not compliant
     /// @param policy The policy to verify
+    // solhint-disable-next-line code-complexity
     function _verifyComercialUse(UMLPolicy calldata policy, address royaltyPolicy) internal view {
         if (!policy.commercialUse) {
             if (policy.commercialAttribution) {

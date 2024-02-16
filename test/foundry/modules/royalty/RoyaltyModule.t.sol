@@ -2,8 +2,9 @@
 pragma solidity ^0.8.23;
 
 // contracts
-import { Errors } from "contracts/lib/Errors.sol";
-import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { Errors } from "../../../../contracts/lib/Errors.sol";
+import { RoyaltyModule } from "../../../../contracts/modules/royalty-module/RoyaltyModule.sol";
+import { RoyaltyPolicyLAP } from "../../../../contracts/modules/royalty-module/policies/RoyaltyPolicyLAP.sol";
 
 // tests
 import { BaseTest } from "../../utils/BaseTest.t.sol";
@@ -31,6 +32,8 @@ contract TestRoyaltyModule is BaseTest {
     uint32[] MAX_ANCESTORS_ROYALTY_ = new uint32[](14);
     address[] parentsIpIds100;
 
+    RoyaltyPolicyLAP internal royaltyPolicyLAP2;
+
     function setUp() public override {
         super.setUp();
         buildDeployModuleCondition(
@@ -42,11 +45,19 @@ contract TestRoyaltyModule is BaseTest {
                 licensingModule: false
             })
         );
-        buildDeployPolicyCondition(DeployPolicyCondition({ arbitrationPolicySP: false, royaltyPolicyLS: true }));
+        buildDeployPolicyCondition(DeployPolicyCondition({ arbitrationPolicySP: false, royaltyPolicyLAP: true }));
         deployConditionally();
         postDeploymentSetup();
 
         USDC.mint(ipAccount2, 1000 * 10 ** 6); // 1000 USDC
+
+        royaltyPolicyLAP2 = new RoyaltyPolicyLAP(
+            getRoyaltyModule(),
+            getLicensingModule(),
+            LIQUID_SPLIT_FACTORY,
+            LIQUID_SPLIT_MAIN,
+            getGovernance()
+        );
 
         vm.startPrank(u.admin);
         // whitelist royalty policy
@@ -83,7 +94,7 @@ contract TestRoyaltyModule is BaseTest {
 
         royaltyModule.onLicenseMinting(address(7), address(royaltyPolicyLAP), abi.encode(uint32(7)), nullBytes);
         royaltyModule.onLicenseMinting(address(8), address(royaltyPolicyLAP), abi.encode(uint32(8)), nullBytes);
- 
+
         // init 2nd level with children
         address[] memory parents = new address[](2);
         address[] memory targetAncestors1 = new address[](2);
@@ -116,7 +127,7 @@ contract TestRoyaltyModule is BaseTest {
     }
 
     function test_RoyaltyModule_setLicensingModule_revert_ZeroLicensingModule() public {
-        RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(1), address(2), address(governance));
+        RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(governance));
         vm.expectRevert(Errors.RoyaltyModule__ZeroLicensingModule.selector);
         vm.prank(u.admin);
         testRoyaltyModule.setLicensingModule(address(0));
@@ -124,7 +135,7 @@ contract TestRoyaltyModule is BaseTest {
 
     function test_RoyaltyModule_setLicensingModule() public {
         vm.startPrank(u.admin);
-        RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(1), address(2), address(governance));
+        RoyaltyModule testRoyaltyModule = new RoyaltyModule(address(governance));
         testRoyaltyModule.setLicensingModule(address(licensingModule));
 
         assertEq(testRoyaltyModule.LICENSING_MODULE(), address(licensingModule));
@@ -425,7 +436,7 @@ contract TestRoyaltyModule is BaseTest {
         address receiverIpId = address(7);
         address payerIpId = address(3);
 
-        (,address splitClone, , , ) = royaltyPolicyLAP.royaltyData(receiverIpId);
+        (, address splitClone, , , ) = royaltyPolicyLAP.royaltyData(receiverIpId);
 
         vm.startPrank(payerIpId);
         USDC.mint(payerIpId, royaltyAmount);
@@ -444,5 +455,5 @@ contract TestRoyaltyModule is BaseTest {
 
         assertEq(payerIpIdUSDCBalBefore - payerIpIdUSDCBalAfter, royaltyAmount);
         assertEq(splitCloneUSDCBalAfter - splitCloneUSDCBalBefore, royaltyAmount);
-    } 
-} 
+    }
+}

@@ -4,16 +4,18 @@ pragma solidity ^0.8.23;
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 import { IRoyaltyModule } from "../../../../contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
-import { IRoyaltyPolicy } from "../../../../contracts/interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
 import { BaseModule } from "../../../../contracts/modules/BaseModule.sol";
 
 contract MockRoyaltyModule is BaseModule, IRoyaltyModule {
-    string public constant name = "ROYALTY_MODULE";
+    string public constant override name = "ROYALTY_MODULE";
+
     address public LICENSING_MODULE;
+
     mapping(address royaltyPolicy => bool allowed) public isWhitelistedRoyaltyPolicy;
+
     mapping(address token => bool) public isWhitelistedRoyaltyToken;
+
     mapping(address ipId => address royaltyPolicy) public royaltyPolicies;
-    mapping(address ipId => bool) public isRoyaltyPolicyImmutable;
 
     constructor() {}
 
@@ -29,32 +31,30 @@ contract MockRoyaltyModule is BaseModule, IRoyaltyModule {
         isWhitelistedRoyaltyToken[_token] = _allowed;
     }
 
-    function setRoyaltyPolicy(
+    function onLicenseMinting(
+        address _ipId,
+        address _royaltyPolicy,
+        bytes calldata _licenseData,
+        bytes calldata _externalData
+    ) external {
+        // address royaltyPolicyIpId = royaltyPolicies[_ipId];
+        // IRoyaltyPolicy(_royaltyPolicy).onLicenseMinting(_ipId, _licenseData, _externalData);
+    }
+
+    function onLinkToParents(
         address _ipId,
         address _royaltyPolicy,
         address[] calldata _parentIpIds,
-        bytes calldata _data
+        bytes[] memory _licenseData,
+        bytes calldata _externalData
     ) external {
-        if (_parentIpIds.length > 0) isRoyaltyPolicyImmutable[_ipId] = true;
-        for (uint32 i = 0; i < _parentIpIds.length; i++) {
-            isRoyaltyPolicyImmutable[_parentIpIds[i]] = true;
-        }
         royaltyPolicies[_ipId] = _royaltyPolicy;
-        IRoyaltyPolicy(_royaltyPolicy).initPolicy(_ipId, _parentIpIds, _data);
+        // IRoyaltyPolicy(_royaltyPolicy).onLinkToParents(_ipId, _parentIpIds, _licenseData, _externalData);
     }
 
-    function setRoyaltyPolicyImmutable(address _ipId) external {
-        isRoyaltyPolicyImmutable[_ipId] = true;
-    }
-
-    function payRoyaltyOnBehalf(address _receiverIpId, address, address _token, uint256 _amount) external {
-        address royaltyPolicy = royaltyPolicies[_receiverIpId];
-        IRoyaltyPolicy(royaltyPolicy).onRoyaltyPayment(msg.sender, _receiverIpId, _token, _amount);
-    }
-
-    function minRoyaltyFromDescendants(address _ipId) external view returns (uint256) {
-        address royaltyPolicy = royaltyPolicies[_ipId];
-        return IRoyaltyPolicy(royaltyPolicy).minRoyaltyFromDescendants(_ipId);
+    function payRoyaltyOnBehalf(address _receiverIpId, address _payerIpId, address _token, uint256 _amount) external {
+        address payerRoyaltyPolicy = royaltyPolicies[_payerIpId];
+        // IRoyaltyPolicy(payerRoyaltyPolicy).onRoyaltyPayment(msg.sender, _receiverIpId, _token, _amount);
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {

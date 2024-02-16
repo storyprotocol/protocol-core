@@ -3,36 +3,25 @@ pragma solidity ^0.8.23;
 
 // external
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import { Test } from "forge-std/Test.sol";
-import { ERC6551Registry } from "erc6551/ERC6551Registry.sol";
 
 // contracts
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
-import { Governance } from "contracts/governance/Governance.sol";
-import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { RegisterUMLPolicyParams } from "contracts/interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
-import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
-import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
-import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
-import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { MockTokenGatedHook } from "test/foundry/mocks/MockTokenGatedHook.sol";
-import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 
 // test
 // solhint-disable-next-line max-line-length
 import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy } from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
 import { MockAccessController } from "test/foundry/mocks/access/MockAccessController.sol";
 import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
-import { MockRoyaltyPolicyLS } from "test/foundry/mocks/policy/MockRoyaltyPolicyLS.sol";
-import { MockDisputeModule } from "test/foundry/mocks/module/MockDisputeModule.sol";
+import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
-contract LicensingModuleTest is Test, TestHelper {
+contract LicensingModuleTest is BaseTest {
     using Strings for *;
 
     MockAccessController internal mockAccessController = new MockAccessController();
@@ -43,20 +32,6 @@ contract LicensingModuleTest is Test, TestHelper {
     MockERC721 internal nft = new MockERC721("MockERC721");
     MockERC721 internal gatedNftFoo = new MockERC721{ salt: bytes32(uint256(1)) }("GatedNftFoo");
     MockERC721 internal gatedNftBar = new MockERC721{ salt: bytes32(uint256(2)) }("GatedNftBar");
-
-    ModuleRegistry internal moduleRegistry;
-
-    ERC6551Registry internal erc6551Registry;
-
-    IPAccountImpl internal ipAccountImpl;
-
-    RoyaltyModule internal royaltyModule;
-
-    IPAssetRegistry internal ipAssetRegistry;
-
-    MockRoyaltyPolicyLS internal mockRoyaltyPolicyLS;
-
-    MockDisputeModule internal disputeModule;
 
     string public licenseUrl = "https://example.com/license";
     address public ipId1;
@@ -70,54 +45,33 @@ contract LicensingModuleTest is Test, TestHelper {
     }
 
     function setUp() public override {
-        // Registry
-        Governance governance = new Governance(address(this));
-        erc6551Registry = new ERC6551Registry();
-        ipAccountImpl = new IPAccountImpl();
-        ipAccountRegistry = new IPAccountRegistry(
-            address(erc6551Registry),
-            address(mockAccessController),
-            address(ipAccountImpl)
+        super.setUp();
+        buildDeployModuleCondition(
+            DeployModuleCondition({
+                registrationModule: true,
+                disputeModule: false,
+                royaltyModule: false,
+                taggingModule: false,
+                licensingModule: true
+            })
         );
-        
-        moduleRegistry = new ModuleRegistry(address(governance));
-        
-        ipAssetRegistry = new IPAssetRegistry(
-            address(mockAccessController),
-            address(erc6551Registry),
-            address(ipAccountImpl),
-            address(moduleRegistry),
-            address(governance)
+        buildDeployPolicyCondition(DeployPolicyCondition({ arbitrationPolicySP: false, royaltyPolicyLAP: true }));
+        buildDeployMiscCondition(
+            DeployMiscCondition({ ipAssetRenderer: false, ipMetadataProvider: false, ipResolver: true })
         );
-        disputeModule = new MockDisputeModule();
-        licenseRegistry = new LicenseRegistry(address(governance));
-        
-        royaltyModule = new RoyaltyModule(address(mockAccessController), address(ipAssetRegistry),address(governance));
-        
-        licenseRegistry = new LicenseRegistry();
-        licensingModule = new LicensingModule(
-            address(mockAccessController),
-            address(ipAssetRegistry),
-            address(royaltyModule),
-            address(licenseRegistry),
-            address(disputeModule)
-        );
-        
-        mockRoyaltyPolicyLS = new MockRoyaltyPolicyLS(address(royaltyModule));
+        deployConditionally();
+        postDeploymentSetup();
 
-        licenseRegistry.setDisputeModule(address(disputeModule));
-        licenseRegistry.setLicensingModule(address(licensingModule));
-        
         // Setup Framework Managers (don't register PFM here, do in each test case)
         mockPFM = new MockPolicyFrameworkManager(
             MockPolicyFrameworkConfig({
                 licensingModule: address(licensingModule),
                 name: "MockPolicyFrameworkManager",
                 licenseUrl: licenseUrl,
-                royaltyPolicy: address(mockRoyaltyPolicyLS)
+                royaltyPolicy: address(mockRoyaltyPolicyLAP)
             })
         );
-        
+
         umlManager = new UMLPolicyFrameworkManager(
             address(mockAccessController),
             address(ipAccountRegistry),
@@ -125,27 +79,13 @@ contract LicensingModuleTest is Test, TestHelper {
             "UMLPolicyFrameworkManager",
             licenseUrl
         );
-        
-        IPResolver ipResolver = new IPResolver(address(mockAccessController), address(ipAssetRegistry));
-        
-        RegistrationModule registrationModule = new RegistrationModule(
-            address(ipAssetRegistry),
-            address(licensingModule),
-            address(ipResolver)
-        );
-        
-        ipAssetRegistry.setRegistrationModule(address(registrationModule));
-        
-        // Set licensing module in royalty module
-        royaltyModule.setLicensingModule(address(licensingModule));
-        royaltyModule.whitelistRoyaltyPolicy(address(mockRoyaltyPolicyLS), true);
-        
+
         // Create IPAccounts
         nft.mintId(ipOwner, 1);
         nft.mintId(ipOwner, 2);
-        
-        //ipId1 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 1);
-        //ipId2 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 2);
+
+        ipId1 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 1);
+        ipId2 = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 2);
 
         vm.label(ipId1, "IPAccount1");
         vm.label(ipId2, "IPAccount2");
@@ -166,30 +106,27 @@ contract LicensingModuleTest is Test, TestHelper {
         assertTrue(licensingModule.isFrameworkRegistered(address(mockPFM)), "framework not registered");
     }
 
-    function test_LicensingModule_registerPolicy()
-        withPolicyFrameworkManager
-        public {
+    function test_LicensingModule_registerPolicy() public withPolicyFrameworkManager {
         licensingModule.registerPolicyFrameworkManager(address(mockPFM));
         vm.prank(address(mockPFM));
-        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLS), "", _createPolicyData());
+        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", _createPolicyData());
         assertEq(policyId, 1, "policyId not 1");
     }
 
-    function test_LicensingModule_registerPolicy_reusesIdForAlreadyAddedPolicy()
-        withPolicyFrameworkManager
-        public {
+    function test_LicensingModule_registerPolicy_reusesIdForAlreadyAddedPolicy() public withPolicyFrameworkManager {
         vm.startPrank(address(mockPFM));
-        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLS), "", _createPolicyData());
-        assertEq(policyId, licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLS), "", _createPolicyData()));
+        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", _createPolicyData());
+        assertEq(
+            policyId,
+            licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", _createPolicyData())
+        );
         vm.stopPrank();
     }
 
-    function test_LicensingModule_getPolicyId()
-        withPolicyFrameworkManager
-        public {
+    function test_LicensingModule_getPolicyId() public withPolicyFrameworkManager {
         bytes memory policy = _createPolicyData();
         vm.prank(address(mockPFM));
-        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLS), "", _createPolicyData());
+        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", _createPolicyData());
         Licensing.Policy memory storedPolicy = licensingModule.policy(policyId);
         assertEq(licensingModule.getPolicyId(storedPolicy), policyId, "policyId not found");
     }
@@ -197,16 +134,13 @@ contract LicensingModuleTest is Test, TestHelper {
     function test_LicensingModule_registerPolicy_revert_frameworkNotFound() public {
         vm.expectRevert(Errors.LicensingModule__FrameworkNotFound.selector);
         vm.prank(address(mockPFM));
-        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLS), "", _createPolicyData());
+        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", _createPolicyData());
     }
 
-    function test_LicensingModule_addPolicyToIpId()
-        withPolicyFrameworkManager
-        public {
-        
+    function test_LicensingModule_addPolicyToIpId() public withPolicyFrameworkManager {
         bytes memory policy = _createPolicyData();
         vm.prank(address(mockPFM));
-        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLS), "", _createPolicyData());
+        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", _createPolicyData());
         vm.prank(ipOwner);
         uint256 indexOnIpId = licensingModule.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1, "policyId not 1");
@@ -217,11 +151,9 @@ contract LicensingModuleTest is Test, TestHelper {
         assertEq(keccak256(abi.encode(storedPolicy)), keccak256(abi.encode(policy)), "policy not stored properly");
     }
 
-    function test_LicensingModule_addSamePolicyReusesPolicyId()
-        withPolicyFrameworkManager
-        public {
+    function test_LicensingModule_addSamePolicyReusesPolicyId() public withPolicyFrameworkManager {
         vm.prank(address(mockPFM));
-        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLS), "", _createPolicyData());
+        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", _createPolicyData());
 
         vm.prank(ipOwner);
         uint256 indexOnIpId = licensingModule.addPolicyToIp(ipId1, policyId);
@@ -234,16 +166,13 @@ contract LicensingModuleTest is Test, TestHelper {
         assertFalse(licensingModule.isPolicyInherited(ipId2, policyId));
     }
 
-    function test_LicensingModule_add2PoliciesToIpId()
-        withPolicyFrameworkManager
-        public {
-        
+    function test_LicensingModule_add2PoliciesToIpId() public withPolicyFrameworkManager {
         assertEq(licensingModule.totalPolicies(), 0);
         assertEq(licensingModule.totalPoliciesForIp(false, ipId1), 0);
 
         // First time adding a policy
         vm.prank(address(mockPFM));
-        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLS), "", _createPolicyData());
+        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", _createPolicyData());
         vm.prank(ipOwner);
         uint256 indexOnIpId = licensingModule.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1, "policyId not 1");
@@ -257,7 +186,7 @@ contract LicensingModuleTest is Test, TestHelper {
         // Adding different policy to same ipId
         bytes memory otherPolicy = abi.encode(MockPolicy({ returnVerifyLink: true, returnVerifyMint: false }));
         vm.prank(address(mockPFM));
-        uint256 policyId2 = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLS), "", otherPolicy);
+        uint256 policyId2 = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", otherPolicy);
         vm.prank(ipOwner);
         uint256 indexOnIpId2 = licensingModule.addPolicyToIp(ipId1, policyId2);
         assertEq(policyId2, 2, "policyId not 2");
@@ -269,12 +198,9 @@ contract LicensingModuleTest is Test, TestHelper {
         assertFalse(isInherited);
     }
 
-    function test_LicensingModule_mintLicense()
-        withPolicyFrameworkManager
-        public returns (uint256 licenseId) {
-
+    function test_LicensingModule_mintLicense() public withPolicyFrameworkManager returns (uint256 licenseId) {
         vm.prank(address(mockPFM));
-        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLS), "", _createPolicyData());
+        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", _createPolicyData());
         vm.prank(ipOwner);
         uint256 indexOnIpId = licensingModule.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1);
@@ -297,9 +223,8 @@ contract LicensingModuleTest is Test, TestHelper {
     function test_LicensingModule_mintLicense_revert_licensorNotRegistered() public {
         licensingModule.registerPolicyFrameworkManager(address(mockPFM));
 
-
         vm.prank(address(mockPFM));
-        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLS), "", _createPolicyData());
+        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", _createPolicyData());
 
         vm.prank(ipOwner);
         licensingModule.addPolicyToIp(ipId1, policyId);
@@ -314,7 +239,7 @@ contract LicensingModuleTest is Test, TestHelper {
         IPAccountImpl ipAccount1 = IPAccountImpl(payable(ipId1));
 
         vm.prank(address(mockPFM));
-        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLS), "", _createPolicyData());
+        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", _createPolicyData());
 
         // Anyone (this contract, in this case) calls
         vm.expectRevert(Errors.LicensingModule__CallerNotLicensorAndPolicyNotSet.selector);
@@ -349,8 +274,8 @@ contract LicensingModuleTest is Test, TestHelper {
         IPAccountImpl ipAccount1 = IPAccountImpl(payable(ipId1));
 
         vm.startPrank(address(mockPFM));
-        uint256 policyId1 = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLS), "", policy);
-        uint256 policyId2 = licensingModule.registerPolicy(false, address(mockRoyaltyPolicyLS), "", policy);
+        uint256 policyId1 = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", policy);
+        uint256 policyId2 = licensingModule.registerPolicy(false, address(mockRoyaltyPolicyLAP), "", policy);
         vm.stopPrank();
 
         // Licensor (IP Account owner) calls directly
@@ -365,7 +290,14 @@ contract LicensingModuleTest is Test, TestHelper {
         bytes memory result = ipAccount1.execute(
             address(licensingModule),
             0,
-            abi.encodeWithSignature("mintLicense(uint256,address,uint256,address,bytes)", policyId1, ipId1, 1, licenseHolder, "")
+            abi.encodeWithSignature(
+                "mintLicense(uint256,address,uint256,address,bytes)",
+                policyId1,
+                ipId1,
+                1,
+                licenseHolder,
+                ""
+            )
         );
         assertEq(1, abi.decode(result, (uint256)));
 
@@ -409,11 +341,10 @@ contract LicensingModuleTest is Test, TestHelper {
         assertEq(parents[0], ipId1, "parent not ipId1");
     }
 
-
     function test_LicensingModule_singleTransfer_verifyOk() public {
         licensingModule.registerPolicyFrameworkManager(address(mockPFM));
         vm.prank(address(mockPFM));
-        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLS), "", _createPolicyData());
+        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", _createPolicyData());
 
         vm.prank(ipOwner);
         licensingModule.addPolicyToIp(ipId1, policyId);
@@ -432,7 +363,12 @@ contract LicensingModuleTest is Test, TestHelper {
     function test_LicensingModule_singleTransfer_revert_verifyFalse() public {
         licensingModule.registerPolicyFrameworkManager(address(mockPFM));
         vm.prank(address(mockPFM));
-        uint256 policyId = licensingModule.registerPolicy(false, address(mockRoyaltyPolicyLS), "", _createPolicyData());
+        uint256 policyId = licensingModule.registerPolicy(
+            false,
+            address(mockRoyaltyPolicyLAP),
+            "",
+            _createPolicyData()
+        );
 
         vm.prank(ipOwner);
         licensingModule.addPolicyToIp(ipId1, policyId);
@@ -476,7 +412,7 @@ contract LicensingModuleTest is Test, TestHelper {
         vm.prank(address(licensingModule));
         uint256 licenseId = licensingModule.mintLicense(policyId, address(0xbeef), 1, licenseHolder, "");
 
-        string memory actualUri = licenseRegistry.uri(licenseId);
+        string memory actualUri = LicenseRegistry(address(licenseRegistry)).uri(licenseId);
 
         /* solhint-disable */
         // NOTE: In STRING version, no spacing between key and value (eg. "value":"true" instead of "value": "true")
@@ -586,22 +522,19 @@ contract LicensingModuleTest is Test, TestHelper {
         licensingModule.registerPolicyFrameworkManager(address(umlManager));
 
         UMLPolicy memory policyData = UMLPolicy({
-            transferable: true,
             attribution: true,
             commercialUse: true,
-            commercialAttribution: true,
+            commercialAttribution: false,
             commercializerChecker: address(0),
             commercializerCheckerData: "",
-            commercialRevShare: 0,
-            derivativesAllowed: true,
-            derivativesAttribution: true,
-            derivativesApproval: true,
-            derivativesReciprocal: true,
-            derivativesRevShare: 0,
+            commercialRevShare: 100,
+            derivativesAllowed: false,
+            derivativesAttribution: false,
+            derivativesApproval: false,
+            derivativesReciprocal: false,
             territories: new string[](1),
             distributionChannels: new string[](1),
-            contentRestrictions: new string[](0),
-            royaltyPolicy: address(mockRoyaltyPolicyLS)
+            contentRestrictions: emptyStringArray
         });
 
         gatedNftFoo.mintId(address(this), 1);
@@ -613,13 +546,20 @@ contract LicensingModuleTest is Test, TestHelper {
         policyData.territories[0] = "territory1";
         policyData.distributionChannels[0] = "distributionChannel1";
 
-        uint256 policyId = umlManager.registerPolicy(policyData);
+        uint256 policyId = umlManager.registerPolicy(
+            RegisterUMLPolicyParams({
+                transferable: true,
+                // TODO: use mock or real based on condition
+                royaltyPolicy: address(mockRoyaltyPolicyLAP),
+                policy: policyData
+            })
+        );
 
         vm.prank(ipOwner);
         licensingModule.addPolicyToIp(ipId1, policyId);
 
         vm.expectRevert(Errors.LicensingModule__MintLicenseParamFailed.selector);
-        licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder);
+        licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder, "");
     }
 
     function onERC721Received(address, address, uint256, bytes memory) public pure returns (bytes4) {

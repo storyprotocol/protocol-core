@@ -12,6 +12,7 @@ import { AccessController } from "../../../contracts/AccessController.sol";
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY, TAGGING_MODULE_KEY, ROYALTY_MODULE_KEY, LICENSING_MODULE_KEY } from "../../../contracts/lib/modules/Module.sol";
 import { AccessPermission } from "../../../contracts/lib/AccessPermission.sol";
 import { LicenseRegistry } from "../../../contracts/registries/LicenseRegistry.sol";
+import { RoyaltyModule } from "../../../contracts/modules/royalty-module/RoyaltyModule.sol";
 
 // test
 import { DeployHelper } from "./DeployHelper.t.sol";
@@ -38,6 +39,7 @@ contract BaseTest is Test, DeployHelper, LicensingHelper {
     /// NOTE: Must call `postDeploymentSetup` after `deployConditionally` to set these.
     MockERC20 internal mockToken; // alias for erc20
     MockERC20 internal USDC; // alias for mockToken/erc20
+    MockERC20 internal LINK; // alias for erc20bb
     MockERC721 internal mockNFT; // alias for erc721.ape
 
     /// @notice Sets up the base test contract.
@@ -60,16 +62,13 @@ contract BaseTest is Test, DeployHelper, LicensingHelper {
         if (postDeployConditions.moduleRegistry_registerModules) registerModules();
         if (postDeployConditions.royaltyModule_configure) configureRoyaltyModule();
         if (postDeployConditions.disputeModule_configure) configureDisputeModule();
-        if (deployConditions.registry.licenseRegistry) {
-            configureLicenseRegistry();
-        }
-        if (deployConditions.module.registrationModule) {
-            // TODO: also conditionally check on `deployConditions.registry.ipAssetRegistry`
-            configureIPAssetRegistry();
-        }
+        if (deployConditions.registry.licenseRegistry) configureLicenseRegistry();
+        // TODO: also conditionally check on `deployConditions.registry.ipAssetRegistry`
+        if (deployConditions.module.registrationModule) configureIPAssetRegistry();
+        if (deployConditions.policy.royaltyPolicyLAP) configureRoyaltyPolicyLAP();
 
-        bool isMockRoyaltyPolicyLS = address(royaltyPolicyLS) == address(0) &&
-            address(mockRoyaltyPolicyLS) != address(0);
+        bool isMockRoyaltyPolicyLAP = address(royaltyPolicyLAP) == address(0) &&
+            address(mockRoyaltyPolicyLAP) != address(0);
 
         // Initialize licensing helper
         // TODO: conditionally init and use LicensingHelper.
@@ -78,12 +77,13 @@ contract BaseTest is Test, DeployHelper, LicensingHelper {
             address(ipAccountRegistry),
             getLicensingModule(),
             getRoyaltyModule(),
-            isMockRoyaltyPolicyLS ? address(mockRoyaltyPolicyLS) : address(royaltyPolicyLS)
+            isMockRoyaltyPolicyLAP ? address(mockRoyaltyPolicyLAP) : address(royaltyPolicyLAP)
         );
 
         // Set aliases
         mockToken = erc20;
         USDC = erc20;
+        LINK = erc20bb;
         mockNFT = erc721.ape;
     }
 
@@ -92,6 +92,11 @@ contract BaseTest is Test, DeployHelper, LicensingHelper {
         erc20.mint(u.bob, 1000 * 10 ** erc20.decimals());
         erc20.mint(u.carl, 1000 * 10 ** erc20.decimals());
         erc20.mint(u.dan, 1000 * 10 ** erc20.decimals());
+
+        erc20bb.mint(u.alice, 1000 * 10 ** erc20bb.decimals());
+        erc20bb.mint(u.bob, 1000 * 10 ** erc20bb.decimals());
+        erc20bb.mint(u.carl, 1000 * 10 ** erc20bb.decimals());
+        erc20bb.mint(u.dan, 1000 * 10 ** erc20bb.decimals());
     }
 
     /// @dev Initialize the access controller to abstract away access controller initialization when testing
@@ -156,10 +161,10 @@ contract BaseTest is Test, DeployHelper, LicensingHelper {
         require(address(royaltyModule) != address(0), "royaltyModule not set");
 
         vm.startPrank(u.admin);
-        royaltyModule.setLicensingModule(getLicensingModule());
+        RoyaltyModule(address(royaltyModule)).setLicensingModule(getLicensingModule());
         royaltyModule.whitelistRoyaltyToken(address(erc20), true);
-        if (address(royaltyPolicyLS) != address(0)) {
-            royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
+        if (address(royaltyPolicyLAP) != address(0)) {
+            royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLAP), true);
         }
         vm.stopPrank();
     }
@@ -197,6 +202,15 @@ contract BaseTest is Test, DeployHelper, LicensingHelper {
 
         vm.startPrank(u.admin);
         ipAssetRegistry.setRegistrationModule(address(registrationModule));
+        vm.stopPrank();
+    }
+
+    function configureRoyaltyPolicyLAP() public {
+        console2.log("BaseTest PostDeploymentSetup: Configure Royalty Policy LAP");
+        require(address(royaltyPolicyLAP) != address(0), "royaltyPolicyLAP not set");
+
+        vm.startPrank(u.admin);
+        royaltyPolicyLAP.setAncestorsVaultImplementation(address(ancestorsVaultImpl));
         vm.stopPrank();
     }
 

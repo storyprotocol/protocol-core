@@ -5,7 +5,6 @@ pragma solidity ^0.8.23;
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
-import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import { IIPAccount } from "../../interfaces/IIPAccount.sol";
@@ -218,7 +217,13 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         address royaltyAddressAcc = address(0);
 
         for (uint256 i = 0; i < licenseIds.length; i++) {
-            (licensors[i], royaltyAddressAcc, royaltyData[i]) = _verifyRoyaltyAndLink(i, licenseIds[i], childIpId, holder, royaltyAddressAcc);
+            (licensors[i], royaltyAddressAcc, royaltyData[i]) = _verifyRoyaltyAndLink(
+                i,
+                licenseIds[i],
+                childIpId,
+                holder,
+                royaltyAddressAcc
+            );
         }
         emit IpIdLinkedToParents(msg.sender, childIpId, licensors);
 
@@ -235,9 +240,9 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         uint256 i,
         uint256 licenseId,
         address childIpId,
-        address holder, 
+        address holder,
         address royaltyAddressAcc
-    ) private returns(address licensor, address newRoyaltyAcc, bytes memory royaltyData) {
+    ) private returns (address licensor, address newRoyaltyAcc, bytes memory royaltyData) {
         if (!LICENSE_REGISTRY.isLicensee(licenseId, holder)) {
             revert Errors.LicensingModule__NotLicensee();
         }
@@ -247,7 +252,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         if (i > 0 && pol.royaltyPolicy != royaltyAddressAcc) {
             revert Errors.LicensingModule__IncompatibleLicensorCommercialPolicy();
         }
-        
+
         _linkIpToParent(i, licenseId, licenseData.policyId, pol, licenseData.licensorIpId, childIpId);
         return (licenseData.licensorIpId, pol.royaltyPolicy, pol.royaltyData);
     }

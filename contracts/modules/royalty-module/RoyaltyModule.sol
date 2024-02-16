@@ -35,11 +35,7 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModul
 
     /// @notice Constructor
     /// @param _governance The address of the governance contract
-    constructor(
-        address _controller, 
-        address _assetRegistry, 
-        address _governance
-    ) BaseModule(_controller, _assetRegistry) Governable(_governance) {}
+    constructor(address _governance) Governable(_governance) {}
 
     modifier onlyLicensingModule() {
         if (msg.sender != LICENSING_MODULE) revert Errors.RoyaltyModule__NotAllowedCaller();
@@ -76,27 +72,37 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModul
         emit RoyaltyTokenWhitelistUpdated(_token, _allowed);
     }
 
-    // TODO: Ensure that the ipId that is passed in from license cannot be manipulated - given ipId addresses are deterministic
-    // TODO: the parentIpIds refer to the parents of the node that whose license is being minted (whether by itself or by a derivative node)
+    // TODO: Ensure that the ipId that is passed in from license cannot be manipulated - given ipId addresses are
+    // deterministic
+    // TODO: the parentIpIds refer to the parents of the node that whose license is being minted (whether by itself or
+    // by a derivative node)
     /// @notice Executes royalty related logic on license minting
     /// @param _ipId The ipId whose license is being minted (licensor)
     /// @param _royaltyPolicy The royalty policy address of the license being minted
     /// @param _licenseData The license data custom to each the royalty policy
     /// @param _externalData The external data custom to each the royalty policy
-    function onLicenseMinting(address _ipId, address _royaltyPolicy, bytes calldata _licenseData, bytes calldata _externalData) external nonReentrant onlyLicensingModule {
+    function onLicenseMinting(
+        address _ipId,
+        address _royaltyPolicy,
+        bytes calldata _licenseData,
+        bytes calldata _externalData
+    ) external nonReentrant onlyLicensingModule {
         if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
-        
+
         address royaltyPolicyIpId = royaltyPolicies[_ipId];
 
-        // if the node is a root node, then royaltyPolicyIpId will be address(0) and any type of royalty type can be selected to mint a license
-        // if the node is a derivative node, then the any minted licenses by the derivative node should have the same royalty policy as the parent node
-        // a derivative node set its royalty policy immutably in onLinkToParents() function below
-        if (royaltyPolicyIpId != _royaltyPolicy && royaltyPolicyIpId != address(0)) revert Errors.RoyaltyModule__CanOnlyMintSelectedPolicy();
+        // if the node is a root node, then royaltyPolicyIpId will be address(0) and any type of royalty type can be
+        // selected to mint a license if the node is a derivative node, then the any minted licenses by the derivative
+        // node should have the same royalty policy as the parent node a derivative node set its royalty policy
+        // immutably in onLinkToParents() function below
+        if (royaltyPolicyIpId != _royaltyPolicy && royaltyPolicyIpId != address(0))
+            revert Errors.RoyaltyModule__CanOnlyMintSelectedPolicy();
 
         IRoyaltyPolicy(_royaltyPolicy).onLicenseMinting(_ipId, _licenseData, _externalData);
     }
 
-    // TODO: Ensure that the ipId that is passed in from license cannot be manipulated - given ipId addresses are deterministic
+    // TODO: Ensure that the ipId that is passed in from license cannot be manipulated - given ipId addresses are
+    // deterministic
     // TODO: Ensure all licenses are burned before linking to a new parents all have the same royalty policy address
     /// @notice Executes royalty related logic on linking to parents
     /// @param _ipId The children ipId that is being linked to parents
@@ -104,16 +110,24 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModul
     /// @param _parentIpIds The parent ipIds that the children ipId is being linked to
     /// @param _licenseData The license data custom to each the royalty policy
     /// @param _externalData The external data custom to each the royalty policy
-    function onLinkToParents(address _ipId, address _royaltyPolicy, address[] calldata _parentIpIds, bytes[] memory _licenseData, bytes calldata _externalData) external nonReentrant onlyLicensingModule {
+    function onLinkToParents(
+        address _ipId,
+        address _royaltyPolicy,
+        address[] calldata _parentIpIds,
+        bytes[] memory _licenseData,
+        bytes calldata _externalData
+    ) external nonReentrant onlyLicensingModule {
         if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
         if (_parentIpIds.length == 0) revert Errors.RoyaltyModule__NoParentsOnLinking();
 
         for (uint32 i = 0; i < _parentIpIds.length; i++) {
             address parentRoyaltyPolicy = royaltyPolicies[_parentIpIds[i]];
-            // if the parent node has a royalty policy set, then the derivative node should have the same royalty policy
-            // if the parent node does not have a royalty policy set, then the derivative node can set any type of royalty policy
-            // as long as the children ip obtained and is burning all licenses with that royalty type from each parent (was checked in licensing module before calling this function)
-            if (parentRoyaltyPolicy != _royaltyPolicy && parentRoyaltyPolicy != address(0)) revert Errors.RoyaltyModule__IncompatibleRoyaltyPolicy();
+            // if the parent node has a royalty policy set, then the derivative node should have the same royalty
+            // policy if the parent node does not have a royalty policy set, then the derivative node can set any type
+            // of royalty policy as long as the children ip obtained and is burning all licenses with that royalty type
+            // from each parent (was checked in licensing module before calling this function)
+            if (parentRoyaltyPolicy != _royaltyPolicy && parentRoyaltyPolicy != address(0))
+                revert Errors.RoyaltyModule__IncompatibleRoyaltyPolicy();
         }
 
         royaltyPolicies[_ipId] = _royaltyPolicy;
@@ -135,8 +149,8 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModul
         if (!isWhitelistedRoyaltyToken[_token]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyToken();
 
         address payerRoyaltyPolicy = royaltyPolicies[_payerIpId];
-        // if the payer does not have a royalty policy set, then the payer is not a derivative ip and does not pay royalties
-        // the receiver ip can have a zero royalty policy since that could mean it is an ip a root
+        // if the payer does not have a royalty policy set, then the payer is not a derivative ip and does not pay
+        // royalties the receiver ip can have a zero royalty policy since that could mean it is an ip a root
         if (payerRoyaltyPolicy == address(0)) revert Errors.RoyaltyModule__NoRoyaltyPolicySet();
         if (!isWhitelistedRoyaltyPolicy[payerRoyaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
 

@@ -12,8 +12,6 @@ import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/A
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 import { UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 // test
-// solhint-disable-next-line max-line-length
-import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.t.sol";
 import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
 contract DisputeModuleTest is BaseTest {
@@ -53,7 +51,7 @@ contract DisputeModuleTest is BaseTest {
                 licensingModule: false
             })
         );
-        buildDeployPolicyCondition(DeployPolicyCondition({ arbitrationPolicySP: true, royaltyPolicyLS: true }));
+        buildDeployPolicyCondition(DeployPolicyCondition({ arbitrationPolicySP: true, royaltyPolicyLAP: true }));
         buildDeployMiscCondition(
             DeployMiscCondition({ ipAssetRenderer: false, ipMetadataProvider: false, ipResolver: true })
         );
@@ -82,7 +80,7 @@ contract DisputeModuleTest is BaseTest {
             "cheap_flexible",
             true,
             address(royaltyPolicyLAP),
-            UMLPolicy ({
+            UMLPolicy({
                 attribution: false,
                 commercialUse: true,
                 commercialAttribution: true,

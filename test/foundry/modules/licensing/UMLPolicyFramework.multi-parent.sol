@@ -7,9 +7,9 @@ import { IRoyaltyModule } from "contracts/interfaces/modules/royalty/IRoyaltyMod
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
-import { UMLPolicy, RegisterUMLPolicyParams } from "contracts/interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
+// solhint-disable-next-line max-line-length
+import { RegisterUMLPolicyParams } from "contracts/interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
-import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 
 import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
@@ -63,6 +63,7 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
                 licensingModule: true
             })
         );
+        buildDeployPolicyCondition(DeployPolicyCondition({ royaltyPolicyLAP: true, arbitrationPolicySP: false }));
         deployConditionally();
         postDeploymentSetup();
 
@@ -146,7 +147,6 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         _getMappedUmlPolicy("other").attribution = !_getMappedUmlPolicy("other").attribution;
         _addUMLPolicyFromMapping("other", address(umlFramework));
 
-        mockRoyaltyPolicyLS.setMinRoyalty(ipId3, 100);
         vm.prank(ipId3);
         licenses.push(licensingModule.mintLicense(_getUmlPolicyId("other"), ipId3, 1, alice, ""));
         vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalButDifferentPolicyIds.selector);
@@ -272,7 +272,11 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
 
         // TODO: passing in two different royaltyPolicy addresses
         // solhint-disable-next-line max-line-length
-        _testRevertCompat(inputA, inputB, UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesValueMismatch.selector);
+        _testRevertCompat(
+            inputA,
+            inputB,
+            UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesValueMismatch.selector
+        );
     }
 
     function test_UMLPolicyFramework_multiParent_NonReciprocalTerritories() public {
@@ -301,7 +305,6 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         inputB.policy.territories[0] = "US";
         inputB.policy.attribution = !inputB.policy.attribution; // generates different policyId
         _testSuccessCompat(inputA, inputB, 2);
-
     }
 
     function test_UMLPolicyFramework_multiParent_revert_NonReciprocalTerritories() public {
@@ -362,7 +365,6 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         inputB.policy.distributionChannels[0] = "web";
         inputB.policy.attribution = !inputB.policy.attribution; // generates different policyId
         _testSuccessCompat(inputA, inputB, 2);
-
     }
 
     function test_UMLPolicyFramework_multiParent_revert_NonReciprocalDistributionChannels() public {
@@ -423,7 +425,6 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         inputB.policy.contentRestrictions[0] = "web";
         inputB.policy.attribution = !inputB.policy.attribution; // generates different policyId
         _testSuccessCompat(inputA, inputB, 2);
-
     }
 
     function test_UMLPolicyFramework_multiParent_revert_NonReciprocalContentRestrictions() public {
@@ -462,7 +463,6 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         RegisterUMLPolicyParams memory inputA,
         RegisterUMLPolicyParams memory inputB
     ) internal returns (uint256 polAId, uint256 polBId) {
-
         polAId = umlFramework.registerPolicy(inputA);
         vm.prank(ipId1);
         licenses.push(licensingModule.mintLicense(polAId, ipId1, 1, alice, ""));

@@ -3,7 +3,6 @@ pragma solidity ^0.8.23;
 
 // contracts
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
-import { IPolicyFrameworkManager } from "contracts/interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 
 struct MockPolicyFrameworkConfig {
     address licensingModule;
@@ -41,13 +40,7 @@ contract MockPolicyFrameworkManager is BasePolicyFrameworkManager {
         return policy.returnVerifyMint;
     }
 
-    function verifyLink(
-        uint256,
-        address,
-        address,
-        address,
-        bytes calldata data
-    ) external pure override returns (bool) {
+    function verifyLink(uint256, address, address, address, bytes calldata data) external pure override returns (bool) {
         MockPolicy memory policy = abi.decode(data, (MockPolicy));
         return policy.returnVerifyLink;
     }

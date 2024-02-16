@@ -7,6 +7,15 @@ import { IRoyaltyPolicy } from "../../../../interfaces/modules/royalty/policies/
 
 /// @title RoyaltyPolicy interface
 interface IRoyaltyPolicyLAP is IRoyaltyPolicy {
+    struct InitParams {
+        address[] targetAncestors; // the expected ancestors of an ipId
+        uint32[] targetRoyaltyAmount; // the expected royalties of each of the ancestors for an ipId
+        address[] parentAncestors1; // all the ancestors of the first parent
+        address[] parentAncestors2; // all the ancestors of the second parent
+        uint32[] parentAncestorsRoyalties1; // the royalties of each of the ancestors for the first parent
+        uint32[] parentAncestorsRoyalties2; // the royalties of each of the ancestors for the second parent
+    }
+
     /// @notice Event emitted when a policy is initialized
     /// @param ipId The ipId
     /// @param splitClone The split clone address
@@ -14,7 +23,14 @@ interface IRoyaltyPolicyLAP is IRoyaltyPolicy {
     /// @param royaltyStack The royalty stack
     /// @param targetAncestors The ip ancestors array
     /// @param targetRoyaltyAmount The ip royalty amount array
-    event PolicyInitialized(address ipId, address splitClone, address ancestorsVault, uint32 royaltyStack, address[] targetAncestors, uint32[] targetRoyaltyAmount);
+    event PolicyInitialized(
+        address ipId,
+        address splitClone,
+        address ancestorsVault,
+        uint32 royaltyStack,
+        address[] targetAncestors,
+        uint32[] targetRoyaltyAmount
+    );
 
     /// @notice Gets the royalty data
     /// @param ipId The ipId
@@ -25,7 +41,16 @@ interface IRoyaltyPolicyLAP is IRoyaltyPolicy {
     ///         ancestorsHash The unique ancestors hash
     function royaltyData(
         address ipId
-    ) external view returns (bool isUnlinkable, address splitClone, address ancestorsVault, uint32 royaltyStack, bytes32 ancestorsHash);
+    )
+        external
+        view
+        returns (
+            bool isUnlinkable,
+            address splitClone,
+            address ancestorsVault,
+            uint32 royaltyStack,
+            bytes32 ancestorsHash
+        );
 
     /// @notice Gets liquid split main address
     function LIQUID_SPLIT_MAIN() external view returns (address);
@@ -34,7 +59,8 @@ interface IRoyaltyPolicyLAP is IRoyaltyPolicy {
     /// @param _ancestorsVaultImpl The ancestors vault implementation address
     function setAncestorsVaultImplementation(address _ancestorsVaultImpl) external;
 
-    /// @notice Distributes funds internally so that accounts holding the royalty nfts at distribution moment can claim afterwards
+    /// @notice Distributes funds internally so that accounts holding the royalty nfts at distribution moment can
+    /// claim afterwards
     /// @param _ipId The ipId
     /// @param _token The token to distribute
     /// @param _accounts The accounts to distribute to
@@ -65,7 +91,7 @@ interface IRoyaltyPolicyLAP is IRoyaltyPolicy {
     /// @param _ancestorsRoyalties The royalties of the ancestors
     /// @param _withdrawETH Indicates if the claimer wants to withdraw ETH
     /// @param _tokens The ERC20 tokens to withdraw
-    function claimFromAncestorsVault(        
+    function claimFromAncestorsVault(
         address _ipId,
         address _claimerIpId,
         address[] calldata _ancestors,
@@ -73,6 +99,4 @@ interface IRoyaltyPolicyLAP is IRoyaltyPolicy {
         bool _withdrawETH,
         ERC20[] calldata _tokens
     ) external;
-
-
 }

@@ -14,7 +14,12 @@ interface IRoyaltyPolicy {
     /// @param _parentIpIds The selected parent ipIds
     /// @param _licenseData The license data custom to each the royalty policy
     /// @param _externalData The external data custom to each the royalty policy
-    function onLinkToParents(address _ipId, address[] calldata _parentIpIds, bytes[] memory _licenseData, bytes calldata _externalData) external;
+    function onLinkToParents(
+        address _ipId,
+        address[] calldata _parentIpIds,
+        bytes[] memory _licenseData,
+        bytes calldata _externalData
+    ) external;
 
     /// @notice Allows to pay a royalty
     /// @param caller The caller

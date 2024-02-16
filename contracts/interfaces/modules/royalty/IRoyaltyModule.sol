@@ -41,14 +41,6 @@ interface IRoyaltyModule is IModule {
     /// @param ipId The ipId
     function royaltyPolicies(address ipId) external view returns (address);
 
-    /// @notice Indicates if a royalty policy is immutable
-    /// @param ipId The ipId
-    function isRoyaltyPolicyImmutable(address ipId) external view returns (bool);
-
-    /// @notice Sets the licensing module
-    /// @param licensingModule The address of the licensing module
-    function setLicensingModule(address licensingModule) external;
-
     /// @notice Whitelist a royalty policy
     /// @param royaltyPolicy The address of the royalty policy
     /// @param allowed Indicates if the royalty policy is whitelisted or not
@@ -64,15 +56,26 @@ interface IRoyaltyModule is IModule {
     /// @param royaltyPolicy The royalty policy address of the license being minted
     /// @param licenseData The license data custom to each the royalty policy
     /// @param externalData The external data custom to each the royalty policy
-    function onLicenseMinting(address ipId, address royaltyPolicy, bytes calldata licenseData, bytes calldata externalData) external;
-    
+    function onLicenseMinting(
+        address ipId,
+        address royaltyPolicy,
+        bytes calldata licenseData,
+        bytes calldata externalData
+    ) external;
+
     /// @notice Executes royalty related logic on linking to parents
     /// @param ipId The children ipId that is being linked to parents
     /// @param royaltyPolicy The common royalty policy address of all the licenses being burned
     /// @param parentIpIds The parent ipIds that the children ipId is being linked to
     /// @param licenseData The license data custom to each the royalty policy
     /// @param externalData The external data custom to each the royalty policy
-    function onLinkToParents(address ipId, address royaltyPolicy, address[] calldata parentIpIds, bytes[] memory licenseData, bytes calldata externalData) external;
+    function onLinkToParents(
+        address ipId,
+        address royaltyPolicy,
+        address[] calldata parentIpIds,
+        bytes[] memory licenseData,
+        bytes calldata externalData
+    ) external;
 
     /// @notice Allows a sender to to pay royalties on behalf of an ipId
     /// @param receiverIpId The ipId that receives the royalties

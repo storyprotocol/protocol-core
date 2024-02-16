@@ -28,8 +28,6 @@ contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
     }
 
     modifier withAliceOwningDerivativeIp2(string memory policyName) {
-        mockRoyaltyPolicyLS.setMinRoyalty(ipId1, 100);
-
         // Must add the policy first to set the royalty policy (if policy is commercial)
         // Otherwise, minting license will fail because there's no royalty policy set for license policy,
         // AND bob (the caller) is not the owner of IPAccount 1.
@@ -56,6 +54,7 @@ contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
                 licensingModule: true
             })
         );
+        buildDeployPolicyCondition(DeployPolicyCondition({ royaltyPolicyLAP: true, arbitrationPolicySP: false }));
         deployConditionally();
         postDeploymentSetup();
 
@@ -113,15 +112,13 @@ contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
             "comm_non_deriv not set"
         );
 
-        mockRoyaltyPolicyLS.setMinRoyalty(ipId1, 100);
-
         // Others can mint licenses to make derivatives of IP1 from each different policy,
         // as long as they pass the verifications
-        uint256 licenseId1 = licensingModule.mintLicense(_getUmlPolicyId("comm_deriv"), ipId1, 1, don, "");
-        assertEq(licenseRegistry.balanceOf(don, licenseId1), 1, "Don doesn't have license1");
+        uint256 licenseId1 = licensingModule.mintLicense(_getUmlPolicyId("comm_deriv"), ipId1, 1, dan, "");
+        assertEq(licenseRegistry.balanceOf(dan, licenseId1), 1, "dan doesn't have license1");
 
-        uint256 licenseId2 = licensingModule.mintLicense(_getUmlPolicyId("comm_non_deriv"), ipId1, 1, don, "");
-        assertEq(licenseRegistry.balanceOf(don, licenseId2), 1, "Don doesn't have license2");
+        uint256 licenseId2 = licensingModule.mintLicense(_getUmlPolicyId("comm_non_deriv"), ipId1, 1, dan, "");
+        assertEq(licenseRegistry.balanceOf(dan, licenseId2), 1, "dan doesn't have license2");
     }
 
     function test_UMLPolicyFramework_originalWork_bobMintsWithDifferentPolicies()
@@ -129,15 +126,13 @@ contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
         withUMLPolicySimple("comm_deriv", true, true, false)
         withUMLPolicySimple("comm_non_deriv", true, false, false)
     {
-        mockRoyaltyPolicyLS.setMinRoyalty(ipId1, 100);
-
         // Bob can add different policies on IP1 without compatibility checks.
         vm.startPrank(bob);
-        uint256 licenseId1 = licensingModule.mintLicense(_getUmlPolicyId("comm_deriv"), ipId1, 2, don, "");
-        assertEq(licenseRegistry.balanceOf(don, licenseId1), 2, "Don doesn't have license1");
+        uint256 licenseId1 = licensingModule.mintLicense(_getUmlPolicyId("comm_deriv"), ipId1, 2, dan, "");
+        assertEq(licenseRegistry.balanceOf(dan, licenseId1), 2, "dan doesn't have license1");
 
-        uint256 licenseId2 = licensingModule.mintLicense(_getUmlPolicyId("comm_non_deriv"), ipId1, 1, don, "");
-        assertEq(licenseRegistry.balanceOf(don, licenseId2), 1, "Don doesn't have license2");
+        uint256 licenseId2 = licensingModule.mintLicense(_getUmlPolicyId("comm_non_deriv"), ipId1, 1, dan, "");
+        assertEq(licenseRegistry.balanceOf(dan, licenseId2), 1, "dan doesn't have license2");
         vm.stopPrank();
     }
 
@@ -159,11 +154,9 @@ contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
         withUMLPolicySimple("comm_non_deriv", true, false, false)
         withAliceOwningDerivativeIp2("comm_non_deriv")
     {
-        mockRoyaltyPolicyLS.setMinRoyalty(ipId2, 100);
-
         vm.expectRevert(Errors.LicensingModule__MintLicenseParamFailed.selector);
-        vm.startPrank(don);
-        licensingModule.mintLicense(_getUmlPolicyId("comm_non_deriv"), ipId2, 1, don, "");
+        vm.startPrank(dan);
+        licensingModule.mintLicense(_getUmlPolicyId("comm_non_deriv"), ipId2, 1, dan, "");
 
         vm.expectRevert(Errors.LicensingModule__MintLicenseParamFailed.selector);
         vm.startPrank(alice);
@@ -176,8 +169,6 @@ contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
         withUMLPolicySimple("comm_deriv", true, true, false)
         withAliceOwningDerivativeIp2("comm_non_deriv")
     {
-        mockRoyaltyPolicyLS.setMinRoyalty(ipId2, 100);
-
         vm.expectRevert(Errors.LicensingModule__DerivativesCannotAddPolicy.selector);
         vm.prank(alice);
         licensingModule.addPolicyToIp(ipId2, _getUmlPolicyId("comm_deriv"));
@@ -195,16 +186,14 @@ contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
     //////                RECIPROCAL DERIVATIVES               //////
     /////////////////////////////////////////////////////////////////
 
-    function test_UMLPolicyFramework_reciprocal_DonMintsLicenseFromIp2()
+    function test_UMLPolicyFramework_reciprocal_danMintsLicenseFromIp2()
         public
         withUMLPolicySimple("comm_reciprocal", true, true, true)
         withAliceOwningDerivativeIp2("comm_reciprocal")
     {
-        mockRoyaltyPolicyLS.setMinRoyalty(ipId2, 100);
-
-        vm.prank(don);
-        uint256 licenseId = licensingModule.mintLicense(_getUmlPolicyId("comm_reciprocal"), ipId2, 1, don, "");
-        assertEq(licenseRegistry.balanceOf(don, licenseId), 1, "Don doesn't have license");
+        vm.prank(dan);
+        uint256 licenseId = licensingModule.mintLicense(_getUmlPolicyId("comm_reciprocal"), ipId2, 1, dan, "");
+        assertEq(licenseRegistry.balanceOf(dan, licenseId), 1, "dan doesn't have license");
     }
 
     function test_UMLPolicyFramework_reciprocal_AliceMintsLicenseForP1inIP2()
@@ -212,8 +201,6 @@ contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
         withUMLPolicySimple("comm_reciprocal", true, true, true)
         withAliceOwningDerivativeIp2("comm_reciprocal")
     {
-        mockRoyaltyPolicyLS.setMinRoyalty(ipId2, 100);
-
         vm.prank(alice);
         uint256 licenseId = licensingModule.mintLicense(_getUmlPolicyId("comm_reciprocal"), ipId2, 1, alice, "");
         assertEq(licenseRegistry.balanceOf(alice, licenseId), 1, "Alice doesn't have license");
@@ -225,8 +212,6 @@ contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
         withUMLPolicySimple("other_policy", true, true, false)
         withAliceOwningDerivativeIp2("comm_reciprocal")
     {
-        mockRoyaltyPolicyLS.setMinRoyalty(ipId2, 100);
-
         vm.expectRevert(Errors.LicensingModule__DerivativesCannotAddPolicy.selector);
         vm.prank(alice);
         licensingModule.addPolicyToIp(ipId2, _getUmlPolicyId("other_policy"));

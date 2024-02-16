@@ -1,20 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import { RoyaltyPolicyLAP } from "../../../../contracts/modules/royalty-module/policies/RoyaltyPolicyLAP.sol";
 import { AncestorsVaultLAP } from "../../../../contracts/modules/royalty-module/policies/AncestorsVaultLAP.sol";
 import { ILiquidSplitClone } from "../../../../contracts/interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
 import { ILiquidSplitMain } from "../../../../contracts/interfaces/modules/royalty/policies/ILiquidSplitMain.sol";
 import { Errors } from "../../../../contracts/lib/Errors.sol";
-// tests
-import { TestHelper } from "../../utils/TestHelper.sol";
-import { console2 } from "forge-std/console2.sol";
 
+import { BaseTest } from "../../utils/BaseTest.t.sol";
 
-contract TestAncestorsVaultLAP is TestHelper {
+contract TestAncestorsVaultLAP is BaseTest {
     event Claimed(address ipId, address claimerIpId, bool withdrawETH, ERC20[] tokens);
 
     struct InitParams {
@@ -26,37 +22,45 @@ contract TestAncestorsVaultLAP is TestHelper {
         uint32[] parentAncestorsRoyalties2;
     }
 
-    RoyaltyPolicyLAP internal testRoyaltyPolicyLAP;
-
     InitParams initParamsMax;
     bytes MAX_ANCESTORS;
     address[] MAX_ANCESTORS_ = new address[](14);
     uint32[] MAX_ANCESTORS_ROYALTY_ = new uint32[](14);
     address[] parentsIpIds100;
 
-    AncestorsVaultLAP ancestorsVault100;
-    AncestorsVaultLAP ancestorsVault1;
-    address splitClone100;
-    address ancestorsVaultAddr100;
-    address ancestorsVaultAddr1;
-    uint32 royaltyStack100;
-    uint256 ethAccrued;
-    uint256 usdcAccrued;
-    uint256 linkAccrued;
-    address ipIdToClaim;
-    ERC20[] tokens = new ERC20[](2);
-    uint32 expectedRnft7;
-    address claimerIpId7;
-    address claimerIpId10;
-    address splitClone7;
+    AncestorsVaultLAP internal ancestorsVault100;
+    AncestorsVaultLAP internal ancestorsVault1;
+    address internal splitClone100;
+    address internal ancestorsVaultAddr100;
+    address internal ancestorsVaultAddr1;
+    uint32 internal royaltyStack100;
+    uint256 internal ethAccrued;
+    uint256 internal usdcAccrued;
+    uint256 internal linkAccrued;
+    address internal ipIdToClaim;
+    ERC20[] internal tokens = new ERC20[](2);
+    uint32 internal expectedRnft7;
+    address internal claimerIpId7;
+    address internal claimerIpId10;
+    address internal splitClone7;
 
     function setUp() public override {
         super.setUp();
-
-        vm.startPrank(u.admin);
-        // whitelist royalty policy
-        royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLAP), true);
-        vm.stopPrank();
+        buildDeployModuleCondition(
+            DeployModuleCondition({
+                registrationModule: false,
+                disputeModule: false,
+                royaltyModule: true,
+                taggingModule: false,
+                licensingModule: false
+            })
+        );
+        buildDeployPolicyCondition(DeployPolicyCondition({ arbitrationPolicySP: false, royaltyPolicyLAP: true }));
+        buildDeployMiscCondition(
+            DeployMiscCondition({ ipAssetRenderer: false, ipMetadataProvider: false, ipResolver: true })
+        );
+        deployConditionally();
+        postDeploymentSetup();
 
         vm.startPrank(address(royaltyModule));
         _setupMaxUniqueTree();
@@ -74,12 +78,11 @@ contract TestAncestorsVaultLAP is TestHelper {
         royaltyPolicyLAP.onLinkToParents(address(100), parentsIpIds100, encodedLicenseData, MAX_ANCESTORS);
         vm.stopPrank();
 
-        (,splitClone100, ancestorsVaultAddr100, royaltyStack100,) = royaltyPolicyLAP.royaltyData(address(100));
+        (, splitClone100, ancestorsVaultAddr100, royaltyStack100, ) = royaltyPolicyLAP.royaltyData(address(100));
         ancestorsVault100 = AncestorsVaultLAP(ancestorsVaultAddr100);
 
-        (,,ancestorsVaultAddr1,,) = royaltyPolicyLAP.royaltyData(address(1));
+        (, , ancestorsVaultAddr1, , ) = royaltyPolicyLAP.royaltyData(address(1));
         ancestorsVault1 = AncestorsVaultLAP(ancestorsVaultAddr1);
-
 
         ipIdToClaim = address(100);
         tokens[0] = USDC;
@@ -89,7 +92,7 @@ contract TestAncestorsVaultLAP is TestHelper {
         claimerIpId7 = address(7);
         claimerIpId10 = address(10);
 
-        (,splitClone7,,,) = royaltyPolicyLAP.royaltyData(claimerIpId7);
+        (, splitClone7, , , ) = royaltyPolicyLAP.royaltyData(claimerIpId7);
 
         // send tokens to ancestors vault
         ethAccrued = 1 ether;
@@ -97,9 +100,8 @@ contract TestAncestorsVaultLAP is TestHelper {
         linkAccrued = 100 * 10 ** 18;
         vm.deal(address(ancestorsVault100), ethAccrued);
         USDC.mint(address(ancestorsVault100), usdcAccrued);
-        vm.startPrank(LINK_RICH);
-        LINK.transfer(address(ancestorsVault100), linkAccrued);
-        vm.stopPrank();
+
+        LINK.mint(address(ancestorsVault100), linkAccrued);
     }
 
     function _setupMaxUniqueTree() internal {
@@ -128,7 +130,7 @@ contract TestAncestorsVaultLAP is TestHelper {
         royaltyPolicyLAP.onLicenseMinting(address(12), abi.encode(uint32(12)), nullBytes);
         royaltyPolicyLAP.onLicenseMinting(address(13), abi.encode(uint32(13)), nullBytes);
         royaltyPolicyLAP.onLicenseMinting(address(14), abi.encode(uint32(14)), nullBytes);
- 
+
         // init 2nd level with children
         address[] memory parents = new address[](2);
         address[] memory targetAncestors1 = new address[](2);
@@ -205,8 +207,7 @@ contract TestAncestorsVaultLAP is TestHelper {
         encodedBytes = abi.encode(initParams);
         royaltyPolicyLAP.onLinkToParents(address(5), parents, encodedLicenseData, encodedBytes);
 
-        
-         // 6 is child of 13 and 14
+        // 6 is child of 13 and 14
         parents[0] = address(13);
         parents[1] = address(14);
         parentRoyalties1[0] = 13;
@@ -228,7 +229,6 @@ contract TestAncestorsVaultLAP is TestHelper {
         }
         encodedBytes = abi.encode(initParams);
         royaltyPolicyLAP.onLinkToParents(address(6), parents, encodedLicenseData, encodedBytes);
-
 
         // init 3rd level with children
         address[] memory targetAncestors2 = new address[](6);
@@ -449,7 +449,10 @@ contract TestAncestorsVaultLAP is TestHelper {
 
         ERC20 token_ = USDC;
         // value of 0 is stored as 1 in 0xSplits (for cheaper, warm storage)
-        assertGt(ILiquidSplitMain(royaltyPolicyLAP.LIQUID_SPLIT_MAIN()).getERC20Balance(address(ancestorsVault100), token_), 1);
+        assertGt(
+            ILiquidSplitMain(royaltyPolicyLAP.LIQUID_SPLIT_MAIN()).getERC20Balance(address(ancestorsVault100), token_),
+            1
+        );
 
         vm.expectRevert(Errors.AncestorsVaultLAP__ERC20BalanceNotZero.selector);
         ancestorsVault100.claim(ipIdToClaim, claimerIpId7, MAX_ANCESTORS_, MAX_ANCESTORS_ROYALTY_, true, tokens);
@@ -480,11 +483,26 @@ contract TestAncestorsVaultLAP is TestHelper {
 
         assertEq(ancestorsVault100.isClaimed(ipIdToClaim, claimerIpId7), true);
         assertEq(rnftBalAfter - rnftBalBefore, expectedRnft7);
-        assertEq(ancestorsVaultUSDCBalBefore - ancestorsVaultUSDCBalAfter, (usdcAccrued * expectedRnft7) / (royaltyStack100));
-        assertEq(claimerVaultUSDCBalAfter - claimerVaultUSDCBalBefore, (usdcAccrued * expectedRnft7) / (royaltyStack100));
-        assertEq(ancestorsVaultLinkBalBefore - ancestorsVaultLinkBalAfter, (linkAccrued * expectedRnft7) / (royaltyStack100));
-        assertEq(claimerVaultLinkBalAfter - claimerVaultLinkBalBefore, (linkAccrued * expectedRnft7) / (royaltyStack100));
-        assertEq(ancestorsVaultETHBalBefore - ancestorsVaultETHBalAfter, (ethAccrued * expectedRnft7) / (royaltyStack100));
+        assertEq(
+            ancestorsVaultUSDCBalBefore - ancestorsVaultUSDCBalAfter,
+            (usdcAccrued * expectedRnft7) / (royaltyStack100)
+        );
+        assertEq(
+            claimerVaultUSDCBalAfter - claimerVaultUSDCBalBefore,
+            (usdcAccrued * expectedRnft7) / (royaltyStack100)
+        );
+        assertEq(
+            ancestorsVaultLinkBalBefore - ancestorsVaultLinkBalAfter,
+            (linkAccrued * expectedRnft7) / (royaltyStack100)
+        );
+        assertEq(
+            claimerVaultLinkBalAfter - claimerVaultLinkBalBefore,
+            (linkAccrued * expectedRnft7) / (royaltyStack100)
+        );
+        assertEq(
+            ancestorsVaultETHBalBefore - ancestorsVaultETHBalAfter,
+            (ethAccrued * expectedRnft7) / (royaltyStack100)
+        );
         assertEq(claimerETHBalAfter - claimerETHBalBefore, (ethAccrued * expectedRnft7) / (royaltyStack100));
     }
 
@@ -515,11 +533,26 @@ contract TestAncestorsVaultLAP is TestHelper {
 
         assertEq(ancestorsVault100.isClaimed(ipIdToClaim, claimerIpId7), true);
         assertEq(rnftBalAfter - rnftBalBefore, expectedRnft7);
-        assertEq(ancestorsVaultUSDCBalBefore - ancestorsVaultUSDCBalAfter, (usdcAccrued * expectedRnft7) / (royaltyStack100));
-        assertEq(claimerVaultUSDCBalAfter - claimerVaultUSDCBalBefore, (usdcAccrued * expectedRnft7) / (royaltyStack100));
-        assertEq(ancestorsVaultLinkBalBefore - ancestorsVaultLinkBalAfter, (linkAccrued * expectedRnft7) / (royaltyStack100));
-        assertEq(claimerVaultLinkBalAfter - claimerVaultLinkBalBefore, (linkAccrued * expectedRnft7) / (royaltyStack100));
-        assertEq(ancestorsVaultETHBalBefore - ancestorsVaultETHBalAfter, (ethAccrued * expectedRnft7) / (royaltyStack100));
+        assertEq(
+            ancestorsVaultUSDCBalBefore - ancestorsVaultUSDCBalAfter,
+            (usdcAccrued * expectedRnft7) / (royaltyStack100)
+        );
+        assertEq(
+            claimerVaultUSDCBalAfter - claimerVaultUSDCBalBefore,
+            (usdcAccrued * expectedRnft7) / (royaltyStack100)
+        );
+        assertEq(
+            ancestorsVaultLinkBalBefore - ancestorsVaultLinkBalAfter,
+            (linkAccrued * expectedRnft7) / (royaltyStack100)
+        );
+        assertEq(
+            claimerVaultLinkBalAfter - claimerVaultLinkBalBefore,
+            (linkAccrued * expectedRnft7) / (royaltyStack100)
+        );
+        assertEq(
+            ancestorsVaultETHBalBefore - ancestorsVaultETHBalAfter,
+            (ethAccrued * expectedRnft7) / (royaltyStack100)
+        );
         assertEq(claimerETHBalAfter - claimerETHBalBefore, (ethAccrued * expectedRnft7) / (royaltyStack100));
     }
 }

@@ -131,6 +131,9 @@ interface ILicensingModule is IModule {
     /// @notice True if policy is part of an IP's policy list
     function isPolicyIdSetForIp(bool isInherited, address ipId, uint256 policyId) external view returns (bool);
 
+    /// @notice True if policy is inherited from an IP
+    function isPolicyInherited(address ipId, uint256 policyId) external view returns (bool);
+
     /// @notice Gets the policy ID for an IP by index on the IP's policy list
     function policyIdForIpAtIndex(
         bool isInherited,
