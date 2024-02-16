@@ -114,6 +114,7 @@ library Errors {
     error LicenseRegistry__CallerNotLicensingModule();
     error LicenseRegistry__ZeroLicensingModule();
     error LicensingModule__CallerNotLicenseRegistry();
+    error LicenseRegistry__RevokedLicense();
     /// @notice emitted when trying to transfer a license that is not transferable (by policy)
     error LicenseRegistry__NotTransferable();
     /// @notice emitted on constructor if dispute module is not set
