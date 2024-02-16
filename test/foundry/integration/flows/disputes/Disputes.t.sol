@@ -89,8 +89,9 @@ contract Flows_Integration_Disputes is BaseIntegration {
 
         _disputeIp(u.bob, ipAcct[1]);
 
-        // eEen if the IP asset is disputed, license owners can still transfer license NFTs
+        // If the IP asset is disputed, license owners won't be able to transfer license NFTs
         vm.prank(u.carl);
+        vm.expectRevert(Errors.LicenseRegistry__RevokedLicense.selector);
         licenseRegistry.safeTransferFrom(u.carl, u.bob, licenseId, 1, "");
     }
 

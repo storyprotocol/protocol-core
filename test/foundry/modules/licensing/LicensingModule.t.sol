@@ -64,7 +64,7 @@ contract LicensingModuleTest is Test {
     string public licenseUrl = "https://example.com/license";
     address public ipId1;
     address public ipId2;
-    address public ipOwner = vm.addr(1);
+    address public ipOwner = address(0x100); // use static address, otherwise uri check fails because licensor changes
     address public licenseHolder = address(0x101);
 
     function setUp() public {
@@ -447,13 +447,16 @@ contract LicensingModuleTest is Test {
     function test_LicensingModule_licenseUri() public {
         licensingModule.registerPolicyFrameworkManager(address(umlManager));
 
+        MockTokenGatedHook tokenGatedHook = new MockTokenGatedHook();
+        gatedNftFoo.mintId(address(this), 1);
+
         UMLPolicy memory policyData = UMLPolicy({
             transferable: true,
             attribution: true,
             commercialUse: true,
             commercialAttribution: true,
-            commercializerChecker: address(0),
-            commercializerCheckerData: "",
+            commercializerChecker: address(tokenGatedHook),
+            commercializerCheckerData: abi.encode(address(gatedNftFoo)),
             commercialRevShare: 0,
             derivativesAllowed: true,
             derivativesAttribution: true,
@@ -466,11 +469,6 @@ contract LicensingModuleTest is Test {
             royaltyPolicy: address(mockRoyaltyPolicyLS)
         });
 
-        gatedNftFoo.mintId(address(this), 1);
-
-        MockTokenGatedHook tokenGatedHook = new MockTokenGatedHook();
-        policyData.commercializerChecker = address(tokenGatedHook);
-        policyData.commercializerCheckerData = abi.encode(address(gatedNftFoo));
         policyData.territories[0] = "territory1";
         policyData.distributionChannels[0] = "distributionChannel1";
 
@@ -479,7 +477,9 @@ contract LicensingModuleTest is Test {
         vm.prank(ipOwner);
         licensingModule.addPolicyToIp(ipId1, policyId);
 
-        uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder);
+        // Set the licensor to `0xbeef` for uri testing. Must call LicenseRegistry directly to do so.
+        vm.prank(address(licensingModule));
+        uint256 licenseId = licenseRegistry.mintLicense(policyId, address(0xbeef), true, 1, licenseHolder);
 
         string memory actualUri = licenseRegistry.uri(licenseId);
 
@@ -488,78 +488,98 @@ contract LicensingModuleTest is Test {
         // DEV : Since the raw string below produces stack too deep error, we use the encoded output of the string below.
         //       The string below is left here for reference.
         /*
-        string memory expectedJson = string(abi.encodePacked('{',
-            '"name":"Story Protocol License NFT",'
-            '"description":"License agreement stating the terms of a Story Protocol IPAsset",',
-            '"attributes":[',
-            '{',
-                '"trait_type":"Attribution",'
-                '"value":"true"',
-            '},',
-            '{',
-                '"trait_type":"Transferable",',
-                '"value":"true"',
-            '},',
-            '{',
-                '"trait_type":"Commerical Use",',
-                '"value":"true"',
-            '},',
-            '{',
-                '"trait_type":"commercialAttribution",',
-                '"value":"true"',
-            '},',
-            '{',
-                '"trait_type":"commercialRevShare",',
-                '"value":0',
-            '},',
-            '{',
-                '"trait_type":"commercializers",',
-                '"value":[',
-                    '"commercializer1",',
-                    '"commercializer2"',
-                ']',
-            '},',
-            '{',
-                '"trait_type":"derivativesAllowed",',
-                '"value":"true"',
-            '},',
-            '{',
-                '"trait_type":"derivativesAttribution",',
-                '"value":"true"',
-            '},',
-            '{',
-                '"trait_type":"derivativesApproval",',
-                '"value":"true"',
-            '},',
-            '{',
-                '"trait_type":"derivativesReciprocal",',
-                '"value":"true"',
-            '},',
-            '{',
-                '"trait_type":"derivativesRevShare",',
-                '"value":0',
-            '},',
-            '{',
-                '"trait_type":"territories",',
-                '"value":[',
-                    '"territory1",',
-                ']',
-            '},'
-            '{',
-                '"trait_type":"distributionChannels"',
-                '"value":[',
-                    '"distributionChannel1",',
-                ']',
-            '}',
-            ']',
-        '}'
-        ));
+        expectedJson = {
+            "name": "Story Protocol License NFT",
+            "description": "License agreement stating the terms of a Story Protocol IPAsset",
+            "external_url": "https://storyprotocol.xyz",
+            "image": "https://images.ctfassets.net/5ei3wx54t1dp/1WXOHnPLROsGiBsI46zECe/4f38a95c58d3b0329af3085b36d720c8/Story_Protocol_Icon.png",
+            "attributes": [
+                {
+                    "trait_type": "Attribution",
+                    "value": "true"
+                },
+                {
+                    "trait_type": "Transferable",
+                    "value": "true"
+                },
+                {
+                    "trait_type": "Attribution",
+                    "value": "true"
+                },
+                {
+                    "trait_type": "Commerical Use",
+                    "value": "true"
+                },
+                {
+                    "trait_type": "Commercial Attribution",
+                    "value": "true"
+                },
+                {
+                    "trait_type": "Commercial Revenue Share",
+                    "max_value": 1000,
+                    "value": 0
+                },
+                {
+                    "trait_type": "Commercializer Check",
+                    "value": "0x210503c318855259983298ba58055a38d5ff63e0"
+                },
+                {
+                    "trait_type": "Derivatives Allowed",
+                    "value": "true"
+                },
+                {
+                    "trait_type": "Derivatives Attribution",
+                    "value": "true"
+                },
+                {
+                    "trait_type": "Derivatives Approval",
+                    "value": "true"
+                },
+                {
+                    "trait_type": "Derivatives Reciprocal",
+                    "value": "true"
+                },
+                {
+                    "trait_type": "Derivatives Revenue Share",
+                    "max_value": 1000,
+                    "value": 0
+                },
+                {
+                    "trait_type": "Territories",
+                    "value": [
+                        "territory1"
+                    ]
+                },
+                {
+                    "trait_type": "Distribution Channels",
+                    "value": [
+                        "distributionChannel1"
+                    ]
+                },
+                {
+                    "trait_type": "Licensor",
+                    "value": "0x000000000000000000000000000000000000beef"
+                },
+                {
+                    "trait_type": "Policy Framework",
+                    "value": "0xf1e1d77c54e9c28cc1da2dbc377b4a85765c2542"
+                },
+                {
+                    "trait_type": "Transferable",
+                    "value": "true"
+                },
+                {
+                    "trait_type": "Revoked",
+                    "value": "false"
+                }
+            ]
+        };
         */
         /* solhint-enable */
 
         /* solhint-disable */
         string
-            memory expectedJson = "eyJuYW1lIjogIlN0b3J5IFByb3RvY29sIExpY2Vuc2UgTkZUIiwgImRlc2NyaXB0aW9uIjogIkxpY2Vuc2UgYWdyZWVtZW50IHN0YXRpbmcgdGhlIHRlcm1zIG9mIGEgU3RvcnkgUHJvdG9jb2wgSVBBc3NldCIsICJhdHRyaWJ1dGVzIjogW3sidHJhaXRfdHlwZSI6ICJBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIlRyYW5zZmVyYWJsZSIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkNvbW1lcmljYWwgVXNlIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbEF0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiY29tbWVyY2lhbFJldlNoYXJlIiwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogImNvbW1lcmNpYWxpemVyQ2hlY2siLCAidmFsdWUiOiAiMHgyMTA1MDNjMzE4ODU1MjU5OTgzMjk4YmE1ODA1NWEzOGQ1ZmY2M2UwIn0sIHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc0FsbG93ZWQiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJkZXJpdmF0aXZlc0F0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiZGVyaXZhdGl2ZXNBcHByb3ZhbCIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzUmVjaXByb2NhbCIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogImRlcml2YXRpdmVzUmV2U2hhcmUiLCAidmFsdWUiOiAwfSx7InRyYWl0X3R5cGUiOiAidGVycml0b3JpZXMiLCAidmFsdWUiOiBbInRlcnJpdG9yeTEiXX0sIHsidHJhaXRfdHlwZSI6ICJkaXN0cmlidXRpb25DaGFubmVscyIsICJ2YWx1ZSI6IFsiZGlzdHJpYnV0aW9uQ2hhbm5lbDEiXX1dfQ==";
+            memory expectedJson = "eyJuYW1lIjogIlN0b3J5IFByb3RvY29sIExpY2Vuc2UgTkZUIiwiZGVzY3JpcHRpb24iOiAiTGljZW5zZSBhZ3JlZW1lbnQgc3RhdGluZyB0aGUgdGVybXMgb2YgYSBTdG9yeSBQcm90b2NvbCBJUEFzc2V0IiwiZXh0ZXJuYWxfdXJsIjogImh0dHBzOi8vc3Rvcnlwcm90b2NvbC54eXoiLCJpbWFnZSI6ICJodHRwczovL2ltYWdlcy5jdGZhc3NldHMubmV0LzVlaTN3eDU0dDFkcC8xV1hPSG5QTFJPc0dpQnNJNDZ6RUNlLzRmMzhhOTVjNThkM2IwMzI5YWYzMDg1YjM2ZDcyMGM4L1N0b3J5X1Byb3RvY29sX0ljb24ucG5nIiwiYXR0cmlidXRlcyI6IFt7InRyYWl0X3R5cGUiOiAiQXR0cmlidXRpb24iLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJUcmFuc2ZlcmFibGUiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkNvbW1lcmljYWwgVXNlIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiQ29tbWVyY2lhbCBBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkNvbW1lcmNpYWwgUmV2ZW51ZSBTaGFyZSIsICJtYXhfdmFsdWUiOiAxMDAwLCAidmFsdWUiOiAwfSx7InRyYWl0X3R5cGUiOiAiQ29tbWVyY2lhbGl6ZXIgQ2hlY2siLCAidmFsdWUiOiAiMHgyMTA1MDNjMzE4ODU1MjU5OTgzMjk4YmE1ODA1NWEzOGQ1ZmY2M2UwIn0seyJ0cmFpdF90eXBlIjogIkRlcml2YXRpdmVzIEFsbG93ZWQiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJEZXJpdmF0aXZlcyBBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkRlcml2YXRpdmVzIEFwcHJvdmFsIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiRGVyaXZhdGl2ZXMgUmVjaXByb2NhbCIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkRlcml2YXRpdmVzIFJldmVudWUgU2hhcmUiLCAibWF4X3ZhbHVlIjogMTAwMCwgInZhbHVlIjogMH0seyJ0cmFpdF90eXBlIjogIlRlcnJpdG9yaWVzIiwgInZhbHVlIjogWyJ0ZXJyaXRvcnkxIl19LHsidHJhaXRfdHlwZSI6ICJEaXN0cmlidXRpb24gQ2hhbm5lbHMiLCAidmFsdWUiOiBbImRpc3RyaWJ1dGlvbkNoYW5uZWwxIl19LHsidHJhaXRfdHlwZSI6ICJMaWNlbnNvciIsICJ2YWx1ZSI6ICIweDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMGJlZWYifSx7InRyYWl0X3R5cGUiOiAiUG9saWN5IEZyYW1ld29yayIsICJ2YWx1ZSI6ICIweGYxZTFkNzdjNTRlOWMyOGNjMWRhMmRiYzM3N2I0YTg1NzY1YzI1NDIifSx7InRyYWl0X3R5cGUiOiAiVHJhbnNmZXJhYmxlIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiUmV2b2tlZCIsICJ2YWx1ZSI6ICJmYWxzZSJ9XX0=";
         /* solhint-enable */
 
         string memory expectedUri = string(abi.encodePacked("data:application/json;base64,", expectedJson));
