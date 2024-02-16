@@ -22,11 +22,11 @@ contract TestAncestorsVaultLAP is BaseTest {
         uint32[] parentAncestorsRoyalties2;
     }
 
-    InitParams initParamsMax;
-    bytes MAX_ANCESTORS;
-    address[] MAX_ANCESTORS_ = new address[](14);
-    uint32[] MAX_ANCESTORS_ROYALTY_ = new uint32[](14);
-    address[] parentsIpIds100;
+    InitParams internal initParamsMax;
+    bytes internal MAX_ANCESTORS;
+    address[] internal MAX_ANCESTORS_ = new address[](14);
+    uint32[] internal MAX_ANCESTORS_ROYALTY_ = new uint32[](14);
+    address[] internal parentsIpIds100;
 
     AncestorsVaultLAP internal ancestorsVault100;
     AncestorsVaultLAP internal ancestorsVault1;

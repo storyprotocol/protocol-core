@@ -9,6 +9,7 @@ import { IIPAccount } from "../../../../contracts/interfaces/IIPAccount.sol";
 import { IP } from "../../../../contracts/lib/IP.sol";
 import { Errors } from "../../../../contracts/lib/Errors.sol";
 import { UMLPolicy } from "../../../../contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { IRoyaltyPolicyLAP } from "../../../../contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLAP.sol";
 
 // test
 import { BaseIntegration } from "../BaseIntegration.t.sol";
@@ -19,6 +20,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
     mapping(uint256 tokenId => address ipAccount) internal ipAcct;
 
     mapping(string name => uint256 licenseId) internal licenseIds;
+
+    bytes internal emptyRoyaltyPolicyLAPInitParams;
 
     function setUp() public override {
         super.setUp();
@@ -66,6 +69,17 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 territories: new string[](0),
                 distributionChannels: new string[](0),
                 contentRestrictions: new string[](0)
+            })
+        );
+
+        emptyRoyaltyPolicyLAPInitParams = abi.encode(
+            IRoyaltyPolicyLAP.InitParams({
+                targetAncestors: new address[](0),
+                targetRoyaltyAmount: new uint32[](0),
+                parentAncestors1: new address[](0),
+                parentAncestors2: new address[](0),
+                parentAncestorsRoyalties1: new uint32[](0),
+                parentAncestorsRoyalties2: new uint32[](0)
             })
         );
     }
@@ -140,7 +154,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
 
             ipAcct[6] = registerIpAccount(mockNFT, 6, u.carl);
             // minRoyalty = 0 gets overridden by the `derivativesRevShare` value of the linking licenses
-            linkIpToParents(carl_license_from_root_alice, ipAcct[6], u.carl, "");
+            linkIpToParents(carl_license_from_root_alice, ipAcct[6], u.carl, emptyRoyaltyPolicyLAPInitParams);
         }
 
         // Carl mints 2 license for policy "uml_noncom_deriv_reciprocal_derivative" on Bob's NFT 3 IPAccount
@@ -160,7 +174,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
 
             ipAcct[7] = registerIpAccount(mockNFT, 7, u.carl);
             // minRoyalty = 0 gets overridden by the `derivativesRevShare` value of the linking licenses
-            linkIpToParents(carl_license_from_root_bob, ipAcct[7], u.carl, "");
+            linkIpToParents(carl_license_from_root_bob, ipAcct[7], u.carl, emptyRoyaltyPolicyLAPInitParams);
         }
 
         // Alice mints 2 license for policy "uml_com_deriv_cheap_flexible" on Bob's NFT 3 IPAccount
@@ -182,7 +196,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             );
 
             ipAcct[2] = registerIpAccount(mockNFT, 2, u.alice);
-            linkIpToParents(alice_license_from_root_bob, ipAcct[2], u.alice, "");
+            linkIpToParents(alice_license_from_root_bob, ipAcct[2], u.alice, emptyRoyaltyPolicyLAPInitParams);
 
             uint256 tokenId = 99999999;
             mockNFT.mintId(u.alice, tokenId);
