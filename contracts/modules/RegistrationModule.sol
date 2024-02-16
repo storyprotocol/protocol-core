@@ -107,6 +107,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
     /// @param ipName The name assigned to the new IP.
     /// @param contentHash The content hash of the IP being registered.
     /// @param externalURL An external URI to link to the IP.
+    /// @param royaltyContext The royalty context for the derivative IP.
     /// TODO: Replace all metadata with a generic bytes parameter type, and do
     ///       encoding on the periphery contract level instead.
     function registerDerivativeIp(
@@ -116,7 +117,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         string memory ipName,
         bytes32 contentHash,
         string calldata externalURL,
-        uint32 minRoyalty
+        bytes calldata royaltyContext
     ) external {
         // Check that the caller is authorized to perform the registration.
         // TODO: Perform additional registration authorization logic, allowing
@@ -145,7 +146,7 @@ contract RegistrationModule is BaseModule, IRegistrationModule {
         );
 
         // Perform core IP derivative licensing - the license must be owned by the caller.
-        _LICENSING_MODULE.linkIpToParents(licenseIds, ipId, minRoyalty);
+        _LICENSING_MODULE.linkIpToParents(licenseIds, ipId, royaltyContext);
 
         emit DerivativeIPRegistered(msg.sender, ipId, licenseIds);
     }

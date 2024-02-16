@@ -5,7 +5,6 @@ import { BaseTest } from "test/foundry/utils/BaseTest.sol";
 import { IP } from "contracts/lib/IP.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
-import { MockLicensingModule } from "test/foundry/mocks/licensing/MockLicensingModule.sol";
 import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
 import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
@@ -112,7 +111,7 @@ contract MetadataProviderTest is BaseTest {
         Governance governance = new Governance(address(this));
         AccessController accessController = new AccessController(address(governance));
         ModuleRegistry moduleRegistry = new ModuleRegistry(address(governance));
-        MockLicensingModule licensingModule = new MockLicensingModule();
+        address mockLicensingModule = address(99999);
 
         ERC6551Registry erc6551Registry = new ERC6551Registry();
         IPAccountImpl ipAccountImpl = new IPAccountImpl();
@@ -125,14 +124,14 @@ contract MetadataProviderTest is BaseTest {
             address(accessController),
             address(erc6551Registry),
             address(ipAccountImpl),
-            address(licensingModule),
+            mockLicensingModule,
             address(governance)
         );
         IPResolver ipResolver = new IPResolver(address(accessController), address(registry));
         RegistrationModule registrationModule = new RegistrationModule(
             address(accessController),
             address(registry),
-            address(licensingModule),
+            mockLicensingModule,
             address(ipResolver)
         );
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));

@@ -7,11 +7,11 @@ import { console2 } from "forge-std/console2.sol"; // console to indicate setUp 
 import { Test } from "forge-std/Test.sol";
 
 // contracts
+import { RegisterUMLPolicyParams } from "contracts/interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 
 // test
 // solhint-disable-next-line max-line-length
-import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { DeployHelper } from "test/foundry/utils/DeployHelper.sol";
 
@@ -48,7 +48,7 @@ contract TestHelper is Test, DeployHelper {
     mapping(string policyFrameworkManagerName => PolicyFrameworkManagerData) internal pfms;
 
     mapping(string policyName => uint256 policyId) internal policyIds;
-    mapping(string => UMLPolicy) internal policies;
+    mapping(string => RegisterUMLPolicyParams) internal policies;
 
     string[] internal emptyStringArray = new string[](0);
 
@@ -89,29 +89,16 @@ contract TestHelper is Test, DeployHelper {
     }
 
     function _addUMLPolicy(
-        bool commercialUse,
-        bool derivativesAllowed,
-        UMLPolicyGenericParams memory gparams,
-        UMLPolicyCommercialParams memory cparams,
-        UMLPolicyDerivativeParams memory dparams
+        string memory policyName,
+        bool transferable,
+        address royaltyPolicy,
+        UMLPolicy memory policy
     ) internal {
-        string memory pName = string(abi.encodePacked("uml_", gparams.policyName));
-        policies[pName] = UMLPolicy({
-            transferable: gparams.transferable,
-            attribution: gparams.attribution,
-            commercialUse: commercialUse,
-            commercialAttribution: cparams.commercialAttribution,
-            commercializers: cparams.commercializers,
-            commercialRevShare: cparams.commercialRevShare,
-            derivativesAllowed: derivativesAllowed,
-            derivativesAttribution: dparams.derivativesAttribution,
-            derivativesApproval: dparams.derivativesApproval,
-            derivativesReciprocal: dparams.derivativesReciprocal,
-            derivativesRevShare: dparams.derivativesRevShare,
-            territories: gparams.territories,
-            distributionChannels: gparams.distributionChannels,
-            contentRestrictions: gparams.contentRestrictions,
-            royaltyPolicy: cparams.royaltyPolicy
+        string memory pName = string(abi.encodePacked("uml_", policyName));
+        policies[pName] = RegisterUMLPolicyParams({
+            transferable: transferable,
+            royaltyPolicy: royaltyPolicy,
+            policy: policy
         });
         policyIds[pName] = UMLPolicyFrameworkManager(pfms["uml"].addr).registerPolicy(policies[pName]);
     }
@@ -121,26 +108,26 @@ contract TestHelper is Test, DeployHelper {
         bool commercial,
         bool derivatives,
         bool reciprocal,
-        uint32 commercialRevShare,
-        uint32 derivativesRevShare
+        uint32 commercialRevShare
     ) internal {
         string memory pName = string(abi.encodePacked("uml_", name));
-        policies[pName] = UMLPolicy({
+        policies[pName] = RegisterUMLPolicyParams({
             transferable: true,
-            attribution: true,
-            commercialUse: commercial,
-            commercialAttribution: false,
-            commercializers: emptyStringArray,
-            commercialRevShare: commercial ? commercialRevShare : 0,
-            derivativesAllowed: derivatives,
-            derivativesAttribution: false,
-            derivativesApproval: false,
-            derivativesReciprocal: reciprocal,
-            derivativesRevShare: derivatives ? derivativesRevShare : 0,
-            territories: emptyStringArray,
-            distributionChannels: emptyStringArray,
-            contentRestrictions: emptyStringArray,
-            royaltyPolicy: address(mockRoyaltyPolicyLS) // TODO: should use mock or real royalty policy
+            royaltyPolicy: address(mockRoyaltyPolicyLS),
+            policy: UMLPolicy({
+                attribution: true,
+                commercialUse: commercial,
+                commercialAttribution: false,
+                commercializers: emptyStringArray,
+                commercialRevShare: commercial ? commercialRevShare : 0,
+                derivativesAllowed: derivatives,
+                derivativesAttribution: false,
+                derivativesApproval: false,
+                derivativesReciprocal: reciprocal,
+                territories: emptyStringArray,
+                distributionChannels: emptyStringArray,
+                contentRestrictions: emptyStringArray
+            })
         });
     }
 
@@ -151,6 +138,11 @@ contract TestHelper is Test, DeployHelper {
     }
 
     function _getMappedUmlPolicy(string memory name) internal view returns (UMLPolicy storage) {
+        string memory pName = string(abi.encodePacked("uml_", name));
+        return policies[pName].policy;
+    }
+
+    function _getMappedUmlParams(string memory name) internal view returns (RegisterUMLPolicyParams storage) {
         string memory pName = string(abi.encodePacked("uml_", name));
         return policies[pName];
     }

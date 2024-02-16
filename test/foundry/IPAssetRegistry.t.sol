@@ -8,7 +8,6 @@ import { IIPAssetRegistry } from "contracts/interfaces/registries/IIPAssetRegist
 import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
 import { LICENSING_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IP } from "contracts/lib/IP.sol";
-import { MockLicensingModule } from "test/foundry/mocks/licensing/MockLicensingModule.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { ERC6551Registry } from "@erc6551/ERC6551Registry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
@@ -64,8 +63,8 @@ contract IPAssetRegistryTest is BaseTest {
         address accessController = address(new MockAccessController());
         governance = new Governance(address(this));
         moduleRegistry = new ModuleRegistry(address(governance));
-        MockLicensingModule licensingModule = new MockLicensingModule();
-        moduleRegistry.registerModule(LICENSING_MODULE_KEY, address(licensingModule));
+        address mockLicensingModule = address(0x1234);
+        moduleRegistry.registerModule(LICENSING_MODULE_KEY, mockLicensingModule);
         erc6551Registry = address(new ERC6551Registry());
         ipAccountImpl = address(new IPAccountImpl());
         ipAccountRegistry = new IPAccountRegistry(erc6551Registry, accessController, ipAccountImpl);

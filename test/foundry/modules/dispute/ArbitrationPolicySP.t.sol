@@ -8,9 +8,9 @@ import { ERC6551AccountLib } from "@erc6551/lib/ERC6551AccountLib.sol";
 // contracts
 import { Errors } from "contracts/lib/Errors.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
+import { UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 // test
 // solhint-disable-next-line max-line-length
-import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/integration/shared/LicenseHelper.sol";
 import { MockERC721 } from "test/foundry/mocks/MockERC721.sol";
 import { TestHelper } from "test/foundry/utils/TestHelper.sol";
 
@@ -37,28 +37,24 @@ contract TestArbitrationPolicySP is TestHelper {
 
         _setUMLPolicyFrameworkManager();
         nft = new MockERC721("mock");
+        
         _addUMLPolicy(
+            "cheap_flexible",
             true,
-            true,
-            UMLPolicyGenericParams({
-                policyName: "cheap_flexible", // => uml_cheap_flexible
+            address(royaltyPolicyLAP),
+            UMLPolicy ({
                 attribution: false,
-                transferable: true,
-                territories: new string[](0),
-                distributionChannels: new string[](0),
-                contentRestrictions: new string[](0)
-            }),
-            UMLPolicyCommercialParams({
+                commercialUse: true,
                 commercialAttribution: true,
                 commercializers: new string[](0),
                 commercialRevShare: 10,
-                royaltyPolicy: address(royaltyPolicyLAP)
-            }),
-            UMLPolicyDerivativeParams({
+                derivativesAllowed: true,
                 derivativesAttribution: true,
                 derivativesApproval: false,
                 derivativesReciprocal: false,
-                derivativesRevShare: 10
+                territories: new string[](0),
+                distributionChannels: new string[](0),
+                contentRestrictions: new string[](0)
             })
         );
 

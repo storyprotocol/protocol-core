@@ -117,7 +117,7 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
     function uri(uint256 id) public view virtual override returns (string memory) {
         Licensing.License memory licenseData = _licenses[id];
         Licensing.Policy memory pol = _licensingModule.policy(licenseData.policyId);
-        return IPolicyFrameworkManager(pol.policyFramework).policyToJson(pol.data);
+        return IPolicyFrameworkManager(pol.policyFramework).policyToJson(pol.frameworkData);
     }
 
     /// @dev Pre-hook for ERC1155's _update() called on transfers.

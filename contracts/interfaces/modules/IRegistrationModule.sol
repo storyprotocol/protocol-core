@@ -22,6 +22,6 @@ interface IRegistrationModule {
         string memory ipName,
         bytes32 hash,
         string calldata externalURL,
-        uint32 minRoyalty
+        bytes calldata data
     ) external;
 }

@@ -104,13 +104,13 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
         bool createAccount,
         bytes calldata data
     ) external returns (address id) {
-        id = _register(new uint256[](0), 0, chainId, tokenContract, tokenId, resolverAddr, createAccount, data);
+        id = _register(new uint256[](0), "", chainId, tokenContract, tokenId, resolverAddr, createAccount, data);
         emit IPRegistered(id, chainId, tokenContract, tokenId, resolverAddr, address(_metadataProvider), data);
     }
 
     /// @notice Registers an NFT as an IP using licenses derived from parent IP asset(s).
     /// @param licenseIds The parent IP asset licenses used to derive the new IP asset.
-    /// @param minRoyalty The minimum royalty to enforce if applicable, else 0.
+    /// @param royaltyContext The context for the royalty module to process.
     /// @param chainId The chain identifier of where the NFT resides.
     /// @param tokenContract The address of the NFT.
     /// @param tokenId The token identifier of the NFT.
@@ -118,7 +118,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
     /// @param data Canonical metadata to associate with the IP.
     function register(
         uint256[] calldata licenseIds,
-        uint32 minRoyalty,
+        bytes calldata royaltyContext,
         uint256 chainId,
         address tokenContract,
         uint256 tokenId,
@@ -126,7 +126,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
         bool createAccount,
         bytes calldata data
     ) external returns (address id) {
-        id = _register(licenseIds, minRoyalty, chainId, tokenContract, tokenId, resolverAddr, createAccount, data);
+        id = _register(licenseIds, royaltyContext, chainId, tokenContract, tokenId, resolverAddr, createAccount, data);
         emit IPRegistered(id, chainId, tokenContract, tokenId, resolverAddr, address(_metadataProvider), data);
     }
 
@@ -215,7 +215,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
 
     /// @dev Registers an NFT as an IP.
     /// @param licenseIds IP asset licenses used to derive the new IP asset, if any.
-    /// @param minRoyalty The minimum royalty to enforce if applicable, else 0.
+    /// @param royaltyContext The context for the royalty module to process.
     /// @param chainId The chain identifier of where the NFT resides.
     /// @param tokenContract The address of the NFT.
     /// @param tokenId The token identifier of the NFT.
@@ -224,7 +224,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
     /// @param data Canonical metadata to associate with the IP.
     function _register(
         uint256[] memory licenseIds,
-        uint32 minRoyalty,
+        bytes memory royaltyContext,
         uint256 chainId,
         address tokenContract,
         uint256 tokenId,
@@ -253,7 +253,7 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
 
         if (licenseIds.length != 0) {
             ILicensingModule licensingModule = ILicensingModule(MODULE_REGISTRY.getModule(LICENSING_MODULE_KEY));
-            licensingModule.linkIpToParents(licenseIds, id, minRoyalty);
+            licensingModule.linkIpToParents(licenseIds, id, royaltyContext);
         }
     }
 

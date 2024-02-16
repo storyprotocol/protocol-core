@@ -36,27 +36,21 @@ contract TestLSClaimer is TestHelper {
         _setUMLPolicyFrameworkManager();
         nft = erc721.ape;
         _addUMLPolicy(
+            "cheap_flexible"
             true,
-            true,
-            UMLPolicyGenericParams({
-                policyName: "cheap_flexible", // => uml_cheap_flexible
+            address(royaltyPolicyLAP),
+            UMLPolicy ({
                 attribution: false,
-                transferable: true,
-                territories: new string[](0),
-                distributionChannels: new string[](0),
-                contentRestrictions: new string[](0)
-            }),
-            UMLPolicyCommercialParams({
+                commercialUse: true,
                 commercialAttribution: true,
                 commercializers: new string[](0),
                 commercialRevShare: 10,
-                royaltyPolicy: address(royaltyPolicyLS)
-            }),
-            UMLPolicyDerivativeParams({
                 derivativesAttribution: true,
                 derivativesApproval: false,
                 derivativesReciprocal: false,
-                derivativesRevShare: 10
+                territories: new string[](0),
+                distributionChannels: new string[](0),
+                contentRestrictions: new string[](0)
             })
         );
 

@@ -7,12 +7,6 @@ import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
 /// @notice Interface to define a policy framework contract, that will
 /// register itself into the LicenseRegistry to format policy into the LicenseRegistry
 interface IPolicyFrameworkManager is IERC165 {
-    struct VerifyLinkResponse {
-        bool isLinkingAllowed;
-        bool isRoyaltyRequired;
-        address royaltyPolicy;
-        uint32 royaltyDerivativeRevShare;
-    }
 
     /// @notice Name to be show in LNFT metadata
     function name() external view returns (string memory);
@@ -25,14 +19,6 @@ interface IPolicyFrameworkManager is IERC165 {
     /// Must return ERC1155 OpenSea standard compliant metadata
     function policyToJson(bytes memory policyData) external view returns (string memory);
 
-    /// @notice Returns the royalty policy address of a policy ID belonging to the PFM
-    function getRoyaltyPolicy(uint256 policyId) external view returns (address royaltyPolicy);
-
-    /// @notice Returns the commercial revenue share of a policy ID belonging to the PFM
-    function getCommercialRevenueShare(uint256 policyId) external view returns (uint32 commercialRevenueShare);
-
-    /// @notice Returns whether the policy ID belonging to the PFM is commercial or non-commercial
-    function isPolicyCommercial(uint256 policyId) external view returns (bool);
 
     function processInheritedPolicies(
         bytes memory aggregator,
@@ -55,5 +41,5 @@ interface IPolicyFrameworkManager is IERC165 {
         address ipId,
         address parentIpId,
         bytes calldata policyData
-    ) external returns (VerifyLinkResponse memory);
+    ) external returns (bool);
 }

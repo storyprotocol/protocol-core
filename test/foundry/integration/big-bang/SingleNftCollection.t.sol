@@ -41,7 +41,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration, Integration
     function test_Integration_SingleNftCollection_DirectCallsByIPAccountOwners()
         public
         withLFM_UML
-        withLFM_MintPayment(erc20, 1)
+        withLFM_MintPayment(erc20, 1) // TODO pay through royalty module
         withUMLPolicy_Commerical_Derivative(
             UMLPolicyGenericParams({
                 policyName: "cheap_flexible", // => uml_com_deriv_cheap_flexible
