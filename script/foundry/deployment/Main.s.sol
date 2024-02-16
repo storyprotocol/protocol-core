@@ -308,6 +308,13 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
 
         accessController.setGlobalPermission(
+            address(ipAssetRegistry),
+            address(licensingModule),
+            bytes4(licensingModule.linkIpToParents.selector),
+            AccessPermission.ALLOW
+        );
+
+        accessController.setGlobalPermission(
             address(registrationModule),
             address(licensingModule),
             bytes4(licensingModule.linkIpToParents.selector),
