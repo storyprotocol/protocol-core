@@ -3,6 +3,7 @@ pragma solidity ^0.8.23;
 
 // contracts
 import { BasePolicyFrameworkManager } from "contracts/modules/licensing/BasePolicyFrameworkManager.sol";
+import { Licensing } from "contracts/lib/Licensing.sol";
 
 struct MockPolicyFrameworkConfig {
     address licensingModule;
@@ -32,7 +33,16 @@ contract MockPolicyFrameworkManager is BasePolicyFrameworkManager {
 
     function registerPolicy(MockPolicy calldata mockPolicy) external returns (uint256 policyId) {
         emit MockPolicyAdded(policyId, mockPolicy);
-        return LICENSING_MODULE.registerPolicy(true, royaltyPolicy, "", abi.encode(mockPolicy));
+        Licensing.Policy memory pol = Licensing.Policy({
+            isLicenseTransferable: true,
+            policyFramework: address(this),
+            frameworkData: "",
+            royaltyPolicy: royaltyPolicy,
+            royaltyData: abi.encode(mockPolicy),
+            mintingFee: 0,
+            mintingFeeToken: address(0)
+        });
+        return LICENSING_MODULE.registerPolicy(pol);
     }
 
     function verifyMint(address, bool, address, address, uint256, bytes memory data) external pure returns (bool) {

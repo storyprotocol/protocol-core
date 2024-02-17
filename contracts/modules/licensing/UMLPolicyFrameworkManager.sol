@@ -10,6 +10,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 // contracts
 import { IHookModule } from "../../interfaces/modules/base/IHookModule.sol";
 import { ILicensingModule } from "../../interfaces/modules/licensing/ILicensingModule.sol";
+import { IRoyaltyModule } from "../../interfaces/modules/royalty/IRoyaltyModule.sol";
 import { Licensing } from "../../lib/Licensing.sol";
 import { Errors } from "../../lib/Errors.sol";
 import { UMLFrameworkErrors } from "../../lib/UMLFrameworkErrors.sol";
@@ -50,18 +51,23 @@ contract UMLPolicyFrameworkManager is
     /// @param params the parameters for the policy
     /// @return policyId the ID of the policy
     function registerPolicy(RegisterUMLPolicyParams calldata params) external returns (uint256 policyId) {
-        _verifyComercialUse(params.policy, params.royaltyPolicy);
+        /// Minting fee amount & address checked in LicensingModule, no need to check here.
+        /// We don't limit charging for minting to commercial use, you could sell a NC license in theory.
+        _verifyComercialUse(params.policy, params.royaltyPolicy, params.mintingFee, params.mintingFeeToken);
         _verifyDerivatives(params.policy);
         /// TODO: DO NOT deploy on production networks without hashing string[] values instead of storing them
 
+        Licensing.Policy memory pol = Licensing.Policy({
+            isLicenseTransferable: params.transferable,
+            policyFramework: address(this),
+            frameworkData: abi.encode(params.policy),
+            royaltyPolicy: params.royaltyPolicy,
+            royaltyData: abi.encode(params.policy.commercialRevShare),
+            mintingFee: params.mintingFee,
+            mintingFeeToken: params.mintingFeeToken
+        });
         // No need to emit here, as the LicensingModule will emit the event
-        return
-            LICENSING_MODULE.registerPolicy(
-                params.transferable,
-                params.royaltyPolicy,
-                abi.encode(params.policy.commercialRevShare), // TODO: this should be encoded by the royalty policy
-                abi.encode(params.policy)
-            );
+        return LICENSING_MODULE.registerPolicy(pol);
     }
 
     /// Called by licenseRegistry to verify policy parameters for linking a child IP to a parent IP (licensor)
@@ -331,7 +337,7 @@ contract UMLPolicyFrameworkManager is
     /// Checks the configuration of commercial use and throws if the policy is not compliant
     /// @param policy The policy to verify
     // solhint-disable-next-line code-complexity
-    function _verifyComercialUse(UMLPolicy calldata policy, address royaltyPolicy) internal view {
+    function _verifyComercialUse(UMLPolicy calldata policy, address royaltyPolicy, uint256 mintingFee, address mintingFeeToken) internal view {
         if (!policy.commercialUse) {
             if (policy.commercialAttribution) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddAttribution();
@@ -346,7 +352,6 @@ contract UMLPolicyFrameworkManager is
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddRoyaltyPolicy();
             }
         } else {
-            // TODO: check for supportInterface instead
             if (royaltyPolicy == address(0)) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialEnabled_RoyaltyPolicyRequired();
             }

@@ -29,6 +29,13 @@ interface IRoyaltyModule is IModule {
     /// @param amount The amount that is paid
     event RoyaltyPaid(address receiverIpId, address payerIpId, address sender, address token, uint256 amount);
 
+    /// @notice Event emitted when the license minting fee is paid
+    /// @param receiverIpId The ipId that receives the royalties
+    /// @param payerAddress The address that pays the royalties
+    /// @param token The token that is used to pay the royalties
+    /// @param amount The amount paid
+    event LicenseMintingFeePaid(address receiverIpId, address payerAddress, address token, uint256 amount);
+
     /// @notice Indicates if a royalty policy is whitelisted
     /// @param royaltyPolicy The address of the royalty policy
     function isWhitelistedRoyaltyPolicy(address royaltyPolicy) external view returns (bool);
@@ -83,4 +90,11 @@ interface IRoyaltyModule is IModule {
     /// @param token The token to use to pay the royalties
     /// @param amount The amount to pay
     function payRoyaltyOnBehalf(address receiverIpId, address payerIpId, address token, uint256 amount) external;
+
+    /// @notice Allows the sender to pay the license minting fee
+    /// @param receiverIpId The ipId that receives the royalties
+    /// @param payerAddress The address that pays the royalties
+    /// @param token The token to use to pay the royalties
+    /// @param amount The amount to pay
+    function payLicenseMintingFee(address receiverIpId, address payerAddress, address token, uint256 amount) external;
 }

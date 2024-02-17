@@ -207,6 +207,8 @@ contract LicensingHelper {
         policies[pName] = RegisterUMLPolicyParams({
             transferable: transferable,
             royaltyPolicy: royaltyPolicy,
+            mintingFee: 0,
+            mintingFeeToken: address(0),
             policy: policy
         });
         policyIds[pName] = UMLPolicyFrameworkManager(pfm["uml"]).registerPolicy(policies[pName]);
@@ -224,6 +226,8 @@ contract LicensingHelper {
             transferable: true,
             // TODO: use mock or real based on condition
             royaltyPolicy: commercial ? address(ROYALTY_POLICY_LAP) : address(0),
+            mintingFee: 0,
+            mintingFeeToken: address(0),
             policy: UMLPolicy({
                 attribution: true,
                 commercialUse: commercial,

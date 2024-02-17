@@ -23,4 +23,5 @@ library UMLFrameworkErrors {
     error UMLPolicyFrameworkManager__CommercialValueMismatch();
     error UMLPolicyFrameworkManager__DerivativesValueMismatch();
     error UMLPolicyFrameworkManager__StringArrayMismatch();
+    
 }

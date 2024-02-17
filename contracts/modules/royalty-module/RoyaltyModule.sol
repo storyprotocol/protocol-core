@@ -139,20 +139,33 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModul
         address _token,
         uint256 _amount
     ) external nonReentrant {
+        _payRoyalty(_receiverIpId, msg.sender, _token, _amount);
+        emit RoyaltyPaid(_receiverIpId, _payerIpId, msg.sender, _token, _amount);
+    }
+
+    /// @notice Allows to pay the minting fee for a license
+    /// @param _receiverIpId The ipId that receives the royalties
+    /// @param _payerAddress The address that pays the royalties
+    /// @param _token The token to use to pay the royalties
+    /// @param _amount The amount to pay
+    function payLicenseMintingFee(address _receiverIpId, address _payerAddress, address _token, uint256 _amount) external onlyLicensingModule {
+        _payRoyalty(_receiverIpId, _payerAddress, _token, _amount);
+        emit LicenseMintingFeePaid(_receiverIpId, _payerAddress, _token, _amount);
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
+        return interfaceId == type(IRoyaltyModule).interfaceId || super.supportsInterface(interfaceId);
+    }
+
+    function _payRoyalty(address _receiverIpId, address _payerAddress, address _token, uint256 _amount) internal {
         if (!isWhitelistedRoyaltyToken[_token]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyToken();
 
-        address payerRoyaltyPolicy = royaltyPolicies[_payerIpId];
+        address payerRoyaltyPolicy = royaltyPolicies[_receiverIpId];
         // if the payer does not have a royalty policy set, then the payer is not a derivative ip and does not pay
         // royalties the receiver ip can have a zero royalty policy since that could mean it is an ip a root
         if (payerRoyaltyPolicy == address(0)) revert Errors.RoyaltyModule__NoRoyaltyPolicySet();
         if (!isWhitelistedRoyaltyPolicy[payerRoyaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
 
-        IRoyaltyPolicy(payerRoyaltyPolicy).onRoyaltyPayment(msg.sender, _receiverIpId, _token, _amount);
-
-        emit RoyaltyPaid(_receiverIpId, _payerIpId, msg.sender, _token, _amount);
-    }
-
-    function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
-        return interfaceId == type(IRoyaltyModule).interfaceId || super.supportsInterface(interfaceId);
+        IRoyaltyPolicy(payerRoyaltyPolicy).onRoyaltyPayment(_payerAddress, _receiverIpId, _token, _amount);
     }
 }
