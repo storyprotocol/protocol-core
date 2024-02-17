@@ -58,18 +58,16 @@ contract IPAssetRegistry is IIPAssetRegistry, IPAccountRegistry, Governable {
 
     /// @notice Initializes the IP Asset Registry.
     /// @param erc6551Registry The address of the ERC6551 registry.
-    /// @param accessController The address of the access controller.
     /// @param ipAccountImpl The address of the IP account implementation.
     /// @param moduleRegistry The address of the module registry.
     /// @param governance The address of the governance contract.
     /// TODO: Utilize module registry for fetching different modules.
     constructor(
-        address accessController,
         address erc6551Registry,
         address ipAccountImpl,
         address moduleRegistry,
         address governance
-    ) IPAccountRegistry(erc6551Registry, accessController, ipAccountImpl) Governable(governance) {
+    ) IPAccountRegistry(erc6551Registry, ipAccountImpl) Governable(governance) {
         MODULE_REGISTRY = IModuleRegistry(moduleRegistry);
         _metadataProvider = IMetadataProviderMigratable(new MetadataProviderV1(address(this)));
     }

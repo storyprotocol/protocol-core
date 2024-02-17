@@ -17,11 +17,22 @@ import { Errors } from "./lib/Errors.sol";
 /// @title IPAccountImpl
 /// @notice The Story Protocol's implementation of the IPAccount.
 contract IPAccountImpl is IERC165, IIPAccount {
-    address public accessController;
+    address public immutable accessController;
 
     uint256 public state;
 
     receive() external payable override(IERC6551Account) {}
+
+    /// @notice Creates a new IPAccountImpl contract instance
+    /// @dev Initializes the IPAccountImpl with an AccessController address which is stored
+    /// in the implementation code's storage.
+    /// This means that each cloned IPAccount will inherently use the same AccessController
+    /// without the need for individual configuration.
+    /// @param accessController_ The address of the AccessController contract to be used for permission checks
+    constructor(address accessController_) {
+        if (accessController_ == address(0)) revert Errors.IPAccount__InvalidAccessController();
+        accessController = accessController_;
+    }
 
     /// @notice Checks if the contract supports a specific interface
     /// @param interfaceId_ The interface identifier, as specified in ERC-165
@@ -32,14 +43,6 @@ contract IPAccountImpl is IERC165, IIPAccount {
             interfaceId_ == type(IERC1155Receiver).interfaceId ||
             interfaceId_ == type(IERC721Receiver).interfaceId ||
             interfaceId_ == type(IERC165).interfaceId);
-    }
-
-    /// @notice Initializes the IPAccount with the given access controller
-    /// @param accessController_ The address of the access controller
-    // TODO: can only be called by IPAccountRegistry
-    function initialize(address accessController_) external {
-        require(accessController_ != address(0), "Invalid access controller");
-        accessController = accessController_;
     }
 
     /// @notice Returns the identifier of the non-fungible token which owns the account

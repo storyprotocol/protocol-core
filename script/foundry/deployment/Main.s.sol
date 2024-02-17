@@ -150,7 +150,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "IPAccountImpl";
         _predeploy(contractKey);
-        ipAccountImpl = new IPAccountImpl();
+        ipAccountImpl = new IPAccountImpl(address(accessController));
         _postdeploy(contractKey, address(ipAccountImpl));
 
         contractKey = "ModuleRegistry";
@@ -162,7 +162,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         _predeploy(contractKey);
         ipAccountRegistry = new IPAccountRegistry(
             ERC6551_REGISTRY,
-            address(accessController),
             address(ipAccountImpl)
         );
         _postdeploy(contractKey, address(ipAccountRegistry));
@@ -170,7 +169,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         contractKey = "IPAssetRegistry";
         _predeploy(contractKey);
         ipAssetRegistry = new IPAssetRegistry(
-            address(accessController),
             ERC6551_REGISTRY,
             address(ipAccountImpl),
             address(moduleRegistry),

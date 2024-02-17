@@ -22,6 +22,7 @@ library Errors {
     error IPAccount__InvalidSignature();
     error IPAccount__ExpiredSignature();
     error IPAccount__InvalidCalldata();
+    error IPAccount__InvalidAccessController();
 
     ////////////////////////////////////////////////////////////////////////////
     //                                   Module                               //

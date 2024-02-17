@@ -23,16 +23,16 @@ contract RegistryTest is Test {
     uint256 internal tokenId;
 
     function setUp() public {
-        implementation = new IPAccountImpl();
         erc6551Registry = new ERC6551Registry();
         accessController = new MockAccessController();
+        implementation = new IPAccountImpl(address(accessController));
         chainId = 100;
         tokenAddress = address(200);
         tokenId = 300;
     }
 
     function test_IPAccountRegistry_registerIpAccount() public {
-        registry = new IPAccountRegistry(address(erc6551Registry), address(accessController), address(implementation));
+        registry = new IPAccountRegistry(address(erc6551Registry), address(implementation));
         address ipAccountAddr;
         ipAccountAddr = registry.registerIpAccount(chainId, tokenAddress, tokenId);
 
@@ -47,12 +47,5 @@ contract RegistryTest is Test {
         assertEq(tokenId_, tokenId);
 
         assertTrue(registry.isRegistered(chainId, tokenAddress, tokenId));
-    }
-
-    function test_IPAccountRegistry_revert_createAccount_ifInitFailed() public {
-        // expect init revert for invalid accessController address
-        registry = new IPAccountRegistry(address(erc6551Registry), address(0), address(implementation));
-        vm.expectRevert("Invalid access controller");
-        registry.registerIpAccount(chainId, tokenAddress, tokenId);
     }
 }

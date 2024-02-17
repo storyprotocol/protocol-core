@@ -5,7 +5,7 @@ pragma solidity ^0.8.23;
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 // contracts
-import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
+import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
@@ -255,7 +255,7 @@ contract LicensingModuleTest is BaseTest {
     function test_LicensingModule_mintLicense_revert_callerNotLicensorAndIpIdHasNoPolicy() public {
         licensingModule.registerPolicyFrameworkManager(address(mockPFM));
 
-        IPAccountImpl ipAccount1 = IPAccountImpl(payable(ipId1));
+        IIPAccount ipAccount1 = IIPAccount(payable(ipId1));
 
         vm.prank(address(mockPFM));
         uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", _createMockPolicy());
@@ -290,7 +290,7 @@ contract LicensingModuleTest is BaseTest {
         licensingModule.registerPolicyFrameworkManager(address(mockPFM));
 
         bytes memory policy = _createMockPolicy();
-        IPAccountImpl ipAccount1 = IPAccountImpl(payable(ipId1));
+        IIPAccount ipAccount1 = IIPAccount(payable(ipId1));
 
         vm.startPrank(address(mockPFM));
         uint256 policyId1 = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", policy);
