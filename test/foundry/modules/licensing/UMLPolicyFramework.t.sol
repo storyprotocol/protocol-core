@@ -87,37 +87,8 @@ contract PILPolicyFrameworkTest is BaseTest {
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(inputA.policy)));
     }
 
-    function test_PILPolicyFrameworkManager__verifyLink_revert_invalidCommercializerChecker() public {
-        address badCommercializerChecker = address(new MockERC721("Fake Commercializer Checker"));
-
-        PILPolicy memory policyData = PILPolicy({
-            attribution: true,
-            commercialUse: false,
-            commercialAttribution: false,
-            commercializerChecker: badCommercializerChecker,
-            commercializerCheckerData: "",
-            commercialRevShare: 0,
-            derivativesAllowed: false,
-            derivativesAttribution: false,
-            derivativesApproval: false,
-            derivativesReciprocal: false,
-            territories: emptyStringArray,
-            distributionChannels: emptyStringArray,
-            contentRestrictions: emptyStringArray
-        });
-
-        vm.prank(address(licensingModule));
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.PolicyFrameworkManager__CommercializerCheckerDoesNotSupportHook.selector,
-                badCommercializerChecker
-            )
-        );
-        pilFramework.verifyLink(0, alice, ipId1, address(0), abi.encode(policyData));
-    }
-
-    function test_PILPolicyFrameworkManager__verifyLink_revert_commercializerCheckerFailedVerify() public {
-        PILPolicy memory policyData = PILPolicy({
+    function test_UMLPolicyFrameworkManager__verifyLink_false_commercializerCheckerFailedVerify() public {
+        UMLPolicy memory policyData = UMLPolicy({
             attribution: true,
             commercialUse: false,
             commercialAttribution: false,
@@ -138,15 +109,13 @@ contract PILPolicyFrameworkTest is BaseTest {
         assertFalse(verified);
     }
 
-    function test_PILPolicyFrameworkManager__verifyMint_revert_invalidCommercializerChecker() public {
-        address badCommercializerChecker = address(new MockERC721("Fake Commercializer Checker"));
-
-        PILPolicy memory policyData = PILPolicy({
+    function test_UMLPolicyFrameworkManager__verifyMint_false_commercializerCheckerFailedVerify() public {
+        UMLPolicy memory policyData = UMLPolicy({
             attribution: true,
             commercialUse: false,
             commercialAttribution: false,
-            commercializerChecker: badCommercializerChecker,
-            commercializerCheckerData: "",
+            commercializerChecker: address(tokenGatedHook), // 0 token balance for ipId1
+            commercializerCheckerData: abi.encode(address(gatedNftFoo)),
             commercialRevShare: 0,
             derivativesAllowed: false,
             derivativesAttribution: false,
@@ -158,13 +127,8 @@ contract PILPolicyFrameworkTest is BaseTest {
         });
 
         vm.prank(address(licensingModule));
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Errors.PolicyFrameworkManager__CommercializerCheckerDoesNotSupportHook.selector,
-                badCommercializerChecker
-            )
-        );
-        pilFramework.verifyMint(alice, false, ipId1, alice, 2, abi.encode(policyData));
+        bool verified = umlFramework.verifyMint(alice, false, ipId1, alice, 2, abi.encode(policyData));
+        assertFalse(verified);
     }
 
     function test_PILPolicyFrameworkManager__verifyMint_revert_commercializerCheckerFailedVerify() public {
@@ -198,38 +162,84 @@ contract PILPolicyFrameworkTest is BaseTest {
     //////              COMMERCIAL USE TERMS               //////
     /////////////////////////////////////////////////////////////
 
-    function test_PILPolicyFrameworkManager__commercialUse_disallowed_revert_settingIncompatibleTerms() public {
-        // If no commercial values allowed
-        _mapPILPolicySimple({
+    function test_UMLPolicyFrameworkManager__commercialUseDisabled_revert_settingIncompatibleTerms() public {
+        // If commercial values are NOT allowed
+        _mapUMLPolicySimple({
             name: "pol_a",
             commercial: false,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
+        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
+
+        // CHECK: commercialAttribution = true should revert
         inputA.policy.commercialAttribution = true;
-        // commercialAttribution = true should revert
-        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddAttribution.selector);
-        pilFramework.registerPolicy(inputA);
-        // Non empty commercializers should revert
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddAttribution.selector);
+        umlFramework.registerPolicy(inputA);
+
+        // reset
         inputA.policy.commercialAttribution = false;
+
+        // CHECK: Non empty commercializers should revert
         inputA.policy.commercializerChecker = address(tokenGatedHook);
         inputA.policy.commercializerCheckerData = abi.encode(address(gatedNftFoo));
         vm.expectRevert(
             PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddCommercializers.selector
         );
-        pilFramework.registerPolicy(inputA);
-        // No rev share should be set; revert
+        umlFramework.registerPolicy(inputA);
+
+        // reset
         inputA.policy.commercializerChecker = address(0);
         inputA.policy.commercializerCheckerData = "";
+
+        // CHECK: No rev share should be set; revert
         inputA.policy.commercialRevShare = 1;
-        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddRevShare.selector);
-        pilFramework.registerPolicy(inputA);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddRevShare.selector);
+        umlFramework.registerPolicy(inputA);
+
+        // reset
+        inputA.policy.commercialRevShare = 0;
+
+        // CHECK: royaltyPolicy != address(0) should revert
+        inputA.royaltyPolicy = address(0x123123);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddRoyaltyPolicy.selector);
+        umlFramework.registerPolicy(inputA);
+
+        // reset
+        inputA.royaltyPolicy = address(0);
+
+        // CHECK: mintingFee > 0 should revert
+        inputA.mintingFee = 100;
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddMintingFee.selector);
+        umlFramework.registerPolicy(inputA);
+
+        // reset
+        inputA.mintingFee = 0;
     }
 
-    function test_PILPolicyFrameworkManager__commercialUse_valuesSetCorrectly() public {
-        _mapPILPolicySimple({
+    function test_UMLPolicyFrameworkManager__commercialUseEnabled_revert_settingIncompatibleTerms() public {
+        // If commercial values are NOT allowed
+        _mapUMLPolicySimple({
+            name: "pol_a",
+            commercial: true,
+            derivatives: true,
+            reciprocal: true,
+            commercialRevShare: 100
+        });
+        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
+
+        // CHECK: royaltyPolicy == address(0) should revert
+        inputA.royaltyPolicy = address(0);
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialEnabled_RoyaltyPolicyRequired.selector);
+        umlFramework.registerPolicy(inputA);
+
+        // reset
+        inputA.royaltyPolicy = address(0x123123);
+    }
+
+    function test_UMLPolicyFrameworkManager__commercialUseEnabled_valuesSetCorrectly() public {
+        _mapUMLPolicySimple({
             name: "pol_a",
             commercial: true,
             derivatives: true,
@@ -245,10 +255,11 @@ contract PILPolicyFrameworkTest is BaseTest {
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(inputA.policy)));
     }
 
-    function test_PILPolicyFrameworkManager__commercialUse_InvalidCommericalizer() public {
-        address invalidCommercializerChecker = address(0x123);
+    function test_UMLPolicyFrameworkManager__commercialUseEnabled_invalidCommericalizerChecker() public {
+        address invalidCommercializerChecker = address(new MockERC721("Fake Commercializer Checker"));
         bytes memory invalideCommercializerCheckerData = abi.encode(address(0x456));
-        PILPolicy memory policyData = PILPolicy({
+
+        UMLPolicy memory policyData = UMLPolicy({
             attribution: false,
             commercialUse: true,
             commercialAttribution: true,

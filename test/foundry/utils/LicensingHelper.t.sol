@@ -60,128 +60,6 @@ contract LicensingHelper {
     }
 
     /*//////////////////////////////////////////////////////////////////////////
-                                MODIFIERS: POLICY
-    //////////////////////////////////////////////////////////////////////////*/
-
-    // modifier withPILPolicy_Commercial_Derivative(
-    //     PILPolicyGenericParams memory gparams,
-    //     PILPolicyCommercialParams memory cparams,
-    //     PILPolicyDerivativeParams memory dparams
-    // ) {
-    //     PILPolicyFrameworkManager _pfm = PILPolicyFrameworkManager(pfm["pil"]);
-
-    //     string memory pName = string(abi.encodePacked("pil_com_deriv_", gparams.policyName));
-    //     policyIds[pName] = _pfm.registerPolicy(
-    //         PILPolicy({
-    //             transferable: gparams.transferable,
-    //             attribution: gparams.attribution,
-    //             commercialUse: true,
-    //             commercialAttribution: cparams.commercialAttribution,
-    //             commercializerChecker: cparams.commercializerChecker,
-    //             commercializerCheckerData: cparams.commercializerCheckerData,
-    //             commercialRevShare: cparams.commercialRevShare,
-    //             derivativesAllowed: true,
-    //             derivativesAttribution: dparams.derivativesAttribution,
-    //             derivativesApproval: dparams.derivativesApproval,
-    //             derivativesReciprocal: dparams.derivativesReciprocal,
-    //             derivativesRevShare: dparams.derivativesRevShare,
-    //             territories: gparams.territories,
-    //             contentRestrictions: gparams.contentRestrictions,
-    //             distributionChannels: gparams.distributionChannels,
-    //             royaltyPolicy: cparams.royaltyPolicy
-    //         })
-    //     );
-    //     _;
-    // }
-
-    // modifier withPILPolicy_Commerical_NonDerivative(
-    //     PILPolicyGenericParams memory gparams,
-    //     PILPolicyCommercialParams memory cparams
-    // ) {
-    //     PILPolicyFrameworkManager _pfm = PILPolicyFrameworkManager(pfm["pil"]);
-
-    //     string memory pName = string(abi.encodePacked("pil_com_nonderiv_", gparams.policyName));
-    //     policyIds[pName] = _pfm.registerPolicy(
-    //         PILPolicy({
-    //             transferable: gparams.transferable,
-    //             attribution: gparams.attribution,
-    //             commercialUse: true,
-    //             commercialAttribution: cparams.commercialAttribution,
-    //             commercializerChecker: cparams.commercializerChecker,
-    //             commercializerCheckerData: cparams.commercializerCheckerData,
-    //             commercialRevShare: cparams.commercialRevShare,
-    //             derivativesAllowed: false,
-    //             derivativesAttribution: false,
-    //             derivativesApproval: false,
-    //             derivativesReciprocal: false,
-    //             derivativesRevShare: 0,
-    //             territories: gparams.territories,
-    //             contentRestrictions: gparams.contentRestrictions,
-    //             distributionChannels: gparams.distributionChannels,
-    //             royaltyPolicy: cparams.royaltyPolicy
-    //         })
-    //     );
-    //     _;
-    // }
-
-    // modifier withPILPolicy_NonCommercial_Derivative(
-    //     PILPolicyGenericParams memory gparams,
-    //     PILPolicyDerivativeParams memory dparams
-    // ) {
-    //     PILPolicyFrameworkManager _pfm = PILPolicyFrameworkManager(pfm["pil"]);
-
-    //     string memory pName = string(abi.encodePacked("pil_noncom_deriv_", gparams.policyName));
-    //     policyIds[pName] = _pfm.registerPolicy(
-    //         PILPolicy({
-    //             transferable: gparams.transferable,
-    //             attribution: gparams.attribution,
-    //             commercialUse: false,
-    //             commercialAttribution: false,
-    //             commercializerChecker: address(0),
-    //             commercializerCheckerData: "",
-    //             commercialRevShare: 0,
-    //             derivativesAllowed: true,
-    //             derivativesAttribution: dparams.derivativesAttribution,
-    //             derivativesApproval: dparams.derivativesApproval,
-    //             derivativesReciprocal: dparams.derivativesReciprocal,
-    //             derivativesRevShare: dparams.derivativesRevShare,
-    //             territories: gparams.territories,
-    //             distributionChannels: gparams.distributionChannels,
-    //             contentRestrictions: gparams.contentRestrictions,
-    //             royaltyPolicy: address(0)
-    //         })
-    //     );
-    //     _;
-    // }
-
-    // modifier withPILPolicy_NonCommercial_NonDerivative(PILPolicyGenericParams memory gparams) {
-    //     PILPolicyFrameworkManager _pfm = PILPolicyFrameworkManager(pfm["pil"]);
-
-    //     string memory pName = string(abi.encodePacked("pil_noncom_nonderiv_", gparams.policyName));
-    //     policyIds[pName] = _pfm.registerPolicy(
-    //         PILPolicy({
-    //             transferable: gparams.transferable,
-    //             attribution: gparams.attribution,
-    //             commercialUse: false,
-    //             commercialAttribution: false,
-    //             commercializerChecker: address(0),
-    //             commercializerCheckerData: "",
-    //             commercialRevShare: 0,
-    //             derivativesAllowed: false,
-    //             derivativesAttribution: false,
-    //             derivativesApproval: false,
-    //             derivativesReciprocal: false,
-    //             derivativesRevShare: 0,
-    //             territories: gparams.territories,
-    //             contentRestrictions: gparams.contentRestrictions,
-    //             distributionChannels: gparams.distributionChannels,
-    //             royaltyPolicy: address(0)
-    //         })
-    //     );
-    //     _;
-    // }
-
-    /*//////////////////////////////////////////////////////////////////////////
                                 HELPER FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
@@ -214,7 +92,26 @@ contract LicensingHelper {
         policyIds[pName] = PILPolicyFrameworkManager(pfm["pil"]).registerPolicy(policies[pName]);
     }
 
-    function _mapPILPolicySimple(
+    function _addUMLPolicyWihtMintPayment(
+        string memory policyName,
+        bool transferable,
+        address royaltyPolicy,
+        uint256 mintingFee,
+        address mintingFeeToken,
+        UMLPolicy memory policy
+    ) internal {
+        string memory pName = string(abi.encodePacked("uml_", policyName));
+        policies[pName] = RegisterUMLPolicyParams({
+            transferable: transferable,
+            royaltyPolicy: royaltyPolicy,
+            mintingFee: mintingFee,
+            mintingFeeToken: mintingFeeToken,
+            policy: policy
+        });
+        policyIds[pName] = UMLPolicyFrameworkManager(pfm["uml"]).registerPolicy(policies[pName]);
+    }
+
+    function _mapUMLPolicySimple(
         string memory name,
         bool commercial,
         bool derivatives,
