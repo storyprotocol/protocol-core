@@ -18,8 +18,6 @@ import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator, RegisterUMLPolicy
 import { BasePolicyFrameworkManager } from "../../modules/licensing/BasePolicyFrameworkManager.sol";
 import { LicensorApprovalChecker } from "../../modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
 
-import "forge-std/console2.sol";
-
 /// @title UMLPolicyFrameworkManager
 /// @notice UML Policy Framework Manager implements the UML Policy Framework logic for encoding and decoding UML
 /// policies into the LicenseRegistry and verifying the licensing parameters for linking, minting, and transferring.
@@ -91,27 +89,20 @@ contract UMLPolicyFrameworkManager is
         if (!policy.derivativesAllowed) {
             return false;
         }
-        console2.log("verifyLink: policy.derivativesAllowed: ", policy.derivativesAllowed);
-
 
         // If the policy defines the licensor must approve derivatives, check if the
         // derivative is approved by the licensor
         if (policy.derivativesApproval) {
-            console2.log("policy.derivativesApproval", policy.derivativesApproval);
-            console2.log("isDerivativeApproved(licenseId, ipId)", isDerivativeApproved(licenseId, ipId));
             linkAllowed = linkAllowed && isDerivativeApproved(licenseId, ipId);
-            console2.log("linkAllowed", linkAllowed);
         }
         // Check if the commercializerChecker allows the link
         if (policy.commercializerChecker != address(0)) {
-            console2.log("policy.commercializerChecker", policy.commercializerChecker);
             // No need to check if the commercializerChecker supports the IHookModule interface, as it was checked
             // when the policy was registered.
             if (!IHookModule(policy.commercializerChecker).verify(caller, policy.commercializerCheckerData)) {
                 linkAllowed = false;
             }
         }
-        console2.log("final linkAllowed", linkAllowed);
         return linkAllowed;
     }
 
