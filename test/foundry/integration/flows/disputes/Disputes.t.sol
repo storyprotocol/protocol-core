@@ -23,18 +23,18 @@ contract Flows_Integration_Disputes is BaseIntegration {
     function setUp() public override {
         super.setUp();
 
-        // Register UML Framework
-        _deployLFM_UML();
+        // Register PIL Framework
+        _deployLFM_PIL();
 
         // Register a License
-        _mapUMLPolicySimple({
+        _mapPILPolicySimple({
             name: "non-commercial-remix",
             commercial: false,
             derivatives: true,
             reciprocal: true,
             commercialRevShare: 0
         });
-        policyId = _registerUMLPolicyFromMapping("non-commercial-remix");
+        policyId = _registerPILPolicyFromMapping("non-commercial-remix");
 
         // Register an original work with both policies set
         mockNFT.mintId(u.alice, 1);
@@ -46,7 +46,7 @@ contract Flows_Integration_Disputes is BaseIntegration {
         ipAcct[3] = registerIpAccount(mockNFT, 3, u.carl);
 
         vm.startPrank(u.alice);
-        licensingModule.addPolicyToIp(ipAcct[1], _getUmlPolicyId("non-commercial-remix"));
+        licensingModule.addPolicyToIp(ipAcct[1], _getPilPolicyId("non-commercial-remix"));
         vm.stopPrank();
     }
 

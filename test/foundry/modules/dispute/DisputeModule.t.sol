@@ -10,7 +10,7 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
-import { UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { PILPolicy } from "contracts/modules/licensing/PILPolicyFrameworkManager.sol";
 // test
 import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
@@ -75,12 +75,12 @@ contract DisputeModuleTest is BaseTest {
         disputeModule.setBaseArbitrationPolicy(address(arbitrationPolicySP2));
         vm.stopPrank();
 
-        _setUMLPolicyFrameworkManager();
-        _addUMLPolicy(
+        _setPILPolicyFrameworkManager();
+        _addPILPolicy(
             "cheap_flexible",
             true,
             address(royaltyPolicyLAP),
-            UMLPolicy({
+            PILPolicy({
                 attribution: false,
                 commercialUse: true,
                 commercialAttribution: true,
@@ -112,7 +112,7 @@ contract DisputeModuleTest is BaseTest {
         vm.startPrank(u.alice);
         ipAssetRegistry.setApprovalForAll(address(registrationModule), true);
         ipAddr = registrationModule.registerRootIp(
-            policyIds["uml_cheap_flexible"],
+            policyIds["pil_cheap_flexible"],
             address(mockNFT),
             0,
             "IPAccount1",

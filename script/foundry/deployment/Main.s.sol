@@ -33,7 +33,7 @@ import { RoyaltyPolicyLAP } from "contracts/modules/royalty-module/policies/Roya
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
 // solhint-disable-next-line max-line-length
-import { UMLPolicyFrameworkManager, UMLPolicy, RegisterUMLPolicyParams } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { PILPolicyFrameworkManager, PILPolicy, RegisterPILPolicyParams } from "contracts/modules/licensing/PILPolicyFrameworkManager.sol";
 import { MODULE_TYPE_HOOK } from "contracts/lib/modules/Module.sol";
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
 import { IHookModule } from "contracts/interfaces/modules/base/IHookModule.sol";
@@ -381,29 +381,29 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                         CREATE POLICY FRAMEWORK MANAGERS
         ///////////////////////////////////////////////////////////////*/
 
-        _predeploy("UMLPolicyFrameworkManager");
-        UMLPolicyFrameworkManager umlPfm = new UMLPolicyFrameworkManager(
+        _predeploy("PILPolicyFrameworkManager");
+        PILPolicyFrameworkManager pilPfm = new PILPolicyFrameworkManager(
             address(accessController),
             address(ipAccountRegistry),
             address(licensingModule),
-            "uml",
-            "https://uml-license.com/{id}.json"
+            "pil",
+            "https://pil-license.com/{id}.json"
         );
-        _postdeploy("UMLPolicyFrameworkManager", address(umlPfm));
-        licensingModule.registerPolicyFrameworkManager(address(umlPfm));
-        frameworkAddrs["uml"] = address(umlPfm);
+        _postdeploy("PILPolicyFrameworkManager", address(pilPfm));
+        licensingModule.registerPolicyFrameworkManager(address(pilPfm));
+        frameworkAddrs["pil"] = address(pilPfm);
 
         /*///////////////////////////////////////////////////////////////
                                 CREATE POLICIES
         ///////////////////////////////////////////////////////////////*/
 
-        policyIds["uml_com_deriv_expensive"] = umlPfm.registerPolicy(
-            RegisterUMLPolicyParams({
+        policyIds["pil_com_deriv_expensive"] = pilPfm.registerPolicy(
+            RegisterPILPolicyParams({
                 transferable: true,
                 royaltyPolicy: address(royaltyPolicyLAP),
                 mintingFee: 0,
                 mintingFeeToken: address(0),
-                policy: UMLPolicy({
+                policy: PILPolicy({
                     attribution: true,
                     commercialUse: true,
                     commercialAttribution: true,
@@ -421,13 +421,13 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             })
         );
 
-        policyIds["uml_noncom_deriv_reciprocal"] = umlPfm.registerPolicy(
-            RegisterUMLPolicyParams({
+        policyIds["pil_noncom_deriv_reciprocal"] = pilPfm.registerPolicy(
+            RegisterPILPolicyParams({
                 transferable: false,
                 royaltyPolicy: address(0), // no royalty, non-commercial
                 mintingFee: 0,
                 mintingFeeToken: address(0),
-                policy: UMLPolicy({
+                policy: PILPolicy({
                     attribution: true,
                     commercialUse: false,
                     commercialAttribution: false,
@@ -461,10 +461,10 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         );
         disputeModule.setArbitrationPolicy(ipAcct[1], address(arbitrationPolicySP));
 
-        // IPAccount2 (tokenId 2) with policy "uml_noncom_deriv_reciprocal"
+        // IPAccount2 (tokenId 2) with policy "pil_noncom_deriv_reciprocal"
         vm.label(getIpId(erc721, 2), "IPAccount2");
         ipAcct[2] = registrationModule.registerRootIp(
-            policyIds["uml_noncom_deriv_reciprocal"],
+            policyIds["pil_noncom_deriv_reciprocal"],
             address(erc721),
             2,
             "IPAccount2",
@@ -504,8 +504,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                             ADD POLICIES TO IPACCOUNTS
         ///////////////////////////////////////////////////////////////*/
 
-        // Add "uml_com_deriv_expensive" policy to IPAccount1
-        licensingModule.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_expensive"]);
+        // Add "pil_com_deriv_expensive" policy to IPAccount1
+        licensingModule.addPolicyToIp(ipAcct[1], policyIds["pil_com_deriv_expensive"]);
 
         // ROYALTY_MODULE.setRoyaltyPolicy(ipId, newRoyaltyPolicy, new address[](0), abi.encode(minRoyalty));
 
@@ -513,12 +513,12 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                             MINT LICENSES ON POLICIES
         ///////////////////////////////////////////////////////////////*/
 
-        // Mint 2 license of policy "uml_com_deriv_expensive" on IPAccount1
+        // Mint 2 license of policy "pil_com_deriv_expensive" on IPAccount1
         // Register derivative IP for NFT tokenId 3
         {
             uint256[] memory licenseIds = new uint256[](1);
             licenseIds[0] = licensingModule.mintLicense(
-                policyIds["uml_com_deriv_expensive"],
+                policyIds["pil_com_deriv_expensive"],
                 ipAcct[1],
                 2,
                 deployer,
@@ -543,12 +543,12 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                     LINK IPACCOUNTS TO PARENTS USING LICENSES
         ///////////////////////////////////////////////////////////////*/
 
-        // Mint 1 license of policy "uml_noncom_deriv_reciprocal" on IPAccount2
+        // Mint 1 license of policy "pil_noncom_deriv_reciprocal" on IPAccount2
         // Register derivative IP for NFT tokenId 4
         {
             uint256[] memory licenseIds = new uint256[](1);
             licenseIds[0] = licensingModule.mintLicense(
-                policyIds["uml_noncom_deriv_reciprocal"],
+                policyIds["pil_noncom_deriv_reciprocal"],
                 ipAcct[2],
                 1,
                 deployer,

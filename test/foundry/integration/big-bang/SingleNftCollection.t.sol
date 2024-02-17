@@ -8,7 +8,7 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 import { IIPAccount } from "../../../../contracts/interfaces/IIPAccount.sol";
 import { IP } from "../../../../contracts/lib/IP.sol";
 import { Errors } from "../../../../contracts/lib/Errors.sol";
-import { UMLPolicy } from "../../../../contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { PILPolicy } from "../../../../contracts/modules/licensing/PILPolicyFrameworkManager.sol";
 import { IRoyaltyPolicyLAP } from "../../../../contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLAP.sol";
 
 // test
@@ -28,15 +28,15 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
     function setUp() public override {
         super.setUp();
 
-        // Add UML PFM policies
+        // Add PIL PFM policies
 
-        _setUMLPolicyFrameworkManager();
+        _setPILPolicyFrameworkManager();
 
-        _addUMLPolicy(
-            "com_deriv_cheap_flexible", // ==> policyIds["uml_com_deriv_cheap_flexible"]
+        _addPILPolicy(
+            "com_deriv_cheap_flexible", // ==> policyIds["pil_com_deriv_cheap_flexible"]
             true,
             address(royaltyPolicyLAP),
-            UMLPolicy({
+            PILPolicy({
                 attribution: false,
                 commercialUse: true,
                 commercialAttribution: true,
@@ -53,11 +53,11 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             })
         );
 
-        _addUMLPolicy(
-            "noncom_deriv_reciprocal_derivative", // ==> policyIds["uml_noncom_deriv_reciprocal_derivative"]
+        _addPILPolicy(
+            "noncom_deriv_reciprocal_derivative", // ==> policyIds["pil_noncom_deriv_reciprocal_derivative"]
             false,
             address(0),
-            UMLPolicy({
+            PILPolicy({
                 attribution: false,
                 commercialUse: false,
                 commercialAttribution: false,
@@ -115,23 +115,23 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
         ///////////////////////////////////////////////////////////////*/
 
         /* vm.startPrank(u.alice);
-        licensingModule.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_cheap_flexible"]);
-        licensingModule.addPolicyToIp(ipAcct[100], policyIds["uml_noncom_deriv_reciprocal_derivative"]);
+        licensingModule.addPolicyToIp(ipAcct[1], policyIds["pil_com_deriv_cheap_flexible"]);
+        licensingModule.addPolicyToIp(ipAcct[100], policyIds["pil_noncom_deriv_reciprocal_derivative"]);
 
         vm.startPrank(u.bob);
-        licensingModule.addPolicyToIp(ipAcct[3], policyIds["uml_com_deriv_cheap_flexible"]);
-        licensingModule.addPolicyToIp(ipAcct[300], policyIds["uml_com_deriv_cheap_flexible"]);
+        licensingModule.addPolicyToIp(ipAcct[3], policyIds["pil_com_deriv_cheap_flexible"]);
+        licensingModule.addPolicyToIp(ipAcct[300], policyIds["pil_com_deriv_cheap_flexible"]);
 
         vm.startPrank(u.bob);
         // NOTE: the two calls below achieve the same functionality
-        // licensingModule.addPolicyToIp(ipAcct[3], policyIds["uml_noncom_deriv_reciprocal_derivative"]);
+        // licensingModule.addPolicyToIp(ipAcct[3], policyIds["pil_noncom_deriv_reciprocal_derivative"]);
         IIPAccount(payable(ipAcct[3])).execute(
             address(licensingModule),
             0,
             abi.encodeWithSignature(
                 "addPolicyToIp(address,uint256)",
                 ipAcct[3],
-                policyIds["uml_noncom_deriv_reciprocal_derivative"]
+                policyIds["pil_noncom_deriv_reciprocal_derivative"]
             )
         ); */
 
@@ -147,7 +147,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             mockNFT.mintId(u.carl, 6);
             uint256[] memory carl_license_from_root_alice = new uint256[](1);
             carl_license_from_root_alice[0] = licensingModule.mintLicense(
-                policyIds["uml_com_deriv_cheap_flexible"],
+                policyIds["pil_com_deriv_cheap_flexible"],
                 ipAcct[1],
                 1,
                 u.carl,
@@ -170,7 +170,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             linkIpToParents(carl_license_from_root_alice, ipAcct[6], u.carl, abi.encode(params));
         }
 
-        // Carl mints 2 license for policy "uml_noncom_deriv_reciprocal_derivative" on Bob's NFT 3 IPAccount
+        // Carl mints 2 license for policy "pil_noncom_deriv_reciprocal_derivative" on Bob's NFT 3 IPAccount
         // Carl creates NFT 7 IPAccount
         // Carl activates one of the two licenses on his NFT 7 IPAccount, linking as child to Bob's NFT 3 IPAccount
         {
@@ -178,7 +178,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             mockNFT.mintId(u.carl, 7);
             uint256[] memory carl_license_from_root_bob = new uint256[](1);
             carl_license_from_root_bob[0] = licensingModule.mintLicense(
-                policyIds["uml_noncom_deriv_reciprocal_derivative"],
+                policyIds["pil_noncom_deriv_reciprocal_derivative"],
                 ipAcct[3],
                 1,
                 u.carl,
@@ -200,7 +200,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             linkIpToParents(carl_license_from_root_bob, ipAcct[7], u.carl, abi.encode(params));
         }
 
-        // Alice mints 2 license for policy "uml_com_deriv_cheap_flexible" on Bob's NFT 3 IPAccount
+        // Alice mints 2 license for policy "pil_com_deriv_cheap_flexible" on Bob's NFT 3 IPAccount
         // Alice creates NFT 2 IPAccount
         // Alice activates one of the two licenses on her NFT 2 IPAccount, linking as child to Bob's NFT 3 IPAccount
         // Alice creates derivative NFT 3 directly using the other license
@@ -211,7 +211,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
 
             uint256[] memory alice_license_from_root_bob = new uint256[](1);
             alice_license_from_root_bob[0] = licensingModule.mintLicense(
-                policyIds["uml_com_deriv_cheap_flexible"],
+                policyIds["pil_com_deriv_cheap_flexible"],
                 ipAcct[3],
                 mintAmount,
                 u.alice,
@@ -278,7 +278,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             uint256[] memory carl_licenses = new uint256[](2);
             // Commercial license
             carl_licenses[0] = licensingModule.mintLicense(
-                policyIds["uml_com_deriv_cheap_flexible"], // ipAcct[1] has this policy attached
+                policyIds["pil_com_deriv_cheap_flexible"], // ipAcct[1] has this policy attached
                 ipAcct[1],
                 100, // mint 100 licenses
                 u.carl,
@@ -287,7 +287,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
 
             // Non-commercial license
             carl_licenses[1] = licensingModule.mintLicense(
-                policyIds["uml_noncom_deriv_reciprocal_derivative"], // ipAcct[3] has this policy attached
+                policyIds["pil_noncom_deriv_reciprocal_derivative"], // ipAcct[3] has this policy attached
                 ipAcct[3],
                 1,
                 u.carl,
@@ -310,7 +310,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
 
             // Modify license[1] to a Commercial license
             carl_licenses[1] = licensingModule.mintLicense(
-                policyIds["uml_com_deriv_cheap_flexible"], // ipAcct[300] has this policy attached
+                policyIds["pil_com_deriv_cheap_flexible"], // ipAcct[300] has this policy attached
                 ipAcct[300],
                 1,
                 u.carl,

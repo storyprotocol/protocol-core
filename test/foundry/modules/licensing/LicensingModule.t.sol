@@ -9,8 +9,8 @@ import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
-import { RegisterUMLPolicyParams } from "contracts/interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
-import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { RegisterPILPolicyParams } from "contracts/interfaces/modules/licensing/IPILPolicyFrameworkManager.sol";
+import { PILPolicyFrameworkManager, PILPolicy } from "contracts/modules/licensing/PILPolicyFrameworkManager.sol";
 
 // test
 // solhint-disable-next-line max-line-length
@@ -26,7 +26,7 @@ contract LicensingModuleTest is BaseTest {
     MockAccessController internal mockAccessController = new MockAccessController();
 
     MockPolicyFrameworkManager internal mockPFM;
-    UMLPolicyFrameworkManager internal umlManager;
+    PILPolicyFrameworkManager internal pilManager;
 
     MockERC721 internal nft = new MockERC721("MockERC721");
     MockERC721 internal gatedNftFoo = new MockERC721{ salt: bytes32(uint256(1)) }("GatedNftFoo");
@@ -72,11 +72,11 @@ contract LicensingModuleTest is BaseTest {
             })
         );
 
-        umlManager = new UMLPolicyFrameworkManager(
+        pilManager = new PILPolicyFrameworkManager(
             address(mockAccessController),
             address(ipAccountRegistry),
             address(licensingModule),
-            "UMLPolicyFrameworkManager",
+            "PILPolicyFrameworkManager",
             licenseUrl
         );
 
@@ -405,9 +405,9 @@ contract LicensingModuleTest is BaseTest {
     }
 
     function test_LicensingModule_revert_HookVerifyFail() public {
-        licensingModule.registerPolicyFrameworkManager(address(umlManager));
+        licensingModule.registerPolicyFrameworkManager(address(pilManager));
 
-        UMLPolicy memory policyData = UMLPolicy({
+        PILPolicy memory policyData = PILPolicy({
             attribution: true,
             commercialUse: true,
             commercialAttribution: false,
@@ -432,8 +432,8 @@ contract LicensingModuleTest is BaseTest {
         policyData.territories[0] = "territory1";
         policyData.distributionChannels[0] = "distributionChannel1";
 
-        uint256 policyId = umlManager.registerPolicy(
-            RegisterUMLPolicyParams({
+        uint256 policyId = pilManager.registerPolicy(
+            RegisterPILPolicyParams({
                 transferable: true,
                 royaltyPolicy: address(mockRoyaltyPolicyLAP),
                 mintingFee: 0,

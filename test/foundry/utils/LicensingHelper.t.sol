@@ -9,7 +9,7 @@ import { IRoyaltyModule } from "../../../contracts/interfaces/modules/royalty/IR
 import { IRoyaltyPolicyLAP } from "../../../contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLAP.sol";
 import { BasePolicyFrameworkManager } from "../../../contracts/modules/licensing/BasePolicyFrameworkManager.sol";
 // solhint-disable-next-line max-line-length
-import { UMLPolicyFrameworkManager, UMLPolicy, RegisterUMLPolicyParams } from "../../../contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { PILPolicyFrameworkManager, PILPolicy, RegisterPILPolicyParams } from "../../../contracts/modules/licensing/PILPolicyFrameworkManager.sol";
 
 // test
 // solhint-disable-next-line max-line-length
@@ -30,7 +30,7 @@ contract LicensingHelper {
 
     mapping(string policyName => uint256 globalPolicyId) internal policyIds;
 
-    mapping(string policyName => RegisterUMLPolicyParams policy) internal policies;
+    mapping(string policyName => RegisterPILPolicyParams policy) internal policies;
 
     mapping(string policyFrameworkManagerName => address policyFrameworkManagerAddr) internal pfm;
 
@@ -54,8 +54,8 @@ contract LicensingHelper {
                         MODIFIERS: LICENSE FRAMEWORK (MANAGERS)
     //////////////////////////////////////////////////////////////////////////*/
 
-    modifier withLFM_UML() {
-        _deployLFM_UML();
+    modifier withLFM_PIL() {
+        _deployLFM_PIL();
         _;
     }
 
@@ -63,16 +63,16 @@ contract LicensingHelper {
                                 MODIFIERS: POLICY
     //////////////////////////////////////////////////////////////////////////*/
 
-    // modifier withUMLPolicy_Commercial_Derivative(
-    //     UMLPolicyGenericParams memory gparams,
-    //     UMLPolicyCommercialParams memory cparams,
-    //     UMLPolicyDerivativeParams memory dparams
+    // modifier withPILPolicy_Commercial_Derivative(
+    //     PILPolicyGenericParams memory gparams,
+    //     PILPolicyCommercialParams memory cparams,
+    //     PILPolicyDerivativeParams memory dparams
     // ) {
-    //     UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"]);
+    //     PILPolicyFrameworkManager _pfm = PILPolicyFrameworkManager(pfm["pil"]);
 
-    //     string memory pName = string(abi.encodePacked("uml_com_deriv_", gparams.policyName));
+    //     string memory pName = string(abi.encodePacked("pil_com_deriv_", gparams.policyName));
     //     policyIds[pName] = _pfm.registerPolicy(
-    //         UMLPolicy({
+    //         PILPolicy({
     //             transferable: gparams.transferable,
     //             attribution: gparams.attribution,
     //             commercialUse: true,
@@ -94,15 +94,15 @@ contract LicensingHelper {
     //     _;
     // }
 
-    // modifier withUMLPolicy_Commerical_NonDerivative(
-    //     UMLPolicyGenericParams memory gparams,
-    //     UMLPolicyCommercialParams memory cparams
+    // modifier withPILPolicy_Commerical_NonDerivative(
+    //     PILPolicyGenericParams memory gparams,
+    //     PILPolicyCommercialParams memory cparams
     // ) {
-    //     UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"]);
+    //     PILPolicyFrameworkManager _pfm = PILPolicyFrameworkManager(pfm["pil"]);
 
-    //     string memory pName = string(abi.encodePacked("uml_com_nonderiv_", gparams.policyName));
+    //     string memory pName = string(abi.encodePacked("pil_com_nonderiv_", gparams.policyName));
     //     policyIds[pName] = _pfm.registerPolicy(
-    //         UMLPolicy({
+    //         PILPolicy({
     //             transferable: gparams.transferable,
     //             attribution: gparams.attribution,
     //             commercialUse: true,
@@ -124,15 +124,15 @@ contract LicensingHelper {
     //     _;
     // }
 
-    // modifier withUMLPolicy_NonCommercial_Derivative(
-    //     UMLPolicyGenericParams memory gparams,
-    //     UMLPolicyDerivativeParams memory dparams
+    // modifier withPILPolicy_NonCommercial_Derivative(
+    //     PILPolicyGenericParams memory gparams,
+    //     PILPolicyDerivativeParams memory dparams
     // ) {
-    //     UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"]);
+    //     PILPolicyFrameworkManager _pfm = PILPolicyFrameworkManager(pfm["pil"]);
 
-    //     string memory pName = string(abi.encodePacked("uml_noncom_deriv_", gparams.policyName));
+    //     string memory pName = string(abi.encodePacked("pil_noncom_deriv_", gparams.policyName));
     //     policyIds[pName] = _pfm.registerPolicy(
-    //         UMLPolicy({
+    //         PILPolicy({
     //             transferable: gparams.transferable,
     //             attribution: gparams.attribution,
     //             commercialUse: false,
@@ -154,12 +154,12 @@ contract LicensingHelper {
     //     _;
     // }
 
-    // modifier withUMLPolicy_NonCommercial_NonDerivative(UMLPolicyGenericParams memory gparams) {
-    //     UMLPolicyFrameworkManager _pfm = UMLPolicyFrameworkManager(pfm["uml"]);
+    // modifier withPILPolicy_NonCommercial_NonDerivative(PILPolicyGenericParams memory gparams) {
+    //     PILPolicyFrameworkManager _pfm = PILPolicyFrameworkManager(pfm["pil"]);
 
-    //     string memory pName = string(abi.encodePacked("uml_noncom_nonderiv_", gparams.policyName));
+    //     string memory pName = string(abi.encodePacked("pil_noncom_nonderiv_", gparams.policyName));
     //     policyIds[pName] = _pfm.registerPolicy(
-    //         UMLPolicy({
+    //         PILPolicy({
     //             transferable: gparams.transferable,
     //             attribution: gparams.attribution,
     //             commercialUse: false,
@@ -185,50 +185,50 @@ contract LicensingHelper {
                                 HELPER FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    function _setUMLPolicyFrameworkManager() internal {
-        UMLPolicyFrameworkManager umlPfm = new UMLPolicyFrameworkManager(
+    function _setPILPolicyFrameworkManager() internal {
+        PILPolicyFrameworkManager pilPfm = new PILPolicyFrameworkManager(
             address(ACCESS_CONTROLLER),
             address(IP_ACCOUNT_REGISTRY),
             address(LICENSING_MODULE),
-            "UML_MINT_PAYMENT",
+            "PIL_MINT_PAYMENT",
             "license Url"
         );
-        pfm["uml"] = address(umlPfm);
-        LICENSING_MODULE.registerPolicyFrameworkManager(address(umlPfm));
+        pfm["pil"] = address(pilPfm);
+        LICENSING_MODULE.registerPolicyFrameworkManager(address(pilPfm));
     }
 
-    function _addUMLPolicy(
+    function _addPILPolicy(
         string memory policyName,
         bool transferable,
         address royaltyPolicy,
-        UMLPolicy memory policy
+        PILPolicy memory policy
     ) internal {
-        string memory pName = string(abi.encodePacked("uml_", policyName));
-        policies[pName] = RegisterUMLPolicyParams({
+        string memory pName = string(abi.encodePacked("pil_", policyName));
+        policies[pName] = RegisterPILPolicyParams({
             transferable: transferable,
             royaltyPolicy: royaltyPolicy,
             mintingFee: 0,
             mintingFeeToken: address(0),
             policy: policy
         });
-        policyIds[pName] = UMLPolicyFrameworkManager(pfm["uml"]).registerPolicy(policies[pName]);
+        policyIds[pName] = PILPolicyFrameworkManager(pfm["pil"]).registerPolicy(policies[pName]);
     }
 
-    function _mapUMLPolicySimple(
+    function _mapPILPolicySimple(
         string memory name,
         bool commercial,
         bool derivatives,
         bool reciprocal,
         uint32 commercialRevShare
     ) internal {
-        string memory pName = string(abi.encodePacked("uml_", name));
-        policies[pName] = RegisterUMLPolicyParams({
+        string memory pName = string(abi.encodePacked("pil_", name));
+        policies[pName] = RegisterPILPolicyParams({
             transferable: true,
             // TODO: use mock or real based on condition
             royaltyPolicy: commercial ? address(ROYALTY_POLICY_LAP) : address(0),
             mintingFee: 0,
             mintingFeeToken: address(0),
-            policy: UMLPolicy({
+            policy: PILPolicy({
                 attribution: true,
                 commercialUse: commercial,
                 commercialAttribution: false,
@@ -246,30 +246,30 @@ contract LicensingHelper {
         });
     }
 
-    function _addUMLPolicyFromMapping(string memory name, address umlFramework) internal returns (uint256) {
-        string memory pName = string(abi.encodePacked("uml_", name));
-        policyIds[pName] = UMLPolicyFrameworkManager(umlFramework).registerPolicy(policies[pName]);
+    function _addPILPolicyFromMapping(string memory name, address pilFramework) internal returns (uint256) {
+        string memory pName = string(abi.encodePacked("pil_", name));
+        policyIds[pName] = PILPolicyFrameworkManager(pilFramework).registerPolicy(policies[pName]);
         return policyIds[pName];
     }
 
-    function _registerUMLPolicyFromMapping(string memory name) internal returns (uint256) {
-        string memory pName = string(abi.encodePacked("uml_", name));
-        policyIds[pName] = UMLPolicyFrameworkManager(pfm["uml"]).registerPolicy(policies[pName]);
+    function _registerPILPolicyFromMapping(string memory name) internal returns (uint256) {
+        string memory pName = string(abi.encodePacked("pil_", name));
+        policyIds[pName] = PILPolicyFrameworkManager(pfm["pil"]).registerPolicy(policies[pName]);
         return policyIds[pName];
     }
 
-    function _getMappedUmlPolicy(string memory name) internal view returns (UMLPolicy storage) {
-        string memory pName = string(abi.encodePacked("uml_", name));
+    function _getMappedPilPolicy(string memory name) internal view returns (PILPolicy storage) {
+        string memory pName = string(abi.encodePacked("pil_", name));
         return policies[pName].policy;
     }
 
-    function _getMappedUmlParams(string memory name) internal view returns (RegisterUMLPolicyParams storage) {
-        string memory pName = string(abi.encodePacked("uml_", name));
+    function _getMappedPilParams(string memory name) internal view returns (RegisterPILPolicyParams storage) {
+        string memory pName = string(abi.encodePacked("pil_", name));
         return policies[pName];
     }
 
-    function _getUmlPolicyId(string memory name) internal view returns (uint256) {
-        string memory pName = string(abi.encodePacked("uml_", name));
+    function _getPilPolicyId(string memory name) internal view returns (uint256) {
+        string memory pName = string(abi.encodePacked("pil_", name));
         return policyIds[pName];
     }
 
@@ -290,17 +290,17 @@ contract LicensingHelper {
             );
     }
 
-    function _deployLFM_UML() internal {
+    function _deployLFM_PIL() internal {
         BasePolicyFrameworkManager _pfm = BasePolicyFrameworkManager(
-            new UMLPolicyFrameworkManager(
+            new PILPolicyFrameworkManager(
                 address(ACCESS_CONTROLLER),
                 address(IP_ACCOUNT_REGISTRY),
                 address(LICENSING_MODULE),
-                "uml",
+                "pil",
                 "license Url"
             )
         );
         LICENSING_MODULE.registerPolicyFrameworkManager(address(_pfm));
-        pfm["uml"] = address(_pfm);
+        pfm["pil"] = address(_pfm);
     }
 }
