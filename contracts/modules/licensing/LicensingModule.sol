@@ -220,6 +220,10 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         address royaltyAddressAcc = address(0);
 
         for (uint256 i = 0; i < licenseIds.length; i++) {
+            if (LICENSE_REGISTRY.isLicenseRevoked(licenseIds[i])) {
+                revert Errors.LicensingModule__LinkingRevokedLicense();
+            }
+
             (licensors[i], royaltyAddressAcc, royaltyData[i]) = _verifyRoyaltyAndLink(
                 i,
                 licenseIds[i],
