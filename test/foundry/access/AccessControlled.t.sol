@@ -33,10 +33,9 @@ contract AccessControlledTest is Test {
     function setUp() public {
         governance = new Governance(address(this));
         accessController = new AccessController(address(governance));
-        implementation = new IPAccountImpl();
+        implementation = new IPAccountImpl(address(accessController));
         ipAccountRegistry = new IPAccountRegistry(
             address(erc6551Registry),
-            address(accessController),
             address(implementation)
         );
         moduleRegistry = new ModuleRegistry(address(governance));

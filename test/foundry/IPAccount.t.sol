@@ -29,8 +29,8 @@ contract IPAccountTest is Test {
     function setUp() public {
         governance = new Governance(address(this));
         moduleRegistry = new ModuleRegistry(address(governance));
-        implementation = new IPAccountImpl();
-        registry = new IPAccountRegistry(address(erc6551Registry), address(accessController), address(implementation));
+        implementation = new IPAccountImpl(address(accessController));
+        registry = new IPAccountRegistry(address(erc6551Registry), address(implementation));
         module = new MockModule(address(registry), address(moduleRegistry), "MockModule");
     }
 

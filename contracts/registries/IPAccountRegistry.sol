@@ -14,18 +14,15 @@ contract IPAccountRegistry is IIPAccountRegistry {
     address public immutable IP_ACCOUNT_IMPL;
     bytes32 public immutable IP_ACCOUNT_SALT;
     address public immutable ERC6551_PUBLIC_REGISTRY;
-    address public immutable ACCESS_CONTROLLER;
 
     /// @notice Constructor for the IPAccountRegistry contract.
     /// @param erc6551Registry_ The address of the ERC6551 registry.
-    /// @param accessController_ The address of the access controller.
     /// @param ipAccountImpl_ The address of the IP account implementation.
-    constructor(address erc6551Registry_, address accessController_, address ipAccountImpl_) {
+    constructor(address erc6551Registry_, address ipAccountImpl_) {
         if (ipAccountImpl_ == address(0)) revert Errors.IPAccountRegistry_InvalidIpAccountImpl();
         IP_ACCOUNT_IMPL = ipAccountImpl_;
         IP_ACCOUNT_SALT = bytes32(0);
         ERC6551_PUBLIC_REGISTRY = erc6551Registry_;
-        ACCESS_CONTROLLER = accessController_;
     }
 
     /// @notice Deploys an IPAccount contract with the IPAccount implementation and returns the address of the new IP.
@@ -38,7 +35,6 @@ contract IPAccountRegistry is IIPAccountRegistry {
         address tokenContract_,
         uint256 tokenId_
     ) public returns (address ipAccountAddress) {
-        bytes memory initData = abi.encodeWithSignature("initialize(address)", ACCESS_CONTROLLER);
         ipAccountAddress = IERC6551Registry(ERC6551_PUBLIC_REGISTRY).createAccount(
             IP_ACCOUNT_IMPL,
             IP_ACCOUNT_SALT,
@@ -46,12 +42,6 @@ contract IPAccountRegistry is IIPAccountRegistry {
             tokenContract_,
             tokenId_
         );
-        (bool success, bytes memory result) = ipAccountAddress.call(initData);
-        if (!success) {
-            assembly {
-                revert(add(result, 32), mload(result))
-            }
-        }
         emit IPAccountRegistered(ipAccountAddress, IP_ACCOUNT_IMPL, chainId_, tokenContract_, tokenId_);
     }
 

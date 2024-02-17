@@ -198,11 +198,13 @@ contract DeployHelper {
         DeployConditions memory dc = deployConditions; // alias
 
         erc6551Registry = new ERC6551Registry();
-        ipAccountImpl = new IPAccountImpl();
 
         _deployMockAssets();
 
         _deployAccessConditionally(dc.access);
+
+        ipAccountImpl = new IPAccountImpl(address(accessController));
+
         _deployRegistryConditionally(dc.registry);
         // Registration module requires ipResolver
         _deployIPResolverConditionally(dc.misc);
@@ -243,14 +245,12 @@ contract DeployHelper {
         // TODO: Allow using mock IPAccountRegistry, instead of forcing deployment of actual IPAccountRegistry.
         ipAccountRegistry = new IPAccountRegistry(
             address(erc6551Registry),
-            getAccessController(),
             address(ipAccountImpl)
         );
         console2.log("DeployHelper: Using REAL IPAccountRegistry");
 
         // TODO: Allow using mock IPAssetRegistry, instead of forcing deployment of actual IPAssetRegistry.
         ipAssetRegistry = new IPAssetRegistry(
-            getAccessController(),
             address(erc6551Registry),
             address(ipAccountImpl),
             getModuleRegistry(),
