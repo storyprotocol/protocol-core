@@ -146,7 +146,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         return polId;
     }
 
-    /// @notice Adds a policy to the set of policies of an IP
+    /// @notice Adds a policy to the set of policies of an IP. Reverts if policy is undefined in LicenseRegistry.
     /// @param ipId The id of the IP
     /// @param polId The id of the policy
     /// @return indexOnIpId The index of the policy in the IP's policy list
