@@ -197,7 +197,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "LicenseRegistry";
         _predeploy(contractKey);
-        licenseRegistry = new LicenseRegistry();
+        licenseRegistry = new LicenseRegistry(address(governance));
         _postdeploy(contractKey, address(licenseRegistry));
 
         contractKey = "LicensingModule";

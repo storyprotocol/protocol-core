@@ -6,13 +6,14 @@ import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import { IPolicyFrameworkManager } from "../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 import { ILicenseRegistry } from "../interfaces/registries/ILicenseRegistry.sol";
 import { ILicensingModule } from "../interfaces/modules/licensing/ILicensingModule.sol";
+import { Governable } from "../governance/Governable.sol";
 import { Errors } from "../lib/Errors.sol";
 import { Licensing } from "../lib/Licensing.sol";
 import { DataUniqueness } from "../lib/DataUniqueness.sol";
 
 /// @title LicenseRegistry aka LNFT
 /// @notice Registry of License NFTs, which represent licenses granted by IP ID licensors to create derivative IPs.
-contract LicenseRegistry is ERC1155, ILicenseRegistry {
+contract LicenseRegistry is ERC1155, ILicenseRegistry, Governable {
     // TODO: deploy with CREATE2 to make this immutable
     ILicensingModule private _licensingModule;
 
@@ -31,9 +32,9 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry {
         _;
     }
 
-    constructor() ERC1155("") {}
+    constructor(address governance) ERC1155("") Governable(governance) {}
 
-    function setLicensingModule(address newLicensingModule) external {
+    function setLicensingModule(address newLicensingModule) external onlyProtocolAdmin {
         if (newLicensingModule == address(0)) {
             revert Errors.LicenseRegistry__ZeroLicensingModule();
         }
