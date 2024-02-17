@@ -159,5 +159,4 @@ interface IDisputeModule {
     /// @notice returns true if the ipId is tagged with any tag (meaning at least one dispute went through)
     /// @param _ipId The ipId
     function isIpTagged(address _ipId) external view returns (bool);
-
 }

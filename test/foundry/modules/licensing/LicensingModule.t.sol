@@ -11,7 +11,6 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { RegisterUMLPolicyParams } from "contracts/interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
-import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 
 // test
 // solhint-disable-next-line max-line-length

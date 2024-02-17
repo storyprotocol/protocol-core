@@ -126,5 +126,4 @@ contract MockDisputeModule is BaseModule, IDisputeModule {
     function isIpTagged(address) external pure returns (bool) {
         return false;
     }
-
 }

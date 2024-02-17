@@ -228,14 +228,14 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
         Dispute memory dispute = disputes[_disputeId];
 
         if (msg.sender != dispute.disputeInitiator) revert Errors.DisputeModule__NotDisputeInitiator();
-        if (dispute.currentTag == IN_DISPUTE || dispute.currentTag == bytes32(0)) revert Errors.DisputeModule__NotAbleToResolve();
+        if (dispute.currentTag == IN_DISPUTE || dispute.currentTag == bytes32(0))
+            revert Errors.DisputeModule__NotAbleToResolve();
 
         successfulDisputesPerIp[dispute.targetIpId]--;
         disputes[_disputeId].currentTag = bytes32(0);
 
         emit DisputeResolved(_disputeId);
     }
-
 
     /// @notice returns true if the ipId is tagged with any tag (meaning at least one dispute went through)
     /// @param _ipId The ipId
