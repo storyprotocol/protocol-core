@@ -1,48 +1,31 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { Test } from "forge-std/Test.sol";
+import { IIPAccount } from "../../contracts/interfaces/IIPAccount.sol";
+import { AccessPermission } from "../../contracts/lib/AccessPermission.sol";
+import { Errors } from "../../contracts/lib/Errors.sol";
 
-import { ERC6551Registry } from "erc6551/ERC6551Registry.sol";
+import { MockModule } from "./mocks/module/MockModule.sol";
+import { MockOrchestratorModule } from "./mocks/module/MockOrchestratorModule.sol";
+import { BaseTest } from "./utils/BaseTest.t.sol";
 
-import { AccessController } from "contracts/AccessController.sol";
-import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
-import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
-import { AccessPermission } from "contracts/lib/AccessPermission.sol";
-import { Errors } from "contracts/lib/Errors.sol";
-import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
-import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
-import { MockModule } from "test/foundry/mocks/module/MockModule.sol";
-import { MockOrchestratorModule } from "test/foundry/mocks/module/MockOrchestratorModule.sol";
-import { Governance } from "contracts/governance/Governance.sol";
-
-contract AccessControllerTest is Test {
-    AccessController public accessController;
-    IPAccountRegistry public ipAccountRegistry;
-    IModuleRegistry public moduleRegistry;
-    IPAccountImpl public implementation;
-    MockERC721 public nft = new MockERC721("MockERC721");
+contract AccessControllerTest is BaseTest {
     MockModule public mockModule;
     MockModule public moduleWithoutPermission;
     IIPAccount public ipAccount;
-    ERC6551Registry public erc6551Registry = new ERC6551Registry();
     address public owner = vm.addr(1);
     uint256 public tokenId = 100;
-    Governance public governance;
 
     error ERC721NonexistentToken(uint256 tokenId);
 
-    function setUp() public {
-        governance = new Governance(address(this));
-        accessController = new AccessController(address(governance));
-        implementation = new IPAccountImpl(address(accessController));
-        ipAccountRegistry = new IPAccountRegistry(address(erc6551Registry), address(implementation));
-        moduleRegistry = new ModuleRegistry(address(governance));
-        accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-        nft.mintId(owner, tokenId);
-        address deployedAccount = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), tokenId);
+    function setUp() public override {
+        super.setUp();
+        buildDeployAccessCondition(DeployAccessCondition({ accessController: true, governance: true }));
+        deployConditionally();
+        postDeploymentSetup();
+
+        mockNFT.mintId(owner, tokenId);
+        address deployedAccount = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
         ipAccount = IIPAccount(payable(deployedAccount));
 
         mockModule = new MockModule(address(ipAccountRegistry), address(moduleRegistry), "MockModule");
@@ -908,6 +891,7 @@ contract AccessControllerTest is Test {
         );
         moduleRegistry.registerModule("Module2WithPermission", address(module2WithPermission));
 
+        vm.prank(u.admin);
         accessController.setGlobalPermission(
             address(mockOrchestratorModule),
             address(module1WithPermission),
@@ -915,6 +899,7 @@ contract AccessControllerTest is Test {
             AccessPermission.ALLOW
         );
 
+        vm.prank(u.admin);
         accessController.setGlobalPermission(
             address(mockOrchestratorModule),
             address(module2WithPermission),
@@ -927,6 +912,7 @@ contract AccessControllerTest is Test {
     }
 
     function test_AccessController_revert_setGlobalPermissionWithInvalidPermission() public {
+        vm.prank(u.admin);
         vm.expectRevert(Errors.AccessController__PermissionIsNotValid.selector);
         accessController.setGlobalPermission(
             address(mockModule),
@@ -937,6 +923,7 @@ contract AccessControllerTest is Test {
     }
 
     function test_AccessController_revert_setGlobalPermissionWithZeroSignerAddress() public {
+        vm.prank(u.admin);
         vm.expectRevert(abi.encodeWithSelector(Errors.AccessController__SignerIsZeroAddress.selector));
         accessController.setGlobalPermission(
             address(0),
@@ -1292,7 +1279,7 @@ contract AccessControllerTest is Test {
             AccessPermission.ALLOW
         );
         vm.prank(owner);
-        nft.transferFrom(owner, address(0xbeefbeef), tokenId);
+        mockNFT.transferFrom(owner, address(0xbeefbeef), tokenId);
         assertEq(
             accessController.getPermission(
                 address(ipAccount),
@@ -1328,7 +1315,7 @@ contract AccessControllerTest is Test {
             mockModule.executeSuccessfully.selector
         );
         vm.prank(owner);
-        nft.transferFrom(owner, address(0xbeefbeef), tokenId);
+        mockNFT.transferFrom(owner, address(0xbeefbeef), tokenId);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -1374,7 +1361,7 @@ contract AccessControllerTest is Test {
             AccessPermission.ALLOW
         );
         vm.prank(owner);
-        nft.transferFrom(owner, address(0xbeefbeef), tokenId);
+        mockNFT.transferFrom(owner, address(0xbeefbeef), tokenId);
 
         assertEq(
             accessController.getPermission(
@@ -1387,7 +1374,7 @@ contract AccessControllerTest is Test {
         );
 
         vm.prank(address(0xbeefbeef));
-        nft.transferFrom(address(0xbeefbeef), owner, tokenId);
+        mockNFT.transferFrom(address(0xbeefbeef), owner, tokenId);
 
         assertEq(
             accessController.getPermission(
@@ -1424,7 +1411,7 @@ contract AccessControllerTest is Test {
             mockModule.executeSuccessfully.selector
         );
         vm.prank(owner);
-        nft.transferFrom(owner, address(0xbeefbeef), tokenId);
+        mockNFT.transferFrom(owner, address(0xbeefbeef), tokenId);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -1443,7 +1430,7 @@ contract AccessControllerTest is Test {
         );
 
         vm.prank(address(0xbeefbeef));
-        nft.transferFrom(address(0xbeefbeef), owner, tokenId);
+        mockNFT.transferFrom(address(0xbeefbeef), owner, tokenId);
 
         accessController.checkPermission(
             address(ipAccount),
@@ -1480,7 +1467,7 @@ contract AccessControllerTest is Test {
             AccessPermission.ALLOW
         );
         vm.prank(owner);
-        nft.burn(tokenId);
+        mockNFT.burn(tokenId);
         vm.expectRevert(abi.encodeWithSelector(ERC721NonexistentToken.selector, tokenId));
         accessController.getPermission(
             address(ipAccount),
@@ -1514,7 +1501,7 @@ contract AccessControllerTest is Test {
             mockModule.executeSuccessfully.selector
         );
         vm.prank(owner);
-        nft.burn(tokenId);
+        mockNFT.burn(tokenId);
 
         vm.expectRevert(abi.encodeWithSelector(ERC721NonexistentToken.selector, tokenId));
         accessController.checkPermission(

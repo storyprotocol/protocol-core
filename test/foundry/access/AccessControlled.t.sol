@@ -1,44 +1,28 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { Test } from "forge-std/Test.sol";
-
-import { ERC6551Registry } from "erc6551/ERC6551Registry.sol";
-
-import { AccessController } from "contracts/AccessController.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { IModuleRegistry } from "contracts/interfaces/registries/IModuleRegistry.sol";
-import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 import { Errors } from "contracts/lib/Errors.sol";
-import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
-import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
-import { Governance } from "contracts/governance/Governance.sol";
-import { MockAccessControlledModule } from "test/foundry/mocks/MockAccessControlledModule.sol";
 
-contract AccessControlledTest is Test {
-    AccessController public accessController;
-    IPAccountRegistry public ipAccountRegistry;
-    IModuleRegistry public moduleRegistry;
-    IPAccountImpl public implementation;
-    MockERC721 public nft = new MockERC721("MockERC721");
+import { MockAccessControlledModule } from "../mocks/MockAccessControlledModule.sol";
+import { BaseTest } from "../utils/BaseTest.t.sol";
+
+contract AccessControlledTest is BaseTest {
     MockAccessControlledModule public mockModule;
     IIPAccount public ipAccount;
-    ERC6551Registry public erc6551Registry = new ERC6551Registry();
+
     address public owner = vm.addr(1);
     uint256 public tokenId = 100;
-    Governance public governance;
 
-    function setUp() public {
-        governance = new Governance(address(this));
-        accessController = new AccessController(address(governance));
-        implementation = new IPAccountImpl(address(accessController));
-        ipAccountRegistry = new IPAccountRegistry(address(erc6551Registry), address(implementation));
-        moduleRegistry = new ModuleRegistry(address(governance));
-        accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-        nft.mintId(owner, tokenId);
-        address deployedAccount = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), tokenId);
+    function setUp() public override {
+        super.setUp();
+        buildDeployAccessCondition(DeployAccessCondition({ accessController: true, governance: true }));
+        deployConditionally();
+        postDeploymentSetup();
+
+        mockNFT.mintId(owner, tokenId);
+        address deployedAccount = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
         ipAccount = IIPAccount(payable(deployedAccount));
 
         mockModule = new MockAccessControlledModule(
@@ -133,8 +117,8 @@ contract AccessControlledTest is Test {
     }
 
     function test_AccessControlled_revert_callIpAccountOrPermissionFunction_withOtherIpAccount() public {
-        nft.mintId(owner, 101);
-        address otherIpAccountAddr = ipAccountRegistry.registerIpAccount(block.chainid, address(nft), 101);
+        mockNFT.mintId(owner, 101);
+        address otherIpAccountAddr = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), 101);
         IIPAccount otherIpAccount = IIPAccount(payable(otherIpAccountAddr));
         vm.expectRevert(
             abi.encodeWithSelector(

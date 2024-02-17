@@ -1,57 +1,43 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { ERC6551Registry } from "erc6551/ERC6551Registry.sol";
 import { IERC6551Account } from "erc6551/interfaces/IERC6551Account.sol";
-import { Test } from "forge-std/Test.sol";
 
-import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
-import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
-import { Governance } from "contracts/governance/Governance.sol";
-import { Errors } from "contracts/lib/Errors.sol";
+import { IIPAccount } from "../../contracts/interfaces/IIPAccount.sol";
+import { Errors } from "../../contracts/lib/Errors.sol";
 
-import { MockAccessController } from "test/foundry/mocks/access/MockAccessController.sol";
-import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
-import { MockModule } from "test/foundry/mocks/module/MockModule.sol";
+import { MockModule } from "./mocks/module/MockModule.sol";
+import { BaseTest } from "./utils/BaseTest.t.sol";
 
-contract IPAccountTest is Test {
-    IPAccountRegistry public registry;
-    IPAccountImpl public implementation;
-    MockERC721 public nft = new MockERC721("MockERC721");
-    ERC6551Registry public erc6551Registry = new ERC6551Registry();
-    MockAccessController public accessController = new MockAccessController();
-    ModuleRegistry public moduleRegistry;
+contract IPAccountTest is BaseTest {
     MockModule public module;
-    Governance public governance;
 
-    function setUp() public {
-        governance = new Governance(address(this));
-        moduleRegistry = new ModuleRegistry(address(governance));
-        implementation = new IPAccountImpl(address(accessController));
-        registry = new IPAccountRegistry(address(erc6551Registry), address(implementation));
-        module = new MockModule(address(registry), address(moduleRegistry), "MockModule");
+    function setUp() public override {
+        super.setUp();
+        deployConditionally();
+        postDeploymentSetup();
+
+        module = new MockModule(address(ipAssetRegistry), address(moduleRegistry), "MockModule");
     }
 
     function test_IPAccount_Idempotency() public {
         address owner = vm.addr(1);
         uint256 tokenId = 100;
 
-        address predictedAccount = registry.ipAccount(block.chainid, address(nft), tokenId);
+        address predictedAccount = ipAssetRegistry.ipAccount(block.chainid, address(mockNFT), tokenId);
 
-        nft.mintId(owner, tokenId);
+        mockNFT.mintId(owner, tokenId);
 
         vm.prank(owner, owner);
 
-        address deployedAccount = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        address deployedAccount = ipAssetRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
 
         assertTrue(deployedAccount != address(0));
 
         assertEq(predictedAccount, deployedAccount);
 
         // Create account twice
-        deployedAccount = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        deployedAccount = ipAssetRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
         assertEq(predictedAccount, deployedAccount);
     }
 
@@ -59,17 +45,17 @@ contract IPAccountTest is Test {
         address owner = vm.addr(1);
         uint256 tokenId = 100;
 
-        nft.mintId(owner, tokenId);
+        mockNFT.mintId(owner, tokenId);
 
         vm.prank(owner, owner);
-        address account = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        address account = ipAssetRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
         // Check token and owner functions
         (uint256 chainId_, address tokenAddress_, uint256 tokenId_) = ipAccount.token();
         assertEq(chainId_, block.chainid);
-        assertEq(tokenAddress_, address(nft));
+        assertEq(tokenAddress_, address(mockNFT));
         assertEq(tokenId_, tokenId);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -86,7 +72,7 @@ contract IPAccountTest is Test {
         // Transfer token to new owner and make sure account owner changes
         address newOwner = vm.addr(2);
         vm.prank(owner);
-        nft.safeTransferFrom(owner, newOwner, tokenId);
+        mockNFT.safeTransferFrom(owner, newOwner, tokenId);
         assertEq(ipAccount.isValidSigner(newOwner, ""), IERC6551Account.isValidSigner.selector);
     }
 
@@ -94,13 +80,13 @@ contract IPAccountTest is Test {
         address owner = vm.addr(1);
         uint256 tokenId = 100;
 
-        nft.mintId(owner, tokenId);
+        mockNFT.mintId(owner, tokenId);
 
         vm.prank(owner, owner);
-        address account = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        address account = ipAssetRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
 
         uint256 subTokenId = 111;
-        nft.mintId(account, subTokenId);
+        mockNFT.mintId(account, subTokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
@@ -119,12 +105,12 @@ contract IPAccountTest is Test {
         address owner = vm.addr(1);
         uint256 tokenId = 100;
 
-        nft.mintId(owner, tokenId);
+        mockNFT.mintId(owner, tokenId);
 
-        address account = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        address account = ipAssetRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
 
         uint256 subTokenId = 111;
-        nft.mintId(account, subTokenId);
+        mockNFT.mintId(account, subTokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
@@ -146,12 +132,12 @@ contract IPAccountTest is Test {
         address owner = vm.addr(1);
         uint256 tokenId = 100;
 
-        nft.mintId(owner, tokenId);
+        mockNFT.mintId(owner, tokenId);
 
-        address account = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        address account = ipAssetRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
 
         uint256 subTokenId = 111;
-        nft.mintId(account, subTokenId);
+        mockNFT.mintId(account, subTokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
@@ -165,17 +151,17 @@ contract IPAccountTest is Test {
         address owner = vm.addr(1);
         uint256 tokenId = 100;
 
-        nft.mintId(owner, tokenId);
+        mockNFT.mintId(owner, tokenId);
 
         vm.prank(owner, owner);
-        address account = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        address account = ipAssetRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
 
         address otherOwner = vm.addr(2);
         uint256 otherTokenId = 200;
-        nft.mintId(otherOwner, otherTokenId);
+        mockNFT.mintId(otherOwner, otherTokenId);
         vm.prank(otherOwner);
-        nft.safeTransferFrom(otherOwner, account, otherTokenId);
-        assertEq(nft.balanceOf(account), 1);
-        assertEq(nft.ownerOf(otherTokenId), account);
+        mockNFT.safeTransferFrom(otherOwner, account, otherTokenId);
+        assertEq(mockNFT.balanceOf(account), 1);
+        assertEq(mockNFT.ownerOf(otherTokenId), account);
     }
 }
