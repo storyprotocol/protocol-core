@@ -44,7 +44,7 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModul
         _;
     }
 
-    /// @notice Sets the license registry
+    /// @dev Sets the license registry
     /// @param _licensingModule The address of the license registry
     function setLicensingModule(address _licensingModule) external onlyProtocolAdmin {
         if (_licensingModule == address(0)) revert Errors.RoyaltyModule__ZeroLicensingModule();

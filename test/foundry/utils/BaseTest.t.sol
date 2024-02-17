@@ -11,6 +11,8 @@ import { AccessController } from "../../../contracts/AccessController.sol";
 // solhint-disable-next-line max-line-length
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY, TAGGING_MODULE_KEY, ROYALTY_MODULE_KEY, LICENSING_MODULE_KEY } from "../../../contracts/lib/modules/Module.sol";
 import { AccessPermission } from "../../../contracts/lib/AccessPermission.sol";
+import { RoyaltyModule } from "../../../contracts/modules/royalty-module/RoyaltyModule.sol";
+import { LicenseRegistry } from "../../../contracts/registries/LicenseRegistry.sol";
 
 // test
 import { DeployHelper } from "./DeployHelper.t.sol";
@@ -155,7 +157,7 @@ contract BaseTest is Test, DeployHelper, LicensingHelper {
         require(address(royaltyModule) != address(0), "royaltyModule not set");
 
         vm.startPrank(u.admin);
-        royaltyModule.setLicensingModule(getLicensingModule());
+        RoyaltyModule(address(royaltyModule)).setLicensingModule(getLicensingModule());
         royaltyModule.whitelistRoyaltyToken(address(erc20), true);
         if (address(royaltyPolicyLS) != address(0)) {
             royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
@@ -183,7 +185,7 @@ contract BaseTest is Test, DeployHelper, LicensingHelper {
         require(address(licenseRegistry) != address(0), "licenseRegistry not set");
 
         vm.startPrank(u.admin);
-        licenseRegistry.setLicensingModule(getLicensingModule());
+        LicenseRegistry(address(licenseRegistry)).setLicensingModule(getLicensingModule());
         vm.stopPrank();
     }
 

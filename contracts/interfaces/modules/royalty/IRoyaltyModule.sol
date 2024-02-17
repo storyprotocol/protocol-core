@@ -45,10 +45,6 @@ interface IRoyaltyModule is IModule {
     /// @param ipId The ipId
     function isRoyaltyPolicyImmutable(address ipId) external view returns (bool);
 
-    /// @notice Sets the licensing module
-    /// @param licensingModule The address of the licensing module
-    function setLicensingModule(address licensingModule) external;
-
     /// @notice Whitelist a royalty policy
     /// @param royaltyPolicy The address of the royalty policy
     /// @param allowed Indicates if the royalty policy is whitelisted or not
