@@ -108,7 +108,7 @@ contract UMLPolicyFrameworkManager is
     /// @notice Verify policy parameters for minting a license.
     /// @dev Enforced to be only callable by LicenseRegistry
     /// @param caller the address executing the mint
-    /// @param mintingFromADerivative true if the policy was inherited (licensorIpId is not original IP owner)
+    /// @param mintingFromADerivative true if the license is minting from a derivative IPA
     /// @param licensorIpId the IP id of the licensor
     /// @param receiver the address receiving the license
     /// @param mintAmount the amount of licenses to mint
