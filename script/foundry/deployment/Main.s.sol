@@ -581,7 +581,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         }
 
         // Distribute the accrued revenue from the 0xSplitWallet associated with IPAccount3 to
-        // 0xSplits Main, which will get distributed to IPAccount3 AND its claimer based on revenue
+        // 0xSplits Main, which will get distributed to IPAccount3 AND its split clone / vault based on revenue
         // sharing terms specified in the royalty policy.
         {
             (, address ipAcct3_splitClone, , , ) = royaltyPolicyLAP.royaltyData(ipAcct[3]);
@@ -605,22 +605,9 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             ERC20[] memory tokens = new ERC20[](1);
             tokens[0] = erc20;
 
-            // Alice calls on behalf of Dan's claimer to send money from the Split Main to Dan's claimer,
-            // since the revenue payment was made to Dan's Split Wallet, which got distributed to the claimer.
-
-            // Dan is paying 65% of 1000 erc20 royalty to parents (stored in Dan's Claimer).
-            // The other 35% of 1000 erc20 royalty goes directly to Dan's IPAccount.
+            // Alice calls on behalf of Dan's vault to send money from the Split Main to Dan's vault,
+            // since the revenue payment was made to Dan's Split Wallet, which got distributed to the vault.
             royaltyPolicyLAP.claimFromIpPool({ _account: ipAcct3_splitClone, _withdrawETH: 0, _tokens: tokens });
-
-            // Alice calls the claim her portion of rNFTs and tokens. She can only call `claim` once.
-            // Afterwards, she will automatically receive money on revenue distribution.
-
-            // LSClaimer(ipAcct3_claimer).claim({
-            //     _path: chain_ipAcct1_to_ipAcct3,
-            //     _claimerIpId: ipAcct[1],
-            //     _withdrawETH: false,
-            //     _tokens: tokens
-            // });
         }
 
         /*///////////////////////////////////////////////////////////////
