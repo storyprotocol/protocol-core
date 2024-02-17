@@ -23,6 +23,12 @@ contract IPAccountImpl is IERC165, IIPAccount {
 
     receive() external payable override(IERC6551Account) {}
 
+    /// @notice Creates a new IPAccountImpl contract instance
+    /// @dev Initializes the IPAccountImpl with an AccessController address which is stored
+    /// in the implementation code's storage.
+    /// This means that each cloned IPAccount will inherently use the same AccessController
+    /// without the need for individual configuration.
+    /// @param accessController_ The address of the AccessController contract to be used for permission checks
     constructor(address accessController_) {
         if (accessController_ == address(0)) revert Errors.IPAccount__InvalidAccessController();
         accessController = accessController_;
