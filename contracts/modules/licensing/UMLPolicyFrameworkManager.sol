@@ -64,11 +64,12 @@ contract UMLPolicyFrameworkManager is
             );
     }
 
-    /// Called by licenseRegistry to verify policy parameters for linking an IP
-    /// with the licensor's IP ID
-    /// @param licenseId the ID of the license
-    /// @param ipId the IP ID of the IP being linked
-    /// @param policyData the licensing policy to verify
+    /// Called by licenseRegistry to verify policy parameters for linking a child IP to a parent IP (licensor)
+    /// by burning a license.
+    /// @param licenseId the license id to burn
+    /// @param caller the address executing the link
+    /// @param ipId the IP id of the IP being linked
+    /// @param policyData the encoded framework policy data to verify
     function verifyLink(
         uint256 licenseId,
         address caller,
@@ -99,8 +100,9 @@ contract UMLPolicyFrameworkManager is
     }
 
     /// Called by licenseRegistry to verify policy parameters for minting a license
-    /// @param policyWasInherited check if IP is subjected to it's parent's policy
-    /// @param policyData the licensing policy to verify
+    /// @param caller the address executing the mint
+    /// @param policyWasInherited true if the policy was inherited (licensorIpId is not original IP owner)
+    /// @param policyData the encoded framework policy data to verify
     function verifyMint(
         address caller,
         bool policyWasInherited,
@@ -147,6 +149,9 @@ contract UMLPolicyFrameworkManager is
 
     /// Called by licenseRegistry to verify compatibility when inheriting from a parent IP
     /// The objective is to verify compatibility of multiple policies.
+    /// @dev The assumption in this method is that we can add parents later on, hence the need
+    /// for an aggregator, if not we will do this when linking to parents directly with an
+    /// array of policies.
     /// @param aggregator common state of the policies for the IP
     /// @param policyId the ID of the policy being inherited
     /// @param policy the policy to inherit
