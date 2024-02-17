@@ -156,6 +156,9 @@ library Errors {
     error LicensingModule__DisputedIpId();
     /// @notice emitted when linking a license from a licensor that has been disputed in the DisputeModule
     error LicensingModule__LinkingRevokedLicense();
+    error LicensingModule__RegisterPolicyFrameworkMismatch();
+    error LicensingModule__RoyaltyPolicyNotWhitelisted();
+    error LicensingModule__MintingFeeTokenNotWhitelisted();
 
     ////////////////////////////////////////////////////////////////////////////
     //                        LicensingModuleAware                            //
