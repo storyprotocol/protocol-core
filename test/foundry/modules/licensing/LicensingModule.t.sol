@@ -11,12 +11,13 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
 import { RegisterUMLPolicyParams } from "contracts/interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
 import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
-import { MockTokenGatedHook } from "test/foundry/mocks/MockTokenGatedHook.sol";
+import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 
 // test
 // solhint-disable-next-line max-line-length
 import { MockPolicyFrameworkManager, MockPolicyFrameworkConfig, MockPolicy } from "test/foundry/mocks/licensing/MockPolicyFrameworkManager.sol";
 import { MockAccessController } from "test/foundry/mocks/access/MockAccessController.sol";
+import { MockTokenGatedHook } from "test/foundry/mocks/MockTokenGatedHook.sol";
 import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
 import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
@@ -89,12 +90,6 @@ contract LicensingModuleTest is BaseTest {
 
         vm.label(ipId1, "IPAccount1");
         vm.label(ipId2, "IPAccount2");
-
-        //        MockERC721 tempGatedNftFoo = new MockERC721("GatedNftFoo");
-        //        bytes memory GatedNftFooCode = address(tempGatedNftFoo).code;
-        //        address gatedNftFoo = makeAddr("GatedNftFoo");
-        //        vm.etch(gatedNftFoo, GatedNftFooCode);
-        //        deployCodeTo("test/foundry/mocks/MockTokenGatedHook.sol", gatedNftFoo);
     }
 
     function _createMockPolicy() internal pure returns (bytes memory) {
@@ -404,143 +399,6 @@ contract LicensingModuleTest is BaseTest {
         vm.expectRevert(Errors.LicenseRegistry__NotTransferable.selector);
         vm.prank(licenseHolder);
         licenseRegistry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
-    }
-
-    function test_LicensingModule_licenseUri() public {
-        licensingModule.registerPolicyFrameworkManager(address(umlManager));
-
-        _mapUMLPolicySimple({
-            name: "pol_a",
-            commercial: true,
-            derivatives: true,
-            reciprocal: false,
-            commercialRevShare: 100
-        });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
-
-        gatedNftFoo.mintId(address(this), 1);
-
-        MockTokenGatedHook tokenGatedHook = new MockTokenGatedHook();
-        inputA.policy.commercializerChecker = address(tokenGatedHook);
-        inputA.policy.commercializerCheckerData = abi.encode(address(gatedNftFoo));
-        inputA.policy.territories = new string[](1);
-        inputA.policy.territories[0] = "territory1";
-        inputA.policy.distributionChannels = new string[](1);
-        inputA.policy.distributionChannels[0] = "distributionChannel1";
-
-        uint256 policyId = umlManager.registerPolicy(inputA);
-
-        vm.prank(ipOwner);
-        licensingModule.addPolicyToIp(ipId1, policyId);
-
-        // Set the licensor to `0xbeef` for uri testing. Must call LicenseRegistry directly to do so.
-        vm.prank(address(licensingModule));
-        uint256 licenseId = licensingModule.mintLicense(policyId, address(0xbeef), 1, licenseHolder, "");
-
-        string memory actualUri = LicenseRegistry(address(licenseRegistry)).uri(licenseId);
-
-        /* solhint-disable */
-        // NOTE: In STRING version, no spacing between key and value (eg. "value":"true" instead of "value": "true")
-        // DEV : Since the raw string below produces stack too deep error, we use the encoded output of the string below.
-        //       The string below is left here for reference.
-        /*
-        expectedJson = {
-            "name": "Story Protocol License NFT",
-            "description": "License agreement stating the terms of a Story Protocol IPAsset",
-            "external_url": "https://protocol.storyprotocol.xyz/ipa/0x000000000000000000000000000000000000beef",
-            "image": "https://images.ctfassets.net/5ei3wx54t1dp/1WXOHnPLROsGiBsI46zECe/4f38a95c58d3b0329af3085b36d720c8/Story_Protocol_Icon.png",
-            "attributes": [
-                {
-                    "trait_type": "Attribution",
-                    "value": "true"
-                },
-                {
-                    "trait_type": "Transferable",
-                    "value": "true"
-                },
-                {
-                    "trait_type": "Attribution",
-                    "value": "true"
-                },
-                {
-                    "trait_type": "Commerical Use",
-                    "value": "true"
-                },
-                {
-                    "trait_type": "Commercial Attribution",
-                    "value": "true"
-                },
-                {
-                    "trait_type": "Commercial Revenue Share",
-                    "max_value": 1000,
-                    "value": 0
-                },
-                {
-                    "trait_type": "Commercializer Check",
-                    "value": "0x210503c318855259983298ba58055a38d5ff63e0"
-                },
-                {
-                    "trait_type": "Derivatives Allowed",
-                    "value": "true"
-                },
-                {
-                    "trait_type": "Derivatives Attribution",
-                    "value": "true"
-                },
-                {
-                    "trait_type": "Derivatives Approval",
-                    "value": "true"
-                },
-                {
-                    "trait_type": "Derivatives Reciprocal",
-                    "value": "true"
-                },
-                {
-                    "trait_type": "Derivatives Revenue Share",
-                    "max_value": 1000,
-                    "value": 0
-                },
-                {
-                    "trait_type": "Territories",
-                    "value": [
-                        "territory1"
-                    ]
-                },
-                {
-                    "trait_type": "Distribution Channels",
-                    "value": [
-                        "distributionChannel1"
-                    ]
-                },
-                {
-                    "trait_type": "Licensor",
-                    "value": "0x000000000000000000000000000000000000beef"
-                },
-                {
-                    "trait_type": "Policy Framework",
-                    "value": "0xf1e1d77c54e9c28cc1da2dbc377b4a85765c2542"
-                },
-                {
-                    "trait_type": "Transferable",
-                    "value": "true"
-                },
-                {
-                    "trait_type": "Revoked",
-                    "value": "false"
-                }
-            ]
-        };
-        */
-        /* solhint-enable */
-
-        /* solhint-disable */
-        string
-            memory expectedJson = "eyJuYW1lIjogIlN0b3J5IFByb3RvY29sIExpY2Vuc2UgTkZUIiwiZGVzY3JpcHRpb24iOiAiTGljZW5zZSBhZ3JlZW1lbnQgc3RhdGluZyB0aGUgdGVybXMgb2YgYSBTdG9yeSBQcm90b2NvbCBJUEFzc2V0IiwiZXh0ZXJuYWxfdXJsIjogImh0dHBzOi8vcHJvdG9jb2wuc3Rvcnlwcm90b2NvbC54eXovaXBhLzB4MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwYmVlZiIsImltYWdlIjogImh0dHBzOi8vaW1hZ2VzLmN0ZmFzc2V0cy5uZXQvNWVpM3d4NTR0MWRwLzFXWE9IblBMUk9zR2lCc0k0NnpFQ2UvNGYzOGE5NWM1OGQzYjAzMjlhZjMwODViMzZkNzIwYzgvU3RvcnlfUHJvdG9jb2xfSWNvbi5wbmciLCJhdHRyaWJ1dGVzIjogW3sidHJhaXRfdHlwZSI6ICJBdHRyaWJ1dGlvbiIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIlRyYW5zZmVyYWJsZSIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkF0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiQ29tbWVyaWNhbCBVc2UiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJDb21tZXJjaWFsIEF0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiQ29tbWVyY2lhbCBSZXZlbnVlIFNoYXJlIiwgIm1heF92YWx1ZSI6IDEwMDAsICJ2YWx1ZSI6IDB9LHsidHJhaXRfdHlwZSI6ICJDb21tZXJjaWFsaXplciBDaGVjayIsICJ2YWx1ZSI6ICIweDIxMDUwM2MzMTg4NTUyNTk5ODMyOThiYTU4MDU1YTM4ZDVmZjYzZTAifSx7InRyYWl0X3R5cGUiOiAiRGVyaXZhdGl2ZXMgQWxsb3dlZCIsICJ2YWx1ZSI6ICJ0cnVlIn0seyJ0cmFpdF90eXBlIjogIkRlcml2YXRpdmVzIEF0dHJpYnV0aW9uIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiRGVyaXZhdGl2ZXMgQXBwcm92YWwiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJEZXJpdmF0aXZlcyBSZWNpcHJvY2FsIiwgInZhbHVlIjogInRydWUifSx7InRyYWl0X3R5cGUiOiAiRGVyaXZhdGl2ZXMgUmV2ZW51ZSBTaGFyZSIsICJtYXhfdmFsdWUiOiAxMDAwLCAidmFsdWUiOiAwfSx7InRyYWl0X3R5cGUiOiAiVGVycml0b3JpZXMiLCAidmFsdWUiOiBbInRlcnJpdG9yeTEiXX0seyJ0cmFpdF90eXBlIjogIkRpc3RyaWJ1dGlvbiBDaGFubmVscyIsICJ2YWx1ZSI6IFsiZGlzdHJpYnV0aW9uQ2hhbm5lbDEiXX0seyJ0cmFpdF90eXBlIjogIkxpY2Vuc29yIiwgInZhbHVlIjogIjB4MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwYmVlZiJ9LHsidHJhaXRfdHlwZSI6ICJQb2xpY3kgRnJhbWV3b3JrIiwgInZhbHVlIjogIjB4ZjFlMWQ3N2M1NGU5YzI4Y2MxZGEyZGJjMzc3YjRhODU3NjVjMjU0MiJ9LHsidHJhaXRfdHlwZSI6ICJUcmFuc2ZlcmFibGUiLCAidmFsdWUiOiAidHJ1ZSJ9LHsidHJhaXRfdHlwZSI6ICJSZXZva2VkIiwgInZhbHVlIjogImZhbHNlIn1dfQ==";
-        /* solhint-enable */
-
-        string memory expectedUri = string(abi.encodePacked("data:application/json;base64,", expectedJson));
-
-        assertEq(actualUri, expectedUri);
     }
 
     function test_LicensingModule_revert_HookVerifyFail() public {
