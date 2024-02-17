@@ -118,9 +118,10 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
             revert Errors.RoyaltyPolicyLAP__AboveRoyaltyStackLimit();
 
         if (data.splitClone == address(0)) {
-            // If the policy is already initialized, it means that the ipId setup is already done. If not, it means that
-            // the license for this royalty policy is being minted for the first time parentIpIds are zero given that only
-            // roots can call _initPolicy() for the first time in the function onLicenseMinting() while derivatives already
+            // If the policy is already initialized, it means that the ipId setup is already done. If not, it means
+            // that the license for this royalty policy is being minted for the first time parentIpIds are zero given
+            // that only roots can call _initPolicy() for the first time in the function onLicenseMinting() while
+            // derivatives already
             // called _initPolicy() when linking to their parents with onLinkToParents() call.
             address[] memory rootParents = new address[](0);
             bytes[] memory rootParentRoyalties = new bytes[](0);
@@ -129,9 +130,12 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
             InitParams memory params = abi.decode(externalData, (InitParams));
             // If the policy is already initialized and an ipId has the maximum number of ancestors
             // it can not have any derivative and therefore is not allowed to mint any license
-            if (params.targetAncestors.length >= MAX_ANCESTORS) revert Errors.RoyaltyPolicyLAP__LastPositionNotAbleToMintLicense();
+            if (params.targetAncestors.length >= MAX_ANCESTORS)
+                revert Errors.RoyaltyPolicyLAP__LastPositionNotAbleToMintLicense();
+
             // the check below ensures that the ancestors hash is the same as the one stored in the royalty data
-            // and that the targetAncestors passed in by the user matches the record stored in state on policy initialization
+            // and that the targetAncestors passed in by the user matches the record stored in state on policy
+            // initialization
             if (
                 keccak256(abi.encodePacked(params.targetAncestors, params.targetRoyaltyAmount)) !=
                 royaltyData[ipId].ancestorsHash
