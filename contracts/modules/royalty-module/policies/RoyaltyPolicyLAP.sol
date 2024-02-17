@@ -126,7 +126,9 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
             InitParams memory params = abi.decode(_externalData, (InitParams));
             // If the policy is already initialized and an ipId has the maximum number of ancestors
             // it can not have any derivative and therefore is not allowed to mint any license
-            if (params.targetAncestors.length == MAX_ANCESTORS) revert Errors.RoyaltyPolicyLAP__LastPositionNotAbleToMintLicense();
+            if (params.targetAncestors.length >= MAX_ANCESTORS) revert Errors.RoyaltyPolicyLAP__LastPositionNotAbleToMintLicense();
+            // the check below ensures that the ancestors hash is the same as the one stored in the royalty data
+            // and that the targetAncestors passed in by the user matches the record stored in state on policy initialization
             if (
                 keccak256(abi.encodePacked(params.targetAncestors, params.targetRoyaltyAmount)) !=
                 royaltyData[_ipId].ancestorsHash
