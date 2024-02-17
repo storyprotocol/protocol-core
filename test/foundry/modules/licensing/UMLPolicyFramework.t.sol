@@ -87,12 +87,83 @@ contract PILPolicyFrameworkTest is BaseTest {
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(inputA.policy)));
     }
 
+    function test_PILPolicyFrameworkManager__verifyLink_false_commercializerCheckerFailedVerify() public {
+        PILPolicy memory policyData = PILPolicy({
+            attribution: true,
+            commercialUse: false,
+            commercialAttribution: false,
+            commercializerChecker: address(tokenGatedHook), // 0 token balance for ipId1
+            commercializerCheckerData: abi.encode(address(gatedNftFoo)),
+            commercialRevShare: 0,
+            derivativesAllowed: false,
+            derivativesAttribution: false,
+            derivativesApproval: false,
+            derivativesReciprocal: false,
+            territories: emptyStringArray,
+            distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray
+        });
+
+        vm.prank(address(licensingModule));
+        bool verified = pilFramework.verifyLink(0, alice, ipId1, address(0), abi.encode(policyData));
+        assertFalse(verified);
+    }
+
+    function test_PILPolicyFrameworkManager__verifyMint_false_commercializerCheckerFailedVerify() public {
+        PILPolicy memory policyData = PILPolicy({
+            attribution: true,
+            commercialUse: false,
+            commercialAttribution: false,
+            commercializerChecker: address(tokenGatedHook), // 0 token balance for ipId1
+            commercializerCheckerData: abi.encode(address(gatedNftFoo)),
+            commercialRevShare: 0,
+            derivativesAllowed: false,
+            derivativesAttribution: false,
+            derivativesApproval: false,
+            derivativesReciprocal: false,
+            territories: emptyStringArray,
+            distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray
+        });
+
+        vm.prank(address(licensingModule));
+        bool verified = pilFramework.verifyMint(alice, false, ipId1, alice, 2, abi.encode(policyData));
+        assertFalse(verified);
+    }
+
+    function test_PILPolicyFrameworkManager__verifyMint_revert_commercializerCheckerFailedVerify() public {
+        PILPolicy memory policyData = PILPolicy({
+            attribution: true,
+            commercialUse: false,
+            commercialAttribution: false,
+            commercializerChecker: address(tokenGatedHook), // 0 token balance for ipId1
+            commercializerCheckerData: abi.encode(address(gatedNftFoo)),
+            commercialRevShare: 0,
+            derivativesAllowed: false,
+            derivativesAttribution: false,
+            derivativesApproval: false,
+            derivativesReciprocal: false,
+            territories: emptyStringArray,
+            distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray
+        });
+
+        vm.prank(address(licensingModule));
+        bool verified = pilFramework.verifyMint(alice, false, ipId1, alice, 2, abi.encode(policyData));
+        assertFalse(verified);
+    }
+
+    function test_PILPolicyFrameworkManager__getAggregator_revert_emptyAggregator() public {
+        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__RightsNotFound.selector);
+        pilFramework.getAggregator(ipId1);
+    }
+
     /////////////////////////////////////////////////////////////
     //////              COMMERCIAL USE TERMS               //////
     /////////////////////////////////////////////////////////////
 
-    function test_PILPolicyFrameworkManager__commercialUse_disallowed_revert_settingIncompatibleTerms() public {
-        // If no commercial values allowed
+    function test_PILPolicyFrameworkManager__commercialUseDisabled_revert_settingIncompatibleTerms() public {
+        // If commercial values are NOT allowed
         _mapPILPolicySimple({
             name: "pol_a",
             commercial: false,
@@ -101,27 +172,73 @@ contract PILPolicyFrameworkTest is BaseTest {
             commercialRevShare: 100
         });
         RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
+
+        // CHECK: commercialAttribution = true should revert
         inputA.policy.commercialAttribution = true;
-        // commercialAttribution = true should revert
-        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__CommecialDisabled_CantAddAttribution.selector);
+        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddAttribution.selector);
         pilFramework.registerPolicy(inputA);
-        // Non empty commercializers should revert
+
+        // reset
         inputA.policy.commercialAttribution = false;
+
+        // CHECK: Non empty commercializers should revert
         inputA.policy.commercializerChecker = address(tokenGatedHook);
         inputA.policy.commercializerCheckerData = abi.encode(address(gatedNftFoo));
         vm.expectRevert(
             PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddCommercializers.selector
         );
         pilFramework.registerPolicy(inputA);
-        // No rev share should be set; revert
+
+        // reset
         inputA.policy.commercializerChecker = address(0);
         inputA.policy.commercializerCheckerData = "";
+
+        // CHECK: No rev share should be set; revert
         inputA.policy.commercialRevShare = 1;
-        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__CommecialDisabled_CantAddRevShare.selector);
+        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddRevShare.selector);
         pilFramework.registerPolicy(inputA);
+
+        // reset
+        inputA.policy.commercialRevShare = 0;
+
+        // CHECK: royaltyPolicy != address(0) should revert
+        inputA.royaltyPolicy = address(0x123123);
+        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddRoyaltyPolicy.selector);
+        pilFramework.registerPolicy(inputA);
+
+        // reset
+        inputA.royaltyPolicy = address(0);
+
+        // CHECK: mintingFee > 0 should revert
+        inputA.mintingFee = 100;
+        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddMintingFee.selector);
+        pilFramework.registerPolicy(inputA);
+
+        // reset
+        inputA.mintingFee = 0;
     }
 
-    function test_PILPolicyFrameworkManager__commercialUse_valuesSetCorrectly() public {
+    function test_PILPolicyFrameworkManager__commercialUseEnabled_revert_settingIncompatibleTerms() public {
+        // If commercial values are NOT allowed
+        _mapPILPolicySimple({
+            name: "pol_a",
+            commercial: true,
+            derivatives: true,
+            reciprocal: true,
+            commercialRevShare: 100
+        });
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
+
+        // CHECK: royaltyPolicy == address(0) should revert
+        inputA.royaltyPolicy = address(0);
+        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__CommercialEnabled_RoyaltyPolicyRequired.selector);
+        pilFramework.registerPolicy(inputA);
+
+        // reset
+        inputA.royaltyPolicy = address(0x123123);
+    }
+
+    function test_PILPolicyFrameworkManager__commercialUseEnabled_valuesSetCorrectly() public {
         _mapPILPolicySimple({
             name: "pol_a",
             commercial: true,
@@ -138,9 +255,10 @@ contract PILPolicyFrameworkTest is BaseTest {
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(inputA.policy)));
     }
 
-    function test_PILPolicyFrameworkManager__commercialUse_InvalidCommericalizer() public {
-        address invalidCommercializerChecker = address(0x123);
+    function test_PILPolicyFrameworkManager__commercialUseEnabled_invalidCommericalizerChecker() public {
+        address invalidCommercializerChecker = address(new MockERC721("Fake Commercializer Checker"));
         bytes memory invalideCommercializerCheckerData = abi.encode(address(0x456));
+
         PILPolicy memory policyData = PILPolicy({
             attribution: false,
             commercialUse: true,
@@ -329,6 +447,38 @@ contract PILPolicyFrameworkTest is BaseTest {
         vm.expectRevert(Errors.LicenseRegistry__NotTransferable.selector);
         licenseRegistry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
         vm.stopPrank();
+    }
+
+    function test_PILPolicyFrameworkManager__policyToJson() public {
+        string[] memory territories = new string[](2);
+        territories[0] = "test1";
+        territories[1] = "test2";
+        string[] memory distributionChannels = new string[](1);
+        distributionChannels[0] = "test3";
+
+        PILPolicy memory policyData = PILPolicy({
+            attribution: false,
+            commercialUse: false,
+            commercialAttribution: true,
+            commercializerChecker: address(0),
+            commercializerCheckerData: "",
+            commercialRevShare: 0,
+            derivativesAllowed: true,
+            derivativesAttribution: false,
+            derivativesApproval: false,
+            derivativesReciprocal: false,
+            territories: territories,
+            distributionChannels: distributionChannels,
+            contentRestrictions: emptyStringArray
+        });
+
+        string memory actualJson = pilFramework.policyToJson(abi.encode(policyData));
+        /* solhint-disable */
+        string
+            memory expectedJson = '{"trait_type": "Attribution", "value": "false"},{"trait_type": "Commerical Use", "value": "false"},{"trait_type": "Commercial Attribution", "value": "true"},{"trait_type": "Commercial Revenue Share", "max_value": 1000, "value": 0},{"trait_type": "Commercializer Check", "value": "0x0000000000000000000000000000000000000000"},{"trait_type": "Derivatives Allowed", "value": "true"},{"trait_type": "Derivatives Attribution", "value": "false"},{"trait_type": "Derivatives Approval", "value": "false"},{"trait_type": "Derivatives Reciprocal", "value": "false"},{"trait_type": "Territories", "value": ["test1","test2"]},{"trait_type": "Distribution Channels", "value": ["test3"]},';
+        /* solhint-enable */
+
+        assertEq(actualJson, expectedJson);
     }
 
     function onERC721Received(address, address, uint256, bytes memory) public pure returns (bytes4) {

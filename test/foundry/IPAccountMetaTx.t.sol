@@ -1,31 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { ERC6551Registry } from "erc6551/ERC6551Registry.sol";
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-import { Test } from "forge-std/Test.sol";
 
-import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
-import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
-import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-import { ModuleRegistry } from "contracts/registries/ModuleRegistry.sol";
-import { AccessController } from "contracts/AccessController.sol";
-import { MetaTx } from "contracts/lib/MetaTx.sol";
-import { AccessPermission } from "contracts/lib/AccessPermission.sol";
-import { Governance } from "contracts/governance/Governance.sol";
-import { Errors } from "contracts/lib/Errors.sol";
+import { IIPAccount } from "../../contracts/interfaces/IIPAccount.sol";
+import { MetaTx } from "../../contracts/lib/MetaTx.sol";
+import { AccessPermission } from "../../contracts/lib/AccessPermission.sol";
+import { Errors } from "../../contracts/lib/Errors.sol";
 
-import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
-import { MockModule } from "test/foundry/mocks/module/MockModule.sol";
-import { MockMetaTxModule } from "test/foundry/mocks/module/MockMetaTxModule.sol";
+import { MockModule } from "./mocks/module/MockModule.sol";
+import { MockMetaTxModule } from "./mocks/module/MockMetaTxModule.sol";
+import { BaseTest } from "./utils/BaseTest.t.sol";
 
-contract IPAccountMetaTxTest is Test {
-    IPAccountRegistry public registry;
-    IPAccountImpl public implementation;
-    MockERC721 public nft = new MockERC721("MockERC721");
-    ERC6551Registry public erc6551Registry = new ERC6551Registry();
-    AccessController public accessController;
-    ModuleRegistry public moduleRegistry;
+contract IPAccountMetaTxTest is BaseTest {
     MockModule public module;
     MockMetaTxModule public metaTxModule;
 
@@ -33,24 +20,30 @@ contract IPAccountMetaTxTest is Test {
     uint256 public callerPrivateKey;
     address public owner;
     address public caller;
-    Governance public governance;
 
-    function setUp() public {
-        governance = new Governance(address(this));
-        accessController = new AccessController(address(governance));
-        moduleRegistry = new ModuleRegistry(address(governance));
+    function setUp() public override {
+        super.setUp();
+        buildDeployAccessCondition(DeployAccessCondition({ accessController: true, governance: false }));
+        buildDeployRegistryCondition(DeployRegistryCondition({ moduleRegistry: true, licenseRegistry: false }));
+        deployConditionally();
+        postDeploymentSetup();
+
         ownerPrivateKey = 0xA11111;
         callerPrivateKey = 0xB22222;
         owner = vm.addr(ownerPrivateKey);
         caller = vm.addr(callerPrivateKey);
 
-        implementation = new IPAccountImpl(address(accessController));
-        registry = new IPAccountRegistry(address(erc6551Registry), address(implementation));
-        accessController.initialize(address(registry), address(moduleRegistry));
-        module = new MockModule(address(registry), address(moduleRegistry), "Module1WithPermission");
-        metaTxModule = new MockMetaTxModule(address(registry), address(moduleRegistry), address(accessController));
+        module = new MockModule(address(ipAccountRegistry), address(moduleRegistry), "Module1WithPermission");
+        metaTxModule = new MockMetaTxModule(
+            address(ipAccountRegistry),
+            address(moduleRegistry),
+            address(accessController)
+        );
+
+        vm.startPrank(u.admin);
         moduleRegistry.registerModule("Module1WithPermission", address(module));
         moduleRegistry.registerModule("MockMetaTxModule", address(metaTxModule));
+        vm.stopPrank();
     }
 
     // test called by unauthorized module with signature
@@ -67,9 +60,9 @@ contract IPAccountMetaTxTest is Test {
     function test_IPAccount_ExecutionPassWithSignature() public {
         uint256 tokenId = 100;
 
-        nft.mintId(owner, tokenId);
+        mockNFT.mintId(owner, tokenId);
 
-        address account = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        address account = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
@@ -106,9 +99,9 @@ contract IPAccountMetaTxTest is Test {
     function test_IPAccount_setPermissionWithSignature() public {
         uint256 tokenId = 100;
 
-        nft.mintId(owner, tokenId);
+        mockNFT.mintId(owner, tokenId);
 
-        address account = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        address account = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
@@ -152,9 +145,9 @@ contract IPAccountMetaTxTest is Test {
     function test_IPAccount_revert_SignatureExpired() public {
         uint256 tokenId = 100;
 
-        nft.mintId(owner, tokenId);
+        mockNFT.mintId(owner, tokenId);
 
-        address account = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        address account = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
@@ -186,9 +179,9 @@ contract IPAccountMetaTxTest is Test {
     function test_IPAccount_revert_InvalidSignature() public {
         uint256 tokenId = 100;
 
-        nft.mintId(owner, tokenId);
+        mockNFT.mintId(owner, tokenId);
 
-        address account = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        address account = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
@@ -220,9 +213,9 @@ contract IPAccountMetaTxTest is Test {
     function test_IPAccount_revert_SignatureNotMatchExecuteTargetFunction() public {
         uint256 tokenId = 100;
 
-        nft.mintId(owner, tokenId);
+        mockNFT.mintId(owner, tokenId);
 
-        address account = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        address account = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
@@ -254,9 +247,9 @@ contract IPAccountMetaTxTest is Test {
     function test_IPAccount_revert_WrongSigner() public {
         uint256 tokenId = 100;
 
-        nft.mintId(owner, tokenId);
+        mockNFT.mintId(owner, tokenId);
 
-        address account = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        address account = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
@@ -289,15 +282,15 @@ contract IPAccountMetaTxTest is Test {
     function test_IPAccount_revert_SignatureForAnotherIPAccount() public {
         uint256 tokenId = 100;
 
-        nft.mintId(owner, tokenId);
+        mockNFT.mintId(owner, tokenId);
 
-        address account = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        address account = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
         uint256 tokenId2 = 101;
-        nft.mintId(owner, tokenId2);
-        address account2 = registry.registerIpAccount(block.chainid, address(nft), tokenId2);
+        mockNFT.mintId(owner, tokenId2);
+        address account2 = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId2);
         IIPAccount ipAccount2 = IIPAccount(payable(account2));
 
         uint deadline = block.timestamp + 1000;
@@ -329,9 +322,9 @@ contract IPAccountMetaTxTest is Test {
     function test_IPAccount_revert_signedByNonOwner() public {
         uint256 tokenId = 100;
 
-        nft.mintId(owner, tokenId);
+        mockNFT.mintId(owner, tokenId);
 
-        address account = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        address account = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
@@ -372,9 +365,9 @@ contract IPAccountMetaTxTest is Test {
     function test_IPAccount_revert_UseSignatureTwice() public {
         uint256 tokenId = 100;
 
-        nft.mintId(owner, tokenId);
+        mockNFT.mintId(owner, tokenId);
 
-        address account = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        address account = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
@@ -409,9 +402,9 @@ contract IPAccountMetaTxTest is Test {
     function test_IPAccount_revert_signerZeroAddress() public {
         uint256 tokenId = 100;
 
-        nft.mintId(owner, tokenId);
+        mockNFT.mintId(owner, tokenId);
 
-        address account = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        address account = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
@@ -443,9 +436,9 @@ contract IPAccountMetaTxTest is Test {
     function test_IPAccount_revert_workflowFailureWithSig() public {
         uint256 tokenId = 100;
 
-        nft.mintId(owner, tokenId);
+        mockNFT.mintId(owner, tokenId);
 
-        address account = registry.registerIpAccount(block.chainid, address(nft), tokenId);
+        address account = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), tokenId);
 
         IIPAccount ipAccount = IIPAccount(payable(account));
 
@@ -469,10 +462,11 @@ contract IPAccountMetaTxTest is Test {
 
         bytes memory signature = abi.encodePacked(r, s, v);
         MockModule module3WithoutPermission = new MockModule(
-            address(registry),
+            address(ipAccountRegistry),
             address(moduleRegistry),
             "Module3WithoutPermission"
         );
+        vm.prank(u.admin);
         moduleRegistry.registerModule("Module3WithoutPermission", address(module3WithoutPermission));
         vm.expectRevert(
             abi.encodeWithSelector(

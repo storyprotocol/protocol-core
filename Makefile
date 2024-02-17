@@ -55,7 +55,7 @@ abi:
 	@$(call generate_abi,"DisputeModule","./modules/dispute-module")
 	@$(call generate_abi,"ArbitrationPolicySP","./modules/dispute-module/policies")
 	@$(call generate_abi,"LicensingModule","./modules/licensing")
-	@$(call generate_abi,"UMLPolicyFrameworkManager","./modules/licensing")
+	@$(call generate_abi,"PILPolicyFrameworkManager","./modules/licensing")
 	@$(call generate_abi,"RoyaltyModule","./modules/royalty-module")
 	@$(call generate_abi,"LSClaimer","./modules/royalty-module/policies")
 	@$(call generate_abi,"RoyaltyPolicyLS","./modules/royalty-module/policies")

@@ -32,10 +32,12 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
 
         _setPILPolicyFrameworkManager();
 
-        _addPILPolicy(
+        _addPILPolicyWihtMintPayment(
             "com_deriv_cheap_flexible", // ==> policyIds["pil_com_deriv_cheap_flexible"]
             true,
             address(royaltyPolicyLAP),
+            100 ether, // mint payment (100 * 10^18)
+            address(mockToken),
             PILPolicy({
                 attribution: false,
                 commercialUse: true,
@@ -91,7 +93,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                                 REGISTER IP ACCOUNTS
         ///////////////////////////////////////////////////////////////*/
 
-        /* // ipAcct[tokenId] => ipAccount address
+        // ipAcct[tokenId] => ipAccount address
         // owner is the vm.pranker
 
         vm.startPrank(u.alice);
@@ -109,12 +111,12 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
         vm.startPrank(u.carl);
         mockNFT.mintId(u.carl, 5);
         ipAcct[5] = registerIpAccount(mockNFT, 5, u.carl);
- */
+
         /*//////////////////////////////////////////////////////////////
                             ADD POLICIES TO IP ACCOUNTS
         ///////////////////////////////////////////////////////////////*/
 
-        /* vm.startPrank(u.alice);
+        vm.startPrank(u.alice);
         licensingModule.addPolicyToIp(ipAcct[1], policyIds["pil_com_deriv_cheap_flexible"]);
         licensingModule.addPolicyToIp(ipAcct[100], policyIds["pil_noncom_deriv_reciprocal_derivative"]);
 
@@ -133,18 +135,21 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 ipAcct[3],
                 policyIds["pil_noncom_deriv_reciprocal_derivative"]
             )
-        ); */
+        );
 
         /*///////////////////////////////////////////////////////////////
                                 MINT & USE LICENSES
         ///////////////////////////////////////////////////////////////*/
 
-        /* // Carl mints 1 license for policy "com_deriv_all_true" on Alice's NFT 1 IPAccount
+        // Carl mints 1 license for policy "com_deriv_all_true" on Alice's NFT 1 IPAccount
         // Carl creates NFT 6 IPAccount
         // Carl activates the license on his NFT 6 IPAccount, linking as child to Alice's NFT 1 IPAccount
         {
             vm.startPrank(u.carl);
             mockNFT.mintId(u.carl, 6);
+
+            mockToken.approve(address(royaltyPolicyLAP), 100 ether);
+
             uint256[] memory carl_license_from_root_alice = new uint256[](1);
             carl_license_from_root_alice[0] = licensingModule.mintLicense(
                 policyIds["pil_com_deriv_cheap_flexible"],
@@ -209,6 +214,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             mockNFT.mintId(u.alice, 2);
             uint256 mintAmount = 2;
 
+            mockToken.approve(address(royaltyPolicyLAP), mintAmount * 100 ether);
+
             uint256[] memory alice_license_from_root_bob = new uint256[](1);
             alice_license_from_root_bob[0] = licensingModule.mintLicense(
                 policyIds["pil_com_deriv_cheap_flexible"],
@@ -266,6 +273,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
 
             uint256 tokenId = 70000; // dummy number that shouldn't conflict with any other token IDs used in this test
             mockNFT.mintId(u.carl, tokenId);
+
+            mockToken.approve(address(royaltyPolicyLAP), 200 ether);
 
             IP.MetadataV1 memory metadata = IP.MetadataV1({
                 name: "IP NAME",
@@ -340,7 +349,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 metadata,
                 u.carl, // caller
                 abi.encode(params)
-            ); 
-        }*/
+            );
+        }
     }
 }

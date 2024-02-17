@@ -1,42 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { Test } from "forge-std/Test.sol";
+import { IPAccountImpl } from "../../../contracts/IPAccountImpl.sol";
+import { IPAccountChecker } from "../../../contracts/lib/registries/IPAccountChecker.sol";
+import { IPAccountRegistry } from "../../../contracts/registries/IPAccountRegistry.sol";
 
-import { ERC6551Registry } from "erc6551/ERC6551Registry.sol";
+import { BaseTest } from "../utils/BaseTest.t.sol";
 
-import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
-import { IPAccountChecker } from "contracts/lib/registries/IPAccountChecker.sol";
-import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
-
-import { MockAccessController } from "test/foundry/mocks/access/MockAccessController.sol";
-
-contract RegistryTest is Test {
+contract IPAccountRegistryTest is BaseTest {
     using IPAccountChecker for IPAccountRegistry;
 
-    IPAccountRegistry public registry;
-    IPAccountImpl public implementation;
-    ERC6551Registry public erc6551Registry;
-    MockAccessController public accessController;
-    uint256 internal chainId;
-    address internal tokenAddress;
-    uint256 internal tokenId;
+    uint256 internal chainId = 100;
+    address internal tokenAddress = address(200);
+    uint256 internal tokenId = 300;
 
-    function setUp() public {
-        erc6551Registry = new ERC6551Registry();
-        accessController = new MockAccessController();
-        implementation = new IPAccountImpl(address(accessController));
-        chainId = 100;
-        tokenAddress = address(200);
-        tokenId = 300;
+    function setUp() public override {
+        super.setUp();
+        deployConditionally();
+        postDeploymentSetup();
     }
 
     function test_IPAccountRegistry_registerIpAccount() public {
-        registry = new IPAccountRegistry(address(erc6551Registry), address(implementation));
-        address ipAccountAddr;
-        ipAccountAddr = registry.registerIpAccount(chainId, tokenAddress, tokenId);
+        address ipAccountAddr = ipAccountRegistry.registerIpAccount(chainId, tokenAddress, tokenId);
 
-        address registryComputedAddress = registry.ipAccount(chainId, tokenAddress, tokenId);
+        address registryComputedAddress = ipAccountRegistry.ipAccount(chainId, tokenAddress, tokenId);
         assertEq(ipAccountAddr, registryComputedAddress);
 
         IPAccountImpl ipAccount = IPAccountImpl(payable(ipAccountAddr));
@@ -46,6 +33,6 @@ contract RegistryTest is Test {
         assertEq(tokenAddress_, tokenAddress);
         assertEq(tokenId_, tokenId);
 
-        assertTrue(registry.isRegistered(chainId, tokenAddress, tokenId));
+        assertTrue(ipAccountRegistry.isRegistered(chainId, tokenAddress, tokenId));
     }
 }
