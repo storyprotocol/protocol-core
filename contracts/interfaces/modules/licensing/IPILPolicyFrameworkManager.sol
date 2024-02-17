@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 import { IPolicyFrameworkManager } from "../../../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 
-/// @notice Licensing parameters for the Universal Media License v1 (PIL) standard
+/// @notice Licensing parameters for the Programmable IP License v1 (PIL) standard
 /// @param transferable Whether or not the license is transferable
 /// @param attribution Whether or not attribution is required when reproducing the work
 /// @param commercialUse Whether or not the work can be used commercially
