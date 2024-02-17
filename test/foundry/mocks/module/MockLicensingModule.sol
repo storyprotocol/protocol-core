@@ -81,13 +81,13 @@ contract MockLicensingModule is BaseModule, ILicensingModule {
 
     function mintLicense(
         uint256 policyId,
-        address licensorIp,
+        address licensorIpId,
         uint256 amount,
         address receiver,
         bytes calldata royaltyContext
     ) external returns (uint256 licenseId) {
         Licensing.Policy memory pol = policy(policyId);
-        licenseId = LICENSE_REGISTRY.mintLicense(policyId, licensorIp, pol.isLicenseTransferable, amount, receiver);
+        licenseId = LICENSE_REGISTRY.mintLicense(policyId, licensorIpId, pol.isLicenseTransferable, amount, receiver);
     }
 
     function linkIpToParents(uint256[] calldata licenseIds, address childIpId, bytes calldata royaltyContext) external {

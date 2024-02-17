@@ -86,14 +86,14 @@ interface ILicensingModule is IModule {
 
     /// @notice Mints a license to create derivative IP
     /// @param policyId The id of the policy with the licensing parameters
-    /// @param licensorIp The id of the licensor IP
+    /// @param licensorIpId The id of the licensor IP
     /// @param amount The amount of licenses to mint
     /// @param receiver The address that will receive the license
     /// @param royaltyContext The context for the royalty module to process
     /// @return licenseId of the NFT(s)
     function mintLicense(
         uint256 policyId,
-        address licensorIp,
+        address licensorIpId,
         uint256 amount, // mint amount
         address receiver,
         bytes calldata royaltyContext

@@ -26,14 +26,14 @@ contract MockLicenseRegistry is ERC1155, ILicenseRegistry {
 
     function mintLicense(
         uint256 policyId,
-        address licensorIp,
+        address licensorIpId,
         bool transferable,
         uint256 amount,
         address receiver
     ) external returns (uint256 licenseId) {
         Licensing.License memory licenseData = Licensing.License({
             policyId: policyId,
-            licensorIpId: licensorIp,
+            licensorIpId: licensorIpId,
             transferable: transferable
         });
         bool isNew;

@@ -156,7 +156,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
     /// The licensing terms that regulate creating new licenses will be verified to allow minting.
     /// Reverts if caller is not authorized by licensors.
     /// @param policyId id of the policy to be minted
-    /// @param licensorIp IP Id granting the license
+    /// @param licensorIpId IP Id granting the license
     /// @param amount of licenses to be minted. License NFT is fungible for same policy and same licensors
     /// @param receiver of the License NFT(s).
     /// @param royaltyContext The context for the royalty module to process
@@ -164,17 +164,17 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
     // solhint-disable-next-line code-complexity
     function mintLicense(
         uint256 policyId,
-        address licensorIp,
+        address licensorIpId,
         uint256 amount, // mint amount
         address receiver,
         bytes calldata royaltyContext
     ) external nonReentrant returns (uint256 licenseId) {
-        if (!IP_ACCOUNT_REGISTRY.isIpAccount(licensorIp)) {
+        if (!IP_ACCOUNT_REGISTRY.isIpAccount(licensorIpId)) {
             revert Errors.LicensingModule__LicensorNotRegistered();
         }
-        _verifyIpNotDisputed(licensorIp);
+        _verifyIpNotDisputed(licensorIpId);
 
-        bool isInherited = _policySetups[licensorIp][policyId].isInherited;
+        bool isInherited = _policySetups[licensorIpId][policyId].isInherited;
         Licensing.Policy memory pol = policy(policyId);
 
         IPolicyFrameworkManager pfm = IPolicyFrameworkManager(pol.policyFramework);
@@ -182,25 +182,25 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         // If the IP ID doesn't have a policy (meaning, no derivatives), this means the caller is attempting to mint a
         // license on a private policy. IP account can mint license NFTs on a globally registerd policy (via PFM)
         // without attaching the policy to the IP account, thus making it a private policy licenses.
-        if (!_policySetPerIpId(isInherited, licensorIp).contains(policyId)) {
+        if (!_policySetPerIpId(isInherited, licensorIpId).contains(policyId)) {
             // We have to check if the caller is licensor or authorized to mint.
-            if (!_hasPermission(licensorIp)) {
+            if (!_hasPermission(licensorIpId)) {
                 revert Errors.LicensingModule__CallerNotLicensorAndPolicyNotSet();
             }
         }
         // If the policy has a royalty policy, we need to call the royalty module to process the minting
         // Otherwise, it's non commercial and we can skip the call.
         if (pol.royaltyPolicy != address(0)) {
-            ROYALTY_MODULE.onLicenseMinting(licensorIp, pol.royaltyPolicy, pol.royaltyData, royaltyContext);
+            ROYALTY_MODULE.onLicenseMinting(licensorIpId, pol.royaltyPolicy, pol.royaltyData, royaltyContext);
         }
 
         // If a policy is set, then is only up to the policy params.
         // Verify minting param
-        if (!pfm.verifyMint(msg.sender, isInherited, licensorIp, receiver, amount, pol.frameworkData)) {
+        if (!pfm.verifyMint(msg.sender, isInherited, licensorIpId, receiver, amount, pol.frameworkData)) {
             revert Errors.LicensingModule__MintLicenseParamFailed();
         }
 
-        licenseId = LICENSE_REGISTRY.mintLicense(policyId, licensorIp, pol.isLicenseTransferable, amount, receiver);
+        licenseId = LICENSE_REGISTRY.mintLicense(policyId, licensorIpId, pol.isLicenseTransferable, amount, receiver);
     }
 
     /// @notice Links an IP to the licensors (parent IP IDs) listed in the License NFTs, if their policies allow it,
