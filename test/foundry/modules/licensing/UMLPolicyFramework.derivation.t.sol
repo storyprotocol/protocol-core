@@ -136,13 +136,26 @@ contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
         vm.stopPrank();
     }
 
-    function test_UMLPolicyFramework_originalWork_bobSetsPoliciesThenCompatibleParent()
+    /////////////////////////////////////////////////////////////////
+    //////       LICENSES THAT DONT ALLOW DERIVATIVES          //////
+    /////////////////////////////////////////////////////////////////
+
+    function test_UMLPolicyFramework_non_derivative_license()
         public
-        withUMLPolicySimple("comm_deriv", true, true, false)
-        withUMLPolicySimple("comm_non_deriv", true, false, false)
+        withUMLPolicySimple("non_comm_no_deriv", true, false, false)
     {
-        // TODO: This works if all policies compatible.
-        // Can bob disable some policies?
+        // Bob can add different policies on IP1 without compatibility checks.
+        vm.startPrank(bob);
+        uint256 licenseId1 = licensingModule.mintLicense(_getUmlPolicyId("non_comm_no_deriv"), ipId1, 2, alice, "");
+        assertEq(licenseRegistry.balanceOf(alice, licenseId1), 2, "dan doesn't have license1");
+        vm.stopPrank();
+
+        uint256[] memory licenseIds = new uint256[](1);
+        licenseIds[0] = licenseId1;
+        vm.expectRevert(Errors.LicensingModule__LinkParentParamFailed.selector);
+        vm.startPrank(alice);
+        licensingModule.linkIpToParents(licenseIds, ipId2, "");
+        vm.stopPrank();
     }
 
     /////////////////////////////////////////////////////////////////
@@ -151,23 +164,23 @@ contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
 
     function test_UMLPolicyFramework_derivative_revert_cantMintDerivativeOfDerivative()
         public
-        withUMLPolicySimple("comm_non_deriv", true, false, false)
-        withAliceOwningDerivativeIp2("comm_non_deriv")
+        withUMLPolicySimple("comm_non_recip", true, true, false)
+        withAliceOwningDerivativeIp2("comm_non_recip")
     {
         vm.expectRevert(Errors.LicensingModule__MintLicenseParamFailed.selector);
         vm.startPrank(dan);
-        licensingModule.mintLicense(_getUmlPolicyId("comm_non_deriv"), ipId2, 1, dan, "");
+        licensingModule.mintLicense(_getUmlPolicyId("comm_non_recip"), ipId2, 1, dan, "");
 
         vm.expectRevert(Errors.LicensingModule__MintLicenseParamFailed.selector);
         vm.startPrank(alice);
-        licensingModule.mintLicense(_getUmlPolicyId("comm_non_deriv"), ipId2, 1, alice, "");
+        licensingModule.mintLicense(_getUmlPolicyId("comm_non_recip"), ipId2, 1, alice, "");
     }
 
     function test_UMLPolicyFramework_derivative_revert_AliceCantSetPolicyOnDerivativeOfDerivative()
         public
-        withUMLPolicySimple("comm_non_deriv", true, false, false)
+        withUMLPolicySimple("comm_non_recip", true, true, false)
         withUMLPolicySimple("comm_deriv", true, true, false)
-        withAliceOwningDerivativeIp2("comm_non_deriv")
+        withAliceOwningDerivativeIp2("comm_non_recip")
     {
         vm.expectRevert(Errors.LicensingModule__DerivativesCannotAddPolicy.selector);
         vm.prank(alice);

@@ -18,6 +18,8 @@ import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator, RegisterUMLPolicy
 import { BasePolicyFrameworkManager } from "../../modules/licensing/BasePolicyFrameworkManager.sol";
 import { LicensorApprovalChecker } from "../../modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
 
+import "forge-std/console2.sol";
+
 /// @title UMLPolicyFrameworkManager
 /// @notice UML Policy Framework Manager implements the UML Policy Framework logic for encoding and decoding UML
 /// policies into the LicenseRegistry and verifying the licensing parameters for linking, minting, and transferring.
@@ -57,7 +59,6 @@ contract UMLPolicyFrameworkManager is
         _verifyComercialUse(params.policy, params.royaltyPolicy);
         _verifyDerivatives(params.policy);
         /// TODO: DO NOT deploy on production networks without hashing string[] values instead of storing them
-
         // No need to emit here, as the LicensingModule will emit the event
         return
             LICENSING_MODULE.registerPolicy(
@@ -84,25 +85,34 @@ contract UMLPolicyFrameworkManager is
         bytes calldata policyData
     ) external override nonReentrant onlyLicensingModule returns (bool) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
+        bool linkAllowed = true;
+
+        // Trying to burn a license to create a derivative, when the license doesn't allow derivatives.
+        if (!policy.derivativesAllowed) {
+            return false;
+        }
+        console2.log("verifyLink: policy.derivativesAllowed: ", policy.derivativesAllowed);
+
 
         // If the policy defines the licensor must approve derivatives, check if the
         // derivative is approved by the licensor
         if (policy.derivativesApproval) {
-            return isDerivativeApproved(licenseId, ipId);
+            console2.log("policy.derivativesApproval", policy.derivativesApproval);
+            console2.log("isDerivativeApproved(licenseId, ipId)", isDerivativeApproved(licenseId, ipId));
+            linkAllowed = linkAllowed && isDerivativeApproved(licenseId, ipId);
+            console2.log("linkAllowed", linkAllowed);
         }
+        // Check if the commercializerChecker allows the link
         if (policy.commercializerChecker != address(0)) {
-            if (!policy.commercializerChecker.supportsInterface(type(IHookModule).interfaceId)) {
-                revert Errors.PolicyFrameworkManager__CommercializerCheckerDoesNotSupportHook(
-                    policy.commercializerChecker
-                );
-            }
-
+            console2.log("policy.commercializerChecker", policy.commercializerChecker);
+            // No need to check if the commercializerChecker supports the IHookModule interface, as it was checked
+            // when the policy was registered.
             if (!IHookModule(policy.commercializerChecker).verify(caller, policy.commercializerCheckerData)) {
-                return false;
+                linkAllowed = false;
             }
         }
-
-        return true;
+        console2.log("final linkAllowed", linkAllowed);
+        return linkAllowed;
     }
 
     /// @notice Verify policy parameters for minting a license.
@@ -123,19 +133,15 @@ contract UMLPolicyFrameworkManager is
         bytes memory policyData
     ) external nonReentrant onlyLicensingModule returns (bool) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
-        // If the policy defines no derivative is allowed, and policy was inherited,
-        // we don't allow minting
-        if (!policy.derivativesAllowed && policyWasInherited) {
+        // If the policy defines no reciprocal derivatives are allowed (no derivatives of derivatives),
+        //and policy was inherited (so this is a derivative) we don't allow minting
+        if (!policy.derivativesReciprocal && policyWasInherited) {
             return false;
         }
 
         if (policy.commercializerChecker != address(0)) {
-            if (!policy.commercializerChecker.supportsInterface(type(IHookModule).interfaceId)) {
-                revert Errors.PolicyFrameworkManager__CommercializerCheckerDoesNotSupportHook(
-                    policy.commercializerChecker
-                );
-            }
-
+            // No need to check if the commercializerChecker supports the IHookModule interface, as it was checked
+            // when the policy was registered.
             if (!IHookModule(policy.commercializerChecker).verify(caller, policy.commercializerCheckerData)) {
                 return false;
             }
@@ -186,7 +192,6 @@ contract UMLPolicyFrameworkManager is
             // Initialize the aggregator
             agg = UMLAggregator({
                 commercial: newPolicy.commercialUse,
-                derivatives: newPolicy.derivativesAllowed,
                 derivativesReciprocal: newPolicy.derivativesReciprocal,
                 lastPolicyId: policyId,
                 territoriesAcc: keccak256(abi.encode(newPolicy.territories)),
@@ -210,9 +215,6 @@ contract UMLPolicyFrameworkManager is
                 // Both non reciprocal
                 if (agg.commercial != newPolicy.commercialUse) {
                     revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialValueMismatch();
-                }
-                if (agg.derivatives != newPolicy.derivativesAllowed) {
-                    revert UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesValueMismatch();
                 }
 
                 bytes32 newHash = _verifHashedParams(
