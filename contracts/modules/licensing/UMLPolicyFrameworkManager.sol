@@ -236,9 +236,6 @@ contract UMLPolicyFrameworkManager is
                 '{"trait_type": "Attribution", "value": "',
                 policy.attribution ? "true" : "false",
                 '"},',
-                '{"trait_type": "Transferable", "value": "',
-                policy.transferable ? "true" : "false",
-                '"},',
                 _policyCommercialTraitsToJson(policy),
                 _policyDerivativeTraitsToJson(policy)
             )
@@ -323,10 +320,7 @@ contract UMLPolicyFrameworkManager is
                     '"},',
                     '{"trait_type": "Derivatives Reciprocal", "value": "',
                     policy.derivativesReciprocal ? "true" : "false",
-                    '"},',
-                    '{"trait_type": "Derivatives Revenue Share", "max_value": 1000, "value": ',
-                    policy.derivativesRevShare.toString(),
-                    "},"
+                    '"},'
                 )
             );
         /* solhint-enable */

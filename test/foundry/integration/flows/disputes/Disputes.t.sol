@@ -7,6 +7,7 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // contract
+import { IRoyaltyPolicyLAP } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLAP.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
 // test
@@ -31,8 +32,7 @@ contract Flows_Integration_Disputes is BaseIntegration {
             commercial: false,
             derivatives: true,
             reciprocal: true,
-            commercialRevShare: 0,
-            derivativesRevShare: 0
+            commercialRevShare: 0
         });
         policyId = _registerUMLPolicyFromMapping("non-commercial-remix");
 
@@ -53,20 +53,20 @@ contract Flows_Integration_Disputes is BaseIntegration {
     function test_Integration_Disputes_revert_cannotMintFromDisputedIp() public {
         assertEq(licenseRegistry.balanceOf(u.carl, policyId), 0);
         vm.prank(u.carl);
-        licensingModule.mintLicense(policyId, ipAcct[1], 1, u.carl);
+        licensingModule.mintLicense(policyId, ipAcct[1], 1, u.carl, "");
         assertEq(licenseRegistry.balanceOf(u.carl, policyId), 1);
 
         _disputeIp(u.bob, ipAcct[1]);
 
         vm.prank(u.carl);
         vm.expectRevert(Errors.LicensingModule__DisputedIpId.selector);
-        licensingModule.mintLicense(policyId, ipAcct[1], 1, u.carl);
+        licensingModule.mintLicense(policyId, ipAcct[1], 1, u.carl, "");
     }
 
     function test_Integration_Disputes_revert_cannotLinkDisputedIp() public {
         assertEq(licenseRegistry.balanceOf(u.carl, policyId), 0);
         vm.prank(u.carl);
-        uint256 licenseId = licensingModule.mintLicense(policyId, ipAcct[1], 1, u.carl);
+        uint256 licenseId = licensingModule.mintLicense(policyId, ipAcct[1], 1, u.carl, "");
         assertEq(licenseRegistry.balanceOf(u.carl, policyId), 1);
 
         _disputeIp(u.bob, ipAcct[1]);
@@ -74,9 +74,18 @@ contract Flows_Integration_Disputes is BaseIntegration {
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
 
+        IRoyaltyPolicyLAP.InitParams memory royaltyContext = IRoyaltyPolicyLAP.InitParams({
+            targetAncestors: new address[](0),
+            targetRoyaltyAmount: new uint32[](0),
+            parentAncestors1: new address[](0),
+            parentAncestors2: new address[](0),
+            parentAncestorsRoyalties1: new uint32[](0),
+            parentAncestorsRoyalties2: new uint32[](0)
+        });
+
         vm.prank(u.carl);
         vm.expectRevert(Errors.LicensingModule__LinkingRevokedLicense.selector);
-        licensingModule.linkIpToParents(licenseIds, ipAcct[3], 0); // 0, non-commercial
+        licensingModule.linkIpToParents(licenseIds, ipAcct[3], abi.encode(royaltyContext));
     }
 
     // TODO: check if IPAccount is transferable even if disputed
@@ -84,7 +93,7 @@ contract Flows_Integration_Disputes is BaseIntegration {
     function test_Integration_Disputes_transferLicenseAfterIpDispute() public {
         assertEq(licenseRegistry.balanceOf(u.carl, policyId), 0);
         vm.prank(u.carl);
-        uint256 licenseId = licensingModule.mintLicense(policyId, ipAcct[1], 1, u.carl);
+        uint256 licenseId = licensingModule.mintLicense(policyId, ipAcct[1], 1, u.carl, "");
         assertEq(licenseRegistry.balanceOf(u.carl, policyId), 1);
 
         _disputeIp(u.bob, ipAcct[1]);
@@ -103,7 +112,7 @@ contract Flows_Integration_Disputes is BaseIntegration {
 
         assertEq(licenseRegistry.balanceOf(u.carl, policyId), 0);
         vm.prank(u.carl);
-        licensingModule.mintLicense(policyId, ipAcct[1], 1, u.carl);
+        licensingModule.mintLicense(policyId, ipAcct[1], 1, u.carl, "");
         assertEq(licenseRegistry.balanceOf(u.carl, policyId), 1);
     }
 

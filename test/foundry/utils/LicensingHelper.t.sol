@@ -296,7 +296,7 @@ contract LicensingHelper {
                 "license Url"
             )
         );
-        licensingModule.registerPolicyFrameworkManager(address(_pfm));
+        LICENSING_MODULE.registerPolicyFrameworkManager(address(_pfm));
         pfm["uml"] = address(_pfm);
     }
 }
