@@ -12,18 +12,19 @@ import { Governable } from "../governance/Governable.sol";
 import { MODULE_TYPE_DEFAULT } from "../lib/modules/Module.sol";
 
 /// @title ModuleRegistry
+/// @notice This contract is used to register and track modules in the protocol.
 contract ModuleRegistry is IModuleRegistry, Governable {
     using Strings for *;
     using ERC165Checker for address;
 
-    /// @dev Maps module names to their address.
-    mapping(string => address) public modules;
+    /// @dev Returns the address of a registered module by its name.
+    mapping(string moduleName => address moduleAddress) internal modules;
 
-    /// @dev Maps module addresses to their module type name.
-    mapping(address => string) public moduleTypes;
+    /// @dev Returns the module type of a registered module by its address.
+    mapping(address moduleAddress => string moduleType) internal moduleTypes;
 
-    /// @dev All registered module types to their interface id.
-    mapping(string => bytes4) public allModuleTypes;
+    /// @dev Returns the interface ID of a registered module type.
+    mapping(string moduleType => bytes4 moduleTypeInterface) internal allModuleTypes;
 
     constructor(address governance) Governable(governance) {
         // Register the default module types
@@ -31,6 +32,7 @@ contract ModuleRegistry is IModuleRegistry, Governable {
     }
 
     /// @notice Registers a new module type in the registry associate with an interface.
+    /// @dev Enforced to be only callable by the protocol admin in governance.
     /// @param name The name of the module type to be registered.
     /// @param interfaceId The interface ID associated with the module type.
     function registerModuleType(string memory name, bytes4 interfaceId) external override onlyProtocolAdmin {
@@ -47,6 +49,7 @@ contract ModuleRegistry is IModuleRegistry, Governable {
     }
 
     /// @notice Removes a module type from the registry.
+    /// @dev Enforced to be only callable by the protocol admin in governance.
     /// @param name The name of the module type to be removed.
     function removeModuleType(string memory name) external override onlyProtocolAdmin {
         if (bytes(name).length == 0) {
@@ -58,15 +61,16 @@ contract ModuleRegistry is IModuleRegistry, Governable {
         delete allModuleTypes[name];
     }
 
-    /// @notice Registers a new module in the registry with an default module type.
-    /// @param name The name of the module to be registered.
+    /// @notice Registers a new module in the registry.
+    /// @dev Enforced to be only callable by the protocol admin in governance.
+    /// @param name The name of the module.
     /// @param moduleAddress The address of the module.
     function registerModule(string memory name, address moduleAddress) external onlyProtocolAdmin {
         _registerModule(name, moduleAddress, MODULE_TYPE_DEFAULT);
     }
 
-    /// @notice Registers a new module in the protocol with given module type.
-    /// @param name The name of the module.
+    /// @notice Registers a new module in the registry with an associated module type.
+    /// @param name The name of the module to be registered.
     /// @param moduleAddress The address of the module.
     /// @param moduleType The type of the module being registered.
     function registerModule(
@@ -77,8 +81,9 @@ contract ModuleRegistry is IModuleRegistry, Governable {
         _registerModule(name, moduleAddress, moduleType);
     }
 
-    /// @notice Removes a module from the protocol.
-    /// @param name The name of the module to be removed.
+    /// @notice Removes a module from the registry.
+    /// @dev Enforced to be only callable by the protocol admin in governance.
+    /// @param name The name of the module.
     function removeModule(string memory name) external onlyProtocolAdmin {
         if (bytes(name).length == 0) {
             revert Errors.ModuleRegistry__NameEmptyString();
@@ -95,18 +100,18 @@ contract ModuleRegistry is IModuleRegistry, Governable {
         emit ModuleRemoved(name, module);
     }
 
+    /// @notice Checks if a module is registered in the protocol.
+    /// @param moduleAddress The address of the module.
+    /// @return isRegistered True if the module is registered, false otherwise.
+    function isRegistered(address moduleAddress) external view returns (bool) {
+        return bytes(moduleTypes[moduleAddress]).length > 0;
+    }
+
     /// @notice Returns the address of a module.
     /// @param name The name of the module.
     /// @return The address of the module.
     function getModule(string memory name) external view returns (address) {
         return modules[name];
-    }
-
-    /// @notice Checks if a module is registered in the protocol.
-    /// @param moduleAddress The address of the module.
-    /// @return True if the module is registered, false otherwise.
-    function isRegistered(address moduleAddress) external view returns (bool) {
-        return bytes(moduleTypes[moduleAddress]).length > 0;
     }
 
     /// @notice Returns the module type of a given module address.
@@ -123,6 +128,7 @@ contract ModuleRegistry is IModuleRegistry, Governable {
         return allModuleTypes[moduleType];
     }
 
+    /// @dev Registers a new module in the registry.
     // solhint-disable code-complexity
     function _registerModule(string memory name, address moduleAddress, string memory moduleType) internal {
         if (moduleAddress == address(0)) {

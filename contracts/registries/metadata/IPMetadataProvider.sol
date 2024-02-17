@@ -14,22 +14,21 @@ contract IPMetadataProvider is IMetadataProvider {
     /// @notice Maps IPs to their metadata based on their IP IDs.
     mapping(address ip => bytes metadata) internal _ipMetadata;
 
-    /// @notice Initializes the metadata provider contract.
-    /// @param moduleRegistry Gets the protocol-wide module registry.
     constructor(address moduleRegistry) {
         MODULE_REGISTRY = IModuleRegistry(moduleRegistry);
     }
 
-    /// @notice Gets the IP metadata associated with an IP asset based on its IP ID.
-    /// @param ipId The IP id of the target IP asset.
+    /// @notice Gets the metadata associated with an IP asset.
+    /// @param ipId The address identifier of the IP asset.
+    /// @return metadata The encoded metadata associated with the IP asset.
     function getMetadata(address ipId) external view virtual override returns (bytes memory) {
         return _ipMetadata[ipId];
     }
 
-    /// @notice Sets the IP metadata associated with an IP asset based on its IP ID.
-    /// @param ipId The IP id of the IP asset to set metadata for.
-    /// @param metadata The metadata in bytes to set for the IP asset.
     // TODO: Add access control for IP owner can set metadata.
+    /// @notice Sets the metadata associated with an IP asset.
+    /// @param ipId The address identifier of the IP asset.
+    /// @param metadata The metadata in bytes to associate with the IP asset.
     function setMetadata(address ipId, bytes memory metadata) external {
         _ipMetadata[ipId] = metadata;
     }

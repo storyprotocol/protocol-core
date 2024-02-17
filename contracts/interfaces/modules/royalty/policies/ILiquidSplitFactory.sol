@@ -8,6 +8,7 @@ interface ILiquidSplitFactory {
     /// @param initAllocations The initial allocations
     /// @param _distributorFee The distributor fee
     /// @param owner The owner of the LiquidSplitClone contract
+    /// @return address The address of the new LiquidSplitClone contract
     function createLiquidSplitClone(
         address[] calldata accounts,
         uint32[] calldata initAllocations,

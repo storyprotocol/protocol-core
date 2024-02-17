@@ -605,7 +605,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
             // Alice calls on behalf of Dan's vault to send money from the Split Main to Dan's vault,
             // since the revenue payment was made to Dan's Split Wallet, which got distributed to the vault.
-            royaltyPolicyLAP.claimFromIpPool({ _account: ipAcct3_splitClone, _withdrawETH: 0, _tokens: tokens });
+            royaltyPolicyLAP.claimFromIpPool({ account: ipAcct3_splitClone, withdrawETH: 0, tokens: tokens });
         }
 
         /*///////////////////////////////////////////////////////////////

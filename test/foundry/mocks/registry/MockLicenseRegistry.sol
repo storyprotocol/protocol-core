@@ -7,9 +7,11 @@ import { ILicensingModule } from "../../../../contracts/interfaces/modules/licen
 import { DataUniqueness } from "../../../../contracts/lib/DataUniqueness.sol";
 import { Licensing } from "../../../../contracts/lib/Licensing.sol";
 import { ILicenseRegistry } from "../../../../contracts/interfaces/registries/ILicenseRegistry.sol";
+import { IDisputeModule } from "../../../../contracts/interfaces/modules/dispute/IDisputeModule.sol";
 
 contract MockLicenseRegistry is ERC1155, ILicenseRegistry {
-    ILicensingModule private _licensingModule;
+    ILicensingModule public LICENSING_MODULE;
+    IDisputeModule public DISPUTE_MODULE;
     mapping(bytes32 licenseHash => uint256 ids) private _hashedLicenses;
     mapping(uint256 licenseIds => Licensing.License licenseData) private _licenses;
     uint256 private _mintedLicenses;
@@ -17,23 +19,19 @@ contract MockLicenseRegistry is ERC1155, ILicenseRegistry {
     constructor() ERC1155("") {}
 
     function setLicensingModule(address newLicensingModule) external {
-        _licensingModule = ILicensingModule(newLicensingModule);
-    }
-
-    function licensingModule() external view returns (address) {
-        return address(_licensingModule);
+        LICENSING_MODULE = ILicensingModule(newLicensingModule);
     }
 
     function mintLicense(
         uint256 policyId,
-        address licensorIpId,
+        address licensorIpId_,
         bool transferable,
         uint256 amount,
         address receiver
     ) external returns (uint256 licenseId) {
         Licensing.License memory licenseData = Licensing.License({
             policyId: policyId,
-            licensorIpId: licensorIpId,
+            licensorIpId: licensorIpId_,
             transferable: transferable
         });
         bool isNew;

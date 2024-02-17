@@ -19,12 +19,18 @@ contract TaggingModule is BaseModule, ITaggingModule {
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    uint256 public constant MAX_TAG_PERMISSIONS_AT_ONCE = 300;
-
     string public constant override name = TAGGING_MODULE_KEY;
 
+    /// @notice The maximum number of tag permissions that can be set at once
+    uint256 public constant MAX_TAG_PERMISSIONS_AT_ONCE = 300;
+
+    /// @dev The tags for IP assets
     mapping(address => EnumerableSet.Bytes32Set) private _tagsForIpIds;
 
+    /// @notice Sets a tag on an IP asset
+    /// @param tag The tag value
+    /// @param ipId The ID of the IP asset
+    /// @return added True if the tag was added
     function setTag(string calldata tag, address ipId) external returns (bool added) {
         // TODO: access control
         // TODO: emit
@@ -32,30 +38,52 @@ contract TaggingModule is BaseModule, ITaggingModule {
         return _tagsForIpIds[ipId].add(ShortStringOps.stringToBytes32(tag));
     }
 
+    /// @notice Removes a tag from an IP asset
+    /// @param tag The tag value
+    /// @param ipId The ID of the IP asset
+    /// @return removed True if the tag was removed
     function removeTag(string calldata tag, address ipId) external returns (bool removed) {
         // TODO: access control
         emit TagRemoved(tag, ipId);
         return _tagsForIpIds[ipId].remove(ShortStringOps.stringToBytes32(tag));
     }
 
+    /// @notice Checks if an IP asset is tagged with a specific tag
+    /// @param tag The tag value
+    /// @param ipId The ID of the IP asset
+    /// @return True if the IP asset is tagged with the tag
     function isTagged(string calldata tag, address ipId) external view returns (bool) {
         return _tagsForIpIds[ipId].contains(ShortStringOps.stringToBytes32(tag));
     }
 
+    /// @notice Gets the total number of tags for an IP asset
+    /// @param ipId The ID of the IP asset
+    /// @return totalTags The total number of tags for the IP asset
     function totalTagsForIp(address ipId) external view returns (uint256) {
         return _tagsForIpIds[ipId].length();
     }
 
+    /// @notice Gets the tag at a specific index for an IP asset
+    /// @dev Tag ordering is not guaranteed, as it's stored in a set
+    /// @param ipId The ID of the IP asset
+    /// @param index The local index of the tag on the IP asset
+    /// @return tagBytes The tag value in bytes
     function tagAtIndexForIp(address ipId, uint256 index) external view returns (bytes32) {
         // WARNING: tag ordering not guaranteed (since they can be removed)
         return _tagsForIpIds[ipId].at(index);
     }
 
+    /// @notice Gets the tag string at a specific index for an IP
+    /// @dev Tag ordering is not guaranteed, as it's stored in a set
+    /// @param ipId The ID of the IP asset
+    /// @param index The local index of the tag on the IP asset
+    /// @return tagString The tag value casted as string
     function tagStringAtIndexForIp(address ipId, uint256 index) external view returns (string memory) {
         // WARNING: tag ordering not guaranteed (since they can be removed)
         return ShortString.wrap(_tagsForIpIds[ipId].at(index)).toString();
     }
 
+    /// @notice IERC165 interface support.
     function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
         return interfaceId == type(ITaggingModule).interfaceId || super.supportsInterface(interfaceId);
     }

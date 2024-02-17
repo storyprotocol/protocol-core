@@ -27,6 +27,6 @@ interface IGovernance is IAccessControl {
     function setState(GovernanceLib.ProtocolState newState) external;
 
     /// @notice Returns the current state of the protocol
-    /// @return The current state of the protocol
+    /// @return state The current state of the protocol
     function getState() external view returns (GovernanceLib.ProtocolState);
 }

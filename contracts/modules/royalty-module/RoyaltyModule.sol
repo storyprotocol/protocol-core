@@ -14,144 +14,148 @@ import { ROYALTY_MODULE_KEY } from "../../lib/modules/Module.sol";
 import { BaseModule } from "../BaseModule.sol";
 
 /// @title Story Protocol Royalty Module
-/// @notice The Story Protocol royalty module allows to set royalty policies an ipId
-///         and pay royalties as a derivative ip.
+/// @notice The Story Protocol royalty module allows to set royalty policies an IP asset and pay royalties as a
+///         derivative IP.
 contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModule {
     using ERC165Checker for address;
 
     string public constant override name = ROYALTY_MODULE_KEY;
 
-    /// @notice Licensing module address
+    /// @notice Returns the licensing module address
     address public LICENSING_MODULE;
 
     /// @notice Indicates if a royalty policy is whitelisted
-    mapping(address royaltyPolicy => bool allowed) public isWhitelistedRoyaltyPolicy;
+    mapping(address royaltyPolicy => bool isWhitelisted) public isWhitelistedRoyaltyPolicy;
 
     /// @notice Indicates if a royalty token is whitelisted
     mapping(address token => bool) public isWhitelistedRoyaltyToken;
 
-    /// @notice Indicates the royalty policy for a given ipId
+    /// @notice Indicates the royalty policy for a given IP asset
     mapping(address ipId => address royaltyPolicy) public royaltyPolicies;
 
-    /// @notice Constructor
-    /// @param _governance The address of the governance contract
-    constructor(address _governance) Governable(_governance) {}
+    constructor(address governance) Governable(governance) {}
 
+    /// @notice Modifier to enforce that the caller is the licensing module
     modifier onlyLicensingModule() {
         if (msg.sender != LICENSING_MODULE) revert Errors.RoyaltyModule__NotAllowedCaller();
         _;
     }
 
     /// @notice Sets the license registry
-    /// @param _licensingModule The address of the license registry
-    function setLicensingModule(address _licensingModule) external onlyProtocolAdmin {
-        if (_licensingModule == address(0)) revert Errors.RoyaltyModule__ZeroLicensingModule();
-
-        LICENSING_MODULE = _licensingModule;
+    /// @dev Enforced to be only callable by the protocol admin
+    /// @param licensingModule The address of the license registry
+    function setLicensingModule(address licensingModule) external onlyProtocolAdmin {
+        if (licensingModule == address(0)) revert Errors.RoyaltyModule__ZeroLicensingModule();
+        LICENSING_MODULE = licensingModule;
     }
 
     /// @notice Whitelist a royalty policy
-    /// @param _royaltyPolicy The address of the royalty policy
-    /// @param _allowed Indicates if the royalty policy is whitelisted or not
-    function whitelistRoyaltyPolicy(address _royaltyPolicy, bool _allowed) external onlyProtocolAdmin {
-        if (_royaltyPolicy == address(0)) revert Errors.RoyaltyModule__ZeroRoyaltyPolicy();
+    /// @dev Enforced to be only callable by the protocol admin
+    /// @param royaltyPolicy The address of the royalty policy
+    /// @param allowed Indicates if the royalty policy is whitelisted or not
+    function whitelistRoyaltyPolicy(address royaltyPolicy, bool allowed) external onlyProtocolAdmin {
+        if (royaltyPolicy == address(0)) revert Errors.RoyaltyModule__ZeroRoyaltyPolicy();
 
-        isWhitelistedRoyaltyPolicy[_royaltyPolicy] = _allowed;
+        isWhitelistedRoyaltyPolicy[royaltyPolicy] = allowed;
 
-        emit RoyaltyPolicyWhitelistUpdated(_royaltyPolicy, _allowed);
+        emit RoyaltyPolicyWhitelistUpdated(royaltyPolicy, allowed);
     }
 
     /// @notice Whitelist a royalty token
-    /// @param _token The token address
-    /// @param _allowed Indicates if the token is whitelisted or not
-    function whitelistRoyaltyToken(address _token, bool _allowed) external onlyProtocolAdmin {
-        if (_token == address(0)) revert Errors.RoyaltyModule__ZeroRoyaltyToken();
+    /// @dev Enforced to be only callable by the protocol admin
+    /// @param token The token address
+    /// @param allowed Indicates if the token is whitelisted or not
+    function whitelistRoyaltyToken(address token, bool allowed) external onlyProtocolAdmin {
+        if (token == address(0)) revert Errors.RoyaltyModule__ZeroRoyaltyToken();
 
-        isWhitelistedRoyaltyToken[_token] = _allowed;
+        isWhitelistedRoyaltyToken[token] = allowed;
 
-        emit RoyaltyTokenWhitelistUpdated(_token, _allowed);
+        emit RoyaltyTokenWhitelistUpdated(token, allowed);
     }
 
     /// @notice Executes royalty related logic on license minting
-    /// @param _ipId The ipId whose license is being minted (licensor)
-    /// @param _royaltyPolicy The royalty policy address of the license being minted
-    /// @param _licenseData The license data custom to each the royalty policy
-    /// @param _externalData The external data custom to each the royalty policy
+    /// @dev Enforced to be only callable by LicensingModule
+    /// @param ipId The ipId whose license is being minted (licensor)
+    /// @param royaltyPolicy The royalty policy address of the license being minted
+    /// @param licenseData The license data custom to each the royalty policy
+    /// @param externalData The external data custom to each the royalty policy
     function onLicenseMinting(
-        address _ipId,
-        address _royaltyPolicy,
-        bytes calldata _licenseData,
-        bytes calldata _externalData
+        address ipId,
+        address royaltyPolicy,
+        bytes calldata licenseData,
+        bytes calldata externalData
     ) external nonReentrant onlyLicensingModule {
-        if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
+        if (!isWhitelistedRoyaltyPolicy[royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
 
-        address royaltyPolicyIpId = royaltyPolicies[_ipId];
+        address royaltyPolicyIpId = royaltyPolicies[ipId];
 
         // if the node is a root node, then royaltyPolicyIpId will be address(0) and any type of royalty type can be
         // selected to mint a license if the node is a derivative node, then the any minted licenses by the derivative
         // node should have the same royalty policy as the parent node a derivative node set its royalty policy
         // immutably in onLinkToParents() function below
-        if (royaltyPolicyIpId != _royaltyPolicy && royaltyPolicyIpId != address(0))
+        if (royaltyPolicyIpId != royaltyPolicy && royaltyPolicyIpId != address(0))
             revert Errors.RoyaltyModule__CanOnlyMintSelectedPolicy();
 
-        IRoyaltyPolicy(_royaltyPolicy).onLicenseMinting(_ipId, _licenseData, _externalData);
+        IRoyaltyPolicy(royaltyPolicy).onLicenseMinting(ipId, licenseData, externalData);
     }
 
     /// @notice Executes royalty related logic on linking to parents
-    /// @param _ipId The children ipId that is being linked to parents
-    /// @param _royaltyPolicy The common royalty policy address of all the licenses being burned
-    /// @param _parentIpIds The parent ipIds that the children ipId is being linked to
-    /// @param _licenseData The license data custom to each the royalty policy
-    /// @param _externalData The external data custom to each the royalty policy
+    /// @dev Enforced to be only callable by LicensingModule
+    /// @param ipId The children ipId that is being linked to parents
+    /// @param royaltyPolicy The common royalty policy address of all the licenses being burned
+    /// @param parentIpIds The parent ipIds that the children ipId is being linked to
+    /// @param licenseData The license data custom to each the royalty policy
+    /// @param externalData The external data custom to each the royalty policy
     function onLinkToParents(
-        address _ipId,
-        address _royaltyPolicy,
-        address[] calldata _parentIpIds,
-        bytes[] memory _licenseData,
-        bytes calldata _externalData
+        address ipId,
+        address royaltyPolicy,
+        address[] calldata parentIpIds,
+        bytes[] memory licenseData,
+        bytes calldata externalData
     ) external nonReentrant onlyLicensingModule {
-        if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
-        if (_parentIpIds.length == 0) revert Errors.RoyaltyModule__NoParentsOnLinking();
+        if (!isWhitelistedRoyaltyPolicy[royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
+        if (parentIpIds.length == 0) revert Errors.RoyaltyModule__NoParentsOnLinking();
 
-        for (uint32 i = 0; i < _parentIpIds.length; i++) {
-            address parentRoyaltyPolicy = royaltyPolicies[_parentIpIds[i]];
+        for (uint32 i = 0; i < parentIpIds.length; i++) {
+            address parentRoyaltyPolicy = royaltyPolicies[parentIpIds[i]];
             // if the parent node has a royalty policy set, then the derivative node should have the same royalty
             // policy if the parent node does not have a royalty policy set, then the derivative node can set any type
             // of royalty policy as long as the children ip obtained and is burning all licenses with that royalty type
             // from each parent (was checked in licensing module before calling this function)
-            if (parentRoyaltyPolicy != _royaltyPolicy && parentRoyaltyPolicy != address(0))
+            if (parentRoyaltyPolicy != royaltyPolicy && parentRoyaltyPolicy != address(0))
                 revert Errors.RoyaltyModule__IncompatibleRoyaltyPolicy();
         }
 
-        royaltyPolicies[_ipId] = _royaltyPolicy;
+        royaltyPolicies[ipId] = royaltyPolicy;
 
-        IRoyaltyPolicy(_royaltyPolicy).onLinkToParents(_ipId, _parentIpIds, _licenseData, _externalData);
+        IRoyaltyPolicy(royaltyPolicy).onLinkToParents(ipId, parentIpIds, licenseData, externalData);
     }
 
-    /// @notice Allows a sender to to pay royalties on behalf of an ipId
-    /// @param _receiverIpId The ipId that receives the royalties
-    /// @param _payerIpId The ipId that pays the royalties
-    /// @param _token The token to use to pay the royalties
-    /// @param _amount The amount to pay
+    /// @notice Allows the function caller to pay royalties to the receiver IP asset on behalf of the payer IP asset.
+    /// @param receiverIpId The ID of the IP asset that receives the royalties
+    /// @param payerIpId The ID of the IP asset that pays the royalties
+    /// @param token The token to use to pay the royalties
+    /// @param amount The amount to pay
     function payRoyaltyOnBehalf(
-        address _receiverIpId,
-        address _payerIpId,
-        address _token,
-        uint256 _amount
+        address receiverIpId,
+        address payerIpId,
+        address token,
+        uint256 amount
     ) external nonReentrant {
-        if (!isWhitelistedRoyaltyToken[_token]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyToken();
+        if (!isWhitelistedRoyaltyToken[token]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyToken();
 
-        address payerRoyaltyPolicy = royaltyPolicies[_payerIpId];
+        address payerRoyaltyPolicy = royaltyPolicies[payerIpId];
         // if the payer does not have a royalty policy set, then the payer is not a derivative ip and does not pay
         // royalties the receiver ip can have a zero royalty policy since that could mean it is an ip a root
         if (payerRoyaltyPolicy == address(0)) revert Errors.RoyaltyModule__NoRoyaltyPolicySet();
         if (!isWhitelistedRoyaltyPolicy[payerRoyaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
 
-        IRoyaltyPolicy(payerRoyaltyPolicy).onRoyaltyPayment(msg.sender, _receiverIpId, _token, _amount);
+        IRoyaltyPolicy(payerRoyaltyPolicy).onRoyaltyPayment(msg.sender, receiverIpId, token, amount);
 
-        emit RoyaltyPaid(_receiverIpId, _payerIpId, msg.sender, _token, _amount);
+        emit RoyaltyPaid(receiverIpId, payerIpId, msg.sender, token, amount);
     }
 
+    /// @notice IERC165 interface support.
     function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
         return interfaceId == type(IRoyaltyModule).interfaceId || super.supportsInterface(interfaceId);
     }

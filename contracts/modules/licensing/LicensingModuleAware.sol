@@ -7,18 +7,16 @@ import { ILicensingModule } from "../../interfaces/modules/licensing/ILicensingM
 import { Errors } from "../../lib/Errors.sol";
 
 /// @title LicensingModuleAware
-/// @notice Base contract to be inherited by modules that need to access the license registry.
+/// @notice Base contract to be inherited by modules that need to access the licensing module.
 abstract contract LicensingModuleAware {
-    /// @notice Gets the protocol-wide license registry.
+    /// @notice Returns the protocol-wide licensing module.
     ILicensingModule public immutable LICENSING_MODULE;
 
-    /// @notice Initializes the base module contract.
-    /// @param licensingModule The address of the license registry.
     constructor(address licensingModule) {
         LICENSING_MODULE = ILicensingModule(licensingModule);
     }
 
-    /// @notice Modifier for authorizing the calling entity.
+    /// @notice Modifier for authorizing the calling entity to only the LicensingModule.
     modifier onlyLicensingModule() {
         if (msg.sender != address(LICENSING_MODULE)) {
             revert Errors.LicensingModuleAware__CallerNotLicensingModule();
