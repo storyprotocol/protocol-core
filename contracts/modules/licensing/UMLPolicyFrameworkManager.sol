@@ -10,7 +10,6 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 // contracts
 import { IHookModule } from "../../interfaces/modules/base/IHookModule.sol";
 import { ILicensingModule } from "../../interfaces/modules/licensing/ILicensingModule.sol";
-import { IRoyaltyModule } from "../../interfaces/modules/royalty/IRoyaltyModule.sol";
 import { Licensing } from "../../lib/Licensing.sol";
 import { Errors } from "../../lib/Errors.sol";
 import { UMLFrameworkErrors } from "../../lib/UMLFrameworkErrors.sol";
@@ -337,7 +336,12 @@ contract UMLPolicyFrameworkManager is
     /// Checks the configuration of commercial use and throws if the policy is not compliant
     /// @param policy The policy to verify
     // solhint-disable-next-line code-complexity
-    function _verifyComercialUse(UMLPolicy calldata policy, address royaltyPolicy, uint256 mintingFee, address mintingFeeToken) internal view {
+    function _verifyComercialUse(
+        UMLPolicy calldata policy,
+        address royaltyPolicy,
+        uint256 mintingFee,
+        address mintingFeeToken
+    ) internal view {
         if (!policy.commercialUse) {
             if (policy.commercialAttribution) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddAttribution();

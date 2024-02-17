@@ -96,15 +96,16 @@ contract LicensingModuleTest is BaseTest {
     }
 
     function _createPolicyFrameworkData() internal view returns (Licensing.Policy memory) {
-        return Licensing.Policy({
-            isLicenseTransferable: true,
-            policyFramework: address(mockPFM),
-            frameworkData: _createMockPolicy(),
-            royaltyPolicy: address(mockRoyaltyPolicyLAP),
-            royaltyData: "",
-            mintingFee: 0,
-            mintingFeeToken: address(0)
-        });
+        return
+            Licensing.Policy({
+                isLicenseTransferable: true,
+                policyFramework: address(mockPFM),
+                frameworkData: _createMockPolicy(),
+                royaltyPolicy: address(mockRoyaltyPolicyLAP),
+                royaltyData: "",
+                mintingFee: 0,
+                mintingFeeToken: address(0)
+            });
     }
 
     function test_LicensingModule_registerLicenseFramework() public {
@@ -388,7 +389,7 @@ contract LicensingModuleTest is BaseTest {
     function test_LicensingModule_singleTransfer_revert_verifyFalse() public {
         licensingModule.registerPolicyFrameworkManager(address(mockPFM));
         vm.prank(address(mockPFM));
-        
+
         Licensing.Policy memory pol = _createPolicyFrameworkData();
         pol.isLicenseTransferable = false;
         uint256 policyId = licensingModule.registerPolicy(pol);

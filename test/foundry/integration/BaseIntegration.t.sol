@@ -42,7 +42,6 @@ contract BaseIntegration is BaseTest {
 
         dealMockAssets();
         approveRegistration();
-
     }
 
     function approveRegistration() internal {
