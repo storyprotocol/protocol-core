@@ -75,7 +75,7 @@ contract AccessController is IAccessController, Governable {
             revert Errors.AccessController__PermissionIsNotValid();
         }
         _setPermission(address(0), signer_, to_, func_, permission_);
-        emit PermissionSet(address(0), signer_, to_, func_, permission_);
+        emit PermissionSet(address(0), address(0), signer_, to_, func_, permission_);
     }
 
     /// @notice Sets the permission for a specific function call
@@ -116,7 +116,7 @@ contract AccessController is IAccessController, Governable {
         }
         _setPermission(ipAccount_, signer_, to_, func_, permission_);
 
-        emit PermissionSet(ipAccount_, signer_, to_, func_, permission_);
+        emit PermissionSet(IIPAccount(payable(ipAccount_)).owner(), ipAccount_, signer_, to_, func_, permission_);
     }
 
     /// @notice Checks if a specific function call is allowed.
@@ -191,13 +191,24 @@ contract AccessController is IAccessController, Governable {
         permissions[_encodePermission(ipAccount, signer, to, func)] = permission;
     }
 
-    /// @dev encode permission to hash (bytes32)
+    /// @dev Encodes permission parameters into a hash (bytes32) to serve as a unique permission record ID.
+    /// This function is utilized both when setting permissions and checking permissions to uniquely identify them.
+    /// In addition to the four permission fields passed by the parameters (ipAccount, signer, to, func),
+    /// an additional field, "ipAccountOwner", is retrieved on-the-fly when encoding the permission.
+    /// @param ipAccount The IP account involved in the permission.
+    /// @param signer The account that signs the transaction.
+    /// @param to The recipient of the transaction.
+    /// @param func The function selector involved in the permission.
+    /// @return A bytes32 hash representing the unique ID of the permission record.
     function _encodePermission(
         address ipAccount,
         address signer,
         address to,
         bytes4 func
-    ) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(ipAccount, signer, to, func));
+    ) internal view returns (bytes32) {
+        if (ipAccount == address(0)) {
+            return keccak256(abi.encode(address(0), address(0), signer, to, func));
+        }
+        return keccak256(abi.encode(IIPAccount(payable(ipAccount)).owner(), ipAccount, signer, to, func));
     }
 }
