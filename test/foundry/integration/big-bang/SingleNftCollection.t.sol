@@ -37,7 +37,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             true,
             address(royaltyPolicyLAP),
             100 ether, // mint payment (100 * 10^18)
-            address(erc20),
+            address(mockToken),
             PILPolicy({
                 attribution: false,
                 commercialUse: true,
@@ -148,7 +148,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             vm.startPrank(u.carl);
             mockNFT.mintId(u.carl, 6);
 
-            erc20.approve(address(royaltyPolicyLAP), 100 ether);
+            mockToken.approve(address(royaltyPolicyLAP), 100 ether);
 
             uint256[] memory carl_license_from_root_alice = new uint256[](1);
             carl_license_from_root_alice[0] = licensingModule.mintLicense(
@@ -214,7 +214,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             mockNFT.mintId(u.alice, 2);
             uint256 mintAmount = 2;
 
-            erc20.approve(address(royaltyPolicyLAP), mintAmount * 100 ether);
+            mockToken.approve(address(royaltyPolicyLAP), mintAmount * 100 ether);
 
             uint256[] memory alice_license_from_root_bob = new uint256[](1);
             alice_license_from_root_bob[0] = licensingModule.mintLicense(
@@ -274,7 +274,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             uint256 tokenId = 70000; // dummy number that shouldn't conflict with any other token IDs used in this test
             mockNFT.mintId(u.carl, tokenId);
 
-            erc20.approve(address(royaltyPolicyLAP), 200 ether);
+            mockToken.approve(address(royaltyPolicyLAP), 200 ether);
 
             IP.MetadataV1 memory metadata = IP.MetadataV1({
                 name: "IP NAME",
