@@ -40,7 +40,7 @@ struct PILPolicy {
 /// @param royaltyPolicy Address of a royalty policy contract (e.g. RoyaltyPolicyLS) that will handle royalty payments
 /// @param mintingFee Fee to be paid when minting a license
 /// @param mintingFeeToken Token to be used to pay the minting fee
-/// @param pilPolicy PILPolicy compliant licensing term values
+/// @param policy PILPolicy compliant licensing term values
 struct RegisterPILPolicyParams {
     bool transferable;
     address royaltyPolicy;
