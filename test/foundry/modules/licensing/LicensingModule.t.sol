@@ -109,11 +109,11 @@ contract LicensingModuleTest is BaseTest {
     }
 
     function test_LicensingModule_registerPFM() public {
-        PIPPolicyFrameworkManager pfm1 = new PIPPolicyFrameworkManager(
+        PILPolicyFrameworkManager pfm1 = new PILPolicyFrameworkManager(
             address(accessController),
             address(ipAccountRegistry),
             address(licensingModule),
-            "PIPPolicyFrameworkManager",
+            "PILPolicyFrameworkManager",
             licenseUrl
         );
 
@@ -127,11 +127,11 @@ contract LicensingModuleTest is BaseTest {
     }
 
     function test_LicensingModule_registerPFM_revert_emptyLicenseUrl() public {
-        PIPPolicyFrameworkManager pfm1 = new PIPPolicyFrameworkManager(
+        PILPolicyFrameworkManager pfm1 = new PILPolicyFrameworkManager(
             address(accessController),
             address(ipAccountRegistry),
             address(licensingModule),
-            "PIPPolicyFrameworkManager",
+            "PILPolicyFrameworkManager",
             ""
         );
 

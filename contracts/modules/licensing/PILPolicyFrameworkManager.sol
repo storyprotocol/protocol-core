@@ -354,7 +354,7 @@ contract PILPolicyFrameworkManager is
     /// @param royaltyPolicy The address of the royalty policy
     // solhint-disable-next-line code-complexity
     function _verifyComercialUse(
-        UMLPolicy calldata policy,
+        PILPolicy calldata policy,
         address royaltyPolicy,
         uint256 mintingFee,
         address mintingFeeToken

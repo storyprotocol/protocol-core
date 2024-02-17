@@ -92,26 +92,26 @@ contract LicensingHelper {
         policyIds[pName] = PILPolicyFrameworkManager(pfm["pil"]).registerPolicy(policies[pName]);
     }
 
-    function _addUMLPolicyWihtMintPayment(
+    function _addPILPolicyWihtMintPayment(
         string memory policyName,
         bool transferable,
         address royaltyPolicy,
         uint256 mintingFee,
         address mintingFeeToken,
-        UMLPolicy memory policy
+        PILPolicy memory policy
     ) internal {
-        string memory pName = string(abi.encodePacked("uml_", policyName));
-        policies[pName] = RegisterUMLPolicyParams({
+        string memory pName = string(abi.encodePacked("pil_", policyName));
+        policies[pName] = RegisterPILPolicyParams({
             transferable: transferable,
             royaltyPolicy: royaltyPolicy,
             mintingFee: mintingFee,
             mintingFeeToken: mintingFeeToken,
             policy: policy
         });
-        policyIds[pName] = UMLPolicyFrameworkManager(pfm["uml"]).registerPolicy(policies[pName]);
+        policyIds[pName] = PILPolicyFrameworkManager(pfm["pil"]).registerPolicy(policies[pName]);
     }
 
-    function _mapUMLPolicySimple(
+    function _mapPILPolicySimple(
         string memory name,
         bool commercial,
         bool derivatives,

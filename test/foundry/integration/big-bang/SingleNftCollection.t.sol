@@ -32,8 +32,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
 
         _setPILPolicyFrameworkManager();
 
-        _addUMLPolicyWihtMintPayment(
-            "com_deriv_cheap_flexible", // ==> policyIds["uml_com_deriv_cheap_flexible"]
+        _addPILPolicyWihtMintPayment(
+            "com_deriv_cheap_flexible", // ==> policyIds["pil_com_deriv_cheap_flexible"]
             true,
             address(royaltyPolicyLAP),
             100 ether, // mint payment (100 * 10^18)
@@ -117,8 +117,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
         ///////////////////////////////////////////////////////////////*/
 
         vm.startPrank(u.alice);
-        licensingModule.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_cheap_flexible"]);
-        licensingModule.addPolicyToIp(ipAcct[100], policyIds["uml_noncom_deriv_reciprocal_derivative"]);
+        licensingModule.addPolicyToIp(ipAcct[1], policyIds["pil_com_deriv_cheap_flexible"]);
+        licensingModule.addPolicyToIp(ipAcct[100], policyIds["pil_noncom_deriv_reciprocal_derivative"]);
 
         vm.startPrank(u.bob);
         licensingModule.addPolicyToIp(ipAcct[3], policyIds["pil_com_deriv_cheap_flexible"]);
