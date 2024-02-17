@@ -108,7 +108,7 @@ contract UMLPolicyFrameworkManager is
     /// @notice Verify policy parameters for minting a license.
     /// @dev Enforced to be only callable by LicenseRegistry
     /// @param caller the address executing the mint
-    /// @param policyWasInherited true if the policy was inherited (licensorIpId is not original IP owner)
+    /// @param mintingFromADerivative true if the policy was inherited (licensorIpId is not original IP owner)
     /// @param licensorIpId the IP id of the licensor
     /// @param receiver the address receiving the license
     /// @param mintAmount the amount of licenses to mint
@@ -116,7 +116,7 @@ contract UMLPolicyFrameworkManager is
     /// @return verified True if the link is verified
     function verifyMint(
         address caller,
-        bool policyWasInherited,
+        bool mintingFromADerivative,
         address licensorIpId,
         address receiver,
         uint256 mintAmount,
@@ -124,8 +124,8 @@ contract UMLPolicyFrameworkManager is
     ) external nonReentrant onlyLicensingModule returns (bool) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
         // If the policy defines no reciprocal derivatives are allowed (no derivatives of derivatives),
-        // and policy was inherited (so this is a derivative) we don't allow minting
-        if (!policy.derivativesReciprocal && policyWasInherited) {
+        //and we are mintingFromADerivative we don't allow minting
+        if (!policy.derivativesReciprocal && mintingFromADerivative) {
             return false;
         }
 
