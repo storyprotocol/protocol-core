@@ -40,9 +40,6 @@ interface IIPAccount is IERC6551Account, IERC721Receiver, IERC1155Receiver {
         bytes signature
     );
 
-    /// @notice Returns the address of the protocol-wide access controller.
-    function ACCESS_CONTROLLER() external view returns (address);
-
     /// @notice Returns the IPAccount's internal nonce for transaction ordering.
     function state() external view returns (uint256);
 

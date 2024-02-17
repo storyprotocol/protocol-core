@@ -28,9 +28,6 @@ interface IIPAccountRegistry {
     /// @notice Returns the public ERC6551 registry address
     function ERC6551_PUBLIC_REGISTRY() external view returns (address);
 
-    /// @notice Returns the access controller address
-    function ACCESS_CONTROLLER() external view returns (address);
-
     /// @notice Deploys an IPAccount contract with the IPAccount implementation and returns the address of the new IP
     /// @dev The IPAccount deployment deltegates to public ERC6551 Registry
     /// @param chainId The chain ID where the IP Account will be created

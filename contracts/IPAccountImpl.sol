@@ -17,8 +17,7 @@ import { Errors } from "./lib/Errors.sol";
 /// @title IPAccountImpl
 /// @notice The Story Protocol's implementation of the IPAccount.
 contract IPAccountImpl is IERC165, IIPAccount {
-    /// @notice Returns the address of the protocol-wide access controller.
-    address public ACCESS_CONTROLLER;
+    address public immutable accessController;
 
     /// @notice Returns the IPAccount's internal nonce for transaction ordering.
     uint256 public state;
@@ -30,19 +29,21 @@ contract IPAccountImpl is IERC165, IIPAccount {
     /// in the implementation code's storage.
     /// This means that each cloned IPAccount will inherently use the same AccessController
     /// without the need for individual configuration.
-    /// @param accessController The address of the AccessController contract to be used for permission checks
-    constructor(address accessController) {
-        if (accessController == address(0)) revert Errors.IPAccount__InvalidAccessController();
-        ACCESS_CONTROLLER = accessController;
+    /// @param accessController_ The address of the AccessController contract to be used for permission checks
+    constructor(address accessController_) {
+        if (accessController_ == address(0)) revert Errors.IPAccount__InvalidAccessController();
+        accessController = accessController_;
     }
 
-    /// @notice IERC165 interface support.
-    function supportsInterface(bytes4 interfaceId_) external pure returns (bool) {
-        return (interfaceId_ == type(IIPAccount).interfaceId ||
-            interfaceId_ == type(IERC6551Account).interfaceId ||
-            interfaceId_ == type(IERC1155Receiver).interfaceId ||
-            interfaceId_ == type(IERC721Receiver).interfaceId ||
-            interfaceId_ == type(IERC165).interfaceId);
+    /// @notice Checks if the contract supports a specific interface
+    /// @param interfaceId The interface identifier, as specified in ERC-165
+    /// @return bool is true if the contract supports the interface, false otherwise
+    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+        return (interfaceId == type(IIPAccount).interfaceId ||
+            interfaceId == type(IERC6551Account).interfaceId ||
+            interfaceId == type(IERC1155Receiver).interfaceId ||
+            interfaceId == type(IERC721Receiver).interfaceId ||
+            interfaceId == type(IERC165).interfaceId);
     }
 
     /// @notice Returns the identifier of the non-fungible token which owns the account
@@ -80,7 +81,7 @@ contract IPAccountImpl is IERC165, IIPAccount {
     }
 
     /// @notice Returns the owner of the IP Account.
-    /// @return owner The address of the owner.
+    /// @return The address of the owner.
     function owner() public view returns (address) {
         (uint256 chainId, address contractAddress, uint256 tokenId) = token();
         if (chainId != block.chainid) return address(0);
@@ -91,18 +92,17 @@ contract IPAccountImpl is IERC165, IIPAccount {
     /// @param signer The signer to check
     /// @param to The recipient of the transaction
     /// @param data The calldata to check against
-    /// @return isValid True if the signer is valid, false otherwise
+    /// @return bool is true if the signer is valid, false otherwise
     function _isValidSigner(address signer, address to, bytes calldata data) internal view returns (bool) {
         if (data.length > 0 && data.length < 4) {
             revert Errors.IPAccount__InvalidCalldata();
         }
-        require(data.length == 0 || data.length >= 4, "Invalid calldata");
         bytes4 selector = bytes4(0);
         if (data.length >= 4) {
             selector = bytes4(data[:4]);
         }
         // the check will revert if permission is denied
-        IAccessController(ACCESS_CONTROLLER).checkPermission(address(this), signer, to, selector);
+        IAccessController(accessController).checkPermission(address(this), signer, to, selector);
         return true;
     }
 
@@ -113,7 +113,6 @@ contract IPAccountImpl is IERC165, IIPAccount {
     /// @param signer The signer of the transaction.
     /// @param deadline The deadline of the transaction signature.
     /// @param signature The signature of the transaction, EIP-712 encoded.
-    /// @return result The return data from the transaction.
     function executeWithSig(
         address to,
         uint256 value,

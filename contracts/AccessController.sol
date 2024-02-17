@@ -33,8 +33,8 @@ contract AccessController is IAccessController, Governable {
     address public IP_ACCOUNT_REGISTRY;
     address public MODULE_REGISTRY;
 
-    /// @dev Tracks the permission granted to an encoded callpath, where the
-    /// encoded callpath = keccak256(abi.encodePacked(ipAccount, signer, to, func))
+    /// @dev Tracks the permission granted to an encoded permission path, where the
+    /// encoded permission path = keccak256(abi.encodePacked(ipAccount, signer, to, func))
     mapping(bytes32 => uint8) internal encodedPermissions;
 
     constructor(address governance) Governable(governance) {}
@@ -84,8 +84,8 @@ contract AccessController is IAccessController, Governable {
         if (permission > 2) {
             revert Errors.AccessController__PermissionIsNotValid();
         }
-        _setPermission(address(0), signer_, to_, func_, permission_);
-        emit PermissionSet(address(0), signer_, to_, func_, permission_);
+        _setPermission(address(0), signer, to, func, permission);
+        emit PermissionSet(address(0), address(0), signer, to, func, permission);
     }
 
     /// @notice Sets the permission for a specific function call
@@ -128,7 +128,7 @@ contract AccessController is IAccessController, Governable {
         }
         _setPermission(ipAccount, signer, to, func, permission);
 
-        emit PermissionSet(ipAccount_, signer_, to_, func_, permission_);
+        emit PermissionSet(IIPAccount(payable(ipAccount)).owner(), ipAccount, signer, to, func, permission);
     }
 
     /// @notice Checks the permission level for a specific function call. Reverts if permission is not granted.
