@@ -13,17 +13,17 @@ import { ILicensingModule } from "../../interfaces/modules/licensing/ILicensingM
 import { IRoyaltyModule } from "../../interfaces/modules/royalty/IRoyaltyModule.sol";
 import { Licensing } from "../../lib/Licensing.sol";
 import { Errors } from "../../lib/Errors.sol";
-import { UMLFrameworkErrors } from "../../lib/UMLFrameworkErrors.sol";
+import { PILFrameworkErrors } from "../../lib/PILFrameworkErrors.sol";
 // solhint-disable-next-line max-line-length
-import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator, RegisterUMLPolicyParams } from "../../interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
+import { IPILPolicyFrameworkManager, PILPolicy, PILAggregator, RegisterPILPolicyParams } from "../../interfaces/modules/licensing/IPILPolicyFrameworkManager.sol";
 import { BasePolicyFrameworkManager } from "../../modules/licensing/BasePolicyFrameworkManager.sol";
 import { LicensorApprovalChecker } from "../../modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
 
-/// @title UMLPolicyFrameworkManager
-/// @notice UML Policy Framework Manager implements the UML Policy Framework logic for encoding and decoding UML
+/// @title PILPolicyFrameworkManager
+/// @notice PIL Policy Framework Manager implements the PIL Policy Framework logic for encoding and decoding PIL
 /// policies into the LicenseRegistry and verifying the licensing parameters for linking, minting, and transferring.
-contract UMLPolicyFrameworkManager is
-    IUMLPolicyFrameworkManager,
+contract PILPolicyFrameworkManager is
+    IPILPolicyFrameworkManager,
     BasePolicyFrameworkManager,
     LicensorApprovalChecker,
     ReentrancyGuard
@@ -52,9 +52,9 @@ contract UMLPolicyFrameworkManager is
 
     /// @notice Registers a new policy to the registry
     /// @dev Internally, this function must generate a Licensing.Policy struct and call registerPolicy.
-    /// @param params parameters needed to register a UMLPolicy
+    /// @param params parameters needed to register a PILPolicy
     /// @return policyId The ID of the newly registered policy
-    function registerPolicy(RegisterUMLPolicyParams calldata params) external nonReentrant returns (uint256 policyId) {
+    function registerPolicy(RegisterPILPolicyParams calldata params) external nonReentrant returns (uint256 policyId) {
         /// Minting fee amount & address checked in LicensingModule, no need to check here.
         /// We don't limit charging for minting to commercial use, you could sell a NC license in theory.
         _verifyComercialUse(params.policy, params.royaltyPolicy, params.mintingFee, params.mintingFeeToken);
@@ -89,7 +89,7 @@ contract UMLPolicyFrameworkManager is
         address parentIpId,
         bytes calldata policyData
     ) external override nonReentrant onlyLicensingModule returns (bool) {
-        UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
+        PILPolicy memory policy = abi.decode(policyData, (PILPolicy));
 
         // Trying to burn a license to create a derivative, when the license doesn't allow derivatives.
         if (!policy.derivativesAllowed) {
@@ -129,7 +129,7 @@ contract UMLPolicyFrameworkManager is
         uint256 mintAmount,
         bytes memory policyData
     ) external nonReentrant onlyLicensingModule returns (bool) {
-        UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
+        PILPolicy memory policy = abi.decode(policyData, (PILPolicy));
         // If the policy defines no reciprocal derivatives are allowed (no derivatives of derivatives),
         // and we are mintingFromADerivative we don't allow minting
         if (!policy.derivativesReciprocal && mintingFromADerivative) {
@@ -149,22 +149,22 @@ contract UMLPolicyFrameworkManager is
 
     /// @notice Returns the aggregation data for inherited policies of an IP asset.
     /// @param ipId The ID of the IP asset to get the aggregator for
-    /// @return rights The UMLAggregator struct
-    function getAggregator(address ipId) external view returns (UMLAggregator memory rights) {
+    /// @return rights The PILAggregator struct
+    function getAggregator(address ipId) external view returns (PILAggregator memory rights) {
         bytes memory policyAggregatorData = LICENSING_MODULE.policyAggregatorData(address(this), ipId);
         if (policyAggregatorData.length == 0) {
-            revert UMLFrameworkErrors.UMLPolicyFrameworkManager__RightsNotFound();
+            revert PILFrameworkErrors.PILPolicyFrameworkManager__RightsNotFound();
         }
-        rights = abi.decode(policyAggregatorData, (UMLAggregator));
+        rights = abi.decode(policyAggregatorData, (PILAggregator));
     }
 
-    /// @notice gets the UMLPolicy for a given policy ID decoded from Licensing.Policy.frameworkData
+    /// @notice gets the PILPolicy for a given policy ID decoded from Licensing.Policy.frameworkData
     /// @dev Do not call this function from a smart contract, it is only for off-chain
     /// @param policyId The ID of the policy to get
-    /// @return policy The UMLPolicy struct
-    function getUMLPolicy(uint256 policyId) external view returns (UMLPolicy memory policy) {
+    /// @return policy The PILPolicy struct
+    function getPILPolicy(uint256 policyId) external view returns (PILPolicy memory policy) {
         Licensing.Policy memory pol = LICENSING_MODULE.policy(policyId);
-        return abi.decode(pol.frameworkData, (UMLPolicy));
+        return abi.decode(pol.frameworkData, (PILPolicy));
     }
 
     /// @notice Verify compatibility of one or more policies when inheriting them from one or more parent IPs.
@@ -183,11 +183,11 @@ contract UMLPolicyFrameworkManager is
         uint256 policyId,
         bytes memory policy
     ) external view onlyLicensingModule returns (bool changedAgg, bytes memory newAggregator) {
-        UMLAggregator memory agg;
-        UMLPolicy memory newPolicy = abi.decode(policy, (UMLPolicy));
+        PILAggregator memory agg;
+        PILPolicy memory newPolicy = abi.decode(policy, (PILPolicy));
         if (aggregator.length == 0) {
             // Initialize the aggregator
-            agg = UMLAggregator({
+            agg = PILAggregator({
                 commercial: newPolicy.commercialUse,
                 derivativesReciprocal: newPolicy.derivativesReciprocal,
                 lastPolicyId: policyId,
@@ -197,21 +197,21 @@ contract UMLPolicyFrameworkManager is
             });
             return (true, abi.encode(agg));
         } else {
-            agg = abi.decode(aggregator, (UMLAggregator));
+            agg = abi.decode(aggregator, (PILAggregator));
 
             // Either all are reciprocal or none are
             if (agg.derivativesReciprocal != newPolicy.derivativesReciprocal) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalValueMismatch();
+                revert PILFrameworkErrors.PILPolicyFrameworkManager__ReciprocalValueMismatch();
             } else if (agg.derivativesReciprocal && newPolicy.derivativesReciprocal) {
                 // Ids are uniqued because we hash them to compare on creation in LicenseRegistry,
                 // so we can compare the ids safely.
                 if (agg.lastPolicyId != policyId) {
-                    revert UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalButDifferentPolicyIds();
+                    revert PILFrameworkErrors.PILPolicyFrameworkManager__ReciprocalButDifferentPolicyIds();
                 }
             } else {
                 // Both non reciprocal
                 if (agg.commercial != newPolicy.commercialUse) {
-                    revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialValueMismatch();
+                    revert PILFrameworkErrors.PILPolicyFrameworkManager__CommercialValueMismatch();
                 }
 
                 bytes32 newHash = _verifHashedParams(
@@ -251,7 +251,7 @@ contract UMLPolicyFrameworkManager is
     /// @param policyData The encoded licensing policy data to be decoded by the PFM
     /// @return jsonString The OpenSea-compliant metadata URI of the policy
     function policyToJson(bytes memory policyData) public pure returns (string memory) {
-        UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
+        PILPolicy memory policy = abi.decode(policyData, (PILPolicy));
 
         /* solhint-disable */
         // Follows the OpenSea standard for JSON metadata.
@@ -297,9 +297,9 @@ contract UMLPolicyFrameworkManager is
         return json;
     }
 
-    /// @dev Encodes the commercial traits of UML policy into a JSON string for OpenSea
+    /// @dev Encodes the commercial traits of PIL policy into a JSON string for OpenSea
     /// @param policy The policy to encode
-    function _policyCommercialTraitsToJson(UMLPolicy memory policy) internal pure returns (string memory) {
+    function _policyCommercialTraitsToJson(PILPolicy memory policy) internal pure returns (string memory) {
         /* solhint-disable */
         // NOTE: TOTAL_RNFT_SUPPLY = 1000 in trait with max_value. For numbers, don't add any display_type, so that
         // they will show up in the "Ranking" section of the OpenSea UI.
@@ -324,9 +324,9 @@ contract UMLPolicyFrameworkManager is
         /* solhint-enable */
     }
 
-    /// @dev Encodes the derivative traits of UML policy into a JSON string for OpenSea
+    /// @dev Encodes the derivative traits of PIL policy into a JSON string for OpenSea
     /// @param policy The policy to encode
-    function _policyDerivativeTraitsToJson(UMLPolicy memory policy) internal pure returns (string memory) {
+    function _policyDerivativeTraitsToJson(PILPolicy memory policy) internal pure returns (string memory) {
         /* solhint-disable */
         // NOTE: TOTAL_RNFT_SUPPLY = 1000 in trait with max_value. For numbers, don't add any display_type, so that
         // they will show up in the "Ranking" section of the OpenSea UI.
@@ -354,29 +354,29 @@ contract UMLPolicyFrameworkManager is
     /// @param policy The policy to verify
     /// @param royaltyPolicy The address of the royalty policy
     // solhint-disable-next-line code-complexity
-    function _verifyComercialUse(UMLPolicy calldata policy, address royaltyPolicy, uint256 mintingFee, address mintingFeeToken) internal view {
+    function _verifyComercialUse(PILPolicy calldata policy, address royaltyPolicy, uint256 mintingFee, address mintingFeeToken) internal view {
         if (!policy.commercialUse) {
             if (policy.commercialAttribution) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddAttribution();
+                revert PILFrameworkErrors.PILPolicyFrameworkManager__CommecialDisabled_CantAddAttribution();
             }
             if (policy.commercializerChecker != address(0)) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddCommercializers();
+                revert PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddCommercializers();
             }
             if (policy.commercialRevShare > 0) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddRevShare();
+                revert PILFrameworkErrors.PILPolicyFrameworkManager__CommecialDisabled_CantAddRevShare();
             }
             if (royaltyPolicy != address(0)) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddRoyaltyPolicy();
+                revert PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddRoyaltyPolicy();
             }
             if (mintingFee > 0) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddMintingFee();
+                revert PILFrameworkErrors.PILPolicyFrameworkManager__CommecialDisabled_CantAddMintingFee();
             }
             if (mintingFeeToken != address(0)) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddMintingFeeToken();
+                revert PILFrameworkErrors.PILPolicyFrameworkManager__CommecialDisabled_CantAddMintingFeeToken();
             }
         } else {
             if (royaltyPolicy == address(0)) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialEnabled_RoyaltyPolicyRequired();
+                revert PILFrameworkErrors.PILPolicyFrameworkManager__CommecialEnabled_RoyaltyPolicyRequired();
             }
             if (policy.commercializerChecker != address(0)) {
                 if (!policy.commercializerChecker.supportsInterface(type(IHookModule).interfaceId)) {
@@ -391,16 +391,16 @@ contract UMLPolicyFrameworkManager is
 
     /// @notice Checks the configuration of derivative parameters and throws if the policy is not compliant
     /// @param policy The policy to verify
-    function _verifyDerivatives(UMLPolicy calldata policy) internal pure {
+    function _verifyDerivatives(PILPolicy calldata policy) internal pure {
         if (!policy.derivativesAllowed) {
             if (policy.derivativesAttribution) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddAttribution();
+                revert PILFrameworkErrors.PILPolicyFrameworkManager__DerivativesDisabled_CantAddAttribution();
             }
             if (policy.derivativesApproval) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddApproval();
+                revert PILFrameworkErrors.PILPolicyFrameworkManager__DerivativesDisabled_CantAddApproval();
             }
             if (policy.derivativesReciprocal) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddReciprocal();
+                revert PILFrameworkErrors.PILPolicyFrameworkManager__DerivativesDisabled_CantAddReciprocal();
             }
         }
     }
@@ -419,7 +419,7 @@ contract UMLPolicyFrameworkManager is
             return newHash;
         }
         if (oldHash != permissive && newHash != permissive) {
-            revert UMLFrameworkErrors.UMLPolicyFrameworkManager__StringArrayMismatch();
+            revert PILFrameworkErrors.PILPolicyFrameworkManager__StringArrayMismatch();
         }
         if (oldHash != permissive) {
             return oldHash;

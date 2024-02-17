@@ -6,7 +6,7 @@ import { ILicenseRegistry } from "../../../interfaces/registries/ILicenseRegistr
 
 /// @title LicensorApprovalChecker
 /// @notice Manages the approval of derivative IP accounts by the licensor. Used to verify
-/// licensing terms like "Derivatives With Approval" in UML.
+/// licensing terms like "Derivatives With Approval" in PIL.
 abstract contract LicensorApprovalChecker is AccessControlled {
     /// @notice Emits when a derivative IP account is approved by the licensor.
     /// @param licenseId The ID of the license waiting for approval

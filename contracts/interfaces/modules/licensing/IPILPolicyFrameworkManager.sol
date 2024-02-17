@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 import { IPolicyFrameworkManager } from "../../../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 
-/// @notice Licensing parameters for the Universal Media License v1 (UML) standard
+/// @notice Licensing parameters for the Programmable IP License v1 (PIL) standard
 /// @param transferable Whether or not the license is transferable
 /// @param attribution Whether or not attribution is required when reproducing the work
 /// @param commercialUse Whether or not the work can be used commercially
@@ -20,7 +20,7 @@ import { IPolicyFrameworkManager } from "../../../interfaces/modules/licensing/I
 /// @param distributionChannels List of distribution channels where the license is valid. Empty if no restrictions.
 /// @param royaltyPolicy Address of a royalty policy contract (e.g. RoyaltyPolicyLS) that will handle royalty payments
 /// TODO: DO NOT deploy on production networks without hashing string[] instead of storing them
-struct UMLPolicy {
+struct PILPolicy {
     bool attribution;
     bool commercialUse;
     bool commercialAttribution;
@@ -40,13 +40,13 @@ struct UMLPolicy {
 /// @param royaltyPolicy Address of a royalty policy contract (e.g. RoyaltyPolicyLS) that will handle royalty payments
 /// @param mintingFee Fee to be paid when minting a license
 /// @param mintingFeeToken Token to be used to pay the minting fee
-/// @param umlPolicy UMLPolicy compliant licensing term values
-struct RegisterUMLPolicyParams {
+/// @param policy PILPolicy compliant licensing term values
+struct RegisterPILPolicyParams {
     bool transferable;
     address royaltyPolicy;
     uint256 mintingFee;
     address mintingFeeToken;
-    UMLPolicy policy;
+    PILPolicy policy;
 }
 
 /// @notice Struct that accumulates values of inherited policies so we can verify compatibility when inheriting
@@ -59,7 +59,7 @@ struct RegisterUMLPolicyParams {
 /// @param territoriesAcc The last hash of the territories array
 /// @param distributionChannelsAcc The last hash of the distributionChannels array
 /// @param contentRestrictionsAcc The last hash of the contentRestrictions array
-struct UMLAggregator {
+struct PILAggregator {
     bool commercial;
     bool derivativesReciprocal;
     uint256 lastPolicyId;
@@ -68,23 +68,23 @@ struct UMLAggregator {
     bytes32 contentRestrictionsAcc;
 }
 
-/// @title IUMLPolicyFrameworkManager
-/// @notice Defines the interface for a Policy Framework Manager compliant with the UML standard
-interface IUMLPolicyFrameworkManager is IPolicyFrameworkManager {
+/// @title IPILPolicyFrameworkManager
+/// @notice Defines the interface for a Policy Framework Manager compliant with the PIL standard
+interface IPILPolicyFrameworkManager is IPolicyFrameworkManager {
     /// @notice Registers a new policy to the registry
     /// @dev Internally, this function must generate a Licensing.Policy struct and call registerPolicy.
-    /// @param params parameters needed to register a UMLPolicy
+    /// @param params parameters needed to register a PILPolicy
     /// @return policyId The ID of the newly registered policy
-    function registerPolicy(RegisterUMLPolicyParams calldata params) external returns (uint256 policyId);
+    function registerPolicy(RegisterPILPolicyParams calldata params) external returns (uint256 policyId);
 
     /// @notice Returns the aggregation data for inherited policies of an IP asset.
     /// @param ipId The ID of the IP asset to get the aggregator for
-    /// @return rights The UMLAggregator struct
-    function getAggregator(address ipId) external view returns (UMLAggregator memory rights);
+    /// @return rights The PILAggregator struct
+    function getAggregator(address ipId) external view returns (PILAggregator memory rights);
 
-    /// @notice gets the UMLPolicy for a given policy ID decoded from Licensing.Policy.frameworkData
+    /// @notice gets the PILPolicy for a given policy ID decoded from Licensing.Policy.frameworkData
     /// @dev Do not call this function from a smart contract, it is only for off-chain
     /// @param policyId The ID of the policy to get
-    /// @return policy The UMLPolicy struct
-    function getUMLPolicy(uint256 policyId) external view returns (UMLPolicy memory policy);
+    /// @return policy The PILPolicy struct
+    function getPILPolicy(uint256 policyId) external view returns (PILPolicy memory policy);
 }

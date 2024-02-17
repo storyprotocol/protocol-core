@@ -5,25 +5,25 @@ import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
 import { IRoyaltyModule } from "contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
 import { Errors } from "contracts/lib/Errors.sol";
-import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { PILPolicyFrameworkManager } from "contracts/modules/licensing/PILPolicyFrameworkManager.sol";
 
 import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
-contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
-    UMLPolicyFrameworkManager internal umlFramework;
+contract PILPolicyFrameworkCompatibilityTest is BaseTest {
+    PILPolicyFrameworkManager internal pilFramework;
 
     string internal licenseUrl = "https://example.com/license";
     address internal ipId1;
     address internal ipId2;
 
-    modifier withUMLPolicySimple(
+    modifier withPILPolicySimple(
         string memory name,
         bool commercial,
         bool derivatives,
         bool reciprocal
     ) {
-        _mapUMLPolicySimple(name, commercial, derivatives, reciprocal, 100);
-        _addUMLPolicyFromMapping(name, address(umlFramework));
+        _mapPILPolicySimple(name, commercial, derivatives, reciprocal, 100);
+        _addPILPolicyFromMapping(name, address(pilFramework));
         _;
     }
 
@@ -32,7 +32,7 @@ contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
         // Otherwise, minting license will fail because there's no royalty policy set for license policy,
         // AND bob (the caller) is not the owner of IPAccount 1.
         vm.startPrank(bob);
-        uint256 licenseId = licensingModule.mintLicense(_getUmlPolicyId(policyName), ipId1, 1, alice, "");
+        uint256 licenseId = licensingModule.mintLicense(_getPilPolicyId(policyName), ipId1, 1, alice, "");
 
         vm.startPrank(alice);
         uint256[] memory licenseIds = new uint256[](1);
@@ -65,15 +65,15 @@ contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
         licensingModule = ILicensingModule(getLicensingModule());
         royaltyModule = IRoyaltyModule(getRoyaltyModule());
 
-        umlFramework = new UMLPolicyFrameworkManager(
+        pilFramework = new PILPolicyFrameworkManager(
             address(accessController),
             address(ipAccountRegistry),
             address(licensingModule),
-            "UMLPolicyFrameworkManager",
+            "PILPolicyFrameworkManager",
             licenseUrl
         );
 
-        licensingModule.registerPolicyFrameworkManager(address(umlFramework));
+        licensingModule.registerPolicyFrameworkManager(address(pilFramework));
 
         mockNFT.mintId(bob, 1);
         mockNFT.mintId(alice, 2);
@@ -90,48 +90,48 @@ contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
     //////  SETTING POLICIES IN ORIGINAL WORK (NO PARENTS) //////
     /////////////////////////////////////////////////////////////
 
-    function test_UMLPolicyFramework_originalWork_bobAddsDifferentPoliciesAndAliceMints()
+    function test_PILPolicyFramework_originalWork_bobAddsDifferentPoliciesAndAliceMints()
         public
-        withUMLPolicySimple("comm_deriv", true, true, false)
-        withUMLPolicySimple("comm_non_deriv", true, false, false)
+        withPILPolicySimple("comm_deriv", true, true, false)
+        withPILPolicySimple("comm_non_deriv", true, false, false)
     {
         // Bob can add different policies on IP1 without compatibility checks.
         vm.startPrank(bob);
-        licensingModule.addPolicyToIp(ipId1, _getUmlPolicyId("comm_deriv"));
-        licensingModule.addPolicyToIp(ipId1, _getUmlPolicyId("comm_non_deriv"));
+        licensingModule.addPolicyToIp(ipId1, _getPilPolicyId("comm_deriv"));
+        licensingModule.addPolicyToIp(ipId1, _getPilPolicyId("comm_non_deriv"));
         vm.stopPrank();
 
         bool isInherited = false;
         assertEq(licensingModule.totalPoliciesForIp(isInherited, ipId1), 2);
         assertTrue(
-            licensingModule.isPolicyIdSetForIp(isInherited, ipId1, _getUmlPolicyId("comm_deriv")),
+            licensingModule.isPolicyIdSetForIp(isInherited, ipId1, _getPilPolicyId("comm_deriv")),
             "comm_deriv not set"
         );
         assertTrue(
-            licensingModule.isPolicyIdSetForIp(isInherited, ipId1, _getUmlPolicyId("comm_non_deriv")),
+            licensingModule.isPolicyIdSetForIp(isInherited, ipId1, _getPilPolicyId("comm_non_deriv")),
             "comm_non_deriv not set"
         );
 
         // Others can mint licenses to make derivatives of IP1 from each different policy,
         // as long as they pass the verifications
-        uint256 licenseId1 = licensingModule.mintLicense(_getUmlPolicyId("comm_deriv"), ipId1, 1, dan, "");
+        uint256 licenseId1 = licensingModule.mintLicense(_getPilPolicyId("comm_deriv"), ipId1, 1, dan, "");
         assertEq(licenseRegistry.balanceOf(dan, licenseId1), 1, "dan doesn't have license1");
 
-        uint256 licenseId2 = licensingModule.mintLicense(_getUmlPolicyId("comm_non_deriv"), ipId1, 1, dan, "");
+        uint256 licenseId2 = licensingModule.mintLicense(_getPilPolicyId("comm_non_deriv"), ipId1, 1, dan, "");
         assertEq(licenseRegistry.balanceOf(dan, licenseId2), 1, "dan doesn't have license2");
     }
 
-    function test_UMLPolicyFramework_originalWork_bobMintsWithDifferentPolicies()
+    function test_PILPolicyFramework_originalWork_bobMintsWithDifferentPolicies()
         public
-        withUMLPolicySimple("comm_deriv", true, true, false)
-        withUMLPolicySimple("comm_non_deriv", true, false, false)
+        withPILPolicySimple("comm_deriv", true, true, false)
+        withPILPolicySimple("comm_non_deriv", true, false, false)
     {
         // Bob can add different policies on IP1 without compatibility checks.
         vm.startPrank(bob);
-        uint256 licenseId1 = licensingModule.mintLicense(_getUmlPolicyId("comm_deriv"), ipId1, 2, dan, "");
+        uint256 licenseId1 = licensingModule.mintLicense(_getPilPolicyId("comm_deriv"), ipId1, 2, dan, "");
         assertEq(licenseRegistry.balanceOf(dan, licenseId1), 2, "dan doesn't have license1");
 
-        uint256 licenseId2 = licensingModule.mintLicense(_getUmlPolicyId("comm_non_deriv"), ipId1, 1, dan, "");
+        uint256 licenseId2 = licensingModule.mintLicense(_getPilPolicyId("comm_non_deriv"), ipId1, 1, dan, "");
         assertEq(licenseRegistry.balanceOf(dan, licenseId2), 1, "dan doesn't have license2");
         vm.stopPrank();
     }
@@ -140,13 +140,13 @@ contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
     //////       LICENSES THAT DONT ALLOW DERIVATIVES          //////
     /////////////////////////////////////////////////////////////////
 
-    function test_UMLPolicyFramework_non_derivative_license()
+    function test_PILPolicyFramework_non_derivative_license()
         public
-        withUMLPolicySimple("non_comm_no_deriv", true, false, false)
+        withPILPolicySimple("non_comm_no_deriv", true, false, false)
     {
         // Bob can add different policies on IP1 without compatibility checks.
         vm.startPrank(bob);
-        uint256 licenseId1 = licensingModule.mintLicense(_getUmlPolicyId("non_comm_no_deriv"), ipId1, 2, alice, "");
+        uint256 licenseId1 = licensingModule.mintLicense(_getPilPolicyId("non_comm_no_deriv"), ipId1, 2, alice, "");
         assertEq(licenseRegistry.balanceOf(alice, licenseId1), 2, "dan doesn't have license1");
         vm.stopPrank();
 
@@ -162,75 +162,75 @@ contract UMLPolicyFrameworkCompatibilityTest is BaseTest {
     //////  SETTING POLICIES IN DERIVATIVE WORK (WITH PARENTS) //////
     /////////////////////////////////////////////////////////////////
 
-    function test_UMLPolicyFramework_derivative_revert_cantMintDerivativeOfDerivative()
+    function test_PILPolicyFramework_derivative_revert_cantMintDerivativeOfDerivative()
         public
-        withUMLPolicySimple("comm_non_recip", true, true, false)
+        withPILPolicySimple("comm_non_recip", true, true, false)
         withAliceOwningDerivativeIp2("comm_non_recip")
     {
         vm.expectRevert(Errors.LicensingModule__MintLicenseParamFailed.selector);
         vm.startPrank(dan);
-        licensingModule.mintLicense(_getUmlPolicyId("comm_non_recip"), ipId2, 1, dan, "");
+        licensingModule.mintLicense(_getPilPolicyId("comm_non_recip"), ipId2, 1, dan, "");
 
         vm.expectRevert(Errors.LicensingModule__MintLicenseParamFailed.selector);
         vm.startPrank(alice);
-        licensingModule.mintLicense(_getUmlPolicyId("comm_non_recip"), ipId2, 1, alice, "");
+        licensingModule.mintLicense(_getPilPolicyId("comm_non_recip"), ipId2, 1, alice, "");
     }
 
-    function test_UMLPolicyFramework_derivative_revert_AliceCantSetPolicyOnDerivativeOfDerivative()
+    function test_PILPolicyFramework_derivative_revert_AliceCantSetPolicyOnDerivativeOfDerivative()
         public
-        withUMLPolicySimple("comm_non_recip", true, true, false)
-        withUMLPolicySimple("comm_deriv", true, true, false)
+        withPILPolicySimple("comm_non_recip", true, true, false)
+        withPILPolicySimple("comm_deriv", true, true, false)
         withAliceOwningDerivativeIp2("comm_non_recip")
     {
         vm.expectRevert(Errors.LicensingModule__DerivativesCannotAddPolicy.selector);
         vm.prank(alice);
-        licensingModule.addPolicyToIp(ipId2, _getUmlPolicyId("comm_deriv"));
+        licensingModule.addPolicyToIp(ipId2, _getPilPolicyId("comm_deriv"));
 
-        _mapUMLPolicySimple("other_policy", true, true, false, 100);
-        _getMappedUmlPolicy("other_policy").attribution = false;
-        _addUMLPolicyFromMapping("other_policy", address(umlFramework));
+        _mapPILPolicySimple("other_policy", true, true, false, 100);
+        _getMappedPilPolicy("other_policy").attribution = false;
+        _addPILPolicyFromMapping("other_policy", address(pilFramework));
 
         vm.expectRevert(Errors.LicensingModule__DerivativesCannotAddPolicy.selector);
         vm.prank(alice);
-        licensingModule.addPolicyToIp(ipId2, _getUmlPolicyId("other_policy"));
+        licensingModule.addPolicyToIp(ipId2, _getPilPolicyId("other_policy"));
     }
 
     /////////////////////////////////////////////////////////////////
     //////                RECIPROCAL DERIVATIVES               //////
     /////////////////////////////////////////////////////////////////
 
-    function test_UMLPolicyFramework_reciprocal_danMintsLicenseFromIp2()
+    function test_PILPolicyFramework_reciprocal_danMintsLicenseFromIp2()
         public
-        withUMLPolicySimple("comm_reciprocal", true, true, true)
+        withPILPolicySimple("comm_reciprocal", true, true, true)
         withAliceOwningDerivativeIp2("comm_reciprocal")
     {
         vm.prank(dan);
-        uint256 licenseId = licensingModule.mintLicense(_getUmlPolicyId("comm_reciprocal"), ipId2, 1, dan, "");
+        uint256 licenseId = licensingModule.mintLicense(_getPilPolicyId("comm_reciprocal"), ipId2, 1, dan, "");
         assertEq(licenseRegistry.balanceOf(dan, licenseId), 1, "dan doesn't have license");
     }
 
-    function test_UMLPolicyFramework_reciprocal_AliceMintsLicenseForP1inIP2()
+    function test_PILPolicyFramework_reciprocal_AliceMintsLicenseForP1inIP2()
         public
-        withUMLPolicySimple("comm_reciprocal", true, true, true)
+        withPILPolicySimple("comm_reciprocal", true, true, true)
         withAliceOwningDerivativeIp2("comm_reciprocal")
     {
         vm.prank(alice);
-        uint256 licenseId = licensingModule.mintLicense(_getUmlPolicyId("comm_reciprocal"), ipId2, 1, alice, "");
+        uint256 licenseId = licensingModule.mintLicense(_getPilPolicyId("comm_reciprocal"), ipId2, 1, alice, "");
         assertEq(licenseRegistry.balanceOf(alice, licenseId), 1, "Alice doesn't have license");
     }
 
-    function test_UMLPolicyFramework_reciprocal_revert_AliceTriesToSetPolicyInReciprocalDeriv()
+    function test_PILPolicyFramework_reciprocal_revert_AliceTriesToSetPolicyInReciprocalDeriv()
         public
-        withUMLPolicySimple("comm_reciprocal", true, true, true)
-        withUMLPolicySimple("other_policy", true, true, false)
+        withPILPolicySimple("comm_reciprocal", true, true, true)
+        withPILPolicySimple("other_policy", true, true, false)
         withAliceOwningDerivativeIp2("comm_reciprocal")
     {
         vm.expectRevert(Errors.LicensingModule__DerivativesCannotAddPolicy.selector);
         vm.prank(alice);
-        licensingModule.addPolicyToIp(ipId2, _getUmlPolicyId("other_policy"));
+        licensingModule.addPolicyToIp(ipId2, _getPilPolicyId("other_policy"));
 
         vm.expectRevert(Errors.LicensingModule__DerivativesCannotAddPolicy.selector);
         vm.prank(alice);
-        licensingModule.addPolicyToIp(ipId2, _getUmlPolicyId("comm_reciprocal"));
+        licensingModule.addPolicyToIp(ipId2, _getPilPolicyId("comm_reciprocal"));
     }
 }

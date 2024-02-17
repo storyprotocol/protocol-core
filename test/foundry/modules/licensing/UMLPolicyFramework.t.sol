@@ -4,17 +4,17 @@ pragma solidity ^0.8.23;
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";
 import { Errors } from "contracts/lib/Errors.sol";
-import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
+import { PILFrameworkErrors } from "contracts/lib/PILFrameworkErrors.sol";
 // solhint-disable-next-line max-line-length
-import { UMLPolicy, RegisterUMLPolicyParams } from "contracts/interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
-import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { PILPolicy, RegisterPILPolicyParams } from "contracts/interfaces/modules/licensing/IPILPolicyFrameworkManager.sol";
+import { PILPolicyFrameworkManager } from "contracts/modules/licensing/PILPolicyFrameworkManager.sol";
 
 import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
 import { MockTokenGatedHook } from "test/foundry/mocks/MockTokenGatedHook.sol";
 import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
-contract UMLPolicyFrameworkTest is BaseTest {
-    UMLPolicyFrameworkManager internal umlFramework;
+contract PILPolicyFrameworkTest is BaseTest {
+    PILPolicyFrameworkManager internal pilFramework;
 
     string public licenseUrl = "https://example.com/license";
     address public ipId1;
@@ -50,15 +50,15 @@ contract UMLPolicyFrameworkTest is BaseTest {
         accessController = IAccessController(getAccessController());
         licensingModule = ILicensingModule(getLicensingModule());
 
-        umlFramework = new UMLPolicyFrameworkManager(
+        pilFramework = new PILPolicyFrameworkManager(
             address(accessController),
             address(ipAccountRegistry),
             address(licensingModule),
-            "UMLPolicyFrameworkManager",
+            "PILPolicyFrameworkManager",
             licenseUrl
         );
 
-        licensingModule.registerPolicyFrameworkManager(address(umlFramework));
+        licensingModule.registerPolicyFrameworkManager(address(pilFramework));
 
         mockNFT.mintId(alice, 1);
         mockNFT.mintId(alice, 2);
@@ -66,24 +66,24 @@ contract UMLPolicyFrameworkTest is BaseTest {
         ipId2 = ipAccountRegistry.registerIpAccount(block.chainid, address(mockNFT), 2);
     }
 
-    function test_UMLPolicyFrameworkManager__valuesSetCorrectly() public {
+    function test_PILPolicyFrameworkManager__valuesSetCorrectly() public {
         string[] memory territories = new string[](2);
         territories[0] = "test1";
         territories[1] = "test2";
         string[] memory distributionChannels = new string[](1);
         distributionChannels[0] = "test3";
-        _mapUMLPolicySimple({
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
         inputA.policy.territories = territories;
         inputA.policy.distributionChannels = distributionChannels;
-        uint256 policyId = umlFramework.registerPolicy(inputA);
-        UMLPolicy memory policy = umlFramework.getUMLPolicy(policyId);
+        uint256 policyId = pilFramework.registerPolicy(inputA);
+        PILPolicy memory policy = pilFramework.getPILPolicy(policyId);
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(inputA.policy)));
     }
 
@@ -91,57 +91,57 @@ contract UMLPolicyFrameworkTest is BaseTest {
     //////              COMMERCIAL USE TERMS               //////
     /////////////////////////////////////////////////////////////
 
-    function test_UMLPolicyFrameworkManager__commercialUse_disallowed_revert_settingIncompatibleTerms() public {
+    function test_PILPolicyFrameworkManager__commercialUse_disallowed_revert_settingIncompatibleTerms() public {
         // If no commercial values allowed
-        _mapUMLPolicySimple({
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: false,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
         inputA.policy.commercialAttribution = true;
         // commercialAttribution = true should revert
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddAttribution.selector);
-        umlFramework.registerPolicy(inputA);
+        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__CommecialDisabled_CantAddAttribution.selector);
+        pilFramework.registerPolicy(inputA);
         // Non empty commercializers should revert
         inputA.policy.commercialAttribution = false;
         inputA.policy.commercializerChecker = address(tokenGatedHook);
         inputA.policy.commercializerCheckerData = abi.encode(address(gatedNftFoo));
         vm.expectRevert(
-            UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddCommercializers.selector
+            PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddCommercializers.selector
         );
-        umlFramework.registerPolicy(inputA);
+        pilFramework.registerPolicy(inputA);
         // No rev share should be set; revert
         inputA.policy.commercializerChecker = address(0);
         inputA.policy.commercializerCheckerData = "";
         inputA.policy.commercialRevShare = 1;
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddRevShare.selector);
-        umlFramework.registerPolicy(inputA);
+        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__CommecialDisabled_CantAddRevShare.selector);
+        pilFramework.registerPolicy(inputA);
     }
 
-    function test_UMLPolicyFrameworkManager__commercialUse_valuesSetCorrectly() public {
-        _mapUMLPolicySimple({
+    function test_PILPolicyFrameworkManager__commercialUse_valuesSetCorrectly() public {
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: true,
             derivatives: true,
             reciprocal: true,
             commercialRevShare: 123123
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
         inputA.policy.commercialAttribution = true;
         inputA.policy.commercializerChecker = address(0);
         inputA.policy.commercializerCheckerData = "";
-        uint256 policyId = umlFramework.registerPolicy(inputA);
-        UMLPolicy memory policy = umlFramework.getUMLPolicy(policyId);
+        uint256 policyId = pilFramework.registerPolicy(inputA);
+        PILPolicy memory policy = pilFramework.getPILPolicy(policyId);
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(inputA.policy)));
     }
 
-    function test_UMLPolicyFrameworkManager__commercialUse_InvalidCommericalizer() public {
+    function test_PILPolicyFrameworkManager__commercialUse_InvalidCommericalizer() public {
         address invalidCommercializerChecker = address(0x123);
         bytes memory invalideCommercializerCheckerData = abi.encode(address(0x456));
-        UMLPolicy memory policyData = UMLPolicy({
+        PILPolicy memory policyData = PILPolicy({
             attribution: false,
             commercialUse: true,
             commercialAttribution: true,
@@ -157,7 +157,7 @@ contract UMLPolicyFrameworkTest is BaseTest {
             contentRestrictions: emptyStringArray
         });
 
-        RegisterUMLPolicyParams memory input = RegisterUMLPolicyParams({
+        RegisterPILPolicyParams memory input = RegisterPILPolicyParams({
             transferable: true,
             royaltyPolicy: address(0xbeef),
             mintingFee: 0,
@@ -171,52 +171,52 @@ contract UMLPolicyFrameworkTest is BaseTest {
                 invalidCommercializerChecker
             )
         );
-        umlFramework.registerPolicy(input);
+        pilFramework.registerPolicy(input);
 
         input.policy.commercializerChecker = address(tokenGatedHook);
         input.policy.commercializerCheckerData = invalideCommercializerCheckerData;
         vm.expectRevert("MockTokenGatedHook: Invalid token address");
-        umlFramework.registerPolicy(input);
+        pilFramework.registerPolicy(input);
     }
 
-    function test_UMLPolicyFrameworkManager__derivatives_notAllowed_revert_settingIncompatibleTerms() public {
+    function test_PILPolicyFrameworkManager__derivatives_notAllowed_revert_settingIncompatibleTerms() public {
         // If no derivative values allowed
-        _mapUMLPolicySimple({
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: true,
             derivatives: false,
             reciprocal: false,
             commercialRevShare: 123123
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
         inputA.policy.derivativesAttribution = true;
         // derivativesAttribution = true should revert
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddAttribution.selector);
-        umlFramework.registerPolicy(inputA);
+        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__DerivativesDisabled_CantAddAttribution.selector);
+        pilFramework.registerPolicy(inputA);
         // Requesting approval for derivatives should revert
         inputA.policy.derivativesAttribution = false;
         inputA.policy.derivativesApproval = true;
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddApproval.selector);
-        umlFramework.registerPolicy(inputA);
+        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__DerivativesDisabled_CantAddApproval.selector);
+        pilFramework.registerPolicy(inputA);
         // Setting reciprocal license should revert
         inputA.policy.derivativesApproval = false;
         inputA.policy.derivativesReciprocal = true;
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddReciprocal.selector);
-        umlFramework.registerPolicy(inputA);
+        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__DerivativesDisabled_CantAddReciprocal.selector);
+        pilFramework.registerPolicy(inputA);
     }
 
-    function test_UMLPolicyFrameworkManager__derivatives_valuesSetCorrectly() public {
-        _mapUMLPolicySimple({
+    function test_PILPolicyFrameworkManager__derivatives_valuesSetCorrectly() public {
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: true,
             derivatives: true,
             reciprocal: true,
             commercialRevShare: 123123
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
         inputA.policy.derivativesAttribution = true;
-        uint256 policyId = umlFramework.registerPolicy(inputA);
-        UMLPolicy memory policy = umlFramework.getUMLPolicy(policyId);
+        uint256 policyId = pilFramework.registerPolicy(inputA);
+        PILPolicy memory policy = pilFramework.getPILPolicy(policyId);
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(inputA.policy)));
     }
 
@@ -224,26 +224,26 @@ contract UMLPolicyFrameworkTest is BaseTest {
     //////                  APPROVAL TERMS                 //////
     /////////////////////////////////////////////////////////////
 
-    function test_UMLPolicyFrameworkManager_derivatives_withApproval_revert_linkNotApproved() public {
-        _mapUMLPolicySimple({
+    function test_PILPolicyFrameworkManager_derivatives_withApproval_revert_linkNotApproved() public {
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: false,
             derivatives: true,
             reciprocal: true,
             commercialRevShare: 123123
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
         inputA.policy.derivativesApproval = true;
-        uint256 policyId = umlFramework.registerPolicy(inputA);
+        uint256 policyId = pilFramework.registerPolicy(inputA);
         vm.prank(alice);
         licensingModule.addPolicyToIp(ipId1, policyId);
 
         uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, alice, "");
-        assertFalse(umlFramework.isDerivativeApproved(licenseId, ipId2));
+        assertFalse(pilFramework.isDerivativeApproved(licenseId, ipId2));
 
         vm.prank(licenseRegistry.licensorIpId(licenseId));
-        umlFramework.setApproval(licenseId, ipId2, false);
-        assertFalse(umlFramework.isDerivativeApproved(licenseId, ipId2));
+        pilFramework.setApproval(licenseId, ipId2, false);
+        assertFalse(pilFramework.isDerivativeApproved(licenseId, ipId2));
 
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
@@ -253,27 +253,27 @@ contract UMLPolicyFrameworkTest is BaseTest {
         licensingModule.linkIpToParents(licenseIds, ipId2, "");
     }
 
-    function test_UMLPolicyFrameworkManager__derivatives_withApproval_linkApprovedIpId() public {
-        _mapUMLPolicySimple({
+    function test_PILPolicyFrameworkManager__derivatives_withApproval_linkApprovedIpId() public {
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: false,
             derivatives: true,
             reciprocal: true,
             commercialRevShare: 0
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
         inputA.policy.derivativesApproval = true;
-        uint256 policyId = umlFramework.registerPolicy(inputA);
+        uint256 policyId = pilFramework.registerPolicy(inputA);
 
         vm.prank(alice);
         licensingModule.addPolicyToIp(ipId1, policyId);
 
         uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, alice, "");
-        assertFalse(umlFramework.isDerivativeApproved(licenseId, ipId2));
+        assertFalse(pilFramework.isDerivativeApproved(licenseId, ipId2));
 
         vm.prank(licenseRegistry.licensorIpId(licenseId));
-        umlFramework.setApproval(licenseId, ipId2, true);
-        assertTrue(umlFramework.isDerivativeApproved(licenseId, ipId2));
+        pilFramework.setApproval(licenseId, ipId2, true);
+        assertTrue(pilFramework.isDerivativeApproved(licenseId, ipId2));
 
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
@@ -287,17 +287,17 @@ contract UMLPolicyFrameworkTest is BaseTest {
     //////                  TRANSFER TERMS                 //////
     /////////////////////////////////////////////////////////////
 
-    function test_UMLPolicyFrameworkManager__transferrable() public {
-        _mapUMLPolicySimple({
+    function test_PILPolicyFrameworkManager__transferrable() public {
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: false,
             derivatives: true,
             reciprocal: true,
             commercialRevShare: 123123
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
         inputA.transferable = true;
-        uint256 policyId = umlFramework.registerPolicy(inputA);
+        uint256 policyId = pilFramework.registerPolicy(inputA);
         vm.prank(alice);
         licensingModule.addPolicyToIp(ipId1, policyId);
         uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder, "");
@@ -309,17 +309,17 @@ contract UMLPolicyFrameworkTest is BaseTest {
         assertEq(licenseRegistry.balanceOf(licenseHolder2, licenseId), 1);
     }
 
-    function test_UMLPolicyFrameworkManager__nonTransferrable_revertIfTransferExceptFromLicensor() public {
-        _mapUMLPolicySimple({
+    function test_PILPolicyFrameworkManager__nonTransferrable_revertIfTransferExceptFromLicensor() public {
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: false,
             derivatives: true,
             reciprocal: true,
             commercialRevShare: 123123
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
         inputA.transferable = false;
-        uint256 policyId = umlFramework.registerPolicy(inputA);
+        uint256 policyId = pilFramework.registerPolicy(inputA);
         vm.prank(alice);
         licensingModule.addPolicyToIp(ipId1, policyId);
         uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 1, licenseHolder, "");

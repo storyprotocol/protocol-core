@@ -8,7 +8,7 @@ import { ERC6551AccountLib } from "erc6551/lib/ERC6551AccountLib.sol";
 // contracts
 import { Errors } from "contracts/lib/Errors.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
-import { UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { PILPolicy } from "contracts/modules/licensing/PILPolicyFrameworkManager.sol";
 // test
 import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
@@ -42,12 +42,12 @@ contract TestArbitrationPolicySP is BaseTest {
 
         USDC.mint(ipAccount1, 10000 * 10 ** 6);
 
-        _setUMLPolicyFrameworkManager();
-        _addUMLPolicy(
+        _setPILPolicyFrameworkManager();
+        _addPILPolicy(
             "cheap_flexible",
             true,
             address(royaltyPolicyLAP),
-            UMLPolicy({
+            PILPolicy({
                 attribution: false,
                 commercialUse: true,
                 commercialAttribution: true,
@@ -79,7 +79,7 @@ contract TestArbitrationPolicySP is BaseTest {
         vm.startPrank(u.admin);
         ipAssetRegistry.setApprovalForAll(address(registrationModule), true);
         ipAddr = registrationModule.registerRootIp(
-            policyIds["uml_cheap_flexible"],
+            policyIds["pil_cheap_flexible"],
             address(mockNFT),
             0,
             "IPAccount1",

@@ -6,15 +6,15 @@ import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicens
 import { IRoyaltyModule } from "contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { Licensing } from "contracts/lib/Licensing.sol";
-import { UMLFrameworkErrors } from "contracts/lib/UMLFrameworkErrors.sol";
+import { PILFrameworkErrors } from "contracts/lib/PILFrameworkErrors.sol";
 // solhint-disable-next-line max-line-length
-import { RegisterUMLPolicyParams } from "contracts/interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
-import { UMLPolicyFrameworkManager } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+import { RegisterPILPolicyParams } from "contracts/interfaces/modules/licensing/IPILPolicyFrameworkManager.sol";
+import { PILPolicyFrameworkManager } from "contracts/modules/licensing/PILPolicyFrameworkManager.sol";
 
 import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
-contract UMLPolicyFrameworkMultiParentTest is BaseTest {
-    UMLPolicyFrameworkManager internal umlFramework;
+contract PILPolicyFrameworkMultiParentTest is BaseTest {
+    PILPolicyFrameworkManager internal pilFramework;
     string internal licenseUrl = "https://example.com/license";
     address internal ipId1;
     address internal ipId2;
@@ -25,14 +25,14 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
 
     mapping(address => address) internal ipIdToOwner;
 
-    modifier withUMLPolicySimple(
+    modifier withPILPolicySimple(
         string memory name,
         bool commercial,
         bool derivatives,
         bool reciprocal
     ) {
-        _mapUMLPolicySimple(name, commercial, derivatives, reciprocal, 100);
-        _addUMLPolicyFromMapping(name, address(umlFramework));
+        _mapPILPolicySimple(name, commercial, derivatives, reciprocal, 100);
+        _addPILPolicyFromMapping(name, address(pilFramework));
         _;
     }
 
@@ -41,7 +41,7 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         address ipId,
         address owner
     ) {
-        uint256 policyId = _getUmlPolicyId(policyName);
+        uint256 policyId = _getPilPolicyId(policyName);
 
         Licensing.Policy memory policy = licensingModule.policy(policyId);
 
@@ -74,15 +74,15 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         licensingModule = ILicensingModule(getLicensingModule());
         royaltyModule = IRoyaltyModule(getRoyaltyModule());
 
-        umlFramework = new UMLPolicyFrameworkManager(
+        pilFramework = new PILPolicyFrameworkManager(
             address(accessController),
             address(ipAccountRegistry),
             address(licensingModule),
-            "UMLPolicyFrameworkManager",
+            "PILPolicyFrameworkManager",
             licenseUrl
         );
 
-        licensingModule.registerPolicyFrameworkManager(address(umlFramework));
+        licensingModule.registerPolicyFrameworkManager(address(pilFramework));
 
         mockNFT.mintId(bob, 1);
         mockNFT.mintId(bob, 2);
@@ -103,9 +103,9 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         vm.label(ipId4, "IP4");
     }
 
-    function test_UMLPolicyFramework_multiParent_AliceSets3Parents_SamePolicyReciprocal()
+    function test_PILPolicyFramework_multiParent_AliceSets3Parents_SamePolicyReciprocal()
         public
-        withUMLPolicySimple("reciprocal", true, true, true)
+        withPILPolicySimple("reciprocal", true, true, true)
         withLicense("reciprocal", ipId1, alice)
         withLicense("reciprocal", ipId2, alice)
         withLicense("reciprocal", ipId3, alice)
@@ -120,58 +120,58 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         }
         assertEq(licensingModule.totalPoliciesForIp(false, ipId4), 0);
         assertEq(licensingModule.totalPoliciesForIp(true, ipId4), 1);
-        assertTrue(licensingModule.isPolicyIdSetForIp(true, ipId4, _getUmlPolicyId("reciprocal")));
+        assertTrue(licensingModule.isPolicyIdSetForIp(true, ipId4, _getPilPolicyId("reciprocal")));
     }
 
-    function test_UMLPolicyFramework_multiParent_revert_AliceSets3Parents_OneNonReciprocal()
+    function test_PILPolicyFramework_multiParent_revert_AliceSets3Parents_OneNonReciprocal()
         public
-        withUMLPolicySimple("reciprocal", true, true, true)
-        withUMLPolicySimple("non_reciprocal", true, true, false)
+        withPILPolicySimple("reciprocal", true, true, true)
+        withPILPolicySimple("non_reciprocal", true, true, false)
         withLicense("reciprocal", ipId1, alice)
         withLicense("non_reciprocal", ipId2, alice)
         withLicense("reciprocal", ipId3, alice)
     {
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalValueMismatch.selector);
+        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__ReciprocalValueMismatch.selector);
         vm.prank(alice);
         licensingModule.linkIpToParents(licenses, ipId4, "");
     }
 
-    function test_UMLPolicyFramework_multiParent_revert_AliceSets3Parents_3ReciprocalButDifferent()
+    function test_PILPolicyFramework_multiParent_revert_AliceSets3Parents_3ReciprocalButDifferent()
         public
-        withUMLPolicySimple("reciprocal", true, true, true)
+        withPILPolicySimple("reciprocal", true, true, true)
         withLicense("reciprocal", ipId1, alice)
         withLicense("reciprocal", ipId2, alice)
     {
         // Save a new policy (change some value to change the policyId)
-        _mapUMLPolicySimple("other", true, true, true, 100);
-        _getMappedUmlPolicy("other").attribution = !_getMappedUmlPolicy("other").attribution;
-        _addUMLPolicyFromMapping("other", address(umlFramework));
+        _mapPILPolicySimple("other", true, true, true, 100);
+        _getMappedPilPolicy("other").attribution = !_getMappedPilPolicy("other").attribution;
+        _addPILPolicyFromMapping("other", address(pilFramework));
 
         vm.prank(ipId3);
-        licenses.push(licensingModule.mintLicense(_getUmlPolicyId("other"), ipId3, 1, alice, ""));
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__ReciprocalButDifferentPolicyIds.selector);
+        licenses.push(licensingModule.mintLicense(_getPilPolicyId("other"), ipId3, 1, alice, ""));
+        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__ReciprocalButDifferentPolicyIds.selector);
         vm.prank(alice);
         licensingModule.linkIpToParents(licenses, ipId4, "");
     }
 
-    function test_UMLPolicyFramework_multiParent_NonReciprocalCommercial() public {
+    function test_PILPolicyFramework_multiParent_NonReciprocalCommercial() public {
         // First we create 2 policies.
-        _mapUMLPolicySimple({
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
-        _mapUMLPolicySimple({
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
+        _mapPILPolicySimple({
             name: "pol_b",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputB = _getMappedUmlParams("pol_b");
+        RegisterPILPolicyParams memory inputB = _getMappedPilParams("pol_b");
         // We set some indifferents
         inputA.policy.attribution = true;
         inputB.policy.attribution = !inputB.policy.attribution;
@@ -181,24 +181,24 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         _testSuccessCompat(inputA, inputB, 2);
     }
 
-    function test_UMLPolicyFramework_multiParent_revert_NonReciprocalCommercial() public {
+    function test_PILPolicyFramework_multiParent_revert_NonReciprocalCommercial() public {
         // First we create 2 policies.
-        _mapUMLPolicySimple({
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
-        _mapUMLPolicySimple({
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
+        _mapPILPolicySimple({
             name: "pol_b",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputB = _getMappedUmlParams("pol_b");
+        RegisterPILPolicyParams memory inputB = _getMappedPilParams("pol_b");
         // We set some indifferents
         inputA.policy.attribution = true;
         inputB.policy.attribution = !inputB.policy.attribution;
@@ -214,24 +214,24 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         _testRevertCompat(inputA, inputB, Errors.LicensingModule__IncompatibleLicensorCommercialPolicy.selector);
     }
 
-    function test_UMLPolicyFramework_multiParent_NonReciprocalDerivatives() public {
+    function test_PILPolicyFramework_multiParent_NonReciprocalDerivatives() public {
         // First we create 2 policies.
-        _mapUMLPolicySimple({
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
-        _mapUMLPolicySimple({
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
+        _mapPILPolicySimple({
             name: "pol_b",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputB = _getMappedUmlParams("pol_b");
+        RegisterPILPolicyParams memory inputB = _getMappedPilParams("pol_b");
         // We set some indifferents
         inputA.policy.attribution = true;
         inputB.policy.attribution = !inputB.policy.attribution;
@@ -242,24 +242,24 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         _testSuccessCompat(inputA, inputB, 2);
     }
 
-    function test_UMLPolicyFramework_multiParent_NonReciprocalTerritories() public {
+    function test_PILPolicyFramework_multiParent_NonReciprocalTerritories() public {
         // First we create 2 policies.
-        _mapUMLPolicySimple({
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
-        _mapUMLPolicySimple({
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
+        _mapPILPolicySimple({
             name: "pol_b",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputB = _getMappedUmlParams("pol_b");
+        RegisterPILPolicyParams memory inputB = _getMappedPilParams("pol_b");
 
         // Territories (success same)
         inputA.policy.territories = new string[](1);
@@ -270,24 +270,24 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         _testSuccessCompat(inputA, inputB, 2);
     }
 
-    function test_UMLPolicyFramework_multiParent_revert_NonReciprocalTerritories() public {
+    function test_PILPolicyFramework_multiParent_revert_NonReciprocalTerritories() public {
         // First we create 2 policies.
-        _mapUMLPolicySimple({
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
-        _mapUMLPolicySimple({
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
+        _mapPILPolicySimple({
             name: "pol_b",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputB = _getMappedUmlParams("pol_b");
+        RegisterPILPolicyParams memory inputB = _getMappedPilParams("pol_b");
         // We set some indifferents
         inputA.policy.attribution = true;
         inputB.policy.attribution = !inputB.policy.attribution;
@@ -299,27 +299,27 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         inputA.policy.territories[0] = "US";
         inputB.policy.territories = new string[](1);
         inputB.policy.territories[0] = "UK";
-        _testRevertCompat(inputA, inputB, UMLFrameworkErrors.UMLPolicyFrameworkManager__StringArrayMismatch.selector);
+        _testRevertCompat(inputA, inputB, PILFrameworkErrors.PILPolicyFrameworkManager__StringArrayMismatch.selector);
     }
 
-    function test_UMLPolicyFramework_multiParent_NonReciprocalDistributionChannels() public {
+    function test_PILPolicyFramework_multiParent_NonReciprocalDistributionChannels() public {
         // First we create 2 policies.
-        _mapUMLPolicySimple({
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
-        _mapUMLPolicySimple({
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
+        _mapPILPolicySimple({
             name: "pol_b",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputB = _getMappedUmlParams("pol_b");
+        RegisterPILPolicyParams memory inputB = _getMappedPilParams("pol_b");
 
         // Territories (success same)
         inputA.policy.distributionChannels = new string[](1);
@@ -330,24 +330,24 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         _testSuccessCompat(inputA, inputB, 2);
     }
 
-    function test_UMLPolicyFramework_multiParent_revert_NonReciprocalDistributionChannels() public {
+    function test_PILPolicyFramework_multiParent_revert_NonReciprocalDistributionChannels() public {
         // First we create 2 policies.
-        _mapUMLPolicySimple({
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
-        _mapUMLPolicySimple({
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
+        _mapPILPolicySimple({
             name: "pol_b",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputB = _getMappedUmlParams("pol_b");
+        RegisterPILPolicyParams memory inputB = _getMappedPilParams("pol_b");
         // We set some indifferents
         inputA.policy.attribution = true;
         inputB.policy.attribution = !inputB.policy.attribution;
@@ -359,27 +359,27 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         inputA.policy.distributionChannels[0] = "web";
         inputB.policy.distributionChannels = new string[](1);
         inputB.policy.distributionChannels[0] = "mobile";
-        _testRevertCompat(inputA, inputB, UMLFrameworkErrors.UMLPolicyFrameworkManager__StringArrayMismatch.selector);
+        _testRevertCompat(inputA, inputB, PILFrameworkErrors.PILPolicyFrameworkManager__StringArrayMismatch.selector);
     }
 
-    function test_UMLPolicyFramework_multiParent_NonReciprocalContentRestrictions() public {
+    function test_PILPolicyFramework_multiParent_NonReciprocalContentRestrictions() public {
         // First we create 2 policies.
-        _mapUMLPolicySimple({
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
-        _mapUMLPolicySimple({
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
+        _mapPILPolicySimple({
             name: "pol_b",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputB = _getMappedUmlParams("pol_b");
+        RegisterPILPolicyParams memory inputB = _getMappedPilParams("pol_b");
 
         // Territories (success same)
         inputA.policy.contentRestrictions = new string[](1);
@@ -390,24 +390,24 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         _testSuccessCompat(inputA, inputB, 2);
     }
 
-    function test_UMLPolicyFramework_multiParent_revert_NonReciprocalContentRestrictions() public {
+    function test_PILPolicyFramework_multiParent_revert_NonReciprocalContentRestrictions() public {
         // First we create 2 policies.
-        _mapUMLPolicySimple({
+        _mapPILPolicySimple({
             name: "pol_a",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
-        _mapUMLPolicySimple({
+        RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
+        _mapPILPolicySimple({
             name: "pol_b",
             commercial: true,
             derivatives: true,
             reciprocal: false,
             commercialRevShare: 100
         });
-        RegisterUMLPolicyParams memory inputB = _getMappedUmlParams("pol_b");
+        RegisterPILPolicyParams memory inputB = _getMappedPilParams("pol_b");
         // We set some indifferents
         inputA.policy.attribution = true;
         inputB.policy.attribution = !inputA.policy.attribution;
@@ -419,25 +419,25 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         inputA.policy.contentRestrictions[0] = "adult";
         inputB.policy.contentRestrictions = new string[](1);
         inputB.policy.contentRestrictions[0] = "child";
-        _testRevertCompat(inputA, inputB, UMLFrameworkErrors.UMLPolicyFrameworkManager__StringArrayMismatch.selector);
+        _testRevertCompat(inputA, inputB, PILFrameworkErrors.PILPolicyFrameworkManager__StringArrayMismatch.selector);
     }
 
     function _test_register_mint_AB(
-        RegisterUMLPolicyParams memory inputA,
-        RegisterUMLPolicyParams memory inputB
+        RegisterPILPolicyParams memory inputA,
+        RegisterPILPolicyParams memory inputB
     ) internal returns (uint256 polAId, uint256 polBId) {
-        polAId = umlFramework.registerPolicy(inputA);
+        polAId = pilFramework.registerPolicy(inputA);
         vm.prank(ipId1);
         licenses.push(licensingModule.mintLicense(polAId, ipId1, 1, alice, ""));
 
-        polBId = umlFramework.registerPolicy(inputB);
+        polBId = pilFramework.registerPolicy(inputB);
         vm.prank(ipId2);
         licenses.push(licensingModule.mintLicense(polBId, ipId2, 2, alice, ""));
     }
 
     function _testRevertCompat(
-        RegisterUMLPolicyParams memory inputA,
-        RegisterUMLPolicyParams memory inputB,
+        RegisterPILPolicyParams memory inputA,
+        RegisterPILPolicyParams memory inputB,
         bytes4 errorSelector
     ) internal {
         _test_register_mint_AB(inputA, inputB);
@@ -449,8 +449,8 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
     }
 
     function _testSuccessCompat(
-        RegisterUMLPolicyParams memory inputA,
-        RegisterUMLPolicyParams memory inputB,
+        RegisterPILPolicyParams memory inputA,
+        RegisterPILPolicyParams memory inputB,
         uint256 expectedPolicies
     ) internal {
         (uint256 polAId, uint256 polBId) = _test_register_mint_AB(inputA, inputB);
