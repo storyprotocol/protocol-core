@@ -205,21 +205,45 @@ contract TestRoyaltyModule is BaseTest {
         address licensor = address(3);
         bytes memory licenseData = abi.encode(uint32(15));
 
+        address[] memory parents = new address[](2);
+        address[] memory targetAncestors1 = new address[](2);
+        uint32[] memory targetRoyaltyAmount1 = new uint32[](2);
+        uint32[] memory parentRoyalties1 = new uint32[](2);
+        bytes[] memory encodedLicenseData = new bytes[](2);
+
+        address[] memory nullParentAncestors1 = new address[](0);
+        address[] memory nullParentAncestors2 = new address[](0);
+        uint32[] memory nullParentAncestorsRoyalties1 = new uint32[](0);
+        uint32[] memory nullParentAncestorsRoyalties2 = new uint32[](0);
+
+        parents[0] = address(7);
+        parents[1] = address(8);
+        parentRoyalties1[0] = 7;
+        parentRoyalties1[1] = 8;
+        targetAncestors1[0] = address(7);
+        targetAncestors1[1] = address(8);
+        targetRoyaltyAmount1[0] = 7;
+        targetRoyaltyAmount1[1] = 8;
+        InitParams memory initParams = InitParams({
+            targetAncestors: targetAncestors1,
+            targetRoyaltyAmount: targetRoyaltyAmount1,
+            parentAncestors1: nullParentAncestors1,
+            parentAncestors2: nullParentAncestors2,
+            parentAncestorsRoyalties1: nullParentAncestorsRoyalties1,
+            parentAncestorsRoyalties2: nullParentAncestorsRoyalties2
+        });
+        for (uint32 i = 0; i < parentRoyalties1.length; i++) {
+            encodedLicenseData[i] = abi.encode(parentRoyalties1[i]);
+        }
+        bytes memory encodedBytes = abi.encode(initParams);
+
         vm.startPrank(address(licensingModule));
-        royaltyModule.onLicenseMinting(licensor, address(royaltyPolicyLAP), licenseData, "");
+        royaltyModule.onLicenseMinting(licensor, address(royaltyPolicyLAP), licenseData, encodedBytes);
     }
 
     function test_RoyaltyModule_onLicenseMinting_Root() public {
         address licensor = address(7);
         bytes memory licenseData = abi.encode(uint32(15));
-
-        vm.startPrank(address(licensingModule));
-        royaltyModule.onLicenseMinting(licensor, address(royaltyPolicyLAP), licenseData, "");
-        vm.stopPrank();
-
-        vm.startPrank(u.admin);
-        royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLAP2), true);
-        vm.stopPrank();
 
         // mint a license of another policy
         address[] memory nullTargetAncestors = new address[](0);
@@ -238,6 +262,14 @@ contract TestRoyaltyModule is BaseTest {
             parentAncestorsRoyalties2: nullParentAncestorsRoyalties2
         });
         bytes memory nullBytes = abi.encode(nullInitParams);
+
+        vm.startPrank(address(licensingModule));
+        royaltyModule.onLicenseMinting(licensor, address(royaltyPolicyLAP), licenseData, nullBytes);
+        vm.stopPrank();
+
+        vm.startPrank(u.admin);
+        royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLAP2), true);
+        vm.stopPrank();
 
         vm.startPrank(address(licensingModule));
         royaltyModule.onLicenseMinting(licensor, address(royaltyPolicyLAP2), licenseData, nullBytes);

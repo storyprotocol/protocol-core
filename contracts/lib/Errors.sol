@@ -232,6 +232,7 @@ library Errors {
     error RoyaltyPolicyLAP__NotFullOwnership();
     error RoyaltyPolicyLAP__UnlinkableToParents();
     error RoyaltyPolicyLAP__TransferFailed();
+    error RoyaltyPolicyLAP__LastPositionNotAbleToMintLicense();
 
     error AncestorsVaultLAP__ZeroRoyaltyPolicyLAP();
     error AncestorsVaultLAP__AlreadyClaimed();
