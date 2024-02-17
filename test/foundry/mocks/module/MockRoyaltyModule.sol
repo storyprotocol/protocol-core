@@ -56,6 +56,10 @@ contract MockRoyaltyModule is BaseModule, IRoyaltyModule {
         address payerRoyaltyPolicy = royaltyPolicies[_payerIpId];
         // IRoyaltyPolicy(payerRoyaltyPolicy).onRoyaltyPayment(msg.sender, _receiverIpId, _token, _amount);
     }
+    
+    function payLicenseMintingFee(address receiverIpId, address payerAddress, address token, uint256 amount) external {
+
+    }
 
     function payLicenseMintingFee(
         address receiverIpId,

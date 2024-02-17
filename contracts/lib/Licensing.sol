@@ -22,6 +22,7 @@ library Licensing {
         uint256 mintingFee;
         address mintingFeeToken;
     }
+    
     /// @notice Data that define a License Agreement NFT
     /// @param policyId Id of the policy this license is based on, which will be set in the derivative IP when the
     /// license is burnt for linking

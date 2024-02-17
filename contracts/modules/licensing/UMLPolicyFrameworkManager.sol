@@ -10,6 +10,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 // contracts
 import { IHookModule } from "../../interfaces/modules/base/IHookModule.sol";
 import { ILicensingModule } from "../../interfaces/modules/licensing/ILicensingModule.sol";
+import { IRoyaltyModule } from "../../interfaces/modules/royalty/IRoyaltyModule.sol";
 import { Licensing } from "../../lib/Licensing.sol";
 import { Errors } from "../../lib/Errors.sol";
 import { UMLFrameworkErrors } from "../../lib/UMLFrameworkErrors.sol";
@@ -59,8 +60,18 @@ contract UMLPolicyFrameworkManager is
         _verifyComercialUse(params.policy, params.royaltyPolicy, params.mintingFee, params.mintingFeeToken);
         _verifyDerivatives(params.policy);
         /// TODO: DO NOT deploy on production networks without hashing string[] values instead of storing them
+
+        Licensing.Policy memory pol = Licensing.Policy({
+            isLicenseTransferable: params.transferable,
+            policyFramework: address(this),
+            frameworkData: abi.encode(params.policy),
+            royaltyPolicy: params.royaltyPolicy,
+            royaltyData: abi.encode(params.policy.commercialRevShare),
+            mintingFee: params.mintingFee,
+            mintingFeeToken: params.mintingFeeToken
+        });
         // No need to emit here, as the LicensingModule will emit the event
-        return LICENSING_MODULE.registerPolicy(params.policy);
+        return LICENSING_MODULE.registerPolicy(pol);
     }
 
     /// @notice Verify policy parameters for linking a child IP to a parent IP (licensor) by burning a license NFT.
@@ -364,7 +375,6 @@ contract UMLPolicyFrameworkManager is
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddMintingFeeToken();
             }
         } else {
-            // TODO: check for supportInterface instead
             if (royaltyPolicy == address(0)) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialEnabled_RoyaltyPolicyRequired();
             }
