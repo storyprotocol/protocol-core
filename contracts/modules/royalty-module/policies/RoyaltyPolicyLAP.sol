@@ -124,9 +124,9 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
             // called _initPolicy() when linking to their parents with onLinkToParents() call.
             address[] memory rootParents = new address[](0);
             bytes[] memory rootParentRoyalties = new bytes[](0);
-            _initPolicy(_ipId, rootParents, rootParentRoyalties, _externalData);
+            _initPolicy(ipId, rootParents, rootParentRoyalties, externalData);
         } else {
-            InitParams memory params = abi.decode(_externalData, (InitParams));
+            InitParams memory params = abi.decode(externalData, (InitParams));
             // If the policy is already initialized and an ipId has the maximum number of ancestors
             // it can not have any derivative and therefore is not allowed to mint any license
             if (params.targetAncestors.length >= MAX_ANCESTORS) revert Errors.RoyaltyPolicyLAP__LastPositionNotAbleToMintLicense();
@@ -134,7 +134,7 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
             // and that the targetAncestors passed in by the user matches the record stored in state on policy initialization
             if (
                 keccak256(abi.encodePacked(params.targetAncestors, params.targetRoyaltyAmount)) !=
-                royaltyData[_ipId].ancestorsHash
+                royaltyData[ipId].ancestorsHash
             ) revert Errors.RoyaltyPolicyLAP__InvalidAncestorsHash();
         }
     }
