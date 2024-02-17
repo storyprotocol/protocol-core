@@ -42,9 +42,6 @@ contract BaseIntegration is BaseTest {
 
         dealMockAssets();
         approveRegistration();
-
-        // Also deploy mock royalty policy LS
-        // mockRoyaltyPolicyLS = new MockRoyaltyPolicyLS(address(royaltyModule));
     }
 
     function approveRegistration() internal {
