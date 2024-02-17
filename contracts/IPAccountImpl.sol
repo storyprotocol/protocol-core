@@ -24,6 +24,7 @@ contract IPAccountImpl is IERC165, IIPAccount {
     receive() external payable override(IERC6551Account) {}
 
     constructor(address accessController_) {
+        if (accessController_ == address(0)) revert Errors.IPAccount__InvalidAccessController();
         accessController = accessController_;
     }
 

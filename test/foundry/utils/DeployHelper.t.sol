@@ -232,6 +232,9 @@ contract DeployHelper {
             // TODO: Use mock IPAccountRegistry, instead of forcing deployment of actual IPAccountRegistry
             //       contract when using AccessController.
             // deployConditions.registry.ipAccountRegistry = true;
+        } else {
+            accessController = new MockAccessController();
+            console2.log("DeployHelper: Using Mock AccessController");
         }
     }
 
