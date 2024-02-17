@@ -53,7 +53,6 @@ struct RegisterUMLPolicyParams {
 /// new policies.
 /// @dev The assumption is that new policies may be added later, not only when linking an IP to its parent.
 /// @param commercial Whether or not there is a policy that allows commercial use
-/// @param derivatives Whether or not there is a policy that allows derivatives
 /// @param derivativesReciprocal Whether or not there is a policy that requires derivatives to be licensed under the
 /// same terms
 /// @param lastPolicyId The last policy ID that was added to the IP
@@ -62,7 +61,6 @@ struct RegisterUMLPolicyParams {
 /// @param contentRestrictionsAcc The last hash of the contentRestrictions array
 struct UMLAggregator {
     bool commercial;
-    bool derivatives;
     bool derivativesReciprocal;
     uint256 lastPolicyId;
     bytes32 territoriesAcc;

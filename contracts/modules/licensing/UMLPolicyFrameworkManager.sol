@@ -59,18 +59,8 @@ contract UMLPolicyFrameworkManager is
         _verifyComercialUse(params.policy, params.royaltyPolicy, params.mintingFee, params.mintingFeeToken);
         _verifyDerivatives(params.policy);
         /// TODO: DO NOT deploy on production networks without hashing string[] values instead of storing them
-
-        Licensing.Policy memory pol = Licensing.Policy({
-            isLicenseTransferable: params.transferable,
-            policyFramework: address(this),
-            frameworkData: abi.encode(params.policy),
-            royaltyPolicy: params.royaltyPolicy,
-            royaltyData: abi.encode(params.policy.commercialRevShare),
-            mintingFee: params.mintingFee,
-            mintingFeeToken: params.mintingFeeToken
-        });
         // No need to emit here, as the LicensingModule will emit the event
-        return LICENSING_MODULE.registerPolicy(pol);
+        return LICENSING_MODULE.registerPolicy(params.policy);
     }
 
     /// @notice Verify policy parameters for linking a child IP to a parent IP (licensor) by burning a license NFT.
@@ -90,30 +80,31 @@ contract UMLPolicyFrameworkManager is
     ) external override nonReentrant onlyLicensingModule returns (bool) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
 
+        // Trying to burn a license to create a derivative, when the license doesn't allow derivatives.
+        if (!policy.derivativesAllowed) {
+            return false;
+        }
+
         // If the policy defines the licensor must approve derivatives, check if the
         // derivative is approved by the licensor
-        if (policy.derivativesApproval) {
-            return isDerivativeApproved(licenseId, ipId);
+        if (policy.derivativesApproval && !isDerivativeApproved(licenseId, ipId)) {
+            return false;
         }
+        // Check if the commercializerChecker allows the link
         if (policy.commercializerChecker != address(0)) {
-            if (!policy.commercializerChecker.supportsInterface(type(IHookModule).interfaceId)) {
-                revert Errors.PolicyFrameworkManager__CommercializerCheckerDoesNotSupportHook(
-                    policy.commercializerChecker
-                );
-            }
-
+            // No need to check if the commercializerChecker supports the IHookModule interface, as it was checked
+            // when the policy was registered.
             if (!IHookModule(policy.commercializerChecker).verify(caller, policy.commercializerCheckerData)) {
                 return false;
             }
         }
-
         return true;
     }
 
     /// @notice Verify policy parameters for minting a license.
     /// @dev Enforced to be only callable by LicenseRegistry
     /// @param caller the address executing the mint
-    /// @param policyWasInherited true if the policy was inherited (licensorIpId is not original IP owner)
+    /// @param mintingFromADerivative true if the license is minting from a derivative IPA
     /// @param licensorIpId the IP id of the licensor
     /// @param receiver the address receiving the license
     /// @param mintAmount the amount of licenses to mint
@@ -121,26 +112,22 @@ contract UMLPolicyFrameworkManager is
     /// @return verified True if the link is verified
     function verifyMint(
         address caller,
-        bool policyWasInherited,
+        bool mintingFromADerivative,
         address licensorIpId,
         address receiver,
         uint256 mintAmount,
         bytes memory policyData
     ) external nonReentrant onlyLicensingModule returns (bool) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
-        // If the policy defines no derivative is allowed, and policy was inherited,
-        // we don't allow minting
-        if (!policy.derivativesAllowed && policyWasInherited) {
+        // If the policy defines no reciprocal derivatives are allowed (no derivatives of derivatives),
+        // and we are mintingFromADerivative we don't allow minting
+        if (!policy.derivativesReciprocal && mintingFromADerivative) {
             return false;
         }
 
         if (policy.commercializerChecker != address(0)) {
-            if (!policy.commercializerChecker.supportsInterface(type(IHookModule).interfaceId)) {
-                revert Errors.PolicyFrameworkManager__CommercializerCheckerDoesNotSupportHook(
-                    policy.commercializerChecker
-                );
-            }
-
+            // No need to check if the commercializerChecker supports the IHookModule interface, as it was checked
+            // when the policy was registered.
             if (!IHookModule(policy.commercializerChecker).verify(caller, policy.commercializerCheckerData)) {
                 return false;
             }
@@ -191,7 +178,6 @@ contract UMLPolicyFrameworkManager is
             // Initialize the aggregator
             agg = UMLAggregator({
                 commercial: newPolicy.commercialUse,
-                derivatives: newPolicy.derivativesAllowed,
                 derivativesReciprocal: newPolicy.derivativesReciprocal,
                 lastPolicyId: policyId,
                 territoriesAcc: keccak256(abi.encode(newPolicy.territories)),
@@ -215,9 +201,6 @@ contract UMLPolicyFrameworkManager is
                 // Both non reciprocal
                 if (agg.commercial != newPolicy.commercialUse) {
                     revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialValueMismatch();
-                }
-                if (agg.derivatives != newPolicy.derivativesAllowed) {
-                    revert UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesValueMismatch();
                 }
 
                 bytes32 newHash = _verifHashedParams(
