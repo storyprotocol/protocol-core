@@ -188,7 +188,8 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
                 revert Errors.LicensingModule__CallerNotLicensorAndPolicyNotSet();
             }
         }
-
+        // If the policy has a royalty policy, we need to call the royalty module to process the minting
+        // Otherwise, it's non commercial and we can skip the call.
         if (pol.royaltyPolicy != address(0)) {
             ROYALTY_MODULE.onLicenseMinting(licensorIp, pol.royaltyPolicy, pol.royaltyData, royaltyContext);
         }
