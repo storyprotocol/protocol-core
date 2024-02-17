@@ -374,6 +374,12 @@ contract UMLPolicyFrameworkManager is
             if (royaltyPolicy != address(0)) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddRoyaltyPolicy();
             }
+            if (mintingFee > 0) {
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddMintingFee();
+            }
+            if (mintingFeeToken != address(0)) {
+                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddMintingFeeToken();
+            }
         } else {
             // TODO: check for supportInterface instead
             if (royaltyPolicy == address(0)) {
