@@ -195,7 +195,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         if (pol.royaltyPolicy != address(0)) {
             // If there's a minting fee, sender must pay it
             if (pol.mintingFee > 0) {
-                ROYALTY_MODULE.payLicenseMintingFee(licensorIpId, msg.sender, pol.royaltyPolicy, pol.mintingFeeToken, pol.mintingFee);
+                ROYALTY_MODULE.payLicenseMintingFee(licensorIpId, msg.sender, pol.royaltyPolicy, pol.royaltyPolicy, pol.mintingFeeToken, pol.mintingFee);
             }
             ROYALTY_MODULE.onLicenseMinting(licensorIpId, pol.royaltyPolicy, pol.royaltyData, royaltyContext);
         }
