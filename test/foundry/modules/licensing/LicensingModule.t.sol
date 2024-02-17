@@ -96,15 +96,16 @@ contract LicensingModuleTest is BaseTest {
     }
 
     function _createPolicyFrameworkData() internal view returns (Licensing.Policy memory) {
-        return Licensing.Policy({
-            isLicenseTransferable: true,
-            policyFramework: address(mockPFM),
-            frameworkData: _createMockPolicy(),
-            royaltyPolicy: address(mockRoyaltyPolicyLAP),
-            royaltyData: "",
-            mintingFee: 0,
-            mintingFeeToken: address(0)
-        });
+        return
+            Licensing.Policy({
+                isLicenseTransferable: true,
+                policyFramework: address(mockPFM),
+                frameworkData: _createMockPolicy(),
+                royaltyPolicy: address(mockRoyaltyPolicyLAP),
+                royaltyData: "",
+                mintingFee: 0,
+                mintingFeeToken: address(0)
+            });
     }
 
     function test_LicensingModule_registerPFM() public {
@@ -157,47 +158,59 @@ contract LicensingModuleTest is BaseTest {
 
         vm.expectRevert(Errors.LicensingModule__RegisterPolicyFrameworkMismatch.selector);
         vm.prank(address(anotherMockPFM));
-        uint256 policyId = licensingModule.registerPolicy(Licensing.Policy({
-            isLicenseTransferable: true,
-            policyFramework: address(mockPFM),
-            frameworkData: _createMockPolicy(),
-            royaltyPolicy: address(mockRoyaltyPolicyLAP),
-            royaltyData: "",
-            mintingFee: 0,
-            mintingFeeToken: address(0)
-        }));
+        uint256 policyId = licensingModule.registerPolicy(
+            Licensing.Policy({
+                isLicenseTransferable: true,
+                policyFramework: address(mockPFM),
+                frameworkData: _createMockPolicy(),
+                royaltyPolicy: address(mockRoyaltyPolicyLAP),
+                royaltyData: "",
+                mintingFee: 0,
+                mintingFeeToken: address(0)
+            })
+        );
     }
 
-    function test_LicensingModule_registerPolicy_revert_royaltyPolicyNotWhitelisted() public withPolicyFrameworkManager {
+    function test_LicensingModule_registerPolicy_revert_royaltyPolicyNotWhitelisted()
+        public
+        withPolicyFrameworkManager
+    {
         address nonWhitelistedRoyaltyPolicy = address(0x11beef22cc);
-        
+
         vm.expectRevert(Errors.LicensingModule__RoyaltyPolicyNotWhitelisted.selector);
         vm.prank(address(mockPFM));
-        uint256 policyId = licensingModule.registerPolicy(Licensing.Policy({
-            isLicenseTransferable: true,
-            policyFramework: address(mockPFM),
-            frameworkData: _createMockPolicy(),
-            royaltyPolicy: nonWhitelistedRoyaltyPolicy,
-            royaltyData: "",
-            mintingFee: 0,
-            mintingFeeToken: address(0)
-        }));
+        uint256 policyId = licensingModule.registerPolicy(
+            Licensing.Policy({
+                isLicenseTransferable: true,
+                policyFramework: address(mockPFM),
+                frameworkData: _createMockPolicy(),
+                royaltyPolicy: nonWhitelistedRoyaltyPolicy,
+                royaltyData: "",
+                mintingFee: 0,
+                mintingFeeToken: address(0)
+            })
+        );
     }
 
-    function test_LicensingModule_registerPolicy_revert_mintingFeeTokenNotWhitelisted() public withPolicyFrameworkManager {
+    function test_LicensingModule_registerPolicy_revert_mintingFeeTokenNotWhitelisted()
+        public
+        withPolicyFrameworkManager
+    {
         address nonWhitelistedRoyaltyToken = address(0x11beef22cc);
 
         vm.expectRevert(Errors.LicensingModule__MintingFeeTokenNotWhitelisted.selector);
         vm.prank(address(mockPFM));
-        uint256 policyId = licensingModule.registerPolicy(Licensing.Policy({
-            isLicenseTransferable: true,
-            policyFramework: address(mockPFM),
-            frameworkData: _createMockPolicy(),
-            royaltyPolicy: address(mockRoyaltyPolicyLAP),
-            royaltyData: "",
-            mintingFee: 1 ether,
-            mintingFeeToken: nonWhitelistedRoyaltyToken
-        }));
+        uint256 policyId = licensingModule.registerPolicy(
+            Licensing.Policy({
+                isLicenseTransferable: true,
+                policyFramework: address(mockPFM),
+                frameworkData: _createMockPolicy(),
+                royaltyPolicy: address(mockRoyaltyPolicyLAP),
+                royaltyData: "",
+                mintingFee: 1 ether,
+                mintingFeeToken: nonWhitelistedRoyaltyToken
+            })
+        );
     }
 
     function test_LicensingModule_registerPolicy() public withPolicyFrameworkManager {
@@ -552,7 +565,7 @@ contract LicensingModuleTest is BaseTest {
     function test_LicensingModule_singleTransfer_revert_verifyFalse() public {
         licensingModule.registerPolicyFrameworkManager(address(mockPFM));
         vm.prank(address(mockPFM));
-        
+
         Licensing.Policy memory pol = _createPolicyFrameworkData();
         pol.isLicenseTransferable = false;
         uint256 policyId = licensingModule.registerPolicy(pol);

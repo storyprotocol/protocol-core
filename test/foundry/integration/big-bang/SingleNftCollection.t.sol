@@ -111,7 +111,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
         vm.startPrank(u.carl);
         mockNFT.mintId(u.carl, 5);
         ipAcct[5] = registerIpAccount(mockNFT, 5, u.carl);
- 
+
         /*//////////////////////////////////////////////////////////////
                             ADD POLICIES TO IP ACCOUNTS
         ///////////////////////////////////////////////////////////////*/
@@ -349,7 +349,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 metadata,
                 u.carl, // caller
                 abi.encode(params)
-            ); 
+            );
         }
     }
 }

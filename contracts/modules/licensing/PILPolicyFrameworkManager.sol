@@ -10,7 +10,6 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 // contracts
 import { IHookModule } from "../../interfaces/modules/base/IHookModule.sol";
 import { ILicensingModule } from "../../interfaces/modules/licensing/ILicensingModule.sol";
-import { IRoyaltyModule } from "../../interfaces/modules/royalty/IRoyaltyModule.sol";
 import { Licensing } from "../../lib/Licensing.sol";
 import { Errors } from "../../lib/Errors.sol";
 import { PILFrameworkErrors } from "../../lib/PILFrameworkErrors.sol";
@@ -354,7 +353,12 @@ contract PILPolicyFrameworkManager is
     /// @param policy The policy to verify
     /// @param royaltyPolicy The address of the royalty policy
     // solhint-disable-next-line code-complexity
-    function _verifyComercialUse(PILPolicy calldata policy, address royaltyPolicy, uint256 mintingFee, address mintingFeeToken) internal view {
+    function _verifyComercialUse(
+        UMLPolicy calldata policy,
+        address royaltyPolicy,
+        uint256 mintingFee,
+        address mintingFeeToken
+    ) internal view {
         if (!policy.commercialUse) {
             if (policy.commercialAttribution) {
                 revert PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddAttribution();

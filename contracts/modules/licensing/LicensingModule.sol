@@ -203,9 +203,9 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
             }
         }
 
-        // If the policy has a royalty policy, we need to call the royalty module to process the minting. 
+        // If the policy has a royalty policy, we need to call the royalty module to process the minting.
         // Otherwise, it's non commercial and we can skip the call.
-        // NOTE: We must call `payLicenseMintingFee` after calling `onLicenseMinting` because minting licenses on 
+        // NOTE: We must call `payLicenseMintingFee` after calling `onLicenseMinting` because minting licenses on
         // root IPs (licensors) might mean the licensors don't have royalty policy initialized, so we initialize it
         // (deploy the split clone contract) via `onLicenseMinting`. Then, pay the minting fee to the licensor's split
         // clone contract address.
@@ -214,7 +214,13 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
 
             // If there's a minting fee, sender must pay it
             if (pol.mintingFee > 0) {
-                ROYALTY_MODULE.payLicenseMintingFee(licensorIpId, msg.sender, pol.royaltyPolicy, pol.mintingFeeToken, pol.mintingFee);
+                ROYALTY_MODULE.payLicenseMintingFee(
+                    licensorIpId,
+                    msg.sender,
+                    pol.royaltyPolicy,
+                    pol.mintingFeeToken,
+                    pol.mintingFee
+                );
             }
         }
 
