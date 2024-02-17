@@ -108,11 +108,11 @@ contract LicensingModuleTest is BaseTest {
     }
 
     function test_LicensingModule_registerPFM() public {
-        UMLPolicyFrameworkManager pfm1 = new UMLPolicyFrameworkManager(
+        PIPPolicyFrameworkManager pfm1 = new PIPPolicyFrameworkManager(
             address(accessController),
             address(ipAccountRegistry),
             address(licensingModule),
-            "UMLPolicyFrameworkManager",
+            "PIPPolicyFrameworkManager",
             licenseUrl
         );
 
@@ -126,11 +126,11 @@ contract LicensingModuleTest is BaseTest {
     }
 
     function test_LicensingModule_registerPFM_revert_emptyLicenseUrl() public {
-        UMLPolicyFrameworkManager pfm1 = new UMLPolicyFrameworkManager(
+        PIPPolicyFrameworkManager pfm1 = new PIPPolicyFrameworkManager(
             address(accessController),
             address(ipAccountRegistry),
             address(licensingModule),
-            "UMLPolicyFrameworkManager",
+            "PIPPolicyFrameworkManager",
             ""
         );
 

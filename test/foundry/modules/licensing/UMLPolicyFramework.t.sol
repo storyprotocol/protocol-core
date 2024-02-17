@@ -87,10 +87,10 @@ contract PILPolicyFrameworkTest is BaseTest {
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(inputA.policy)));
     }
 
-    function test_UMLPolicyFrameworkManager__verifyLink_revert_invalidCommercializerChecker() public {
+    function test_PILPolicyFrameworkManager__verifyLink_revert_invalidCommercializerChecker() public {
         address badCommercializerChecker = address(new MockERC721("Fake Commercializer Checker"));
 
-        UMLPolicy memory policyData = UMLPolicy({
+        PILPolicy memory policyData = PILPolicy({
             attribution: true,
             commercialUse: false,
             commercialAttribution: false,
@@ -113,11 +113,11 @@ contract PILPolicyFrameworkTest is BaseTest {
                 badCommercializerChecker
             )
         );
-        umlFramework.verifyLink(0, alice, ipId1, address(0), abi.encode(policyData));
+        pilFramework.verifyLink(0, alice, ipId1, address(0), abi.encode(policyData));
     }
 
-    function test_UMLPolicyFrameworkManager__verifyLink_revert_commercializerCheckerFailedVerify() public {
-        UMLPolicy memory policyData = UMLPolicy({
+    function test_PILPolicyFrameworkManager__verifyLink_revert_commercializerCheckerFailedVerify() public {
+        PILPolicy memory policyData = PILPolicy({
             attribution: true,
             commercialUse: false,
             commercialAttribution: false,
@@ -134,14 +134,14 @@ contract PILPolicyFrameworkTest is BaseTest {
         });
 
         vm.prank(address(licensingModule));
-        bool verified = umlFramework.verifyLink(0, alice, ipId1, address(0), abi.encode(policyData));
+        bool verified = pilFramework.verifyLink(0, alice, ipId1, address(0), abi.encode(policyData));
         assertFalse(verified);
     }
 
-    function test_UMLPolicyFrameworkManager__verifyMint_revert_invalidCommercializerChecker() public {
+    function test_PILPolicyFrameworkManager__verifyMint_revert_invalidCommercializerChecker() public {
         address badCommercializerChecker = address(new MockERC721("Fake Commercializer Checker"));
 
-        UMLPolicy memory policyData = UMLPolicy({
+        PILPolicy memory policyData = PILPolicy({
             attribution: true,
             commercialUse: false,
             commercialAttribution: false,
@@ -164,11 +164,11 @@ contract PILPolicyFrameworkTest is BaseTest {
                 badCommercializerChecker
             )
         );
-        umlFramework.verifyMint(alice, false, ipId1, alice, 2, abi.encode(policyData));
+        pilFramework.verifyMint(alice, false, ipId1, alice, 2, abi.encode(policyData));
     }
 
-    function test_UMLPolicyFrameworkManager__verifyMint_revert_commercializerCheckerFailedVerify() public {
-        UMLPolicy memory policyData = UMLPolicy({
+    function test_PILPolicyFrameworkManager__verifyMint_revert_commercializerCheckerFailedVerify() public {
+        PILPolicy memory policyData = PILPolicy({
             attribution: true,
             commercialUse: false,
             commercialAttribution: false,
@@ -185,13 +185,13 @@ contract PILPolicyFrameworkTest is BaseTest {
         });
 
         vm.prank(address(licensingModule));
-        bool verified = umlFramework.verifyMint(alice, false, ipId1, alice, 2, abi.encode(policyData));
+        bool verified = pilFramework.verifyMint(alice, false, ipId1, alice, 2, abi.encode(policyData));
         assertFalse(verified);
     }
 
-    function test_UMLPolicyFrameworkManager__getAggregator_revert_emptyAggregator() public {
-        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__RightsNotFound.selector);
-        umlFramework.getAggregator(ipId1);
+    function test_PILPolicyFrameworkManager__getAggregator_revert_emptyAggregator() public {
+        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__RightsNotFound.selector);
+        pilFramework.getAggregator(ipId1);
     }
 
     /////////////////////////////////////////////////////////////
@@ -210,7 +210,7 @@ contract PILPolicyFrameworkTest is BaseTest {
         RegisterPILPolicyParams memory inputA = _getMappedPilParams("pol_a");
         inputA.policy.commercialAttribution = true;
         // commercialAttribution = true should revert
-        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__CommecialDisabled_CantAddAttribution.selector);
+        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddAttribution.selector);
         pilFramework.registerPolicy(inputA);
         // Non empty commercializers should revert
         inputA.policy.commercialAttribution = false;
@@ -224,7 +224,7 @@ contract PILPolicyFrameworkTest is BaseTest {
         inputA.policy.commercializerChecker = address(0);
         inputA.policy.commercializerCheckerData = "";
         inputA.policy.commercialRevShare = 1;
-        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__CommecialDisabled_CantAddRevShare.selector);
+        vm.expectRevert(PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddRevShare.selector);
         pilFramework.registerPolicy(inputA);
     }
 
@@ -438,14 +438,14 @@ contract PILPolicyFrameworkTest is BaseTest {
         vm.stopPrank();
     }
 
-    function test_UMLPolicyFrameworkManager__policyToJson() public {
+    function test_PILPolicyFrameworkManager__policyToJson() public {
         string[] memory territories = new string[](2);
         territories[0] = "test1";
         territories[1] = "test2";
         string[] memory distributionChannels = new string[](1);
         distributionChannels[0] = "test3";
 
-        UMLPolicy memory policyData = UMLPolicy({
+        PILPolicy memory policyData = PILPolicy({
             attribution: false,
             commercialUse: false,
             commercialAttribution: true,
@@ -461,7 +461,7 @@ contract PILPolicyFrameworkTest is BaseTest {
             contentRestrictions: emptyStringArray
         });
 
-        string memory actualJson = umlFramework.policyToJson(abi.encode(policyData));
+        string memory actualJson = pilFramework.policyToJson(abi.encode(policyData));
         /* solhint-disable */
         string
             memory expectedJson = '{"trait_type": "Attribution", "value": "false"},{"trait_type": "Commerical Use", "value": "false"},{"trait_type": "Commercial Attribution", "value": "true"},{"trait_type": "Commercial Revenue Share", "max_value": 1000, "value": 0},{"trait_type": "Commercializer Check", "value": "0x0000000000000000000000000000000000000000"},{"trait_type": "Derivatives Allowed", "value": "true"},{"trait_type": "Derivatives Attribution", "value": "false"},{"trait_type": "Derivatives Approval", "value": "false"},{"trait_type": "Derivatives Reciprocal", "value": "false"},{"trait_type": "Territories", "value": ["test1","test2"]},{"trait_type": "Distribution Channels", "value": ["test3"]},';

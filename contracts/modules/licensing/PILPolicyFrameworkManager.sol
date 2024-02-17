@@ -357,26 +357,26 @@ contract PILPolicyFrameworkManager is
     function _verifyComercialUse(PILPolicy calldata policy, address royaltyPolicy, uint256 mintingFee, address mintingFeeToken) internal view {
         if (!policy.commercialUse) {
             if (policy.commercialAttribution) {
-                revert PILFrameworkErrors.PILPolicyFrameworkManager__CommecialDisabled_CantAddAttribution();
+                revert PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddAttribution();
             }
             if (policy.commercializerChecker != address(0)) {
                 revert PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddCommercializers();
             }
             if (policy.commercialRevShare > 0) {
-                revert PILFrameworkErrors.PILPolicyFrameworkManager__CommecialDisabled_CantAddRevShare();
+                revert PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddRevShare();
             }
             if (royaltyPolicy != address(0)) {
                 revert PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddRoyaltyPolicy();
             }
             if (mintingFee > 0) {
-                revert PILFrameworkErrors.PILPolicyFrameworkManager__CommecialDisabled_CantAddMintingFee();
+                revert PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddMintingFee();
             }
             if (mintingFeeToken != address(0)) {
-                revert PILFrameworkErrors.PILPolicyFrameworkManager__CommecialDisabled_CantAddMintingFeeToken();
+                revert PILFrameworkErrors.PILPolicyFrameworkManager__CommercialDisabled_CantAddMintingFeeToken();
             }
         } else {
             if (royaltyPolicy == address(0)) {
-                revert PILFrameworkErrors.PILPolicyFrameworkManager__CommecialEnabled_RoyaltyPolicyRequired();
+                revert PILFrameworkErrors.PILPolicyFrameworkManager__CommercialEnabled_RoyaltyPolicyRequired();
             }
             if (policy.commercializerChecker != address(0)) {
                 if (!policy.commercializerChecker.supportsInterface(type(IHookModule).interfaceId)) {
