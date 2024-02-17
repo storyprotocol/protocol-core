@@ -176,6 +176,8 @@ contract Flows_Integration_Disputes is BaseIntegration {
         // IPAccount1 and IPAccount2 have commercial policy, of which IPAccount3 has used to mint licenses and link.
         // Thus, any payment to IPAccount3 will get split to IPAccount1 and IPAccount2 accordingly to policy.
 
+        uint256 totalPaymentToIpAcct3;
+
         // A new user, who likes IPAccount3, decides to pay IPAccount3 some royalty (1 token).
         {
             address newUser = address(0xbeef);
@@ -186,6 +188,7 @@ contract Flows_Integration_Disputes is BaseIntegration {
             mockToken.approve(address(royaltyPolicyLAP), 1 ether);
             // ipAcct[3] is the receiver, the actual token is paid by the caller (newUser).
             royaltyModule.payRoyaltyOnBehalf(ipAcct[3], ipAcct[3], address(mockToken), 1 ether);
+            totalPaymentToIpAcct3 += 1 ether;
 
             vm.stopPrank();
         }
@@ -213,11 +216,14 @@ contract Flows_Integration_Disputes is BaseIntegration {
             ERC20[] memory tokens = new ERC20[](1);
             tokens[0] = mockToken;
 
+            (, , address ancestorVault_ipAcct3, , ) = royaltyPolicyLAP.royaltyData(ipAcct[3]);
+
             // First, release the money from the IPAccount3's 0xSplitWallet (that just received money) to the main
             // 0xSplitMain that acts as a ledger for revenue distribution.
             // vm.expectEmit(LIQUID_SPLIT_MAIN);
             // TODO: check Withdrawal(699999999999999998) (Royalty stack is 300, or 30% [absolute] sent to ancestors)
             royaltyPolicyLAP.claimFromIpPool({ account: ipAcct[3], withdrawETH: 0, tokens: tokens });
+            royaltyPolicyLAP.claimFromIpPool({ account: ancestorVault_ipAcct3, withdrawETH: 0, tokens: tokens });
 
             // Bob (owner of IPAccount2) calls the claim her portion of rNFTs and tokens. He can only call
             // `claimFromAncestorsVault` once. Afterwards, she will automatically receive money on revenue distribution.
@@ -230,15 +236,60 @@ contract Flows_Integration_Disputes is BaseIntegration {
             ancestorsRoyalties[1] = defaultCommRevShare;
 
             // IPAccount2 wants to claim from IPAccount3
-            // TODO: AncestorsVaultLAP__ERC20BalanceNotZero (value is at 299999999999999999, which is ~30% of 1 ether)
-            // royaltyPolicyLAP.claimFromAncestorsVault({
-            //     ipId: ipAcct[3],
-            //     claimerIpId: ipAcct[2],
-            //     ancestors: ancestors,
-            //     ancestorsRoyalties: ancestorsRoyalties,
-            //     withdrawETH: false,
-            //     tokens: tokens
-            // });
+            royaltyPolicyLAP.claimFromAncestorsVault({
+                ipId: ipAcct[3],
+                claimerIpId: ipAcct[2],
+                ancestors: ancestors,
+                ancestorsRoyalties: ancestorsRoyalties,
+                withdrawETH: false,
+                tokens: tokens
+            });
+        }
+
+        // IPAccount1, which is both the grandparent and parent of IPAccount3, claims its rNFTs and tokens.
+        {
+            ERC20[] memory tokens = new ERC20[](1);
+            tokens[0] = mockToken;
+
+            (, address splitClone_ipAcct1, , , ) = royaltyPolicyLAP.royaltyData(ipAcct[1]);
+            (, , address ancestorVault_ipAcct3, , ) = royaltyPolicyLAP.royaltyData(ipAcct[3]);
+
+            uint256 balanceBefore_SplitClone_ipAcct1 = mockToken.balanceOf(splitClone_ipAcct1);
+            uint256 balanceBefore_AncestorVault_ipAcct3 = mockToken.balanceOf(ancestorVault_ipAcct3);
+
+            address[] memory ancestors = new address[](2);
+            uint32[] memory ancestorsRoyalties = new uint32[](2);
+            ancestors[0] = ipAcct[1]; // grandparent (claimer)
+            ancestors[1] = ipAcct[2]; // parent
+            ancestorsRoyalties[0] = defaultCommRevShare * 2;
+            ancestorsRoyalties[1] = defaultCommRevShare;
+
+            // IPAccount1 wants to claim from IPAccount3 (gets RNFTs and tokens)
+            royaltyPolicyLAP.claimFromAncestorsVault({
+                ipId: ipAcct[3],
+                claimerIpId: ipAcct[1],
+                ancestors: ancestors,
+                ancestorsRoyalties: ancestorsRoyalties,
+                withdrawETH: false,
+                tokens: tokens
+            });
+
+            uint256 balanceAfter_SplitClone_ipAcct1 = mockToken.balanceOf(splitClone_ipAcct1);
+            uint256 balanceAfter_AncestorVault_ipAcct3 = mockToken.balanceOf(ancestorVault_ipAcct3);
+
+            // IPAccount1's split clone should receive 30% of the total payment to IPAccount3
+            assertApproxEqAbs(
+                balanceAfter_SplitClone_ipAcct1 - balanceBefore_SplitClone_ipAcct1,
+                // should be 200 * 2 * 1 ether / 1000
+                (defaultCommRevShare * 2 * totalPaymentToIpAcct3) / 1000,
+                100
+            );
+            // All money in ancestor vault of IPAccount3 must be sent to IPAccount1's split clone
+            assertEq(
+                balanceAfter_SplitClone_ipAcct1 - balanceBefore_SplitClone_ipAcct1,
+                balanceBefore_AncestorVault_ipAcct3
+            );
+            assertEq(balanceAfter_AncestorVault_ipAcct3, 0);
         }
     }
 }
