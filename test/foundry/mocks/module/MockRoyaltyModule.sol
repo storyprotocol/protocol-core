@@ -56,6 +56,18 @@ contract MockRoyaltyModule is BaseModule, IRoyaltyModule {
         address payerRoyaltyPolicy = royaltyPolicies[_payerIpId];
         // IRoyaltyPolicy(payerRoyaltyPolicy).onRoyaltyPayment(msg.sender, _receiverIpId, _token, _amount);
     }
+    
+    function payLicenseMintingFee(address receiverIpId, address payerAddress, address token, uint256 amount) external {
+
+    }
+
+    function payLicenseMintingFee(
+        address receiverIpId,
+        address payerAddress,
+        address licenseRoyaltyPolicy,
+        address token,
+        uint256 amount
+    ) external{}
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
         return interfaceId == type(IRoyaltyModule).interfaceId || super.supportsInterface(interfaceId);

@@ -32,12 +32,16 @@ interface ILicensingModule is IModule {
     /// @param frameworkData The policy framework specific encoded data
     /// @param royaltyPolicy The address of the royalty policy
     /// @param royaltyData The royalty policy specific encoded data
+    /// @param mintingFee The fee to be paid when minting a license
+    /// @param mintingFeeToken The token to be used to pay the minting fee
     event PolicyRegistered(
         uint256 indexed policyId,
         address indexed policyFrameworkManager,
         bytes frameworkData,
         address royaltyPolicy,
-        bytes royaltyData
+        bytes royaltyData,
+        uint256 mintingFee,
+        address mintingFeeToken
     );
 
     /// @notice Emitted when a policy is added to an IP
@@ -73,18 +77,12 @@ interface ILicensingModule is IModule {
     /// @param manager the address of the manager. Will be ERC165 checked for IPolicyFrameworkManager
     function registerPolicyFrameworkManager(address manager) external;
 
-    /// @notice Registers a policy into the contract. MUST be called by a registered framework or it will revert.
-    /// The policy data and its integrity must be verified by the policy framework manager.
-    /// @param isLicenseTransferable True if the license is transferable
-    /// @param royaltyPolicy The address of the royalty policy
-    /// @param royaltyData The royalty policy specific encoded data
-    /// @param frameworkData The policy framework specific encoded data
-    function registerPolicy(
-        bool isLicenseTransferable,
-        address royaltyPolicy,
-        bytes memory royaltyData,
-        bytes memory frameworkData
-    ) external returns (uint256 policyId);
+    /// @notice Registers a policy into the contract. MUST be called by a registered
+    /// framework or it will revert. The policy data and its integrity must be
+    /// verified by the policy framework manager.
+    /// @param pol The Licensing policy data. MUST have same policy framework as the caller address
+    /// @return policyId The id of the newly registered policy
+    function registerPolicy(Licensing.Policy memory pol) external returns (uint256 policyId);
 
     /// @notice Adds a policy to the set of policies of an IP
     /// @param ipId The id of the IP

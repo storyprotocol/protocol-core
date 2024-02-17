@@ -14,6 +14,7 @@ contract TestRoyaltyModule is BaseTest {
     event RoyaltyTokenWhitelistUpdated(address token, bool allowed);
     event RoyaltyPolicySet(address ipId, address royaltyPolicy, bytes data);
     event RoyaltyPaid(address receiverIpId, address payerIpId, address sender, address token, uint256 amount);
+    event LicenseMintingFeePaid(address receiverIpId, address payerAddress, address token, uint256 amount);
 
     address internal ipAccount1 = address(0x111000aaa);
     address internal ipAccount2 = address(0x111000bbb);
@@ -486,6 +487,36 @@ contract TestRoyaltyModule is BaseTest {
         uint256 splitCloneUSDCBalAfter = USDC.balanceOf(splitClone);
 
         assertEq(payerIpIdUSDCBalBefore - payerIpIdUSDCBalAfter, royaltyAmount);
+        assertEq(splitCloneUSDCBalAfter - splitCloneUSDCBalBefore, royaltyAmount);
+    }
+
+    function test_RoyaltyModule_payLicenseMintingFee() public {
+        uint256 royaltyAmount = 100 * 10 ** 6;
+        address receiverIpId = address(7);
+        address payerAddress = address(3);
+        address licenseRoyaltyPolicy = address(royaltyPolicyLAP);
+        address token = address(USDC);
+
+        (, address splitClone, , , ) = royaltyPolicyLAP.royaltyData(receiverIpId);
+
+        vm.startPrank(payerAddress);
+        USDC.mint(payerAddress, royaltyAmount);
+        USDC.approve(address(royaltyPolicyLAP), royaltyAmount);
+        vm.stopPrank;
+
+        uint256 payerAddressUSDCBalBefore = USDC.balanceOf(payerAddress);
+        uint256 splitCloneUSDCBalBefore = USDC.balanceOf(splitClone);
+
+        vm.expectEmit(true, true, true, true, address(royaltyModule));
+        emit LicenseMintingFeePaid(receiverIpId, payerAddress, address(USDC), royaltyAmount);
+
+        vm.startPrank(address(licensingModule));
+        royaltyModule.payLicenseMintingFee(receiverIpId, payerAddress, licenseRoyaltyPolicy, token, royaltyAmount);
+
+        uint256 payerAddressUSDCBalAfter = USDC.balanceOf(payerAddress);
+        uint256 splitCloneUSDCBalAfter = USDC.balanceOf(splitClone);
+
+        assertEq(payerAddressUSDCBalBefore - payerAddressUSDCBalAfter, royaltyAmount);
         assertEq(splitCloneUSDCBalAfter - splitCloneUSDCBalBefore, royaltyAmount);
     }
 }

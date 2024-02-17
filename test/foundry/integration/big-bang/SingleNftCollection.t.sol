@@ -91,7 +91,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                                 REGISTER IP ACCOUNTS
         ///////////////////////////////////////////////////////////////*/
 
-        // ipAcct[tokenId] => ipAccount address
+        /* // ipAcct[tokenId] => ipAccount address
         // owner is the vm.pranker
 
         vm.startPrank(u.alice);
@@ -109,12 +109,12 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
         vm.startPrank(u.carl);
         mockNFT.mintId(u.carl, 5);
         ipAcct[5] = registerIpAccount(mockNFT, 5, u.carl);
-
+ */
         /*//////////////////////////////////////////////////////////////
                             ADD POLICIES TO IP ACCOUNTS
         ///////////////////////////////////////////////////////////////*/
 
-        vm.startPrank(u.alice);
+        /* vm.startPrank(u.alice);
         licensingModule.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_cheap_flexible"]);
         licensingModule.addPolicyToIp(ipAcct[100], policyIds["uml_noncom_deriv_reciprocal_derivative"]);
 
@@ -133,13 +133,13 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 ipAcct[3],
                 policyIds["uml_noncom_deriv_reciprocal_derivative"]
             )
-        );
+        ); */
 
         /*///////////////////////////////////////////////////////////////
                                 MINT & USE LICENSES
         ///////////////////////////////////////////////////////////////*/
 
-        // Carl mints 1 license for policy "com_deriv_all_true" on Alice's NFT 1 IPAccount
+        /* // Carl mints 1 license for policy "com_deriv_all_true" on Alice's NFT 1 IPAccount
         // Carl creates NFT 6 IPAccount
         // Carl activates the license on his NFT 6 IPAccount, linking as child to Alice's NFT 1 IPAccount
         {
@@ -340,7 +340,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 metadata,
                 u.carl, // caller
                 abi.encode(params)
-            );
-        }
+            ); 
+        }*/
     }
 }

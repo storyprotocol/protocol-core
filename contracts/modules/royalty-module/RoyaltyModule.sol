@@ -155,8 +155,33 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModul
         emit RoyaltyPaid(receiverIpId, payerIpId, msg.sender, token, amount);
     }
 
+    /// @notice Allows to pay the minting fee for a license
+    /// @param receiverIpId The ipId that receives the royalties
+    /// @param payerAddress The address that pays the royalties
+    /// @param licenseRoyaltyPolicy The royalty policy of the license being minted
+    /// @param token The token to use to pay the royalties
+    /// @param amount The amount to pay
+    function payLicenseMintingFee(
+        address receiverIpId,
+        address payerAddress,
+        address licenseRoyaltyPolicy,
+        address token,
+        uint256 amount
+    ) external onlyLicensingModule {
+        if (!isWhitelistedRoyaltyToken[token]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyToken();
+
+        if (licenseRoyaltyPolicy == address(0)) revert Errors.RoyaltyModule__NoRoyaltyPolicySet();
+        if (!isWhitelistedRoyaltyPolicy[licenseRoyaltyPolicy])
+            revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
+
+        IRoyaltyPolicy(licenseRoyaltyPolicy).onRoyaltyPayment(payerAddress, receiverIpId, token, amount);
+
+        emit LicenseMintingFeePaid(receiverIpId, payerAddress, token, amount);
+    }
+
     /// @notice IERC165 interface support.
     function supportsInterface(bytes4 interfaceId) public view virtual override(BaseModule, IERC165) returns (bool) {
         return interfaceId == type(IRoyaltyModule).interfaceId || super.supportsInterface(interfaceId);
     }
+
 }

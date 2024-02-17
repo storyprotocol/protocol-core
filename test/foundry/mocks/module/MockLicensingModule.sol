@@ -43,20 +43,7 @@ contract MockLicensingModule is BaseModule, ILicensingModule {
         _registeredFrameworkManagers[manager] = true;
     }
 
-    function registerPolicy(
-        bool isLicenseTransferable,
-        address royaltyPolicy,
-        bytes memory royaltyData,
-        bytes memory frameworkData
-    ) external returns (uint256 policyId) {
-        Licensing.Policy memory pol = Licensing.Policy({
-            isLicenseTransferable: isLicenseTransferable,
-            policyFramework: msg.sender,
-            frameworkData: frameworkData,
-            royaltyPolicy: royaltyPolicy,
-            royaltyData: royaltyData
-        });
-
+    function registerPolicy(Licensing.Policy memory pol) external returns (uint256 policyId) {
         (uint256 polId, bool newPol) = DataUniqueness.addIdOrGetExisting(
             abi.encode(pol),
             _hashedPolicies,
