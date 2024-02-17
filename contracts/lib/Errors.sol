@@ -152,6 +152,9 @@ library Errors {
     error LicensingModule__DerivativeRevShareSumExceedsMaxRNFTSupply();
     error LicensingModule__MismatchBetweenCommercialRevenueShareAndMinRoyalty();
     error LicensingModule__MismatchBetweenRoyaltyPolicy();
+    error LicensingModule__RegisterPolicyFrameworkMismatch();
+    error LicensingModule__RoyaltyPolicyNotWhitelisted();
+    error LicensingModule__MintingFeeTokenNotWhitelisted();
     /// @notice emitted when trying to interact with an IP that has been disputed in the DisputeModule
     error LicensingModule__DisputedIpId();
     /// @notice emitted when linking a license from a licensor that has been disputed in the DisputeModule

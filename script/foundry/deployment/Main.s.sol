@@ -403,6 +403,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             RegisterUMLPolicyParams({
                 transferable: true,
                 royaltyPolicy: address(royaltyPolicyLAP),
+                mintingFee: 0,
+                mintingFeeToken: address(0),
                 policy: UMLPolicy({
                     attribution: true,
                     commercialUse: true,
@@ -425,6 +427,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             RegisterUMLPolicyParams({
                 transferable: false,
                 royaltyPolicy: address(0), // no royalty, non-commercial
+                mintingFee: 0,
+                mintingFeeToken: address(0),
                 policy: UMLPolicy({
                     attribution: true,
                     commercialUse: false,

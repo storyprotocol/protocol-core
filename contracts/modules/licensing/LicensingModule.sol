@@ -96,25 +96,19 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
     /// @notice Registers a policy into the contract. MUST be called by a registered
     /// framework or it will revert. The policy data and its integrity must be
     /// verified by the policy framework manager.
-    /// @param isLicenseTransferable True if the license is transferable
-    /// @param royaltyPolicy The address of the royalty policy
-    /// @param royaltyData The royalty policy specific encoded data
-    /// @param frameworkData The policy framework specific encoded data
-    function registerPolicy(
-        bool isLicenseTransferable,
-        address royaltyPolicy,
-        bytes memory royaltyData,
-        bytes memory frameworkData
-    ) external returns (uint256 policyId) {
+    /// @param pol The Licensing policy data. MUST have same policy framework as the caller address
+    /// @return policyId The id of the newly registered policy
+    function registerPolicy(Licensing.Policy memory pol) external returns (uint256 policyId) {
         _verifyRegisteredFramework(address(msg.sender));
-        Licensing.Policy memory pol = Licensing.Policy({
-            isLicenseTransferable: isLicenseTransferable,
-            policyFramework: msg.sender,
-            frameworkData: frameworkData,
-            royaltyPolicy: royaltyPolicy,
-            royaltyData: royaltyData
-        });
-
+        if (pol.policyFramework != address(msg.sender)) {
+            revert Errors.LicensingModule__RegisterPolicyFrameworkMismatch();
+        }
+        if (pol.royaltyPolicy != address(0) && !ROYALTY_MODULE.isWhitelistedRoyaltyPolicy(pol.royaltyPolicy)) {
+            revert Errors.LicensingModule__RoyaltyPolicyNotWhitelisted();
+        }
+        if (pol.mintingFee > 0 && !ROYALTY_MODULE.isWhitelistedRoyaltyToken(pol.mintingFeeToken)) {
+            revert Errors.LicensingModule__MintingFeeTokenNotWhitelisted();
+        }
         (uint256 polId, bool newPol) = DataUniqueness.addIdOrGetExisting(
             abi.encode(pol),
             _hashedPolicies,
@@ -124,7 +118,15 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         if (newPol) {
             _totalPolicies = polId;
             _policies[polId] = pol;
-            emit PolicyRegistered(polId, msg.sender, frameworkData, royaltyPolicy, royaltyData);
+            emit PolicyRegistered(
+                polId,
+                pol.policyFramework,
+                pol.frameworkData,
+                pol.royaltyPolicy,
+                pol.royaltyData,
+                pol.mintingFee,
+                pol.mintingFeeToken
+            );
         }
         return polId;
     }
@@ -191,6 +193,10 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         // If the policy has a royalty policy, we need to call the royalty module to process the minting
         // Otherwise, it's non commercial and we can skip the call.
         if (pol.royaltyPolicy != address(0)) {
+            // If there's a minting fee, sender must pay it
+            if (pol.mintingFee > 0) {
+                ROYALTY_MODULE.payLicenseMintingFee(licensorIpId, msg.sender, pol.mintingFeeToken, pol.mintingFee);
+            }
             ROYALTY_MODULE.onLicenseMinting(licensorIpId, pol.royaltyPolicy, pol.royaltyData, royaltyContext);
         }
 
