@@ -12,6 +12,7 @@ import { GovernanceLib } from "../lib/GovernanceLib.sol";
 /// @dev This contract is used for governance of the protocol.
 /// TODO: Replace with OZ's 2StepOwnable
 contract Governance is AccessControl, IGovernance {
+    /// @dev The current governance state.
     GovernanceLib.ProtocolState internal state;
 
     /// @notice Creates a new Governance contract.
@@ -21,8 +22,9 @@ contract Governance is AccessControl, IGovernance {
         _grantRole(GovernanceLib.PROTOCOL_ADMIN, admin);
     }
 
-    /// @notice Sets the state of the protocol.
-    /// @param newState The new state of the protocol.
+    /// @notice Sets the state of the protocol
+    /// @dev This function can only be called by an account with the appropriate role
+    /// @param newState The new state to set for the protocol
     function setState(GovernanceLib.ProtocolState newState) external override {
         if (!hasRole(GovernanceLib.PROTOCOL_ADMIN, msg.sender)) revert Errors.Governance__OnlyProtocolAdmin();
         if (newState == state) revert Errors.Governance__NewStateIsTheSameWithOldState();
@@ -30,15 +32,13 @@ contract Governance is AccessControl, IGovernance {
         state = newState;
     }
 
-    /// @notice Returns the current state of the protocol.
-    /// @return The current state of the protocol.
+    /// @notice Returns the current state of the protocol
+    /// @return state The current state of the protocol
     function getState() external view override returns (GovernanceLib.ProtocolState) {
         return state;
     }
 
-    /// @notice Checks if the contract supports a specific interface.
-    /// @param interfaceId The id of the interface.
-    /// @return True if the contract supports the interface, false otherwise.
+    /// @notice IERC165 interface support.
     function supportsInterface(bytes4 interfaceId) public view override returns (bool) {
         return (interfaceId == type(IGovernance).interfaceId || super.supportsInterface(interfaceId));
     }

@@ -33,26 +33,36 @@ contract AccessController is IAccessController, Governable {
     address public IP_ACCOUNT_REGISTRY;
     address public MODULE_REGISTRY;
 
-    /// @dev encoded permission => permission
-    /// encoded permission = keccak256(abi.encodePacked(ipAccount, signer, to, func))
-    mapping(bytes32 => uint8) public permissions;
+    /// @dev Tracks the permission granted to an encoded callpath, where the
+    /// encoded callpath = keccak256(abi.encodePacked(ipAccount, signer, to, func))
+    mapping(bytes32 => uint8) internal encodedPermissions;
 
     constructor(address governance) Governable(governance) {}
 
+    // TODO: Change the function name to not clash with potential proxy contract `initialize`.
+    // TODO: Only allow calling once.
+    /// @dev Initialize the Access Controller with the IP Account Registry and Module Registry addresses.
+    /// These are separated from the constructor, because we need to deploy the AccessController first for
+    /// to deploy many registry and module contracts, including the IP Account Registry and Module Registry.
+    /// @dev Enforced to be only callable by the protocol admin in governance.
+    /// @param ipAccountRegistry The address of the IP Account Registry.
+    /// @param moduleRegistry The address of the Module Registry.
     function initialize(address ipAccountRegistry, address moduleRegistry) external onlyProtocolAdmin {
         IP_ACCOUNT_REGISTRY = ipAccountRegistry;
         MODULE_REGISTRY = moduleRegistry;
     }
 
-    /// @inheritdoc IAccessController
-    function setBatchPermissions(AccessPermission.Permission[] memory permissions_) external whenNotPaused {
-        for (uint256 i = 0; i < permissions_.length; ) {
+    /// @notice Sets a batch of permissions in a single transaction.
+    /// @dev This function allows setting multiple permissions at once. Pausable.
+    /// @param permissions An array of `Permission` structs, each representing the permission to be set.
+    function setBatchPermissions(AccessPermission.Permission[] memory permissions) external whenNotPaused {
+        for (uint256 i = 0; i < permissions.length; ) {
             setPermission(
-                permissions_[i].ipAccount,
-                permissions_[i].signer,
-                permissions_[i].to,
-                permissions_[i].func,
-                permissions_[i].permission
+                permissions[i].ipAccount,
+                permissions[i].signer,
+                permissions[i].to,
+                permissions[i].func,
+                permissions[i].permission
             );
             unchecked {
                 i += 1;
@@ -61,92 +71,90 @@ contract AccessController is IAccessController, Governable {
     }
 
     /// @notice Sets the permission for all IPAccounts
-    function setGlobalPermission(
-        address signer_,
-        address to_,
-        bytes4 func_,
-        uint8 permission_
-    ) external onlyProtocolAdmin {
-        if (signer_ == address(0)) {
+    /// @dev Enforced to be only callable by the protocol admin in governance.
+    /// @param signer The address that can call `to` on behalf of the IP account
+    /// @param to The address that can be called by the `signer` (currently only modules can be `to`)
+    /// @param func The function selector of `to` that can be called by the `signer` on behalf of the `ipAccount`
+    /// @param permission The new permission level
+    function setGlobalPermission(address signer, address to, bytes4 func, uint8 permission) external onlyProtocolAdmin {
+        if (signer == address(0)) {
             revert Errors.AccessController__SignerIsZeroAddress();
         }
         // permission must be one of ABSTAIN, ALLOW, DENY
-        if (permission_ > 2) {
+        if (permission > 2) {
             revert Errors.AccessController__PermissionIsNotValid();
         }
         _setPermission(address(0), signer_, to_, func_, permission_);
-        emit PermissionSet(address(0), address(0), signer_, to_, func_, permission_);
+        emit PermissionSet(address(0), signer_, to_, func_, permission_);
     }
 
     /// @notice Sets the permission for a specific function call
-    /// @dev By default, all policies are set to ABSTAIN, which means that the permission is not set
-    /// Owner of ipAccount by default has permission sets the permission
-    /// permission 0 => ABSTAIN, 1 => ALLOW, 3 => DENY
+    /// @dev Each policy is represented as a mapping from an IP account address to a signer address to a recipient
+    /// address to a function selector to a permission level. The permission level can be 0 (ABSTAIN), 1 (ALLOW), or
+    /// 2 (DENY).
+    /// @dev By default, all policies are set to 0 (ABSTAIN), which means that the permission is not set.
+    /// The owner of ipAccount by default has all permission.
     /// address(0) => wildcard
     /// bytes4(0) => wildcard
-    /// specific permission overrides wildcard permission
-    /// @param ipAccount_ The account that owns the IP (not support wildcard permission)
-    /// @param signer_ The account that signs the transaction (not support wildcard permission)
-    /// @param to_ The recipient of the transaction (support wildcard permission)
-    /// @param func_ The function selector (support wildcard permission)
-    /// @param permission_ The permission level (0 => ABSTAIN, 1 => ALLOW, 3 => DENY)
+    /// Specific permission overrides wildcard permission.
+    /// @param ipAccount The address of the IP account that grants the permission for `signer`
+    /// @param signer The address that can call `to` on behalf of the `ipAccount`
+    /// @param to The address that can be called by the `signer` (currently only modules can be `to`)
+    /// @param func The function selector of `to` that can be called by the `signer` on behalf of the `ipAccount`
+    /// @param permission The new permission level
     function setPermission(
-        address ipAccount_,
-        address signer_,
-        address to_,
-        bytes4 func_,
-        uint8 permission_
+        address ipAccount,
+        address signer,
+        address to,
+        bytes4 func,
+        uint8 permission
     ) public whenNotPaused {
         // IPAccount and signer does not support wildcard permission
-        if (ipAccount_ == address(0)) {
+        if (ipAccount == address(0)) {
             revert Errors.AccessController__IPAccountIsZeroAddress();
         }
-        if (signer_ == address(0)) {
+        if (signer == address(0)) {
             revert Errors.AccessController__SignerIsZeroAddress();
         }
-        if (!IIPAccountRegistry(IP_ACCOUNT_REGISTRY).isIpAccount(ipAccount_)) {
-            revert Errors.AccessController__IPAccountIsNotValid(ipAccount_);
+        if (!IIPAccountRegistry(IP_ACCOUNT_REGISTRY).isIpAccount(ipAccount)) {
+            revert Errors.AccessController__IPAccountIsNotValid(ipAccount);
         }
         // permission must be one of ABSTAIN, ALLOW, DENY
-        if (permission_ > 2) {
+        if (permission > 2) {
             revert Errors.AccessController__PermissionIsNotValid();
         }
-        if (!IModuleRegistry(MODULE_REGISTRY).isRegistered(msg.sender) && ipAccount_ != msg.sender) {
+        if (!IModuleRegistry(MODULE_REGISTRY).isRegistered(msg.sender) && ipAccount != msg.sender) {
             revert Errors.AccessController__CallerIsNotIPAccount();
         }
-        _setPermission(ipAccount_, signer_, to_, func_, permission_);
+        _setPermission(ipAccount, signer, to, func, permission);
 
-        emit PermissionSet(IIPAccount(payable(ipAccount_)).owner(), ipAccount_, signer_, to_, func_, permission_);
+        emit PermissionSet(ipAccount_, signer_, to_, func_, permission_);
     }
 
-    /// @notice Checks if a specific function call is allowed.
+    /// @notice Checks the permission level for a specific function call. Reverts if permission is not granted.
+    /// Otherwise, the function is a noop.
     /// @dev This function checks the permission level for a specific function call.
     /// If a specific permission is set, it overrides the general (wildcard) permission.
     /// If the current level permission is ABSTAIN, the final permission is determined by the upper level.
-    /// @param ipAccount_ The account that owns the IP.
-    /// @param signer_ The account that signs the transaction.
-    /// @param to_ The recipient of the transaction.
-    /// @param func_ The function selector.
+    /// @param ipAccount The address of the IP account that grants the permission for `signer`
+    /// @param signer The address that can call `to` on behalf of the `ipAccount`
+    /// @param to The address that can be called by the `signer` (currently only modules can be `to`)
+    /// @param func The function selector of `to` that can be called by the `signer` on behalf of the `ipAccount`
     // solhint-disable code-complexity
-    function checkPermission(
-        address ipAccount_,
-        address signer_,
-        address to_,
-        bytes4 func_
-    ) external view whenNotPaused {
-        // ipAccount_ can only call registered modules or set Permissions
-        if (to_ != address(this) && !IModuleRegistry(MODULE_REGISTRY).isRegistered(to_)) {
-            revert Errors.AccessController__RecipientIsNotRegisteredModule(to_);
+    function checkPermission(address ipAccount, address signer, address to, bytes4 func) external view whenNotPaused {
+        // ipAccount can only call registered modules or set Permissions
+        if (to != address(this) && !IModuleRegistry(MODULE_REGISTRY).isRegistered(to)) {
+            revert Errors.AccessController__RecipientIsNotRegisteredModule(to);
         }
         // Must be a valid IPAccount
-        if (!IIPAccountRegistry(IP_ACCOUNT_REGISTRY).isIpAccount(ipAccount_)) {
-            revert Errors.AccessController__IPAccountIsNotValid(ipAccount_);
+        if (!IIPAccountRegistry(IP_ACCOUNT_REGISTRY).isIpAccount(ipAccount)) {
+            revert Errors.AccessController__IPAccountIsNotValid(ipAccount);
         }
         // Owner can call all functions of all modules
-        if (IIPAccount(payable(ipAccount_)).owner() == signer_) {
+        if (IIPAccount(payable(ipAccount)).owner() == signer) {
             return;
         }
-        uint functionPermission = getPermission(ipAccount_, signer_, to_, func_);
+        uint functionPermission = getPermission(ipAccount, signer, to, func);
         // Specific function permission overrides wildcard/general permission
         if (functionPermission == AccessPermission.ALLOW) {
             return;
@@ -154,52 +162,44 @@ contract AccessController is IAccessController, Governable {
 
         // If specific function permission is ABSTAIN, check module level permission
         if (functionPermission == AccessPermission.ABSTAIN) {
-            uint8 modulePermission = getPermission(ipAccount_, signer_, to_, bytes4(0));
+            uint8 modulePermission = getPermission(ipAccount, signer, to, bytes4(0));
             // Return true if allow to call all functions of the module
             if (modulePermission == AccessPermission.ALLOW) {
                 return;
             }
             // If module level permission is ABSTAIN, check transaction signer level permission
             if (modulePermission == AccessPermission.ABSTAIN) {
-                if (getPermission(address(0), signer_, to_, func_) == AccessPermission.ALLOW) {
+                if (getPermission(address(0), signer, to, func) == AccessPermission.ALLOW) {
                     return;
                 }
                 // Pass if the ipAccount allow the signer can call all functions of all modules
                 // Otherwise, revert
-                if (getPermission(ipAccount_, signer_, address(0), bytes4(0)) == AccessPermission.ALLOW) {
+                if (getPermission(ipAccount, signer, address(0), bytes4(0)) == AccessPermission.ALLOW) {
                     return;
                 }
-                revert Errors.AccessController__PermissionDenied(ipAccount_, signer_, to_, func_);
+                revert Errors.AccessController__PermissionDenied(ipAccount, signer, to, func);
             }
-            revert Errors.AccessController__PermissionDenied(ipAccount_, signer_, to_, func_);
+            revert Errors.AccessController__PermissionDenied(ipAccount, signer, to, func);
         }
-        revert Errors.AccessController__PermissionDenied(ipAccount_, signer_, to_, func_);
+        revert Errors.AccessController__PermissionDenied(ipAccount, signer, to, func);
     }
 
     /// @notice Returns the permission level for a specific function call.
-    /// @param ipAccount The account that owns the IP.
-    /// @param signer The account that signs the transaction.
-    /// @param to The recipient of the transaction.
-    /// @param func The function selector.
-    /// @return The permission level for the specific function call.
+    /// @param ipAccount The address of the IP account that grants the permission for `signer`
+    /// @param signer The address that can call `to` on behalf of the `ipAccount`
+    /// @param to The address that can be called by the `signer` (currently only modules can be `to`)
+    /// @param func The function selector of `to` that can be called by the `signer` on behalf of the `ipAccount`
+    /// @return permission The current permission level for the function call on `to` by the `signer` for `ipAccount`
     function getPermission(address ipAccount, address signer, address to, bytes4 func) public view returns (uint8) {
-        return permissions[_encodePermission(ipAccount, signer, to, func)];
+        return encodedPermissions[_encodePermission(ipAccount, signer, to, func)];
     }
 
-    /// @dev the permission parameters will be encoded into bytes32 as key in the permissions mapping to save storage
+    /// @dev The permission parameters will be encoded into bytes32 as key in the permissions mapping to save storage
     function _setPermission(address ipAccount, address signer, address to, bytes4 func, uint8 permission) internal {
-        permissions[_encodePermission(ipAccount, signer, to, func)] = permission;
+        encodedPermissions[_encodePermission(ipAccount, signer, to, func)] = permission;
     }
 
-    /// @dev Encodes permission parameters into a hash (bytes32) to serve as a unique permission record ID.
-    /// This function is utilized both when setting permissions and checking permissions to uniquely identify them.
-    /// In addition to the four permission fields passed by the parameters (ipAccount, signer, to, func),
-    /// an additional field, "ipAccountOwner", is retrieved on-the-fly when encoding the permission.
-    /// @param ipAccount The IP account involved in the permission.
-    /// @param signer The account that signs the transaction.
-    /// @param to The recipient of the transaction.
-    /// @param func The function selector involved in the permission.
-    /// @return A bytes32 hash representing the unique ID of the permission record.
+    /// @dev encode permission to hash (bytes32)
     function _encodePermission(
         address ipAccount,
         address signer,

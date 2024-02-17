@@ -20,19 +20,26 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
     using Strings for *;
 
     // TODO: deploy with CREATE2 to make this immutable
-    ILicensingModule private _licensingModule;
+    /// @notice Returns the canonical protocol-wide LicensingModule
+    ILicensingModule public LICENSING_MODULE;
+
+    /// @notice Returns the canonical protocol-wide DisputeModule
     IDisputeModule public DISPUTE_MODULE;
 
-    mapping(bytes32 licenseHash => uint256 ids) private _hashedLicenses;
-    mapping(uint256 licenseIds => Licensing.License licenseData) private _licenses;
-    /// This tracks the number of licenses registered in the protocol, it will not decrease when a license is burnt.
+    /// @dev Maps the hash of the license data to the licenseId
+    mapping(bytes32 licenseHash => uint256 licenseId) private _hashedLicenses;
+
+    /// @dev Maps the licenseId to the license data
+    mapping(uint256 licenseId => Licensing.License licenseData) private _licenses;
+
+    /// @dev Tracks the number of licenses registered in the protocol, it will not decrease when a license is burnt.
     uint256 private _mintedLicenses;
 
     /// @dev We have to implement this modifier instead of inheriting `LicensingModuleAware` because LicensingModule
     /// constructor requires the licenseRegistry address, which would create a circular dependency. Thus, we use the
     /// function `setLicensingModule` to set the licensing module address after deploying the module.
     modifier onlyLicensingModule() {
-        if (msg.sender != address(_licensingModule)) {
+        if (msg.sender != address(LICENSING_MODULE)) {
             revert Errors.LicenseRegistry__CallerNotLicensingModule();
         }
         _;
@@ -40,6 +47,9 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
 
     constructor(address governance) ERC1155("") Governable(governance) {}
 
+    /// @dev Sets the DisputeModule address.
+    /// @dev Enforced to be only callable by the protocol admin
+    /// @param newDisputeModule The address of the DisputeModule
     function setDisputeModule(address newDisputeModule) external onlyProtocolAdmin {
         if (newDisputeModule == address(0)) {
             revert Errors.LicenseRegistry__ZeroDisputeModule();
@@ -47,39 +57,36 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
         DISPUTE_MODULE = IDisputeModule(newDisputeModule);
     }
 
+    /// @dev Sets the LicensingModule address.
+    /// @dev Enforced to be only callable by the protocol admin
+    /// @param newLicensingModule The address of the LicensingModule
     function setLicensingModule(address newLicensingModule) external onlyProtocolAdmin {
         if (newLicensingModule == address(0)) {
             revert Errors.LicenseRegistry__ZeroLicensingModule();
         }
-        _licensingModule = ILicensingModule(newLicensingModule);
+        LICENSING_MODULE = ILicensingModule(newLicensingModule);
     }
 
-    function licensingModule() external view override returns (address) {
-        return address(_licensingModule);
-    }
-
-    /// Mints license NFTs representing a policy granted by a set of ipIds (licensors). This NFT needs to be burned
-    /// in order to link a derivative IP with its parents.
-    /// If this is the first combination of policy and licensors, a new licenseId
-    /// will be created.
-    /// If not, the license is fungible and an id will be reused.
-    /// Only callable by the LicensingModule.
-    /// @param policyId id of the policy to be minted
-    /// @param licensorIpId IP Id granting the license
+    /// @notice Mints license NFTs representing a policy granted by a set of ipIds (licensors). This NFT needs to be
+    /// burned in order to link a derivative IP with its parents. If this is the first combination of policy and
+    /// licensors, a new licenseId will be created. If not, the license is fungible and an id will be reused.
+    /// @dev Only callable by the licensing module.
+    /// @param policyId The ID of the policy to be minted
+    /// @param licensorIpId_ The ID of the IP granting the license (ie. licensor)
     /// @param transferable True if the license is transferable
-    /// @param amount of licenses to be minted. License NFT is fungible for same policy and same licensors
-    /// @param receiver of the License NFT(s).
-    /// @return licenseId of the NFT(s).
+    /// @param amount Number of licenses to mint. License NFT is fungible for same policy and same licensors
+    /// @param receiver Receiver address of the minted license NFT(s).
+    /// @return licenseId The ID of the minted license NFT(s).
     function mintLicense(
         uint256 policyId,
-        address licensorIpId,
+        address licensorIpId_,
         bool transferable,
         uint256 amount, // mint amount
         address receiver
     ) external onlyLicensingModule returns (uint256 licenseId) {
         Licensing.License memory licenseData = Licensing.License({
             policyId: policyId,
-            licensorIpId: licensorIpId,
+            licensorIpId: licensorIpId_,
             transferable: transferable
         });
         bool isNew;
@@ -106,30 +113,45 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
         _burnBatch(holder, licenseIds, values);
     }
 
+    /// @notice Returns the number of licenses registered in the protocol.
+    /// @dev Token ID counter total count.
+    /// @return mintedLicenses The number of minted licenses
     function mintedLicenses() external view returns (uint256) {
         return _mintedLicenses;
     }
 
-    /// Returns true if holder has positive balance for licenseId
+    /// @notice Returns true if holder has positive balance for the given license ID.
+    /// @return isLicensee True if holder is the licensee for the license (owner of the license NFT), or derivative IP
+    /// owner if the license was added to the IP by linking (burning a license).
     function isLicensee(uint256 licenseId, address holder) external view returns (bool) {
         return balanceOf(holder, licenseId) > 0;
     }
 
+    /// @notice Returns the license data for the given license ID
+    /// @param licenseId The ID of the license
+    /// @return licenseData The license data
     function license(uint256 licenseId) external view returns (Licensing.License memory) {
         return _licenses[licenseId];
     }
 
+    /// @notice Returns the ID of the IP asset that is the licensor of the given license ID
+    /// @param licenseId The ID of the license
+    /// @return licensorIpId The ID of the licensor
     function licensorIpId(uint256 licenseId) external view returns (address) {
         return _licenses[licenseId].licensorIpId;
     }
 
+    /// @notice Returns the policy ID for the given license ID
+    /// @param licenseId The ID of the license
+    /// @return policyId The ID of the policy
     function policyIdForLicense(uint256 licenseId) external view returns (uint256) {
         return _licenses[licenseId].policyId;
     }
 
     /// @notice Returns true if the license has been revoked (licensor tagged after a dispute in
     /// the dispute module). If the tag is removed, the license is not revoked anymore.
-    /// @param licenseId The id of the license
+    /// @param licenseId The id of the license to check
+    /// @return isRevoked True if the license is revoked
     function isLicenseRevoked(uint256 licenseId) public view returns (bool) {
         // For beta, any tag means revocation, for mainnet we need more context.
         // TODO: signal metadata update when tag changes.
@@ -141,7 +163,7 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
     /// (last attribute must not have a comma at the end)
     function uri(uint256 id) public view virtual override returns (string memory) {
         Licensing.License memory licenseData = _licenses[id];
-        Licensing.Policy memory pol = _licensingModule.policy(licenseData.policyId);
+        Licensing.Policy memory pol = LICENSING_MODULE.policy(licenseData.policyId);
 
         string memory licensorIpIdHex = licenseData.licensorIpId.toHexString();
 

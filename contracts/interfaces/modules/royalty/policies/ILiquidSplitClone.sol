@@ -17,5 +17,9 @@ interface ILiquidSplitClone {
     /// @param data Custom data
     function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes calldata data) external;
 
+    /// @notice Returns the balance of the account
+    /// @param account The account to check
+    /// @param id The token id
+    /// @return balance The balance of the account
     function balanceOf(address account, uint256 id) external view returns (uint256);
 }

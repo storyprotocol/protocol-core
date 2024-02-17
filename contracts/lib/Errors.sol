@@ -151,7 +151,6 @@ library Errors {
     error LicensingModule__IncompatibleLicensorCommercialPolicy();
     error LicensingModule__IncompatibleLicensorRoyaltyDerivativeRevShare();
     error LicensingModule__DerivativeRevShareSumExceedsMaxRNFTSupply();
-    error LicensingModule__MismatchBetweenCommercialRevenueShareAndMinRoyalty();
     error LicensingModule__MismatchBetweenRoyaltyPolicy();
     /// @notice emitted when trying to interact with an IP that has been disputed in the DisputeModule
     error LicensingModule__DisputedIpId();
