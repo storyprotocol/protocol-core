@@ -124,7 +124,7 @@ contract UMLPolicyFrameworkManager is
     ) external nonReentrant onlyLicensingModule returns (bool) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
         // If the policy defines no reciprocal derivatives are allowed (no derivatives of derivatives),
-        //and we are mintingFromADerivative we don't allow minting
+        // and we are mintingFromADerivative we don't allow minting
         if (!policy.derivativesReciprocal && mintingFromADerivative) {
             return false;
         }
