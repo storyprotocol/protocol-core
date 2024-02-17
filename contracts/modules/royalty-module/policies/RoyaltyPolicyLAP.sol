@@ -38,6 +38,8 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
     uint256 public constant MAX_PARENTS = 2;
 
     /// @notice Maximum number of total ancestors
+    // The IP derivative tree is limited to 14 ancestors
+    // which represents 3 levels of a binary tree 14 = 2 + 4 + 8
     uint256 public constant MAX_ANCESTORS = 14;
 
     /// @notice RoyaltyModule address
@@ -97,8 +99,6 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
         ANCESTORS_VAULT_IMPL = _ancestorsVaultImpl;
     }
 
-    // TODO: the parentIpIds refer to the parents of the node that whose license is being minted (whether by itself or
-    // by a derivative node)
     /// @notice Executes royalty related logic on minting a license
     /// @param _ipId The children ipId that is being linked to parents
     /// @param _licenseData The license data custom to each the royalty policy

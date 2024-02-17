@@ -92,7 +92,9 @@ contract AncestorsVaultLAP is IAncestorsVaultLAP, ERC1155Holder, ReentrancyGuard
         (uint32 index, bool isIn) = ArrayUtils.indexOf(_ancestors, _claimerIpId);
         if (!isIn) revert Errors.AncestorsVaultLAP__ClaimerNotAnAncestor();
 
-        // transfer the rnfts to the claimer split clone
+        // transfer the rnfts from the ancestors vault to the claimer split clone
+        // the rnfts that are meant for the ancestors were transferred to the ancestors vault at its deployment
+        // and each ancestor can claim their share of the rnfts only once
         ILiquidSplitClone rnft = ILiquidSplitClone(_splitClone);
         uint256 totalUnclaimedRnfts = rnft.balanceOf(address(this), 0);
         (, address claimerSplitClone, , , ) = IROYALTY_POLICY_LAP.royaltyData(_claimerIpId);
