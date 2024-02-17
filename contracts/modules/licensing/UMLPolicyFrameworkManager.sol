@@ -83,7 +83,6 @@ contract UMLPolicyFrameworkManager is
         bytes calldata policyData
     ) external override nonReentrant onlyLicensingModule returns (bool) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
-        bool linkAllowed = true;
 
         // Trying to burn a license to create a derivative, when the license doesn't allow derivatives.
         if (!policy.derivativesAllowed) {
@@ -92,18 +91,18 @@ contract UMLPolicyFrameworkManager is
 
         // If the policy defines the licensor must approve derivatives, check if the
         // derivative is approved by the licensor
-        if (policy.derivativesApproval) {
-            linkAllowed = linkAllowed && isDerivativeApproved(licenseId, ipId);
+        if (policy.derivativesApproval && !isDerivativeApproved(licenseId, ipId)) {
+            return false;
         }
         // Check if the commercializerChecker allows the link
         if (policy.commercializerChecker != address(0)) {
             // No need to check if the commercializerChecker supports the IHookModule interface, as it was checked
             // when the policy was registered.
             if (!IHookModule(policy.commercializerChecker).verify(caller, policy.commercializerCheckerData)) {
-                linkAllowed = false;
+                return false;
             }
         }
-        return linkAllowed;
+        return true;
     }
 
     /// @notice Verify policy parameters for minting a license.
