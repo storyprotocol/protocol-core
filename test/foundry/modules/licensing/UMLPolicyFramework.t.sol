@@ -159,8 +159,9 @@ contract UMLPolicyFrameworkTest is BaseTest {
 
         RegisterUMLPolicyParams memory input = RegisterUMLPolicyParams({
             transferable: true,
-            // TODO: use mock or real based on condition
             royaltyPolicy: address(0xbeef),
+            mintingFee: 0,
+            mintingFeeToken: address(0),
             policy: policyData
         });
 

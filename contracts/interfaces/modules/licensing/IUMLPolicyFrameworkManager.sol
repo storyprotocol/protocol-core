@@ -38,10 +38,14 @@ struct UMLPolicy {
 
 /// @param transferable Whether or not the license is transferable
 /// @param royaltyPolicy Address of a royalty policy contract (e.g. RoyaltyPolicyLS) that will handle royalty payments
+/// @param mintingFee Fee to be paid when minting a license
+/// @param mintingFeeToken Token to be used to pay the minting fee
 /// @param umlPolicy UMLPolicy compliant licensing term values
 struct RegisterUMLPolicyParams {
     bool transferable;
     address royaltyPolicy;
+    uint256 mintingFee;
+    address mintingFeeToken;
     UMLPolicy policy;
 }
 
