@@ -72,10 +72,6 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModul
         emit RoyaltyTokenWhitelistUpdated(_token, _allowed);
     }
 
-    // TODO: Ensure that the ipId that is passed in from license cannot be manipulated - given ipId addresses are
-    // deterministic
-    // TODO: the parentIpIds refer to the parents of the node that whose license is being minted (whether by itself or
-    // by a derivative node)
     /// @notice Executes royalty related logic on license minting
     /// @param _ipId The ipId whose license is being minted (licensor)
     /// @param _royaltyPolicy The royalty policy address of the license being minted
@@ -101,9 +97,6 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModul
         IRoyaltyPolicy(_royaltyPolicy).onLicenseMinting(_ipId, _licenseData, _externalData);
     }
 
-    // TODO: Ensure that the ipId that is passed in from license cannot be manipulated - given ipId addresses are
-    // deterministic
-    // TODO: Ensure all licenses are burned before linking to a new parents all have the same royalty policy address
     /// @notice Executes royalty related logic on linking to parents
     /// @param _ipId The children ipId that is being linked to parents
     /// @param _royaltyPolicy The common royalty policy address of all the licenses being burned
