@@ -91,10 +91,17 @@ interface IRoyaltyModule is IModule {
     /// @param amount The amount to pay
     function payRoyaltyOnBehalf(address receiverIpId, address payerIpId, address token, uint256 amount) external;
 
-    /// @notice Allows the sender to pay the license minting fee
+    /// @notice Allows to pay the minting fee for a license
     /// @param receiverIpId The ipId that receives the royalties
     /// @param payerAddress The address that pays the royalties
+    /// @param licenseRoyaltyPolicy The royalty policy of the license being minted
     /// @param token The token to use to pay the royalties
     /// @param amount The amount to pay
-    function payLicenseMintingFee(address receiverIpId, address payerAddress, address token, uint256 amount) external;
+    function payLicenseMintingFee(
+        address receiverIpId,
+        address payerAddress,
+        address licenseRoyaltyPolicy,
+        address token,
+        uint256 amount
+    ) external;
 }
