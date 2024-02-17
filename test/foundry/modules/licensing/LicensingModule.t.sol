@@ -107,9 +107,35 @@ contract LicensingModuleTest is BaseTest {
         });
     }
 
-    function test_LicensingModule_registerLicenseFramework() public {
-        licensingModule.registerPolicyFrameworkManager(address(mockPFM));
-        assertTrue(licensingModule.isFrameworkRegistered(address(mockPFM)), "framework not registered");
+    function test_LicensingModule_registerPFM() public {
+        UMLPolicyFrameworkManager pfm1 = new UMLPolicyFrameworkManager(
+            address(accessController),
+            address(ipAccountRegistry),
+            address(licensingModule),
+            "UMLPolicyFrameworkManager",
+            licenseUrl
+        );
+
+        licensingModule.registerPolicyFrameworkManager(address(pfm1));
+        assertTrue(licensingModule.isFrameworkRegistered(address(pfm1)));
+    }
+
+    function test_LicensingModule_registerPFM_revert_invalidPolicyFramework() public {
+        vm.expectRevert(Errors.LicensingModule__InvalidPolicyFramework.selector);
+        licensingModule.registerPolicyFrameworkManager(address(0xdeadbeef000aaabbbccc));
+    }
+
+    function test_LicensingModule_registerPFM_revert_emptyLicenseUrl() public {
+        UMLPolicyFrameworkManager pfm1 = new UMLPolicyFrameworkManager(
+            address(accessController),
+            address(ipAccountRegistry),
+            address(licensingModule),
+            "UMLPolicyFrameworkManager",
+            ""
+        );
+
+        vm.expectRevert(Errors.LicensingModule__EmptyLicenseUrl.selector);
+        licensingModule.registerPolicyFrameworkManager(address(pfm1));
     }
 
     function test_LicensingModule_registerPolicy() public withPolicyFrameworkManager {
@@ -153,6 +179,8 @@ contract LicensingModuleTest is BaseTest {
         uint256 indexOnIpId = licensingModule.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1, "policyId not 1");
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
+        assertTrue(licensingModule.isPolicyDefined(policyId));
+        assertTrue(licensingModule.isPolicyIdSetForIp(false, ipId1, policyId));
         assertFalse(licensingModule.isPolicyInherited(ipId1, policyId));
 
         Licensing.Policy memory storedPolicy = licensingModule.policy(policyId);
@@ -166,7 +194,7 @@ contract LicensingModuleTest is BaseTest {
         assertEq(keccak256(abi.encode(storedPolicy)), keccak256(abi.encode(policy)), "policy not stored properly");
     }
 
-    function test_LicensingModule_addSamePolicyReusesPolicyId() public withPolicyFrameworkManager {
+    function test_LicensingModule_addPolicyToIp_sameReusePolicyId() public withPolicyFrameworkManager {
         vm.prank(address(mockPFM));
         uint256 policyId = licensingModule.registerPolicy(_createPolicyFrameworkData());
 
@@ -181,7 +209,7 @@ contract LicensingModuleTest is BaseTest {
         assertFalse(licensingModule.isPolicyInherited(ipId2, policyId));
     }
 
-    function test_LicensingModule_add2PoliciesToIpId() public withPolicyFrameworkManager {
+    function test_LicensingModule_addPolicyToIp_TwoPoliciesToOneIpId() public withPolicyFrameworkManager {
         assertEq(licensingModule.totalPolicies(), 0);
         assertEq(licensingModule.totalPoliciesForIp(false, ipId1), 0);
 
@@ -192,6 +220,11 @@ contract LicensingModuleTest is BaseTest {
         uint256 indexOnIpId = licensingModule.addPolicyToIp(ipId1, policyId);
         assertEq(policyId, 1, "policyId not 1");
         assertEq(indexOnIpId, 0, "indexOnIpId not 0");
+        assertEq(licensingModule.policy(policyId).isLicenseTransferable, true);
+        assertEq(licensingModule.policy(policyId).policyFramework, address(mockPFM));
+        assertEq(licensingModule.policy(policyId).royaltyPolicy, address(mockRoyaltyPolicyLAP));
+        // assertEq(licensingModule.policy(policyId).frameworkData, _createPolicyFrameworkData());
+        assertEq(licensingModule.policy(policyId).royaltyData, "");
         assertEq(licensingModule.totalPolicies(), 1, "totalPolicies not incremented");
         assertEq(licensingModule.totalPoliciesForIp(false, ipId1), 1, "totalPoliciesForIp not incremented");
         assertEq(licensingModule.policyIdForIpAtIndex(false, ipId1, 0), 1, "policyIdForIpAtIndex not 1");
@@ -214,11 +247,46 @@ contract LicensingModuleTest is BaseTest {
         uint256 indexOnIpId2 = licensingModule.addPolicyToIp(ipId1, policyId2);
         assertEq(policyId2, 2, "policyId not 2");
         assertEq(indexOnIpId2, 1, "indexOnIpId not 1");
+        assertEq(licensingModule.policy(policyId2).isLicenseTransferable, false);
+        assertEq(licensingModule.policy(policyId2).policyFramework, address(mockPFM));
+        assertEq(licensingModule.policy(policyId2).royaltyPolicy, address(0x123123));
+        // assertEq(licensingModule.policy(policyId2).frameworkData, _createPolicyFrameworkData());
+        assertEq(licensingModule.policy(policyId2).royaltyData, "");
         assertEq(licensingModule.totalPolicies(), 2, "totalPolicies not incremented");
         assertEq(licensingModule.totalPoliciesForIp(false, ipId1), 2, "totalPoliciesForIp not incremented");
         assertEq(licensingModule.policyIdForIpAtIndex(false, ipId1, 1), 2, "policyIdForIpAtIndex not 2");
         (index, isInherited, active) = licensingModule.policyStatus(ipId1, policyId2);
         assertFalse(isInherited);
+    }
+
+    function test_LicensingModule_addPolicyToIp_revert_policyNotFound() public withPolicyFrameworkManager {
+        uint256 undefinedPolicyId = 111222333222111;
+        assertFalse(licensingModule.isPolicyDefined(undefinedPolicyId));
+
+        vm.expectRevert(Errors.LicensingModule__PolicyNotFound.selector);
+        vm.prank(ipOwner);
+        licensingModule.addPolicyToIp(ipId1, undefinedPolicyId);
+    }
+
+    function test_LicensingModule_addPolicyToIp_revert_policyAlreadySetForIpId() public withPolicyFrameworkManager {
+        vm.prank(address(mockPFM));
+        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", _createMockPolicy());
+
+        vm.prank(ipOwner);
+        uint256 indexOnIpId = licensingModule.addPolicyToIp(ipId1, policyId);
+        assertEq(policyId, 1, "policyId not 1");
+        assertEq(indexOnIpId, 0, "indexOnIpId not 0");
+        assertEq(licensingModule.totalPolicies(), 1, "totalPolicies not incremented");
+        assertEq(licensingModule.totalPoliciesForIp(false, ipId1), 1, "totalPoliciesForIp not incremented");
+        assertEq(licensingModule.policyIdForIpAtIndex(false, ipId1, 0), 1, "policyIdForIpAtIndex not 1");
+
+        vm.prank(ipOwner);
+        vm.expectRevert(Errors.LicensingModule__PolicyAlreadySetForIpId.selector);
+        licensingModule.addPolicyToIp(ipId1, policyId);
+
+        assertEq(licensingModule.totalPolicies(), 1, "totalPolicies not incremented");
+        assertEq(licensingModule.totalPoliciesForIp(false, ipId1), 1, "totalPoliciesForIp not incremented");
+        assertEq(licensingModule.policyIdForIpAtIndex(false, ipId1, 0), 1, "policyIdForIpAtIndex not 1");
     }
 
     function test_LicensingModule_mintLicense() public withPolicyFrameworkManager returns (uint256 licenseId) {
@@ -332,7 +400,7 @@ contract LicensingModuleTest is BaseTest {
         assertEq(licenseId, 2); // new license ID as this is the first mint on a different policy
     }
 
-    function test_LicensingModule_linkIpToParents_single_parent() public {
+    function test_LicensingModule_linkIpToParents_singleParent() public {
         uint256 licenseId = test_LicensingModule_mintLicense();
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
@@ -364,6 +432,44 @@ contract LicensingModuleTest is BaseTest {
             "parents.length and totalParentsForIpId mismatch"
         );
         assertEq(parents[0], ipId1, "parent not ipId1");
+    }
+
+    function test_LicensingModule_linkIpToParents_revert_parentIsChild() public withPolicyFrameworkManager {
+        vm.prank(address(mockPFM));
+        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", _createMockPolicy());
+
+        vm.startPrank(ipOwner);
+        uint256 indexOnIpId = licensingModule.addPolicyToIp(ipId1, policyId);
+        assertEq(policyId, 1);
+
+        uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 2, ipOwner, "");
+        assertEq(licenseId, 1);
+
+        uint256[] memory licenseIds = new uint256[](1);
+        licenseIds[0] = licenseId;
+
+        vm.expectRevert(Errors.LicensingModule__ParentIdEqualThanChild.selector);
+        licensingModule.linkIpToParents(licenseIds, ipId1, "");
+        vm.stopPrank();
+    }
+
+    function test_LicensingModule_linkIpToParents_revert_notLicensee() public withPolicyFrameworkManager {
+        vm.prank(address(mockPFM));
+        uint256 policyId = licensingModule.registerPolicy(true, address(mockRoyaltyPolicyLAP), "", _createMockPolicy());
+
+        vm.startPrank(ipOwner);
+        uint256 indexOnIpId = licensingModule.addPolicyToIp(ipId1, policyId);
+        assertEq(policyId, 1);
+
+        uint256 licenseId = licensingModule.mintLicense(policyId, ipId1, 2, licenseHolder, "");
+        assertEq(licenseId, 1);
+
+        uint256[] memory licenseIds = new uint256[](1);
+        licenseIds[0] = licenseId;
+
+        vm.expectRevert(Errors.LicensingModule__NotLicensee.selector);
+        licensingModule.linkIpToParents(licenseIds, ipId1, "");
+        vm.stopPrank();
     }
 
     function test_LicensingModule_singleTransfer_verifyOk() public {

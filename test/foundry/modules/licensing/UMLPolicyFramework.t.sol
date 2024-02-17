@@ -87,6 +87,113 @@ contract PILPolicyFrameworkTest is BaseTest {
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(inputA.policy)));
     }
 
+    function test_UMLPolicyFrameworkManager__verifyLink_revert_invalidCommercializerChecker() public {
+        address badCommercializerChecker = address(new MockERC721("Fake Commercializer Checker"));
+
+        UMLPolicy memory policyData = UMLPolicy({
+            attribution: true,
+            commercialUse: false,
+            commercialAttribution: false,
+            commercializerChecker: badCommercializerChecker,
+            commercializerCheckerData: "",
+            commercialRevShare: 0,
+            derivativesAllowed: false,
+            derivativesAttribution: false,
+            derivativesApproval: false,
+            derivativesReciprocal: false,
+            territories: emptyStringArray,
+            distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray
+        });
+
+        vm.prank(address(licensingModule));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.PolicyFrameworkManager__CommercializerCheckerDoesNotSupportHook.selector,
+                badCommercializerChecker
+            )
+        );
+        umlFramework.verifyLink(0, alice, ipId1, address(0), abi.encode(policyData));
+    }
+
+    function test_UMLPolicyFrameworkManager__verifyLink_revert_commercializerCheckerFailedVerify() public {
+        UMLPolicy memory policyData = UMLPolicy({
+            attribution: true,
+            commercialUse: false,
+            commercialAttribution: false,
+            commercializerChecker: address(tokenGatedHook), // 0 token balance for ipId1
+            commercializerCheckerData: abi.encode(address(gatedNftFoo)),
+            commercialRevShare: 0,
+            derivativesAllowed: false,
+            derivativesAttribution: false,
+            derivativesApproval: false,
+            derivativesReciprocal: false,
+            territories: emptyStringArray,
+            distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray
+        });
+
+        vm.prank(address(licensingModule));
+        bool verified = umlFramework.verifyLink(0, alice, ipId1, address(0), abi.encode(policyData));
+        assertFalse(verified);
+    }
+
+    function test_UMLPolicyFrameworkManager__verifyMint_revert_invalidCommercializerChecker() public {
+        address badCommercializerChecker = address(new MockERC721("Fake Commercializer Checker"));
+
+        UMLPolicy memory policyData = UMLPolicy({
+            attribution: true,
+            commercialUse: false,
+            commercialAttribution: false,
+            commercializerChecker: badCommercializerChecker,
+            commercializerCheckerData: "",
+            commercialRevShare: 0,
+            derivativesAllowed: false,
+            derivativesAttribution: false,
+            derivativesApproval: false,
+            derivativesReciprocal: false,
+            territories: emptyStringArray,
+            distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray
+        });
+
+        vm.prank(address(licensingModule));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.PolicyFrameworkManager__CommercializerCheckerDoesNotSupportHook.selector,
+                badCommercializerChecker
+            )
+        );
+        umlFramework.verifyMint(alice, false, ipId1, alice, 2, abi.encode(policyData));
+    }
+
+    function test_UMLPolicyFrameworkManager__verifyMint_revert_commercializerCheckerFailedVerify() public {
+        UMLPolicy memory policyData = UMLPolicy({
+            attribution: true,
+            commercialUse: false,
+            commercialAttribution: false,
+            commercializerChecker: address(tokenGatedHook), // 0 token balance for ipId1
+            commercializerCheckerData: abi.encode(address(gatedNftFoo)),
+            commercialRevShare: 0,
+            derivativesAllowed: false,
+            derivativesAttribution: false,
+            derivativesApproval: false,
+            derivativesReciprocal: false,
+            territories: emptyStringArray,
+            distributionChannels: emptyStringArray,
+            contentRestrictions: emptyStringArray
+        });
+
+        vm.prank(address(licensingModule));
+        bool verified = umlFramework.verifyMint(alice, false, ipId1, alice, 2, abi.encode(policyData));
+        assertFalse(verified);
+    }
+
+    function test_UMLPolicyFrameworkManager__getAggregator_revert_emptyAggregator() public {
+        vm.expectRevert(UMLFrameworkErrors.UMLPolicyFrameworkManager__RightsNotFound.selector);
+        umlFramework.getAggregator(ipId1);
+    }
+
     /////////////////////////////////////////////////////////////
     //////              COMMERCIAL USE TERMS               //////
     /////////////////////////////////////////////////////////////
@@ -329,6 +436,38 @@ contract PILPolicyFrameworkTest is BaseTest {
         vm.expectRevert(Errors.LicenseRegistry__NotTransferable.selector);
         licenseRegistry.safeTransferFrom(licenseHolder, licenseHolder2, licenseId, 1, "");
         vm.stopPrank();
+    }
+
+    function test_UMLPolicyFrameworkManager__policyToJson() public {
+        string[] memory territories = new string[](2);
+        territories[0] = "test1";
+        territories[1] = "test2";
+        string[] memory distributionChannels = new string[](1);
+        distributionChannels[0] = "test3";
+
+        UMLPolicy memory policyData = UMLPolicy({
+            attribution: false,
+            commercialUse: false,
+            commercialAttribution: true,
+            commercializerChecker: address(0),
+            commercializerCheckerData: "",
+            commercialRevShare: 0,
+            derivativesAllowed: true,
+            derivativesAttribution: false,
+            derivativesApproval: false,
+            derivativesReciprocal: false,
+            territories: territories,
+            distributionChannels: distributionChannels,
+            contentRestrictions: emptyStringArray
+        });
+
+        string memory actualJson = umlFramework.policyToJson(abi.encode(policyData));
+        /* solhint-disable */
+        string
+            memory expectedJson = '{"trait_type": "Attribution", "value": "false"},{"trait_type": "Commerical Use", "value": "false"},{"trait_type": "Commercial Attribution", "value": "true"},{"trait_type": "Commercial Revenue Share", "max_value": 1000, "value": 0},{"trait_type": "Commercializer Check", "value": "0x0000000000000000000000000000000000000000"},{"trait_type": "Derivatives Allowed", "value": "true"},{"trait_type": "Derivatives Attribution", "value": "false"},{"trait_type": "Derivatives Approval", "value": "false"},{"trait_type": "Derivatives Reciprocal", "value": "false"},{"trait_type": "Territories", "value": ["test1","test2"]},{"trait_type": "Distribution Channels", "value": ["test3"]},';
+        /* solhint-enable */
+
+        assertEq(actualJson, expectedJson);
     }
 
     function onERC721Received(address, address, uint256, bytes memory) public pure returns (bytes4) {
