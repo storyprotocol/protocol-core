@@ -11,7 +11,6 @@ import { AccessController } from "../../../contracts/AccessController.sol";
 // solhint-disable-next-line max-line-length
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY, TAGGING_MODULE_KEY, ROYALTY_MODULE_KEY, LICENSING_MODULE_KEY } from "../../../contracts/lib/modules/Module.sol";
 import { AccessPermission } from "../../../contracts/lib/AccessPermission.sol";
-import { RoyaltyModule } from "../../../contracts/modules/royalty-module/RoyaltyModule.sol";
 import { LicenseRegistry } from "../../../contracts/registries/LicenseRegistry.sol";
 
 // test
@@ -185,6 +184,8 @@ contract BaseTest is Test, DeployHelper, LicensingHelper {
         require(address(licenseRegistry) != address(0), "licenseRegistry not set");
 
         vm.startPrank(u.admin);
+        // Need to cast to LicenseRegistry to set dispute and licensing module, as interface doesn't expose those fns.
+        LicenseRegistry(address(licenseRegistry)).setDisputeModule(getDisputeModule());
         LicenseRegistry(address(licenseRegistry)).setLicensingModule(getLicensingModule());
         vm.stopPrank();
     }

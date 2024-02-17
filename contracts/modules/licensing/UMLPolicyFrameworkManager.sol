@@ -3,7 +3,6 @@
 pragma solidity ^0.8.23;
 
 // external
-import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -258,86 +257,107 @@ contract UMLPolicyFrameworkManager is
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
 
         /* solhint-disable */
-        // Follows the OpenSea standard for JSON metadata
-
-        // base json
+        // Follows the OpenSea standard for JSON metadata.
+        // **Attributions**
         string memory json = string(
-            '{"name": "Story Protocol License NFT", "description": "License agreement stating the terms of a Story Protocol IPAsset", "attributes": ['
-        );
-
-        // Attributions
-        json = string(
             abi.encodePacked(
-                json,
                 '{"trait_type": "Attribution", "value": "',
                 policy.attribution ? "true" : "false",
                 '"},',
                 '{"trait_type": "Transferable", "value": "',
                 policy.transferable ? "true" : "false",
                 '"},',
-                '{"trait_type": "Commerical Use", "value": "',
-                policy.commercialUse ? "true" : "false",
-                '"},',
-                '{"trait_type": "commercialAttribution", "value": "',
-                policy.commercialAttribution ? "true" : "false",
-                '"},',
-                '{"trait_type": "commercialRevShare", "value": ',
-                Strings.toString(policy.commercialRevShare),
-                "},"
-            )
-        );
-        json = string(
-            abi.encodePacked(
-                json,
-                '{"trait_type": "commercializerCheck", "value": "',
-                policy.commercializerChecker.toHexString()
-            )
-        );
-        // TODO: add commercializersData?
-        json = string(
-            abi.encodePacked(
-                json,
-                '"}, {"trait_type": "derivativesAllowed", "value": "',
-                policy.derivativesAllowed ? "true" : "false",
-                '"},',
-                '{"trait_type": "derivativesAttribution", "value": "',
-                policy.derivativesAttribution ? "true" : "false",
-                '"},',
-                '{"trait_type": "derivativesApproval", "value": "',
-                policy.derivativesApproval ? "true" : "false",
-                '"},',
-                '{"trait_type": "derivativesReciprocal", "value": "',
-                policy.derivativesReciprocal ? "true" : "false",
-                '"},',
-                '{"trait_type": "derivativesRevShare", "value": ',
-                Strings.toString(policy.derivativesRevShare),
-                "},"
-                '{"trait_type": "territories", "value": ['
+                _policyCommercialTraitsToJson(policy),
+                _policyDerivativeTraitsToJson(policy)
             )
         );
 
-        uint256 territoryCount = policy.territories.length;
-        for (uint256 i = 0; i < territoryCount; ++i) {
+        json = string(abi.encodePacked(json, '{"trait_type": "Territories", "value": ['));
+        uint256 count = policy.territories.length;
+        for (uint256 i = 0; i < count; ++i) {
             json = string(abi.encodePacked(json, '"', policy.territories[i], '"'));
-            if (i != territoryCount - 1) {
+            if (i != count - 1) {
+                // skip comma for last element in the array
                 json = string(abi.encodePacked(json, ","));
             }
         }
+        json = string(abi.encodePacked(json, "]},")); // close the trait_type: "Territories" array
 
-        json = string(abi.encodePacked(json, ']}, {"trait_type": "distributionChannels", "value": ['));
-
-        uint256 distributionChannelCount = policy.distributionChannels.length;
-        for (uint256 i = 0; i < distributionChannelCount; ++i) {
+        json = string(abi.encodePacked(json, '{"trait_type": "Distribution Channels", "value": ['));
+        count = policy.distributionChannels.length;
+        for (uint256 i = 0; i < count; ++i) {
             json = string(abi.encodePacked(json, '"', policy.distributionChannels[i], '"'));
-            if (i != distributionChannelCount - 1) {
+            if (i != count - 1) {
+                // skip comma for last element in the array
                 json = string(abi.encodePacked(json, ","));
             }
         }
+        json = string(abi.encodePacked(json, "]},")); // close the trait_type: "Distribution Channels" array
 
-        json = string(abi.encodePacked(json, "]}]}"));
+        // NOTE: (above) last trait added by PFM should have a comma at the end.
+
         /* solhint-enable */
 
-        return string(abi.encodePacked("data:application/json;base64,", Base64.encode(bytes(json))));
+        return json;
+    }
+
+    /// @notice Encodes the commercial traits of UML policy into a JSON string for OpenSea
+    function _policyCommercialTraitsToJson(UMLPolicy memory policy) internal pure returns (string memory) {
+        /* solhint-disable */
+        // NOTE: TOTAL_RNFT_SUPPLY = 1000 in trait with max_value. For numbers, don't add any display_type, so that
+        // they will show up in the "Ranking" section of the OpenSea UI.
+        return
+            string(
+                abi.encodePacked(
+                    '{"trait_type": "Attribution", "value": "',
+                    policy.attribution ? "true" : "false",
+                    '"},',
+                    // Skip transferable, it's already added in the common attributes by the LicenseRegistry.
+                    // Should be managed by the LicenseRegistry, not the PFM.
+                    '{"trait_type": "Commerical Use", "value": "',
+                    policy.commercialUse ? "true" : "false",
+                    '"},',
+                    '{"trait_type": "Commercial Attribution", "value": "',
+                    policy.commercialAttribution ? "true" : "false",
+                    '"},',
+                    '{"trait_type": "Commercial Revenue Share", "max_value": 1000, "value": ',
+                    policy.commercialRevShare.toString(),
+                    "},",
+                    '{"trait_type": "Commercializer Check", "value": "',
+                    policy.commercializerChecker.toHexString(),
+                    // Skip on commercializerCheckerData as it's bytes as irrelevant for the user metadata
+                    '"},'
+                )
+            );
+        /* solhint-enable */
+    }
+
+    /// @notice Encodes the derivative traits of UML policy into a JSON string for OpenSea
+    function _policyDerivativeTraitsToJson(UMLPolicy memory policy) internal pure returns (string memory) {
+        /* solhint-disable */
+        // NOTE: TOTAL_RNFT_SUPPLY = 1000 in trait with max_value. For numbers, don't add any display_type, so that
+        // they will show up in the "Ranking" section of the OpenSea UI.
+        return
+            string(
+                abi.encodePacked(
+                    '{"trait_type": "Derivatives Allowed", "value": "',
+                    policy.derivativesAllowed ? "true" : "false",
+                    '"},',
+                    '{"trait_type": "Derivatives Attribution", "value": "',
+                    policy.derivativesAttribution ? "true" : "false",
+                    '"},',
+                    '{"trait_type": "Derivatives Approval", "value": "',
+                    policy.derivativesApproval ? "true" : "false",
+                    '"},',
+                    '{"trait_type": "Derivatives Reciprocal", "value": "',
+                    policy.derivativesReciprocal ? "true" : "false",
+                    '"},',
+                    '{"trait_type": "Derivatives Revenue Share", "max_value": 1000, "value": ',
+                    policy.derivativesRevShare.toString(),
+                    "},"
+                )
+            );
+        /* solhint-enable */
     }
 
     /// Checks the configuration of commercial use and throws if the policy is not compliant

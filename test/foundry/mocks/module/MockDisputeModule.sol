@@ -120,4 +120,11 @@ contract MockDisputeModule is BaseModule, IDisputeModule {
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
         return interfaceId == type(IDisputeModule).interfaceId || super.supportsInterface(interfaceId);
     }
+
+    // These methods are not really used in the mock. They are just here to satisfy the interface.
+
+    function isIpTagged(address) external pure returns (bool) {
+        return false;
+    }
+
 }

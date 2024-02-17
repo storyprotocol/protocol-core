@@ -391,6 +391,7 @@ contract DisputeModuleTest is BaseTest {
         assertEq(arbitrationPolicySPUSDCBalanceBefore - arbitrationPolicySPUSDCBalanceAfter, ARBITRATION_PRICE);
         assertEq(currentTagBefore, bytes32("IN_DISPUTE"));
         assertEq(currentTagAfter, bytes32("PLAGIARISM"));
+        assertTrue(disputeModule.isIpTagged(ipAddr));
     }
 
     function test_DisputeModule_PolicySP_setDisputeJudgement_False() public {
@@ -419,6 +420,7 @@ contract DisputeModuleTest is BaseTest {
         assertEq(arbitrationPolicySPUSDCBalanceBefore - arbitrationPolicySPUSDCBalanceAfter, 0);
         assertEq(currentTagBefore, bytes32("IN_DISPUTE"));
         assertEq(currentTagAfter, bytes32(0));
+        assertFalse(disputeModule.isIpTagged(ipAddr));
     }
 
     function test_DisputeModule_PolicySP_cancelDispute_revert_NotDisputeInitiator() public {
@@ -457,6 +459,7 @@ contract DisputeModuleTest is BaseTest {
 
         assertEq(currentTagBeforeCancel, bytes32("IN_DISPUTE"));
         assertEq(currentTagAfterCancel, bytes32(0));
+        assertFalse(disputeModule.isIpTagged(ipAddr));
     }
 
     function test_DisputeModule_resolveDispute_revert_NotDisputeInitiator() public {
@@ -474,6 +477,7 @@ contract DisputeModuleTest is BaseTest {
         vm.startPrank(ipAccount1);
         vm.expectRevert(Errors.DisputeModule__NotAbleToResolve.selector);
         disputeModule.resolveDispute(1);
+
     }
 
     function test_DisputeModule_resolveDispute() public {
@@ -501,6 +505,12 @@ contract DisputeModuleTest is BaseTest {
 
         assertEq(currentTagBeforeResolve, bytes32("PLAGIARISM"));
         assertEq(currentTagAfterResolve, bytes32(0));
+        assertFalse(disputeModule.isIpTagged(ipAddr));
+
+        // Cant resolve again
+        vm.expectRevert(Errors.DisputeModule__NotAbleToResolve.selector);
+        disputeModule.resolveDispute(1);
+        vm.stopPrank();
     }
 
     function test_DisputeModule_name() public {

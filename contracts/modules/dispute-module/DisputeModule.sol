@@ -2,6 +2,7 @@
 pragma solidity ^0.8.23;
 
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import { DISPUTE_MODULE_KEY } from "../../lib/modules/Module.sol";
 import { BaseModule } from "../../modules/BaseModule.sol";
@@ -17,6 +18,7 @@ import { ShortStringOps } from "../../utils/ShortStringOps.sol";
 /// @notice The Story Protocol dispute module acts as an enforcement layer for
 ///         that allows to raise disputes and resolve them through arbitration.
 contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuard, AccessControlled {
+    using EnumerableSet for EnumerableSet.Bytes32Set;
     /// @notice tag to represent the dispute is in dispute state waiting for judgement
     bytes32 public constant IN_DISPUTE = bytes32("IN_DISPUTE");
 
@@ -53,6 +55,11 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
 
     /// @notice Arbitration policy for a given ipId
     mapping(address ipId => address arbitrationPolicy) public arbitrationPolicies;
+
+    /// @notice counter of successful disputes per ipId
+    /// @dev BETA feature, for mainnet tag semantics must influence effect in other modules. For now
+    /// any successful dispute will affect the IP protocol wide
+    mapping(address ipId => uint256) private successfulDisputesPerIp;
 
     /// @notice Initializes the registration module contract
     /// @param _controller The access controller used for IP authorization
@@ -189,6 +196,7 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
 
         if (_decision) {
             disputes[_disputeId].currentTag = dispute.targetTag;
+            successfulDisputesPerIp[dispute.targetIpId]++;
         } else {
             disputes[_disputeId].currentTag = bytes32(0);
         }
@@ -219,12 +227,20 @@ contract DisputeModule is IDisputeModule, BaseModule, Governable, ReentrancyGuar
     function resolveDispute(uint256 _disputeId) external {
         Dispute memory dispute = disputes[_disputeId];
 
-        if (dispute.currentTag == IN_DISPUTE) revert Errors.DisputeModule__NotAbleToResolve();
         if (msg.sender != dispute.disputeInitiator) revert Errors.DisputeModule__NotDisputeInitiator();
+        if (dispute.currentTag == IN_DISPUTE || dispute.currentTag == bytes32(0)) revert Errors.DisputeModule__NotAbleToResolve();
 
+        successfulDisputesPerIp[dispute.targetIpId]--;
         disputes[_disputeId].currentTag = bytes32(0);
 
         emit DisputeResolved(_disputeId);
+    }
+
+
+    /// @notice returns true if the ipId is tagged with any tag (meaning at least one dispute went through)
+    /// @param _ipId The ipId
+    function isIpTagged(address _ipId) external view returns (bool) {
+        return successfulDisputesPerIp[_ipId] > 0;
     }
 
     /// @notice Gets the protocol-wide module identifier for this module

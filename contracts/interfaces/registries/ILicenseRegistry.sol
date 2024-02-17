@@ -61,4 +61,9 @@ interface ILicenseRegistry is IERC1155 {
 
     /// @notice License data (licensor, policy...) for the license id
     function license(uint256 licenseId) external view returns (Licensing.License memory);
+
+    /// @notice Returns true if the license has been revoked (licensor tagged after a dispute in
+    /// the dispute module). If the tag is removed, the license is not revoked anymore.
+    /// @param licenseId The id of the license
+    function isLicenseRevoked(uint256 licenseId) external view returns (bool);
 }

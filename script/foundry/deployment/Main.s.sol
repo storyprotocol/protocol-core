@@ -195,6 +195,15 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         royaltyModule = new RoyaltyModule(address(governance));
         _postdeploy(contractKey, address(royaltyModule));
 
+        contractKey = "DisputeModule";
+        _predeploy(contractKey);
+        disputeModule = new DisputeModule(
+            address(accessController),
+            address(ipAssetRegistry),
+            address(governance)
+        );
+        _postdeploy(contractKey, address(disputeModule));
+
         contractKey = "LicenseRegistry";
         _predeploy(contractKey);
         licenseRegistry = new LicenseRegistry(address(governance));
@@ -206,7 +215,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             address(accessController),
             address(ipAccountRegistry),
             address(royaltyModule),
-            address(licenseRegistry)
+            address(licenseRegistry),
+            address(disputeModule)
         );
         _postdeploy(contractKey, address(licensingModule));
 
@@ -228,15 +238,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             address(ipResolver)
         );
         _postdeploy(contractKey, address(registrationModule));
-
-        contractKey = "DisputeModule";
-        _predeploy(contractKey);
-        disputeModule = new DisputeModule(
-            address(accessController),
-            address(ipAssetRegistry),
-            address(governance)
-        );
-        _postdeploy(contractKey, address(disputeModule));
 
         contractKey = "ArbitrationPolicySP";
         _predeploy(contractKey);
@@ -278,7 +279,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         _executeInteractions();
     }
 
-    function _predeploy(string memory contractKey) private view {
+    function _predeploy(string memory contractKey) private pure {
         console2.log(string.concat("Deploying ", contractKey, "..."));
     }
 
@@ -300,12 +301,20 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         ipMetadataProvider = IPMetadataProvider(ipAssetRegistry.metadataProvider());
         _postdeploy("IPMetadataProvider", address(ipMetadataProvider));
 
+        licenseRegistry.setDisputeModule(address(disputeModule));
         licenseRegistry.setLicensingModule(address(licensingModule));
         ipAssetRegistry.setRegistrationModule(address(registrationModule));
     }
 
     function _configureAccessController() private {
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
+
+        accessController.setGlobalPermission(
+            address(ipAssetRegistry),
+            address(licensingModule),
+            bytes4(licensingModule.linkIpToParents.selector),
+            AccessPermission.ALLOW
+        );
 
         accessController.setGlobalPermission(
             address(registrationModule),

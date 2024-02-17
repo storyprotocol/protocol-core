@@ -2,10 +2,13 @@
 pragma solidity ^0.8.23;
 
 import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 import { IPolicyFrameworkManager } from "../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
 import { ILicenseRegistry } from "../interfaces/registries/ILicenseRegistry.sol";
 import { ILicensingModule } from "../interfaces/modules/licensing/ILicensingModule.sol";
+import { IDisputeModule } from "../interfaces/modules/dispute/IDisputeModule.sol";
 import { Governable } from "../governance/Governable.sol";
 import { Errors } from "../lib/Errors.sol";
 import { Licensing } from "../lib/Licensing.sol";
@@ -13,9 +16,12 @@ import { DataUniqueness } from "../lib/DataUniqueness.sol";
 
 /// @title LicenseRegistry aka LNFT
 /// @notice Registry of License NFTs, which represent licenses granted by IP ID licensors to create derivative IPs.
-contract LicenseRegistry is ERC1155, ILicenseRegistry, Governable {
+contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
+    using Strings for *;
+
     // TODO: deploy with CREATE2 to make this immutable
     ILicensingModule private _licensingModule;
+    IDisputeModule public DISPUTE_MODULE;
 
     mapping(bytes32 licenseHash => uint256 ids) private _hashedLicenses;
     mapping(uint256 licenseIds => Licensing.License licenseData) private _licenses;
@@ -33,6 +39,13 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, Governable {
     }
 
     constructor(address governance) ERC1155("") Governable(governance) {}
+
+    function setDisputeModule(address newDisputeModule) external onlyProtocolAdmin {
+        if (newDisputeModule == address(0)) {
+            revert Errors.LicenseRegistry__ZeroDisputeModule();
+        }
+        DISPUTE_MODULE = IDisputeModule(newDisputeModule);
+    }
 
     function setLicensingModule(address newLicensingModule) external onlyProtocolAdmin {
         if (newLicensingModule == address(0)) {
@@ -114,11 +127,73 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, Governable {
         return _licenses[licenseId].policyId;
     }
 
+    /// @notice Returns true if the license has been revoked (licensor tagged after a dispute in
+    /// the dispute module). If the tag is removed, the license is not revoked anymore.
+    /// @param licenseId The id of the license
+    function isLicenseRevoked(uint256 licenseId) public view returns (bool) {
+        // For beta, any tag means revocation, for mainnet we need more context.
+        // TODO: signal metadata update when tag changes.
+        return DISPUTE_MODULE.isIpTagged(_licenses[licenseId].licensorIpId);
+    }
+
     /// @notice ERC1155 OpenSea metadata JSON representation of the LNFT parameters
+    /// @dev Expect PFM.policyToJson to return {'trait_type: 'value'},{'trait_type': 'value'},...,{...}
+    /// (last attribute must not have a comma at the end)
     function uri(uint256 id) public view virtual override returns (string memory) {
         Licensing.License memory licenseData = _licenses[id];
         Licensing.Policy memory pol = _licensingModule.policy(licenseData.policyId);
-        return IPolicyFrameworkManager(pol.policyFramework).policyToJson(pol.data);
+
+        string memory licensorIpIdHex = licenseData.licensorIpId.toHexString();
+
+        /* solhint-disable */
+        // Follows the OpenSea standard for JSON metadata
+
+        // base json, open the attributes array
+        string memory json = string(
+            abi.encodePacked(
+                "{",
+                '"name": "Story Protocol License NFT",',
+                '"description": "License agreement stating the terms of a Story Protocol IPAsset",',
+                '"external_url": "https://protocol.storyprotocol.xyz/ipa/',
+                licensorIpIdHex,
+                '",',
+                // solhint-disable-next-line max-length
+                '"image": "https://images.ctfassets.net/5ei3wx54t1dp/1WXOHnPLROsGiBsI46zECe/4f38a95c58d3b0329af3085b36d720c8/Story_Protocol_Icon.png",',
+                '"attributes": ['
+            )
+        );
+
+        // append the policy specific attributes (last attribute added by PFM should have a comma at the end)
+        // TODO: Safeguard mechanism to make sure the attributes added by PFM do NOT overlap with the common traits
+        // defined above. Currently, we add the common license attributes after adding the PFM attributes to override.
+        // But OpenSea might take the value of the first duplicate.
+        json = string(abi.encodePacked(json, IPolicyFrameworkManager(pol.policyFramework).policyToJson(pol.data)));
+
+        // append the common license attributes
+        json = string(
+            abi.encodePacked(
+                json,
+                '{"trait_type": "Licensor", "value": "',
+                licensorIpIdHex,
+                '"},',
+                '{"trait_type": "Policy Framework", "value": "',
+                pol.policyFramework.toHexString(),
+                '"},',
+                '{"trait_type": "Transferable", "value": "',
+                licenseData.transferable ? "true" : "false",
+                '"},',
+                '{"trait_type": "Revoked", "value": "',
+                isLicenseRevoked(id) ? "true" : "false",
+                '"}'
+            )
+        );
+
+        // close the attributes array and the json metadata object
+        json = string(abi.encodePacked(json, "]}"));
+
+        /* solhint-enable */
+
+        return string(abi.encodePacked("data:application/json;base64,", Base64.encode(bytes(json))));
     }
 
     /// @dev Pre-hook for ERC1155's _update() called on transfers.
@@ -134,6 +209,9 @@ contract LicenseRegistry is ERC1155, ILicenseRegistry, Governable {
             for (uint256 i = 0; i < ids.length; i++) {
                 Licensing.License memory lic = _licenses[ids[i]];
                 // TODO: Hook for verify transfer params
+                if (isLicenseRevoked(ids[i])) {
+                    revert Errors.LicenseRegistry__RevokedLicense();
+                }
                 if (!lic.transferable) {
                     // True if from == licensor
                     if (from != lic.licensorIpId) {

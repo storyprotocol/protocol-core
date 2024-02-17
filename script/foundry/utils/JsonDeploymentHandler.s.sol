@@ -21,7 +21,7 @@ contract JsonDeploymentHandler is Script {
         key = _key;
     }
 
-    function _readAddress(string memory readPath) internal returns (address) {
+    function _readAddress(string memory readPath) internal view returns (address) {
         try vm.parseJsonAddress(readJson, readPath) returns (address addr) {
             return addr;
         } catch {
