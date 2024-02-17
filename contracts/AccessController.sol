@@ -75,7 +75,7 @@ contract AccessController is IAccessController, Governable {
             revert Errors.AccessController__PermissionIsNotValid();
         }
         _setPermission(address(0), signer_, to_, func_, permission_);
-        emit PermissionSet(address(0), signer_, to_, func_, permission_);
+        emit PermissionSet(address(0), address(0), signer_, to_, func_, permission_);
     }
 
     /// @notice Sets the permission for a specific function call
@@ -116,7 +116,7 @@ contract AccessController is IAccessController, Governable {
         }
         _setPermission(ipAccount_, signer_, to_, func_, permission_);
 
-        emit PermissionSet(ipAccount_, signer_, to_, func_, permission_);
+        emit PermissionSet(IIPAccount(payable(ipAccount_)).owner(), ipAccount_, signer_, to_, func_, permission_);
     }
 
     /// @notice Checks if a specific function call is allowed.
@@ -198,6 +198,9 @@ contract AccessController is IAccessController, Governable {
         address to,
         bytes4 func
     ) internal view returns (bytes32) {
-        return keccak256(abi.encode(IIPAccount(payable(ipAccount)).owner(), ipAccount, signer, to, func));
+        if (ipAccount == address(0)) {
+            return keccak256(abi.encode(address(0), address(0), signer, to, func));
+        }
+        return keccak256(abi.encode(IIPAccount(payable(ipAccount)).owner() ,ipAccount, signer, to, func));
     }
 }

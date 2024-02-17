@@ -3,6 +3,7 @@ pragma solidity ^0.8.23;
 
 import { Test } from "forge-std/Test.sol";
 
+import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { ERC6551Registry } from "erc6551/ERC6551Registry.sol";
 
 import { AccessController } from "contracts/AccessController.sol";
@@ -31,6 +32,8 @@ contract AccessControllerTest is Test {
     address public owner = vm.addr(1);
     uint256 public tokenId = 100;
     Governance public governance;
+
+    error ERC721NonexistentToken(uint256 tokenId);
 
     function setUp() public {
         governance = new Governance(address(this));
@@ -1265,5 +1268,265 @@ contract AccessControllerTest is Test {
 
         vm.expectRevert(Errors.AccessController__CallerIsNotIPAccount.selector);
         accessController.setBatchPermissions(permissionList);
+    }
+
+    // test permission was unset after transfer NFT to another account
+    function test_AccessController_NFTTransfer() public {
+        moduleRegistry.registerModule("MockModule", address(mockModule));
+        address signer = vm.addr(2);
+        vm.prank(owner);
+        ipAccount.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setPermission(address,address,address,bytes4,uint8)",
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeSuccessfully.selector,
+                AccessPermission.ALLOW
+            )
+        );
+        assertEq(
+            accessController.getPermission(
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeSuccessfully.selector
+            ),
+            AccessPermission.ALLOW
+        );
+        vm.prank(owner);
+        nft.transferFrom(owner, address(0xbeefbeef), tokenId);
+        assertEq(
+            accessController.getPermission(
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeSuccessfully.selector
+            ),
+            AccessPermission.ABSTAIN
+        );
+    }
+
+    // test permission check failure after transfer NFT to another account
+    function test_AccessController_revert_NFTTransferCheckPermissionFailure() public {
+        moduleRegistry.registerModule("MockModule", address(mockModule));
+        address signer = vm.addr(2);
+        vm.prank(owner);
+        ipAccount.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setPermission(address,address,address,bytes4,uint8)",
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeSuccessfully.selector,
+                AccessPermission.ALLOW
+            )
+        );
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
+        );
+        vm.prank(owner);
+        nft.transferFrom(owner, address(0xbeefbeef), tokenId);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeSuccessfully.selector
+            )
+        );
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
+        );
+    }
+
+    // test permission still exist after transfer NFT back
+    function test_AccessController_NFTTransferBack() public {
+        moduleRegistry.registerModule("MockModule", address(mockModule));
+        address signer = vm.addr(2);
+        vm.prank(owner);
+        ipAccount.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setPermission(address,address,address,bytes4,uint8)",
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeSuccessfully.selector,
+                AccessPermission.ALLOW
+            )
+        );
+        assertEq(
+            accessController.getPermission(
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeSuccessfully.selector
+            ),
+            AccessPermission.ALLOW
+        );
+        vm.prank(owner);
+        nft.transferFrom(owner, address(0xbeefbeef), tokenId);
+
+        assertEq(
+            accessController.getPermission(
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeSuccessfully.selector
+            ),
+            AccessPermission.ABSTAIN
+        );
+
+        vm.prank(address(0xbeefbeef));
+        nft.transferFrom(address(0xbeefbeef), owner, tokenId);
+
+        assertEq(
+            accessController.getPermission(
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeSuccessfully.selector
+            ),
+            AccessPermission.ALLOW
+        );
+    }
+
+    // test permission check still pass after transfer NFT back
+    function test_AccessController_NFTTransferBackCheckPermission() public {
+        moduleRegistry.registerModule("MockModule", address(mockModule));
+        address signer = vm.addr(2);
+        vm.prank(owner);
+        ipAccount.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setPermission(address,address,address,bytes4,uint8)",
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeSuccessfully.selector,
+                AccessPermission.ALLOW
+            )
+        );
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
+        );
+        vm.prank(owner);
+        nft.transferFrom(owner, address(0xbeefbeef), tokenId);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__PermissionDenied.selector,
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeSuccessfully.selector
+            )
+        );
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
+        );
+
+        vm.prank(address(0xbeefbeef));
+        nft.transferFrom(address(0xbeefbeef), owner, tokenId);
+
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
+        );
+    }
+
+    // test permission was unset after burn NFT
+    function test_AccessController_NFTBurn() public {
+        moduleRegistry.registerModule("MockModule", address(mockModule));
+        address signer = vm.addr(2);
+        vm.prank(owner);
+        ipAccount.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setPermission(address,address,address,bytes4,uint8)",
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeSuccessfully.selector,
+                AccessPermission.ALLOW
+            )
+        );
+        assertEq(
+            accessController.getPermission(
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeSuccessfully.selector
+            ),
+            AccessPermission.ALLOW
+        );
+        vm.prank(owner);
+        nft.burn(tokenId);
+        vm.expectRevert(abi.encodeWithSelector(ERC721NonexistentToken.selector, tokenId));
+        accessController.getPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
+        );
+    }
+
+    // test permission check failed after burn NFT
+    function test_AccessController_revert_NFTBurnCheckPermissionFailure() public {
+        moduleRegistry.registerModule("MockModule", address(mockModule));
+        address signer = vm.addr(2);
+        vm.prank(owner);
+        ipAccount.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setPermission(address,address,address,bytes4,uint8)",
+                address(ipAccount),
+                signer,
+                address(mockModule),
+                mockModule.executeSuccessfully.selector,
+                AccessPermission.ALLOW
+            )
+        );
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
+        );
+        vm.prank(owner);
+        nft.burn(tokenId);
+
+        vm.expectRevert(abi.encodeWithSelector(ERC721NonexistentToken.selector, tokenId));
+        accessController.checkPermission(
+            address(ipAccount),
+            signer,
+            address(mockModule),
+            mockModule.executeSuccessfully.selector
+        );
     }
 }

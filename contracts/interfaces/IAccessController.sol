@@ -6,6 +6,7 @@ import { AccessPermission } from "../lib/AccessPermission.sol";
 
 interface IAccessController {
     event PermissionSet(
+        address ipAccountOwner,
         address indexed ipAccount,
         address indexed signer,
         address indexed to,
