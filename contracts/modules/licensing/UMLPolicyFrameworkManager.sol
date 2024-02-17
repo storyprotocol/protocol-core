@@ -236,6 +236,8 @@ contract UMLPolicyFrameworkManager is
                 '{"trait_type": "Attribution", "value": "',
                 policy.attribution ? "true" : "false",
                 '"},',
+                // Skip transferable, it's already added in the common attributes by the LicenseRegistry.
+                // Should be managed by the LicenseRegistry, not the PFM.
                 _policyCommercialTraitsToJson(policy),
                 _policyDerivativeTraitsToJson(policy)
             )
@@ -278,11 +280,6 @@ contract UMLPolicyFrameworkManager is
         return
             string(
                 abi.encodePacked(
-                    '{"trait_type": "Attribution", "value": "',
-                    policy.attribution ? "true" : "false",
-                    '"},',
-                    // Skip transferable, it's already added in the common attributes by the LicenseRegistry.
-                    // Should be managed by the LicenseRegistry, not the PFM.
                     '{"trait_type": "Commerical Use", "value": "',
                     policy.commercialUse ? "true" : "false",
                     '"},',
