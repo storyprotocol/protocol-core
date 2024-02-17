@@ -432,6 +432,52 @@ contract TestRoyaltyPolicyLAP is BaseTest {
         royaltyPolicyLAP.onLicenseMinting(address(100), abi.encode(uint32(1001)), inputBytes);
     }
 
+    function test_RoyaltyPolicyLAP_onLicenseMinting_revert_InvalidAncestors() public {
+        address[] memory targetAncestors = new address[](0);
+        uint32[] memory targetRoyaltyAmount = new uint32[](0);
+        address[] memory parentAncestors1 = new address[](0);
+        address[] memory parentAncestors2 = new address[](0);
+        uint32[] memory parentAncestorsRoyalties1 = new uint32[](0);
+        uint32[] memory parentAncestorsRoyalties2 = new uint32[](0);
+        InitParams memory initParams = InitParams({
+            targetAncestors: targetAncestors,
+            targetRoyaltyAmount: targetRoyaltyAmount,
+            parentAncestors1: parentAncestors1,
+            parentAncestors2: parentAncestors2,
+            parentAncestorsRoyalties1: parentAncestorsRoyalties1,
+            parentAncestorsRoyalties2: parentAncestorsRoyalties2
+        });
+        bytes memory inputBytes = abi.encode(initParams);
+
+        royaltyPolicyLAP.onLicenseMinting(address(100), abi.encode(uint32(0)), inputBytes);
+
+        address[] memory targetAncestors2 = new address[](2);
+        initParams = InitParams({
+            targetAncestors: targetAncestors2,
+            targetRoyaltyAmount: targetRoyaltyAmount,
+            parentAncestors1: parentAncestors1,
+            parentAncestors2: parentAncestors2,
+            parentAncestorsRoyalties1: parentAncestorsRoyalties1,
+            parentAncestorsRoyalties2: parentAncestorsRoyalties2
+        });
+        inputBytes = abi.encode(initParams);
+
+        vm.expectRevert(Errors.RoyaltyPolicyLAP__InvalidAncestorsHash.selector);
+        royaltyPolicyLAP.onLicenseMinting(address(100), abi.encode(uint32(0)), inputBytes);
+    }
+
+    function test_RoyaltyPolicyLAP_onLicenseMinting_revert_LastPositionNotAbleToMintLicense() public {
+        bytes[] memory encodedLicenseData = new bytes[](2);
+        for (uint32 i = 0; i < parentsIpIds100.length; i++) {
+            encodedLicenseData[i] = abi.encode(parentsIpIds100[i]);
+        }
+
+        royaltyPolicyLAP.onLinkToParents(address(100), parentsIpIds100, encodedLicenseData, MAX_ANCESTORS);
+
+        vm.expectRevert(Errors.RoyaltyPolicyLAP__LastPositionNotAbleToMintLicense.selector);
+        royaltyPolicyLAP.onLicenseMinting(address(100), abi.encode(uint32(0)), MAX_ANCESTORS);
+    }
+
     function test_RoyaltyPolicyLAP_onLicenseMinting() public {
         address[] memory targetAncestors = new address[](0);
         uint32[] memory targetRoyaltyAmount = new uint32[](0);

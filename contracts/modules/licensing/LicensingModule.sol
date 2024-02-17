@@ -130,8 +130,8 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
     }
 
     /// Adds a policy to an ipId, which can be used to mint licenses.
-    /// Licnses are permissions for ipIds to be derivatives (children).
-    /// if policyId is not defined in LicenseRegistry, reverts.
+    /// Licenses are permissions for ipIds to be derivatives (children).
+    /// If policyId is not defined in LicenseRegistry, reverts.
     /// Will revert if ipId already has the same policy
     /// @param ipId to receive the policy
     /// @param polId id of the policy data
