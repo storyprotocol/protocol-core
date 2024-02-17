@@ -15,7 +15,6 @@ import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicens
 import { IP } from "contracts/lib/IP.sol";
 
 // test
-import { MockRoyaltyPolicyLS } from "test/foundry/mocks/policy/MockRoyaltyPolicyLS.sol";
 import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
 import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
@@ -34,7 +33,7 @@ contract BaseIntegration is BaseTest {
                 licensingModule: true
             })
         );
-        buildDeployPolicyCondition(DeployPolicyCondition({ arbitrationPolicySP: true, royaltyPolicyLS: true }));
+        buildDeployPolicyCondition(DeployPolicyCondition({ arbitrationPolicySP: true, royaltyPolicyLAP: true }));
         buildDeployMiscCondition(
             DeployMiscCondition({ ipAssetRenderer: true, ipMetadataProvider: true, ipResolver: true })
         );
@@ -45,7 +44,7 @@ contract BaseIntegration is BaseTest {
         approveRegistration();
 
         // Also deploy mock royalty policy LS
-        mockRoyaltyPolicyLS = new MockRoyaltyPolicyLS(address(royaltyModule));
+        // mockRoyaltyPolicyLS = new MockRoyaltyPolicyLS(address(royaltyModule));
     }
 
     function approveRegistration() internal {
@@ -147,7 +146,7 @@ contract BaseIntegration is BaseTest {
         uint256 tokenId,
         IP.MetadataV1 memory metadata,
         address caller,
-        uint32 minRoyalty
+        bytes memory royaltyContext
     ) internal returns (address) {
         address expectedAddr = ERC6551AccountLib.computeAddress(
             address(erc6551Registry),
@@ -270,7 +269,7 @@ contract BaseIntegration is BaseTest {
             metadata.name,
             metadata.hash,
             metadata.uri,
-            minRoyalty
+            royaltyContext
         );
         return expectedAddr;
     }
@@ -281,14 +280,19 @@ contract BaseIntegration is BaseTest {
         uint256 tokenId,
         IP.MetadataV1 memory metadata,
         address caller,
-        uint32 minRoyalty
+        bytes memory royaltyContext
     ) internal returns (address) {
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
-        return registerDerivativeIps(licenseIds, nft, tokenId, metadata, caller, minRoyalty);
+        return registerDerivativeIps(licenseIds, nft, tokenId, metadata, caller, royaltyContext);
     }
 
-    function linkIpToParents(uint256[] memory licenseIds, address ipId, address caller, uint32 minRoyalty) internal {
+    function linkIpToParents(
+        uint256[] memory licenseIds,
+        address ipId,
+        address caller,
+        bytes memory royaltyContext
+    ) internal {
         uint256[] memory policyIds = new uint256[](licenseIds.length);
         address[] memory parentIpIds = new address[](licenseIds.length);
         uint256[] memory prevLicenseAmounts = new uint256[](licenseIds.length);
@@ -333,7 +337,7 @@ contract BaseIntegration is BaseTest {
         }
 
         vm.startPrank(caller);
-        licensingModule.linkIpToParents(licenseIds, ipId, minRoyalty);
+        licensingModule.linkIpToParents(licenseIds, ipId, royaltyContext);
 
         for (uint256 i = 0; i < licenseIds.length; i++) {
             assertEq(
@@ -351,9 +355,9 @@ contract BaseIntegration is BaseTest {
         }
     }
 
-    function linkIpToParent(uint256 licenseId, address ipId, address caller, uint32 minRoyalty) internal {
+    function linkIpToParent(uint256 licenseId, address ipId, address caller, bytes memory royaltyContext) internal {
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
-        linkIpToParents(licenseIds, ipId, caller, minRoyalty);
+        linkIpToParents(licenseIds, ipId, caller, royaltyContext);
     }
 }

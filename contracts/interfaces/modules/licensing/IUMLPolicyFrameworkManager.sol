@@ -16,12 +16,11 @@ import { IPolicyFrameworkManager } from "../../../interfaces/modules/licensing/I
 /// @param derivativesApproval Whether or not the licensor must approve derivatives of the work before they can be
 /// linked to the licensor IP ID
 /// @param derivativesReciprocal Whether or not the licensee must license derivatives of the work under the same terms.
-/// @param derivativesRevShare Percentage of revenue that must be shared with the licensor for derivatives of the work
 /// @param territories List of territories where the license is valid. If empty, global.
 /// @param distributionChannels List of distribution channels where the license is valid. Empty if no restrictions.
 /// @param royaltyPolicy Address of a royalty policy contract (e.g. RoyaltyPolicyLS) that will handle royalty payments
+/// TODO: DO NOT deploy on production networks without hashing string[] instead of storing them
 struct UMLPolicy {
-    bool transferable;
     bool attribution;
     bool commercialUse;
     bool commercialAttribution;
@@ -32,15 +31,24 @@ struct UMLPolicy {
     bool derivativesAttribution;
     bool derivativesApproval;
     bool derivativesReciprocal;
-    uint32 derivativesRevShare;
     string[] territories;
     string[] distributionChannels;
     string[] contentRestrictions;
+}
+
+/// @param transferable Whether or not the license is transferable
+/// @param royaltyPolicy Address of a royalty policy contract (e.g. RoyaltyPolicyLS) that will handle royalty payments
+/// @param umlPolicy UMLPolicy compliant licensing term values
+struct RegisterUMLPolicyParams {
+    bool transferable;
     address royaltyPolicy;
+    UMLPolicy policy;
 }
 
 /// @notice Struct that accumulates values of inherited policies
-/// so we can verify compatibility when inheriting new policies
+/// so we can verify compatibility when inheriting new policies.
+/// The assumption is that new policies may be added later, not only when
+/// linking an IP to its parent.
 /// @param commercial Whether or not there is a policy that allows commercial use
 /// @param derivatives Whether or not there is a policy that allows derivatives
 /// @param derivativesReciprocal Whether or not there is a policy that requires derivatives
@@ -63,17 +71,15 @@ struct UMLAggregator {
 /// @notice Defines the interface for a Policy Framework Manager compliant with the UML standard
 interface IUMLPolicyFrameworkManager is IPolicyFrameworkManager {
     /// @notice Registers a new policy to the registry
-    /// @dev Must encode the policy into bytes to be stored in the LicenseRegistry
-    /// @param umlPolicy UMLPolicy compliant licensing term values
-    function registerPolicy(UMLPolicy calldata umlPolicy) external returns (uint256 policyId);
-    /// @notice Fetchs a policy from the registry, decoding the raw bytes into a UMLPolicy struct
-    /// @param policyId  The ID of the policy to fetch
-    /// @return policy The UMLPolicy struct
-    function getPolicy(uint256 policyId) external view returns (UMLPolicy memory policy);
-
-    /// @notice gets the policy ID for the given policy data, or 0 if not found
-    function getPolicyId(UMLPolicy calldata umlPolicy) external view returns (uint256 policyId);
+    /// @dev must generate a Licensing.Policy struct and call registerPolicy
+    /// @param params parameters needed to register a UMLPolicy
+    /// @return policyId The ID of the newly registered policy
+    function registerPolicy(RegisterUMLPolicyParams calldata params) external returns (uint256 policyId);
 
     /// @notice gets the aggregation data for inherited policies.
     function getAggregator(address ipId) external view returns (UMLAggregator memory rights);
+
+    /// @notice gets the UMLPolicy for a given policy ID decoded from Licensing.Policy.frameworkData
+    /// @dev Do not call this function from a smart contract, it is only for off-chain
+    function getUMLPolicy(uint256 policyId) external view returns (UMLPolicy memory policy);
 }

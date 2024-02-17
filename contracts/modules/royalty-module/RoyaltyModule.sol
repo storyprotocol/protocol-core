@@ -5,6 +5,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
+import { BaseModule } from "../BaseModule.sol";
 import { Governable } from "../../governance/Governable.sol";
 import { IRoyaltyModule } from "../../interfaces/modules/royalty/IRoyaltyModule.sol";
 import { IRoyaltyPolicy } from "../../interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
@@ -31,9 +32,6 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModul
 
     /// @notice Indicates the royalty policy for a given ipId
     mapping(address ipId => address royaltyPolicy) public royaltyPolicies;
-
-    /// @notice Indicates if a royalty policy is immutable
-    mapping(address ipId => bool) public isRoyaltyPolicyImmutable;
 
     /// @notice Constructor
     /// @param _governance The address of the governance contract
@@ -74,47 +72,60 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModul
         emit RoyaltyTokenWhitelistUpdated(_token, _allowed);
     }
 
-    // TODO: Ensure that the ipId that is passed in from license cannot be manipulated
-    //       - given ipId addresses are deterministic
-    /// @notice Sets the royalty policy for an ipId
-    /// @param _ipId The ipId
-    /// @param _royaltyPolicy The address of the royalty policy
-    /// @param _parentIpIds The parent ipIds
-    /// @param _data The data to initialize the policy
-    function setRoyaltyPolicy(
+    /// @notice Executes royalty related logic on license minting
+    /// @param _ipId The ipId whose license is being minted (licensor)
+    /// @param _royaltyPolicy The royalty policy address of the license being minted
+    /// @param _licenseData The license data custom to each the royalty policy
+    /// @param _externalData The external data custom to each the royalty policy
+    function onLicenseMinting(
+        address _ipId,
+        address _royaltyPolicy,
+        bytes calldata _licenseData,
+        bytes calldata _externalData
+    ) external nonReentrant onlyLicensingModule {
+        if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
+
+        address royaltyPolicyIpId = royaltyPolicies[_ipId];
+
+        // if the node is a root node, then royaltyPolicyIpId will be address(0) and any type of royalty type can be
+        // selected to mint a license if the node is a derivative node, then the any minted licenses by the derivative
+        // node should have the same royalty policy as the parent node a derivative node set its royalty policy
+        // immutably in onLinkToParents() function below
+        if (royaltyPolicyIpId != _royaltyPolicy && royaltyPolicyIpId != address(0))
+            revert Errors.RoyaltyModule__CanOnlyMintSelectedPolicy();
+
+        IRoyaltyPolicy(_royaltyPolicy).onLicenseMinting(_ipId, _licenseData, _externalData);
+    }
+
+    /// @notice Executes royalty related logic on linking to parents
+    /// @param _ipId The children ipId that is being linked to parents
+    /// @param _royaltyPolicy The common royalty policy address of all the licenses being burned
+    /// @param _parentIpIds The parent ipIds that the children ipId is being linked to
+    /// @param _licenseData The license data custom to each the royalty policy
+    /// @param _externalData The external data custom to each the royalty policy
+    function onLinkToParents(
         address _ipId,
         address _royaltyPolicy,
         address[] calldata _parentIpIds,
-        bytes calldata _data
+        bytes[] memory _licenseData,
+        bytes calldata _externalData
     ) external nonReentrant onlyLicensingModule {
-        if (isRoyaltyPolicyImmutable[_ipId]) revert Errors.RoyaltyModule__AlreadySetRoyaltyPolicy();
         if (!isWhitelistedRoyaltyPolicy[_royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
+        if (_parentIpIds.length == 0) revert Errors.RoyaltyModule__NoParentsOnLinking();
 
-        if (_parentIpIds.length > 0) isRoyaltyPolicyImmutable[_ipId] = true;
-
-        // the loop below is limited to 100 iterations
         for (uint32 i = 0; i < _parentIpIds.length; i++) {
-            if (royaltyPolicies[_parentIpIds[i]] != _royaltyPolicy)
+            address parentRoyaltyPolicy = royaltyPolicies[_parentIpIds[i]];
+            // if the parent node has a royalty policy set, then the derivative node should have the same royalty
+            // policy if the parent node does not have a royalty policy set, then the derivative node can set any type
+            // of royalty policy as long as the children ip obtained and is burning all licenses with that royalty type
+            // from each parent (was checked in licensing module before calling this function)
+            if (parentRoyaltyPolicy != _royaltyPolicy && parentRoyaltyPolicy != address(0))
                 revert Errors.RoyaltyModule__IncompatibleRoyaltyPolicy();
-            isRoyaltyPolicyImmutable[_parentIpIds[i]] = true;
         }
 
         royaltyPolicies[_ipId] = _royaltyPolicy;
 
-        IRoyaltyPolicy(_royaltyPolicy).initPolicy(_ipId, _parentIpIds, _data);
-
-        emit RoyaltyPolicySet(_ipId, _royaltyPolicy, _data);
-    }
-
-    function setRoyaltyPolicyImmutable(address _ipId) external onlyLicensingModule {
-        isRoyaltyPolicyImmutable[_ipId] = true;
-    }
-
-    function minRoyaltyFromDescendants(address _ipId) external view returns (uint256) {
-        address royaltyPolicy = royaltyPolicies[_ipId];
-        if (royaltyPolicy == address(0)) revert Errors.RoyaltyModule__NoRoyaltyPolicySet();
-
-        return IRoyaltyPolicy(royaltyPolicy).minRoyaltyFromDescendants(_ipId);
+        IRoyaltyPolicy(_royaltyPolicy).onLinkToParents(_ipId, _parentIpIds, _licenseData, _externalData);
     }
 
     /// @notice Allows a sender to to pay royalties on behalf of an ipId
@@ -128,12 +139,15 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModul
         address _token,
         uint256 _amount
     ) external nonReentrant {
-        address royaltyPolicy = royaltyPolicies[_receiverIpId];
-        if (royaltyPolicy == address(0)) revert Errors.RoyaltyModule__NoRoyaltyPolicySet();
         if (!isWhitelistedRoyaltyToken[_token]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyToken();
-        if (!isWhitelistedRoyaltyPolicy[royaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
 
-        IRoyaltyPolicy(royaltyPolicy).onRoyaltyPayment(msg.sender, _receiverIpId, _token, _amount);
+        address payerRoyaltyPolicy = royaltyPolicies[_payerIpId];
+        // if the payer does not have a royalty policy set, then the payer is not a derivative ip and does not pay
+        // royalties the receiver ip can have a zero royalty policy since that could mean it is an ip a root
+        if (payerRoyaltyPolicy == address(0)) revert Errors.RoyaltyModule__NoRoyaltyPolicySet();
+        if (!isWhitelistedRoyaltyPolicy[payerRoyaltyPolicy]) revert Errors.RoyaltyModule__NotWhitelistedRoyaltyPolicy();
+
+        IRoyaltyPolicy(payerRoyaltyPolicy).onRoyaltyPayment(msg.sender, _receiverIpId, _token, _amount);
 
         emit RoyaltyPaid(_receiverIpId, _payerIpId, msg.sender, _token, _amount);
     }

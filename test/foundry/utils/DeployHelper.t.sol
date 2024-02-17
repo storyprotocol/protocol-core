@@ -26,7 +26,8 @@ import { LicenseRegistry } from "../../../contracts/registries/LicenseRegistry.s
 import { IPResolver } from "../../../contracts/resolvers/IPResolver.sol";
 import { RegistrationModule } from "../../../contracts/modules/RegistrationModule.sol";
 import { RoyaltyModule } from "../../../contracts/modules/royalty-module/RoyaltyModule.sol";
-import { RoyaltyPolicyLS } from "../../../contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
+import { AncestorsVaultLAP } from "../../../contracts/modules/royalty-module/policies/AncestorsVaultLAP.sol";
+import { RoyaltyPolicyLAP } from "../../../contracts/modules/royalty-module/policies/RoyaltyPolicyLAP.sol";
 import { TaggingModule } from "../../../contracts/modules/tagging/TaggingModule.sol";
 import { DisputeModule } from "../../../contracts/modules/dispute-module/DisputeModule.sol";
 import { LicensingModule } from "../../../contracts/modules/licensing/LicensingModule.sol";
@@ -40,7 +41,6 @@ import { MockLicensingModule } from "../mocks/module/MockLicensingModule.sol";
 import { MockRoyaltyModule } from "../mocks/module/MockRoyaltyModule.sol";
 import { MockTaggingModule } from "../mocks/module/MockTaggingModule.sol";
 import { MockArbitrationPolicy } from "../mocks/policy/MockArbitrationPolicy.sol";
-import { MockRoyaltyPolicyLS } from "../mocks/policy/MockRoyaltyPolicyLS.sol";
 import { MockLicenseRegistry } from "../mocks/registry/MockLicenseRegistry.sol";
 import { MockModuleRegistry } from "../mocks/registry/MockModuleRegistry.sol";
 import { MockERC20 } from "../mocks/token/MockERC20.sol";
@@ -72,7 +72,7 @@ contract DeployHelper {
 
     struct DeployPolicyCondition {
         bool arbitrationPolicySP;
-        bool royaltyPolicyLS;
+        bool royaltyPolicyLAP;
     }
 
     struct DeployMiscCondition {
@@ -127,7 +127,8 @@ contract DeployHelper {
 
     // Policy
     ArbitrationPolicySP internal arbitrationPolicySP;
-    RoyaltyPolicyLS internal royaltyPolicyLS;
+    AncestorsVaultLAP internal ancestorsVaultImpl;
+    RoyaltyPolicyLAP internal royaltyPolicyLAP;
 
     // Misc.
     IPAssetRenderer internal ipAssetRenderer;
@@ -144,9 +145,11 @@ contract DeployHelper {
 
     // Mock
     MockERC20 internal erc20;
+    MockERC20 internal erc20bb;
     MockERC721s internal erc721;
     MockArbitrationPolicy internal mockArbitrationPolicy;
-    MockRoyaltyPolicyLS internal mockRoyaltyPolicyLS;
+    // TODO: create mock
+    RoyaltyPolicyLAP internal mockRoyaltyPolicyLAP;
 
     // DeployHelper
     DeployConditions internal deployConditions;
@@ -210,6 +213,7 @@ contract DeployHelper {
 
     function _deployMockAssets() public {
         erc20 = new MockERC20();
+        erc20bb = new MockERC20();
         erc721 = MockERC721s({ ape: new MockERC721("Ape"), cat: new MockERC721("Cat"), dog: new MockERC721("Dog") });
     }
 
@@ -320,17 +324,21 @@ contract DeployHelper {
             mockArbitrationPolicy = new MockArbitrationPolicy(getDisputeModule(), address(erc20), ARBITRATION_PRICE);
             console2.log("DeployHelper: Using Mock ArbitrationPolicySP");
         }
-        if (d.royaltyPolicyLS) {
-            royaltyPolicyLS = new RoyaltyPolicyLS(
+        if (d.royaltyPolicyLAP) {
+            royaltyPolicyLAP = new RoyaltyPolicyLAP(
                 getRoyaltyModule(),
                 getLicensingModule(),
                 LIQUID_SPLIT_FACTORY,
-                LIQUID_SPLIT_MAIN
+                LIQUID_SPLIT_MAIN,
+                getGovernance()
             );
-            console2.log("DeployHelper: Using REAL RoyaltyPolicyLS");
+            console2.log("DeployHelper: Using REAL RoyaltyPolicyLAP");
+
+            ancestorsVaultImpl = new AncestorsVaultLAP(address(royaltyPolicyLAP));
+            console2.log("DeployHelper: Using REAL AncestorsVaultLAP");
         } else {
-            mockRoyaltyPolicyLS = new MockRoyaltyPolicyLS(getRoyaltyModule());
-            console2.log("DeployHelper: Using Mock RoyaltyPolicyLS");
+            // mockRoyaltyPolicyLAP = new MockRoyaltyPolicyLAP(getRoyaltyModule());
+            // console2.log("DeployHelper: Using Mock RoyaltyPolicyLAP");
         }
     }
 

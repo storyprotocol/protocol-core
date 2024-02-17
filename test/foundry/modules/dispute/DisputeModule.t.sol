@@ -10,9 +10,8 @@ import { Errors } from "contracts/lib/Errors.sol";
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
+import { UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 // test
-// solhint-disable-next-line max-line-length
-import { UMLPolicyGenericParams, UMLPolicyCommercialParams, UMLPolicyDerivativeParams } from "test/foundry/utils/LicensingHelper.t.sol";
 import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";
 
 contract DisputeModuleTest is BaseTest {
@@ -52,7 +51,7 @@ contract DisputeModuleTest is BaseTest {
                 licensingModule: false
             })
         );
-        buildDeployPolicyCondition(DeployPolicyCondition({ arbitrationPolicySP: true, royaltyPolicyLS: true }));
+        buildDeployPolicyCondition(DeployPolicyCondition({ arbitrationPolicySP: true, royaltyPolicyLAP: true }));
         buildDeployMiscCondition(
             DeployMiscCondition({ ipAssetRenderer: false, ipMetadataProvider: false, ipResolver: true })
         );
@@ -78,28 +77,23 @@ contract DisputeModuleTest is BaseTest {
 
         _setUMLPolicyFrameworkManager();
         _addUMLPolicy(
+            "cheap_flexible",
             true,
-            true,
-            UMLPolicyGenericParams({
-                policyName: "cheap_flexible", // => uml_cheap_flexible
+            address(royaltyPolicyLAP),
+            UMLPolicy({
                 attribution: false,
-                transferable: true,
-                territories: new string[](0),
-                distributionChannels: new string[](0),
-                contentRestrictions: new string[](0)
-            }),
-            UMLPolicyCommercialParams({
+                commercialUse: true,
                 commercialAttribution: true,
                 commercializerChecker: address(0),
                 commercializerCheckerData: "",
                 commercialRevShare: 10,
-                royaltyPolicy: address(royaltyPolicyLS)
-            }),
-            UMLPolicyDerivativeParams({
+                derivativesAllowed: true,
                 derivativesAttribution: true,
                 derivativesApproval: false,
                 derivativesReciprocal: false,
-                derivativesRevShare: 10
+                territories: new string[](0),
+                distributionChannels: new string[](0),
+                contentRestrictions: new string[](0)
             })
         );
 
@@ -477,7 +471,6 @@ contract DisputeModuleTest is BaseTest {
         vm.startPrank(ipAccount1);
         vm.expectRevert(Errors.DisputeModule__NotAbleToResolve.selector);
         disputeModule.resolveDispute(1);
-
     }
 
     function test_DisputeModule_resolveDispute() public {

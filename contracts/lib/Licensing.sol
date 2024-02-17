@@ -6,15 +6,18 @@ pragma solidity ^0.8.23;
 library Licensing {
     /// @notice A particular configuration (flavor) of a Policy Framework, setting values for the licensing
     /// terms (parameters) of the framework.
-    /// @param policyFramework address of the IPolicyFrameworkManager this policy is based on
     /// @param isLicenseTransferable Whether or not the license is transferable
-    /// @param data Encoded data for the policy, specific to the policy framework
+    /// @param policyFramework address of the IPolicyFrameworkManager this policy is based on
+    /// @param frameworkData Data to be used by the policy framework to verify minting and linking
+    /// @param royaltyPolicy address of the royalty policy to be used by the policy framework, if any
+    /// @param royaltyData Data to be used by the royalty policy (for example, encoding of the royalty percentage)
     struct Policy {
-        address policyFramework;
         bool isLicenseTransferable;
-        bytes data;
+        address policyFramework;
+        bytes frameworkData;
+        address royaltyPolicy;
+        bytes royaltyData;
     }
-
     /// @notice Data that define a License Agreement NFT
     /// @param policyId Id of the policy this license is based on, which will be set in the derivative IP when the
     /// license is burnt for linking

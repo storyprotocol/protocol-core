@@ -65,21 +65,21 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
     /// If not, the license is fungible and an id will be reused.
     /// Only callable by the LicensingModule.
     /// @param policyId id of the policy to be minted
-    /// @param licensorIp IP Id granting the license
+    /// @param licensorIpId IP Id granting the license
     /// @param transferable True if the license is transferable
     /// @param amount of licenses to be minted. License NFT is fungible for same policy and same licensors
     /// @param receiver of the License NFT(s).
     /// @return licenseId of the NFT(s).
     function mintLicense(
         uint256 policyId,
-        address licensorIp,
+        address licensorIpId,
         bool transferable,
         uint256 amount, // mint amount
         address receiver
     ) external onlyLicensingModule returns (uint256 licenseId) {
         Licensing.License memory licenseData = Licensing.License({
             policyId: policyId,
-            licensorIpId: licensorIp,
+            licensorIpId: licensorIpId,
             transferable: transferable
         });
         bool isNew;
@@ -167,7 +167,9 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
         // TODO: Safeguard mechanism to make sure the attributes added by PFM do NOT overlap with the common traits
         // defined above. Currently, we add the common license attributes after adding the PFM attributes to override.
         // But OpenSea might take the value of the first duplicate.
-        json = string(abi.encodePacked(json, IPolicyFrameworkManager(pol.policyFramework).policyToJson(pol.data)));
+        json = string(
+            abi.encodePacked(json, IPolicyFrameworkManager(pol.policyFramework).policyToJson(pol.frameworkData))
+        );
 
         // append the common license attributes
         json = string(

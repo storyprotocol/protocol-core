@@ -20,10 +20,18 @@ interface ILicensingModule is IModule {
     event PolicyFrameworkRegistered(address indexed framework, string name, string licenseTextUrl);
 
     /// @notice Emitted when a policy is added to the contract
-    /// @param policyFrameworkManager The address that created the policy
     /// @param policyId The id of the policy
-    /// @param policy The encoded policy data
-    event PolicyRegistered(address indexed policyFrameworkManager, uint256 indexed policyId, bytes policy);
+    /// @param policyFrameworkManager The address of the policy framework manager
+    /// @param frameworkData The policy framework specific encoded data
+    /// @param royaltyPolicy The address of the royalty policy
+    /// @param royaltyData The royalty policy specific encoded data
+    event PolicyRegistered(
+        uint256 indexed policyId,
+        address indexed policyFrameworkManager,
+        bytes frameworkData,
+        address royaltyPolicy,
+        bytes royaltyData
+    );
 
     /// @notice Emitted when a policy is added to an IP
     /// @param caller The address that called the function
@@ -47,6 +55,7 @@ interface ILicensingModule is IModule {
 
     /// @notice Returns the address of the LicenseRegistry
     function licenseRegistry() external view returns (address);
+
     /// @notice Registers a policy framework manager into the contract, so it can add policy data for
     /// licenses.
     /// @param manager the address of the manager. Will be ERC165 checked for IPolicyFrameworkManager
@@ -56,15 +65,18 @@ interface ILicensingModule is IModule {
     /// framework or it will revert. The policy data and its integrity must be
     /// verified by the policy framework manager.
     /// @param isLicenseTransferable True if the license is transferable
-    /// @param data The policy data
-    function registerPolicy(bool isLicenseTransferable, bytes memory data) external returns (uint256 policyId);
+    /// @param royaltyPolicy The address of the royalty policy
+    /// @param royaltyData The royalty policy specific encoded data
+    /// @param frameworkData The policy framework specific encoded data
+    function registerPolicy(
+        bool isLicenseTransferable,
+        address royaltyPolicy,
+        bytes memory royaltyData,
+        bytes memory frameworkData
+    ) external returns (uint256 policyId);
 
     /// @notice returns the policy id for the given data, or 0 if not found
-    function getPolicyId(
-        address framework,
-        bool isLicenseTransferable,
-        bytes memory data
-    ) external view returns (uint256 policyId);
+    function getPolicyId(Licensing.Policy calldata pol) external view returns (uint256 policyId);
 
     /// @notice Adds a policy to an IP policy list
     /// @param ipId The id of the IP
@@ -77,20 +89,22 @@ interface ILicensingModule is IModule {
     /// @param licensorIpId The id of the licensor IP
     /// @param amount The amount of licenses to mint
     /// @param receiver The address that will receive the license
+    /// @param royaltyContext The context for the royalty module to process
+    /// @return licenseId of the NFT(s)
     function mintLicense(
         uint256 policyId,
         address licensorIpId,
-        uint256 amount,
-        address receiver
+        uint256 amount, // mint amount
+        address receiver,
+        bytes calldata royaltyContext
     ) external returns (uint256 licenseId);
 
     /// @notice Links an IP to the licensors (parent IP IDs) listed in the License NFTs, if their policies allow it,
     /// burning the NFTs in the proccess. The caller must be the owner of the NFTs and the IP owner.
     /// @param licenseIds The id of the licenses to burn
     /// @param childIpId The id of the child IP to be linked
-    /// @param minRoyalty The minimum derivative rev share that the child wants from its descendants. The value is
-    /// overriden by the `derivativesRevShare` value of the linking licenses.
-    function linkIpToParents(uint256[] calldata licenseIds, address childIpId, uint32 minRoyalty) external;
+    /// @param royaltyContext The context for the royalty module to process
+    function linkIpToParents(uint256[] calldata licenseIds, address childIpId, bytes calldata royaltyContext) external;
 
     ///
     /// Getters
@@ -116,6 +130,9 @@ interface ILicensingModule is IModule {
 
     /// @notice True if policy is part of an IP's policy list
     function isPolicyIdSetForIp(bool isInherited, address ipId, uint256 policyId) external view returns (bool);
+
+    /// @notice True if policy is inherited from an IP
+    function isPolicyInherited(address ipId, uint256 policyId) external view returns (bool);
 
     /// @notice Gets the policy ID for an IP by index on the IP's policy list
     function policyIdForIpAtIndex(

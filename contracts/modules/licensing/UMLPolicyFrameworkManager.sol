@@ -14,8 +14,7 @@ import { Licensing } from "../../lib/Licensing.sol";
 import { Errors } from "../../lib/Errors.sol";
 import { UMLFrameworkErrors } from "../../lib/UMLFrameworkErrors.sol";
 // solhint-disable-next-line max-line-length
-import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator } from "../../interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
-import { IPolicyFrameworkManager } from "../../interfaces/modules/licensing/IPolicyFrameworkManager.sol";
+import { IUMLPolicyFrameworkManager, UMLPolicy, UMLAggregator, RegisterUMLPolicyParams } from "../../interfaces/modules/licensing/IUMLPolicyFrameworkManager.sol";
 import { BasePolicyFrameworkManager } from "../../modules/licensing/BasePolicyFrameworkManager.sol";
 import { LicensorApprovalChecker } from "../../modules/licensing/parameter-helpers/LicensorApprovalChecker.sol";
 
@@ -48,45 +47,42 @@ contract UMLPolicyFrameworkManager is
 
     /// @notice Re a new policy to the registry
     /// @dev Must encode the policy into bytes to be stored in the LicensingModule
-    /// @param umlPolicy UMLPolicy compliant licensing term values
-    function registerPolicy(UMLPolicy calldata umlPolicy) external nonReentrant returns (uint256 policyId) {
-        _verifyComercialUse(umlPolicy);
-        _verifyDerivatives(umlPolicy);
-        // No need to emit here, as the LicensingModule will emit the event
+    /// @param params the parameters for the policy
+    /// @return policyId the ID of the policy
+    function registerPolicy(RegisterUMLPolicyParams calldata params) external returns (uint256 policyId) {
+        _verifyComercialUse(params.policy, params.royaltyPolicy);
+        _verifyDerivatives(params.policy);
+        /// TODO: DO NOT deploy on production networks without hashing string[] values instead of storing them
 
-        return LICENSING_MODULE.registerPolicy(umlPolicy.transferable, abi.encode(umlPolicy));
+        // No need to emit here, as the LicensingModule will emit the event
+        return
+            LICENSING_MODULE.registerPolicy(
+                params.transferable,
+                params.royaltyPolicy,
+                abi.encode(params.policy.commercialRevShare), // TODO: this should be encoded by the royalty policy
+                abi.encode(params.policy)
+            );
     }
 
-    /// Called by licenseRegistry to verify policy parameters for linking an IP
-    /// with the licensor's IP ID
-    /// @param licenseId the ID of the license
-    /// @param ipId the IP ID of the IP being linked
-    /// @param policyData the licensing policy to verify
+    /// Called by licenseRegistry to verify policy parameters for linking a child IP to a parent IP (licensor)
+    /// by burning a license.
+    /// @param licenseId the license id to burn
+    /// @param caller the address executing the link
+    /// @param ipId the IP id of the IP being linked
+    /// @param policyData the encoded framework policy data to verify
     function verifyLink(
         uint256 licenseId,
         address caller,
         address ipId,
         address, // parentIpId
         bytes calldata policyData
-    ) external override nonReentrant onlyLicensingModule returns (IPolicyFrameworkManager.VerifyLinkResponse memory) {
+    ) external override nonReentrant onlyLicensingModule returns (bool) {
         UMLPolicy memory policy = abi.decode(policyData, (UMLPolicy));
-        IPolicyFrameworkManager.VerifyLinkResponse memory response = IPolicyFrameworkManager.VerifyLinkResponse({
-            isLinkingAllowed: true, // If you successfully mint and now hold a license, you have the right to link.
-            isRoyaltyRequired: false,
-            royaltyPolicy: address(0),
-            royaltyDerivativeRevShare: 0
-        });
-
-        if (policy.commercialUse) {
-            response.isRoyaltyRequired = true;
-            response.royaltyPolicy = policy.royaltyPolicy;
-            response.royaltyDerivativeRevShare = policy.derivativesRevShare;
-        }
 
         // If the policy defines the licensor must approve derivatives, check if the
         // derivative is approved by the licensor
         if (policy.derivativesApproval) {
-            response.isLinkingAllowed = response.isLinkingAllowed && isDerivativeApproved(licenseId, ipId);
+            return isDerivativeApproved(licenseId, ipId);
         }
         if (policy.commercializerChecker != address(0)) {
             if (!policy.commercializerChecker.supportsInterface(type(IHookModule).interfaceId)) {
@@ -96,16 +92,17 @@ contract UMLPolicyFrameworkManager is
             }
 
             if (!IHookModule(policy.commercializerChecker).verify(caller, policy.commercializerCheckerData)) {
-                response.isLinkingAllowed = false;
+                return false;
             }
         }
 
-        return response;
+        return true;
     }
 
     /// Called by licenseRegistry to verify policy parameters for minting a license
-    /// @param policyWasInherited check if IP is subjected to it's parent's policy
-    /// @param policyData the licensing policy to verify
+    /// @param caller the address executing the mint
+    /// @param policyWasInherited true if the policy was inherited (licensorIpId is not original IP owner)
+    /// @param policyData the encoded framework policy data to verify
     function verifyMint(
         address caller,
         bool policyWasInherited,
@@ -136,18 +133,6 @@ contract UMLPolicyFrameworkManager is
         return true;
     }
 
-    /// @notice Fetchs a policy from the registry, decoding the raw bytes into a UMLPolicy struct
-    /// @param policyId  The ID of the policy to fetch
-    /// @return policy The UMLPolicy struct
-    function getPolicy(uint256 policyId) public view returns (UMLPolicy memory policy) {
-        Licensing.Policy memory protocolPolicy = LICENSING_MODULE.policy(policyId);
-        if (protocolPolicy.policyFramework != address(this)) {
-            // This should not happen.
-            revert Errors.PolicyFrameworkManager__GettingPolicyWrongFramework();
-        }
-        policy = abi.decode(protocolPolicy.data, (UMLPolicy));
-    }
-
     /// @notice gets the aggregation data for inherited policies, decoded for the framework
     function getAggregator(address ipId) external view returns (UMLAggregator memory rights) {
         bytes memory policyAggregatorData = LICENSING_MODULE.policyAggregatorData(address(this), ipId);
@@ -157,24 +142,16 @@ contract UMLPolicyFrameworkManager is
         rights = abi.decode(policyAggregatorData, (UMLAggregator));
     }
 
-    function getPolicyId(UMLPolicy calldata umlPolicy) external view returns (uint256 policyId) {
-        return LICENSING_MODULE.getPolicyId(address(this), umlPolicy.transferable, abi.encode(umlPolicy));
-    }
-
-    function getRoyaltyPolicy(uint256 policyId) external view returns (address) {
-        return getPolicy(policyId).royaltyPolicy;
-    }
-
-    function getCommercialRevenueShare(uint256 policyId) external view returns (uint32) {
-        return getPolicy(policyId).commercialRevShare;
-    }
-
-    function isPolicyCommercial(uint256 policyId) external view returns (bool) {
-        return getPolicy(policyId).commercialUse;
+    function getUMLPolicy(uint256 policyId) external view returns (UMLPolicy memory policy) {
+        Licensing.Policy memory pol = LICENSING_MODULE.policy(policyId);
+        return abi.decode(pol.frameworkData, (UMLPolicy));
     }
 
     /// Called by licenseRegistry to verify compatibility when inheriting from a parent IP
     /// The objective is to verify compatibility of multiple policies.
+    /// @dev The assumption in this method is that we can add parents later on, hence the need
+    /// for an aggregator, if not we will do this when linking to parents directly with an
+    /// array of policies.
     /// @param aggregator common state of the policies for the IP
     /// @param policyId the ID of the policy being inherited
     /// @param policy the policy to inherit
@@ -264,9 +241,8 @@ contract UMLPolicyFrameworkManager is
                 '{"trait_type": "Attribution", "value": "',
                 policy.attribution ? "true" : "false",
                 '"},',
-                '{"trait_type": "Transferable", "value": "',
-                policy.transferable ? "true" : "false",
-                '"},',
+                // Skip transferable, it's already added in the common attributes by the LicenseRegistry.
+                // Should be managed by the LicenseRegistry, not the PFM.
                 _policyCommercialTraitsToJson(policy),
                 _policyDerivativeTraitsToJson(policy)
             )
@@ -309,11 +285,6 @@ contract UMLPolicyFrameworkManager is
         return
             string(
                 abi.encodePacked(
-                    '{"trait_type": "Attribution", "value": "',
-                    policy.attribution ? "true" : "false",
-                    '"},',
-                    // Skip transferable, it's already added in the common attributes by the LicenseRegistry.
-                    // Should be managed by the LicenseRegistry, not the PFM.
                     '{"trait_type": "Commerical Use", "value": "',
                     policy.commercialUse ? "true" : "false",
                     '"},',
@@ -351,10 +322,7 @@ contract UMLPolicyFrameworkManager is
                     '"},',
                     '{"trait_type": "Derivatives Reciprocal", "value": "',
                     policy.derivativesReciprocal ? "true" : "false",
-                    '"},',
-                    '{"trait_type": "Derivatives Revenue Share", "max_value": 1000, "value": ',
-                    policy.derivativesRevShare.toString(),
-                    "},"
+                    '"},'
                 )
             );
         /* solhint-enable */
@@ -362,8 +330,8 @@ contract UMLPolicyFrameworkManager is
 
     /// Checks the configuration of commercial use and throws if the policy is not compliant
     /// @param policy The policy to verify
-    // solhint-disable code-complexity
-    function _verifyComercialUse(UMLPolicy calldata policy) internal view {
+    // solhint-disable-next-line code-complexity
+    function _verifyComercialUse(UMLPolicy calldata policy, address royaltyPolicy) internal view {
         if (!policy.commercialUse) {
             if (policy.commercialAttribution) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddAttribution();
@@ -374,15 +342,12 @@ contract UMLPolicyFrameworkManager is
             if (policy.commercialRevShare > 0) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddRevShare();
             }
-            if (policy.derivativesRevShare > 0) {
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialDisabled_CantAddDerivRevShare();
-            }
-            if (policy.royaltyPolicy != address(0)) {
+            if (royaltyPolicy != address(0)) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommercialDisabled_CantAddRoyaltyPolicy();
             }
         } else {
             // TODO: check for supportInterface instead
-            if (policy.royaltyPolicy == address(0)) {
+            if (royaltyPolicy == address(0)) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__CommecialEnabled_RoyaltyPolicyRequired();
             }
             if (policy.commercializerChecker != address(0)) {
@@ -408,10 +373,6 @@ contract UMLPolicyFrameworkManager is
             }
             if (policy.derivativesReciprocal) {
                 revert UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddReciprocal();
-            }
-            if (policy.derivativesRevShare > 0) {
-                // additional !policy.commecialUse is already checked in `_verifyComercialUse`
-                revert UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesDisabled_CantAddRevShare();
             }
         }
     }

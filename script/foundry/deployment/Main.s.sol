@@ -12,9 +12,11 @@ import { stdJson } from "forge-std/StdJson.sol";
 import { AccessController } from "contracts/AccessController.sol";
 import { IPAccountImpl } from "contracts/IPAccountImpl.sol";
 import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
+import { IRoyaltyPolicyLAP } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLAP.sol";
 import { Governance } from "contracts/governance/Governance.sol";
 import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 import { IP } from "contracts/lib/IP.sol";
+// solhint-disable-next-line max-line-length
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY, TAGGING_MODULE_KEY, ROYALTY_MODULE_KEY, LICENSING_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
@@ -27,11 +29,11 @@ import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
-import { LSClaimer } from "contracts/modules/royalty-module/policies/LSClaimer.sol";
-import { RoyaltyPolicyLS } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLS.sol";
+import { RoyaltyPolicyLAP } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLAP.sol";
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
-import { UMLPolicyFrameworkManager, UMLPolicy } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
+// solhint-disable-next-line max-line-length
+import { UMLPolicyFrameworkManager, UMLPolicy, RegisterUMLPolicyParams } from "contracts/modules/licensing/UMLPolicyFrameworkManager.sol";
 import { MODULE_TYPE_HOOK } from "contracts/lib/modules/Module.sol";
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
 import { IHookModule } from "contracts/interfaces/modules/base/IHookModule.sol";
@@ -65,7 +67,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     DisputeModule internal disputeModule;
     ArbitrationPolicySP internal arbitrationPolicySP;
     RoyaltyModule internal royaltyModule;
-    RoyaltyPolicyLS internal royaltyPolicyLS;
+    RoyaltyPolicyLAP internal royaltyPolicyLAP;
     TaggingModule internal taggingModule;
 
     // Misc.
@@ -249,15 +251,16 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         );
         _postdeploy(contractKey, address(arbitrationPolicySP));
 
-        contractKey = "RoyaltyPolicyLS";
+        contractKey = "RoyaltyPolicyLAP";
         _predeploy(contractKey);
-        royaltyPolicyLS = new RoyaltyPolicyLS(
+        royaltyPolicyLAP = new RoyaltyPolicyLAP(
             address(royaltyModule),
             address(licensingModule),
             LIQUID_SPLIT_FACTORY,
-            LIQUID_SPLIT_MAIN
+            LIQUID_SPLIT_MAIN,
+            address(governance)
         );
-        _postdeploy(contractKey, address(royaltyPolicyLS));
+        _postdeploy(contractKey, address(royaltyPolicyLAP));
     }
 
     function _configureDeployedProtocolContracts() private {
@@ -271,7 +274,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         registrationModule = RegistrationModule(_readAddress("main.RegistrationModule"));
         taggingModule = TaggingModule(_readAddress("main.TaggingModule"));
         royaltyModule = RoyaltyModule(_readAddress("main.RoyaltyModule"));
-        royaltyPolicyLS = RoyaltyPolicyLS(_readAddress("main.RoyaltyPolicyLS"));
+        royaltyPolicyLAP = RoyaltyPolicyLAP(payable(_readAddress("main.royaltyPolicyLAP")));
         disputeModule = DisputeModule(_readAddress("main.DisputeModule"));
         ipAssetRenderer = IPAssetRenderer(_readAddress("main.IPAssetRenderer"));
         ipMetadataProvider = IPMetadataProvider(_readAddress("main.IPMetadataProvider"));
@@ -343,7 +346,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     function _configureRoyaltyPolicy() private {
         royaltyModule.setLicensingModule(address(licensingModule));
         // whitelist
-        royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLS), true);
+        royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLAP), true);
         royaltyModule.whitelistRoyaltyToken(address(erc20), true);
     }
 
@@ -365,13 +368,20 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         erc20.mint(deployer, 100_000 * 10 ** 6);
 
         erc20.approve(address(arbitrationPolicySP), 10 * ARBITRATION_PRICE); // 10 * raising disputes
-        erc20.approve(address(royaltyPolicyLS), ROYALTY_AMOUNT);
+        erc20.approve(address(royaltyPolicyLAP), ROYALTY_AMOUNT);
 
-        uint32 minRevShareIpAcct1 = 300; // 30%
+        bytes memory emptyRoyaltyPolicyLAPInitParams = abi.encode(IRoyaltyPolicyLAP.InitParams({
+            targetAncestors: new address[](0),
+            targetRoyaltyAmount: new uint32[](0),
+            parentAncestors1: new address[](0),
+            parentAncestors2: new address[](0),
+            parentAncestorsRoyalties1: new uint32[](0),
+            parentAncestorsRoyalties2: new uint32[](0)
+        }));
 
         /*///////////////////////////////////////////////////////////////
                         CREATE POLICY FRAMEWORK MANAGERS
-        ////////////////////////////////////////////////////////////////*/
+        ///////////////////////////////////////////////////////////////*/
 
         _predeploy("UMLPolicyFrameworkManager");
         UMLPolicyFrameworkManager umlPfm = new UMLPolicyFrameworkManager(
@@ -387,53 +397,55 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         /*///////////////////////////////////////////////////////////////
                                 CREATE POLICIES
-        ////////////////////////////////////////////////////////////////*/
+        ///////////////////////////////////////////////////////////////*/
 
         policyIds["uml_com_deriv_expensive"] = umlPfm.registerPolicy(
-            UMLPolicy({
-                attribution: true,
+            RegisterUMLPolicyParams({
                 transferable: true,
-                commercialUse: true,
-                commercialAttribution: true,
-                commercializerChecker: address(0),
-                commercializerCheckerData: "",
-                commercialRevShare: 100,
-                derivativesAllowed: true,
-                derivativesAttribution: false,
-                derivativesApproval: false,
-                derivativesReciprocal: false,
-                derivativesRevShare: minRevShareIpAcct1,
-                territories: new string[](0),
-                distributionChannels: new string[](0),
-                contentRestrictions: new string[](0),
-                royaltyPolicy: address(royaltyPolicyLS)
+                royaltyPolicy: address(royaltyPolicyLAP),
+                policy: UMLPolicy({
+                    attribution: true,
+                    commercialUse: true,
+                    commercialAttribution: true,
+                    commercializerChecker: address(0),
+                    commercializerCheckerData: "",
+                    commercialRevShare: 100,
+                    derivativesAllowed: true,
+                    derivativesAttribution: false,
+                    derivativesApproval: false,
+                    derivativesReciprocal: false,
+                    territories: new string[](0),
+                    distributionChannels: new string[](0),
+                    contentRestrictions: new string[](0)
+                })
             })
         );
 
         policyIds["uml_noncom_deriv_reciprocal"] = umlPfm.registerPolicy(
-            UMLPolicy({
-                attribution: true,
+            RegisterUMLPolicyParams({
                 transferable: false,
-                commercialUse: false,
-                commercialAttribution: false,
-                commercializerChecker: address(0),
-                commercializerCheckerData: "",
-                commercialRevShare: 0,
-                derivativesAllowed: true,
-                derivativesAttribution: true,
-                derivativesApproval: false,
-                derivativesReciprocal: true,
-                derivativesRevShare: 0,
-                territories: new string[](0),
-                distributionChannels: new string[](0),
-                contentRestrictions: new string[](0),
-                royaltyPolicy: address(0) // non-commercial => no royalty policy
+                royaltyPolicy: address(0), // no royalty, non-commercial
+                policy: UMLPolicy({
+                    attribution: true,
+                    commercialUse: false,
+                    commercialAttribution: false,
+                    commercializerChecker: address(0),
+                    commercializerCheckerData: "",
+                    commercialRevShare: 0,
+                    derivativesAllowed: true,
+                    derivativesAttribution: true,
+                    derivativesApproval: false,
+                    derivativesReciprocal: true,
+                    territories: new string[](0),
+                    distributionChannels: new string[](0),
+                    contentRestrictions: new string[](0)
+                })
             })
         );
 
         /*///////////////////////////////////////////////////////////////
                                 REGISTER IP ACCOUNTS
-        ////////////////////////////////////////////////////////////////*/
+        ///////////////////////////////////////////////////////////////*/
 
         // IPAccount1 (tokenId 1) with no initial policy
         vm.label(getIpId(erc721, 1), "IPAccount1");
@@ -488,7 +500,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         /*///////////////////////////////////////////////////////////////
                             ADD POLICIES TO IPACCOUNTS
-        ////////////////////////////////////////////////////////////////*/
+        ///////////////////////////////////////////////////////////////*/
 
         // Add "uml_com_deriv_expensive" policy to IPAccount1
         licensingModule.addPolicyToIp(ipAcct[1], policyIds["uml_com_deriv_expensive"]);
@@ -497,13 +509,19 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         /*///////////////////////////////////////////////////////////////
                             MINT LICENSES ON POLICIES
-        ////////////////////////////////////////////////////////////////*/
+        ///////////////////////////////////////////////////////////////*/
 
         // Mint 2 license of policy "uml_com_deriv_expensive" on IPAccount1
         // Register derivative IP for NFT tokenId 3
         {
             uint256[] memory licenseIds = new uint256[](1);
-            licenseIds[0] = licensingModule.mintLicense(policyIds["uml_com_deriv_expensive"], ipAcct[1], 2, deployer);
+            licenseIds[0] = licensingModule.mintLicense(
+                policyIds["uml_com_deriv_expensive"],
+                ipAcct[1],
+                2,
+                deployer,
+                emptyRoyaltyPolicyLAPInitParams
+            );
 
             ipAcct[3] = getIpId(erc721, 3);
             vm.label(ipAcct[3], "IPAccount3");
@@ -515,13 +533,13 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 "IPAccount3",
                 bytes32("some of the best description"),
                 "https://example.com/best-derivative-ip",
-                0
+                emptyRoyaltyPolicyLAPInitParams
             );
         }
 
         /*///////////////////////////////////////////////////////////////
                     LINK IPACCOUNTS TO PARENTS USING LICENSES
-        ////////////////////////////////////////////////////////////////*/
+        ///////////////////////////////////////////////////////////////*/
 
         // Mint 1 license of policy "uml_noncom_deriv_reciprocal" on IPAccount2
         // Register derivative IP for NFT tokenId 4
@@ -531,7 +549,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 policyIds["uml_noncom_deriv_reciprocal"],
                 ipAcct[2],
                 1,
-                deployer
+                deployer,
+                emptyRoyaltyPolicyLAPInitParams
             );
 
             ipAcct[4] = getIpId(erc721, 4);
@@ -546,12 +565,12 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 "https://example.com/test-ip"
             );
 
-            licensingModule.linkIpToParents(licenseIds, ipAcct[4], 0);
+            licensingModule.linkIpToParents(licenseIds, ipAcct[4], emptyRoyaltyPolicyLAPInitParams);
         }
 
         /*///////////////////////////////////////////////////////////////
                             ROYALTY PAYMENT AND CLAIMS
-        ////////////////////////////////////////////////////////////////*/
+        ///////////////////////////////////////////////////////////////*/
 
         // IPAccount1 has commercial policy, of which IPAccount3 has used to mint a license.
         // Thus, any payment to IPAccount3 will get split to IPAccount1.
@@ -562,22 +581,22 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         }
 
         // Distribute the accrued revenue from the 0xSplitWallet associated with IPAccount3 to
-        // 0xSplits Main, which will get distributed to IPAccount3 AND its claimer based on revenue
+        // 0xSplits Main, which will get distributed to IPAccount3 AND its split clone / vault based on revenue
         // sharing terms specified in the royalty policy.
         {
-            (, address ipAcct3_claimer, , ) = royaltyPolicyLS.royaltyData(ipAcct[3]);
+            (, address ipAcct3_splitClone, , , ) = royaltyPolicyLAP.royaltyData(ipAcct[3]);
 
             address[] memory accounts = new address[](2);
             // order matters, otherwise error: InvalidSplit__AccountsOutOfOrder
-            accounts[1] = ipAcct3_claimer;
+            accounts[1] = ipAcct3_splitClone;
             accounts[0] = ipAcct[3];
 
-            royaltyPolicyLS.distributeFunds(ipAcct[3], address(erc20), accounts, address(0));
+            royaltyPolicyLAP.distributeIpPoolFunds(ipAcct[3], address(erc20), accounts, address(0));
         }
 
         // IPAccount1 claims its rNFTs and tokens, only done once since it's a direct chain
         {
-            (, address ipAcct3_claimer, , ) = royaltyPolicyLS.royaltyData(ipAcct[3]);
+            (, address ipAcct3_splitClone, , , ) = royaltyPolicyLAP.royaltyData(ipAcct[3]);
 
             address[] memory chain_ipAcct1_to_ipAcct3 = new address[](2);
             chain_ipAcct1_to_ipAcct3[0] = ipAcct[1];
@@ -586,27 +605,14 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             ERC20[] memory tokens = new ERC20[](1);
             tokens[0] = erc20;
 
-            // Alice calls on behalf of Dan's claimer to send money from the Split Main to Dan's claimer,
-            // since the revenue payment was made to Dan's Split Wallet, which got distributed to the claimer.
-
-            // Dan is paying 65% of 1000 erc20 royalty to parents (stored in Dan's Claimer).
-            // The other 35% of 1000 erc20 royalty goes directly to Dan's IPAccount.
-            royaltyPolicyLS.claimRoyalties({ _account: ipAcct3_claimer, _withdrawETH: 0, _tokens: tokens });
-
-            // Alice calls the claim her portion of rNFTs and tokens. She can only call `claim` once.
-            // Afterwards, she will automatically receive money on revenue distribution.
-
-            LSClaimer(ipAcct3_claimer).claim({
-                _path: chain_ipAcct1_to_ipAcct3,
-                _claimerIpId: ipAcct[1],
-                _withdrawETH: false,
-                _tokens: tokens
-            });
+            // Alice calls on behalf of Dan's vault to send money from the Split Main to Dan's vault,
+            // since the revenue payment was made to Dan's Split Wallet, which got distributed to the vault.
+            royaltyPolicyLAP.claimFromIpPool({ _account: ipAcct3_splitClone, _withdrawETH: 0, _tokens: tokens });
         }
 
         /*///////////////////////////////////////////////////////////////
                             TAGGING MODULE INTERACTIONS
-        ////////////////////////////////////////////////////////////////*/
+        ///////////////////////////////////////////////////////////////*/
 
         taggingModule.setTag("premium", ipAcct[1]);
         taggingModule.setTag("cheap", ipAcct[1]);
@@ -615,7 +621,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         /*///////////////////////////////////////////////////////////////
                             DISPUTE MODULE INTERACTIONS
-        ////////////////////////////////////////////////////////////////*/
+        ///////////////////////////////////////////////////////////////*/
 
         // Say, IPAccount4 is accused of plagiarism by IPAccount2
         // Then, a judge (deployer in this example) settles as true.

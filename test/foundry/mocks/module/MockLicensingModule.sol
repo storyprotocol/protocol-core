@@ -4,7 +4,6 @@ pragma solidity ^0.8.23;
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import { IIPAccount } from "../../../../contracts/interfaces/IIPAccount.sol";
 import { ILicensingModule } from "../../../../contracts/interfaces/modules/licensing/ILicensingModule.sol";
 import { ILicenseRegistry } from "../../../../contracts/interfaces/registries/ILicenseRegistry.sol";
 import { DataUniqueness } from "../../../../contracts/lib/DataUniqueness.sol";
@@ -49,11 +48,18 @@ contract MockLicensingModule is BaseModule, ILicensingModule {
         _registeredFrameworkManagers[manager] = true;
     }
 
-    function registerPolicy(bool isLicenseTransferable, bytes memory data) external returns (uint256 policyId) {
+    function registerPolicy(
+        bool isLicenseTransferable,
+        address royaltyPolicy,
+        bytes memory royaltyData,
+        bytes memory frameworkData
+    ) external returns (uint256 policyId) {
         Licensing.Policy memory pol = Licensing.Policy({
             isLicenseTransferable: isLicenseTransferable,
             policyFramework: msg.sender,
-            data: data
+            frameworkData: frameworkData,
+            royaltyPolicy: royaltyPolicy,
+            royaltyData: royaltyData
         });
 
         (uint256 polId, bool newPol) = DataUniqueness.addIdOrGetExisting(
@@ -73,72 +79,19 @@ contract MockLicensingModule is BaseModule, ILicensingModule {
         indexOnIpId = _addPolicyIdToIp({ ipId: ipId, policyId: polId, isInherited: false, skipIfDuplicate: false });
     }
 
-    function addPolicyToIpCommercial(
-        address ipId,
-        uint256 polId,
-        address newRoyaltyPolicy,
-        uint32 newMinRoyalty
-    ) external returns (uint256 indexOnIpId) {
-        indexOnIpId = addPolicyToIp(ipId, polId);
-        ROYALTY_MODULE.setRoyaltyPolicy(ipId, newRoyaltyPolicy, new address[](0), abi.encode(newMinRoyalty));
-    }
-
     function mintLicense(
         uint256 policyId,
-        address licensorIp,
+        address licensorIpId,
         uint256 amount,
-        address receiver
-    ) public returns (uint256 licenseId) {
-        Licensing.Policy memory pol = policy(policyId);
-        licenseId = LICENSE_REGISTRY.mintLicense(policyId, licensorIp, pol.isLicenseTransferable, amount, receiver);
-    }
-
-    function mintLicenseCommercial(
-        uint256 policyId,
-        address licensorIp,
-        uint256 amount,
-        address receiver
+        address receiver,
+        bytes calldata royaltyContext
     ) external returns (uint256 licenseId) {
-        licenseId = mintLicense(policyId, licensorIp, amount, receiver);
-        if (!ROYALTY_MODULE.isRoyaltyPolicyImmutable(licensorIp)) {
-            ROYALTY_MODULE.setRoyaltyPolicyImmutable(licensorIp);
-        }
+        Licensing.Policy memory pol = policy(policyId);
+        licenseId = LICENSE_REGISTRY.mintLicense(policyId, licensorIpId, pol.isLicenseTransferable, amount, receiver);
     }
 
-    function linkIpToParents(
-        uint256[] calldata licenseIds,
-        address childIpId,
-        uint32 // minRoyalty
-    ) public {
-        address holder = IIPAccount(payable(childIpId)).owner();
-        address[] memory licensors = new address[](licenseIds.length);
-
-        for (uint256 i = 0; i < licenseIds.length; i++) {
-            uint256 licenseId = licenseIds[i];
-            Licensing.License memory licenseData = LICENSE_REGISTRY.license(licenseId);
-            licensors[i] = licenseData.licensorIpId;
-
-            _linkIpToParent(licenseData.policyId, licensors[i], childIpId);
-        }
-
-        LICENSE_REGISTRY.burnLicenses(holder, licenseIds);
-    }
-
-    function linkIpToParentsCommercial(
-        uint256[] calldata licenseIds,
-        address childIpId,
-        address royaltyPolicy,
-        uint32 minRoyalty
-    ) external {
-        linkIpToParents(licenseIds, childIpId, minRoyalty);
-
-        address[] memory licensors = new address[](licenseIds.length);
-        for (uint256 i = 0; i < licenseIds.length; i++) {
-            uint256 licenseId = licenseIds[i];
-            Licensing.License memory licenseData = LICENSE_REGISTRY.license(licenseId);
-            licensors[i] = licenseData.licensorIpId;
-        }
-        ROYALTY_MODULE.setRoyaltyPolicy(childIpId, royaltyPolicy, licensors, abi.encode(minRoyalty));
+    function linkIpToParents(uint256[] calldata licenseIds, address childIpId, bytes calldata royaltyContext) external {
+        LICENSE_REGISTRY.burnLicenses(childIpId, licenseIds);
     }
 
     function _addPolicyIdToIp(
@@ -185,16 +138,7 @@ contract MockLicensingModule is BaseModule, ILicensingModule {
         return pol;
     }
 
-    function getPolicyId(
-        address framework,
-        bool isLicenseTransferable,
-        bytes memory data
-    ) external view returns (uint256 policyId) {
-        Licensing.Policy memory pol = Licensing.Policy({
-            isLicenseTransferable: isLicenseTransferable,
-            policyFramework: framework,
-            data: data
-        });
+    function getPolicyId(Licensing.Policy calldata pol) external view returns (uint256 policyId) {
         return _hashedPolicies[keccak256(abi.encode(pol))];
     }
 
