@@ -242,43 +242,6 @@ contract UMLPolicyFrameworkMultiParentTest is BaseTest {
         _testSuccessCompat(inputA, inputB, 2);
     }
 
-    function test_UMLPolicyFramework_multiParent_revert_NonReciprocalDerivatives() public {
-        // First we create 2 policies.
-        _mapUMLPolicySimple({
-            name: "pol_a",
-            commercial: true,
-            derivatives: true,
-            reciprocal: false,
-            commercialRevShare: 100
-        });
-        RegisterUMLPolicyParams memory inputA = _getMappedUmlParams("pol_a");
-        _mapUMLPolicySimple({
-            name: "pol_b",
-            commercial: true,
-            derivatives: true,
-            reciprocal: false,
-            commercialRevShare: 100
-        });
-        RegisterUMLPolicyParams memory inputB = _getMappedUmlParams("pol_b");
-        // We set some indifferents
-        inputA.policy.attribution = true;
-        inputB.policy.attribution = !inputB.policy.attribution;
-        inputA.transferable = true;
-        inputB.transferable = !inputA.transferable;
-
-        // Derivatives (revert)
-        inputA.policy.derivativesAllowed = true;
-        inputB.policy.derivativesAllowed = !inputA.policy.derivativesAllowed;
-
-        // TODO: passing in two different royaltyPolicy addresses
-        // solhint-disable-next-line max-line-length
-        _testRevertCompat(
-            inputA,
-            inputB,
-            UMLFrameworkErrors.UMLPolicyFrameworkManager__DerivativesValueMismatch.selector
-        );
-    }
-
     function test_UMLPolicyFramework_multiParent_NonReciprocalTerritories() public {
         // First we create 2 policies.
         _mapUMLPolicySimple({

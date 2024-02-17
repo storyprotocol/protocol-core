@@ -38,7 +38,7 @@ interface IPolicyFrameworkManager is IERC165 {
     /// @notice Verify policy parameters for minting a license.
     /// @dev Enforced to be only callable by LicenseRegistry
     /// @param caller the address executing the mint
-    /// @param policyWasInherited true if the policy was inherited (licensorIpId is not original IP owner)
+    /// @param mintingFromADerivative true if we verify minting a license from a derivative IP ID
     /// @param receiver the address receiving the license
     /// @param licensorIpId the IP id of the licensor
     /// @param mintAmount the amount of licenses to mint
@@ -46,7 +46,7 @@ interface IPolicyFrameworkManager is IERC165 {
     /// @return verified True if the link is verified
     function verifyMint(
         address caller,
-        bool policyWasInherited,
+        bool mintingFromADerivative,
         address licensorIpId,
         address receiver,
         uint256 mintAmount,
