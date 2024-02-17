@@ -151,7 +151,6 @@ library Errors {
     error LicensingModule__IncompatibleLicensorCommercialPolicy();
     error LicensingModule__IncompatibleLicensorRoyaltyDerivativeRevShare();
     error LicensingModule__DerivativeRevShareSumExceedsMaxRNFTSupply();
-    error LicensingModule__MismatchBetweenCommercialRevenueShareAndMinRoyalty();
     error LicensingModule__MismatchBetweenRoyaltyPolicy();
     error LicensingModule__RegisterPolicyFrameworkMismatch();
     error LicensingModule__RoyaltyPolicyNotWhitelisted();

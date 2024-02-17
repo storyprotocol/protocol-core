@@ -257,7 +257,7 @@ contract DisputeModuleTest is BaseTest {
         vm.startPrank(ipAccount1);
         IERC20(USDC).approve(address(arbitrationPolicySP2), ARBITRATION_PRICE);
 
-        uint256 disputeIdBefore = disputeModule.disputeId();
+        uint256 disputeIdBefore = disputeModule.disputeCounter();
         uint256 ipAccount1USDCBalanceBefore = IERC20(USDC).balanceOf(ipAccount1);
         uint256 arbitrationPolicySPUSDCBalanceBefore = IERC20(USDC).balanceOf(address(arbitrationPolicySP2));
 
@@ -274,7 +274,7 @@ contract DisputeModuleTest is BaseTest {
 
         disputeModule.raiseDispute(ipAddr, string("urlExample"), "PLAGIARISM", "");
 
-        uint256 disputeIdAfter = disputeModule.disputeId();
+        uint256 disputeIdAfter = disputeModule.disputeCounter();
         uint256 ipAccount1USDCBalanceAfter = IERC20(USDC).balanceOf(ipAccount1);
         uint256 arbitrationPolicySPUSDCBalanceAfter = IERC20(USDC).balanceOf(address(arbitrationPolicySP2));
 
@@ -302,7 +302,7 @@ contract DisputeModuleTest is BaseTest {
         vm.startPrank(ipAccount1);
         IERC20(USDC).approve(address(arbitrationPolicySP), ARBITRATION_PRICE);
 
-        uint256 disputeIdBefore = disputeModule.disputeId();
+        uint256 disputeIdBefore = disputeModule.disputeCounter();
         uint256 ipAccount1USDCBalanceBefore = USDC.balanceOf(ipAccount1);
         uint256 arbitrationPolicySPUSDCBalanceBefore = USDC.balanceOf(address(arbitrationPolicySP));
 
@@ -319,7 +319,7 @@ contract DisputeModuleTest is BaseTest {
 
         disputeModule.raiseDispute(ipAddr, string("urlExample"), "PLAGIARISM", "");
 
-        uint256 disputeIdAfter = disputeModule.disputeId();
+        uint256 disputeIdAfter = disputeModule.disputeCounter();
         uint256 ipAccount1USDCBalanceAfter = USDC.balanceOf(ipAccount1);
         uint256 arbitrationPolicySPUSDCBalanceAfter = USDC.balanceOf(address(arbitrationPolicySP));
 

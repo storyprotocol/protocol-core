@@ -11,67 +11,71 @@ import { Errors } from "../lib/Errors.sol";
 /// @notice This contract is responsible for managing the registration and tracking of IP Accounts.
 /// It leverages a public ERC6551 registry to deploy IPAccount contracts.
 contract IPAccountRegistry is IIPAccountRegistry {
+    /// @notice Returns the IPAccount implementation address
     address public immutable IP_ACCOUNT_IMPL;
+
+    /// @notice Returns the IPAccount salt
     bytes32 public immutable IP_ACCOUNT_SALT;
+
+    /// @notice Returns the public ERC6551 registry address
     address public immutable ERC6551_PUBLIC_REGISTRY;
 
-    /// @notice Constructor for the IPAccountRegistry contract.
-    /// @param erc6551Registry_ The address of the ERC6551 registry.
-    /// @param ipAccountImpl_ The address of the IP account implementation.
-    constructor(address erc6551Registry_, address ipAccountImpl_) {
-        if (ipAccountImpl_ == address(0)) revert Errors.IPAccountRegistry_InvalidIpAccountImpl();
-        IP_ACCOUNT_IMPL = ipAccountImpl_;
+    constructor(address erc6551Registry, address ipAccountImpl) {
+        if (ipAccountImpl == address(0)) revert Errors.IPAccountRegistry_InvalidIpAccountImpl();
+        IP_ACCOUNT_IMPL = ipAccountImpl;
         IP_ACCOUNT_SALT = bytes32(0);
-        ERC6551_PUBLIC_REGISTRY = erc6551Registry_;
+        ERC6551_PUBLIC_REGISTRY = erc6551Registry;
     }
 
-    /// @notice Deploys an IPAccount contract with the IPAccount implementation and returns the address of the new IP.
-    /// @param chainId_ The chain ID where the IP Account will be created.
-    /// @param tokenContract_ The address of the token contract to be associated with the IP Account.
-    /// @param tokenId_ The ID of the token to be associated with the IP Account.
-    /// @return ipAccountAddress The address of the newly created IP Account.
+    /// @notice Deploys an IPAccount contract with the IPAccount implementation and returns the address of the new IP
+    /// @dev The IPAccount deployment deltegates to public ERC6551 Registry
+    /// @param chainId The chain ID where the IP Account will be created
+    /// @param tokenContract The address of the token contract to be associated with the IP Account
+    /// @param tokenId The ID of the token to be associated with the IP Account
+    /// @return ipAccountAddress The address of the newly created IP Account
     function registerIpAccount(
-        uint256 chainId_,
-        address tokenContract_,
-        uint256 tokenId_
+        uint256 chainId,
+        address tokenContract,
+        uint256 tokenId
     ) public returns (address ipAccountAddress) {
         ipAccountAddress = IERC6551Registry(ERC6551_PUBLIC_REGISTRY).createAccount(
             IP_ACCOUNT_IMPL,
             IP_ACCOUNT_SALT,
-            chainId_,
-            tokenContract_,
-            tokenId_
+            chainId,
+            tokenContract,
+            tokenId
         );
-        emit IPAccountRegistered(ipAccountAddress, IP_ACCOUNT_IMPL, chainId_, tokenContract_, tokenId_);
+        emit IPAccountRegistered(ipAccountAddress, IP_ACCOUNT_IMPL, chainId, tokenContract, tokenId);
     }
 
     /// @notice Returns the IPAccount address for the given NFT token.
-    /// @param chainId_ The chain ID where the IP Account is located.
-    /// @param tokenContract_ The address of the token contract associated with the IP Account.
-    /// @param tokenId_ The ID of the token associated with the IP Account.
-    /// @return The address of the IP Account associated with the given NFT token.
-    function ipAccount(uint256 chainId_, address tokenContract_, uint256 tokenId_) public view returns (address) {
-        return _get6551AccountAddress(chainId_, tokenContract_, tokenId_);
+    /// @param chainId The chain ID where the IP Account is located
+    /// @param tokenContract The address of the token contract associated with the IP Account
+    /// @param tokenId The ID of the token associated with the IP Account
+    /// @return ipAccountAddress The address of the IP Account associated with the given NFT token
+    function ipAccount(uint256 chainId, address tokenContract, uint256 tokenId) public view returns (address) {
+        return _get6551AccountAddress(chainId, tokenContract, tokenId);
     }
 
     /// @notice Returns the IPAccount implementation address.
-    /// @return The address of the IPAccount implementation.
+    /// @return The address of the IPAccount implementation
     function getIPAccountImpl() external view override returns (address) {
         return IP_ACCOUNT_IMPL;
     }
 
+    /// @dev Helper function to get the IPAccount address from the ERC6551 registry.
     function _get6551AccountAddress(
-        uint256 chainId_,
-        address tokenContract_,
-        uint256 tokenId_
+        uint256 chainId,
+        address tokenContract,
+        uint256 tokenId
     ) internal view returns (address) {
         return
             IERC6551Registry(ERC6551_PUBLIC_REGISTRY).account(
                 IP_ACCOUNT_IMPL,
                 IP_ACCOUNT_SALT,
-                chainId_,
-                tokenContract_,
-                tokenId_
+                chainId,
+                tokenContract,
+                tokenId
             );
     }
 }

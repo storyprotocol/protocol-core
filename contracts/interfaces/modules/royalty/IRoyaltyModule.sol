@@ -16,15 +16,15 @@ interface IRoyaltyModule is IModule {
     event RoyaltyTokenWhitelistUpdated(address token, bool allowed);
 
     /// @notice Event emitted when a royalty policy is set
-    /// @param ipId The ipId
+    /// @param ipId The ID of IP asset
     /// @param royaltyPolicy The address of the royalty policy
     /// @param data The data to initialize the policy
     event RoyaltyPolicySet(address ipId, address royaltyPolicy, bytes data);
 
     /// @notice Event emitted when royalties are paid
-    /// @param receiverIpId The ipId that receives the royalties
-    /// @param payerIpId The ipId that pays the royalties
-    /// @param sender The address that pays the royalties on behalf of the payer ipId
+    /// @param receiverIpId The ID of IP asset that receives the royalties
+    /// @param payerIpId The ID of IP asset that pays the royalties
+    /// @param sender The address that pays the royalties on behalf of the payer ID of IP asset
     /// @param token The token that is used to pay the royalties
     /// @param amount The amount that is paid
     event RoyaltyPaid(address receiverIpId, address payerIpId, address sender, address token, uint256 amount);
@@ -36,29 +36,38 @@ interface IRoyaltyModule is IModule {
     /// @param amount The amount paid
     event LicenseMintingFeePaid(address receiverIpId, address payerAddress, address token, uint256 amount);
 
+    /// @notice Returns the licensing module address
+    function LICENSING_MODULE() external view returns (address);
+
     /// @notice Indicates if a royalty policy is whitelisted
     /// @param royaltyPolicy The address of the royalty policy
+    /// @return isWhitelisted True if the royalty policy is whitelisted
     function isWhitelistedRoyaltyPolicy(address royaltyPolicy) external view returns (bool);
 
     /// @notice Indicates if a royalty token is whitelisted
     /// @param token The address of the royalty token
+    /// @return isWhitelisted True if the royalty token is whitelisted
     function isWhitelistedRoyaltyToken(address token) external view returns (bool);
 
-    /// @notice Indicates the royalty policy for a given ipId
-    /// @param ipId The ipId
+    /// @notice Indicates the royalty policy for a given IP asset
+    /// @param ipId The ID of IP asset
+    /// @return royaltyPolicy The address of the royalty policy
     function royaltyPolicies(address ipId) external view returns (address);
 
     /// @notice Whitelist a royalty policy
+    /// @dev Enforced to be only callable by the protocol admin
     /// @param royaltyPolicy The address of the royalty policy
     /// @param allowed Indicates if the royalty policy is whitelisted or not
     function whitelistRoyaltyPolicy(address royaltyPolicy, bool allowed) external;
 
     /// @notice Whitelist a royalty token
+    /// @dev Enforced to be only callable by the protocol admin
     /// @param token The token address
     /// @param allowed Indicates if the token is whitelisted or not
     function whitelistRoyaltyToken(address token, bool allowed) external;
 
     /// @notice Executes royalty related logic on license minting
+    /// @dev Enforced to be only callable by LicensingModule
     /// @param ipId The ipId whose license is being minted (licensor)
     /// @param royaltyPolicy The royalty policy address of the license being minted
     /// @param licenseData The license data custom to each the royalty policy
@@ -71,6 +80,7 @@ interface IRoyaltyModule is IModule {
     ) external;
 
     /// @notice Executes royalty related logic on linking to parents
+    /// @dev Enforced to be only callable by LicensingModule
     /// @param ipId The children ipId that is being linked to parents
     /// @param royaltyPolicy The common royalty policy address of all the licenses being burned
     /// @param parentIpIds The parent ipIds that the children ipId is being linked to
@@ -84,9 +94,9 @@ interface IRoyaltyModule is IModule {
         bytes calldata externalData
     ) external;
 
-    /// @notice Allows a sender to to pay royalties on behalf of an ipId
-    /// @param receiverIpId The ipId that receives the royalties
-    /// @param payerIpId The ipId that pays the royalties
+    /// @notice Allows the function caller to pay royalties to the receiver IP asset on behalf of the payer IP asset.
+    /// @param receiverIpId The ID of the IP asset that receives the royalties
+    /// @param payerIpId The ID of the IP asset that pays the royalties
     /// @param token The token to use to pay the royalties
     /// @param amount The amount to pay
     function payRoyaltyOnBehalf(address receiverIpId, address payerIpId, address token, uint256 amount) external;

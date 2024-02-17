@@ -6,6 +6,7 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 
 import { ILicensingModule } from "../../../../contracts/interfaces/modules/licensing/ILicensingModule.sol";
 import { ILicenseRegistry } from "../../../../contracts/interfaces/registries/ILicenseRegistry.sol";
+import { IDisputeModule } from "../../../../contracts/interfaces/modules/dispute/IDisputeModule.sol";
 import { DataUniqueness } from "../../../../contracts/lib/DataUniqueness.sol";
 import { Licensing } from "../../../../contracts/lib/Licensing.sol";
 import { RoyaltyModule } from "../../../../contracts/modules/royalty-module/RoyaltyModule.sol";
@@ -15,15 +16,9 @@ contract MockLicensingModule is BaseModule, ILicensingModule {
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    struct PolicySetup {
-        uint256 index;
-        bool isSet;
-        bool active;
-        bool isInherited;
-    }
-
     RoyaltyModule public immutable ROYALTY_MODULE;
     ILicenseRegistry public immutable LICENSE_REGISTRY;
+    IDisputeModule public immutable DISPUTE_MODULE;
     string public constant name = "LICENSING_MODULE";
 
     mapping(address framework => bool registered) private _registeredFrameworkManagers;

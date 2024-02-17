@@ -8,9 +8,11 @@ interface IGovernable {
     /// @notice Emitted when the governance is updated
     /// @param newGovernance The address of the new governance
     event GovernanceUpdated(address indexed newGovernance);
+
     /// @notice Sets the governance address
     /// @param newGovernance The address of the new governance
     function setGovernance(address newGovernance) external;
+
     /// @notice Returns the current governance address
     /// @return The address of the current governance
     function getGovernance() external view returns (address);

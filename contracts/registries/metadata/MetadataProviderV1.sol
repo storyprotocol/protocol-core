@@ -15,36 +15,42 @@ contract MetadataProviderV1 is MetadataProviderBase {
 
     /// @notice Fetches the metadata linked to an IP asset.
     /// @param ipId The address identifier of the IP asset.
+    /// @return metadata The metadata linked to the IP asset.
     function metadata(address ipId) external view returns (IP.MetadataV1 memory) {
         return _metadataV1(ipId);
     }
 
     /// @notice Gets the name associated with the IP asset.
     /// @param ipId The address identifier of the IP asset.
+    /// @return name The name associated with the IP asset.
     function name(address ipId) external view returns (string memory) {
         return _metadataV1(ipId).name;
     }
 
     /// @notice Gets the hash associated with the IP asset.
     /// @param ipId The address identifier of the IP asset.
+    /// @return hash The hash associated with the IP asset.
     function hash(address ipId) external view returns (bytes32) {
         return _metadataV1(ipId).hash;
     }
 
     /// @notice Gets the date in which the IP asset was registered.
     /// @param ipId The address identifier of the IP asset.
+    /// @return registrationDate The date in which the IP asset was registered.
     function registrationDate(address ipId) external view returns (uint64) {
         return _metadataV1(ipId).registrationDate;
     }
 
     /// @notice Gets the initial registrant address of the IP asset.
     /// @param ipId The address identifier of the IP asset.
+    /// @return registrant The initial registrant address of the IP asset.
     function registrant(address ipId) external view returns (address) {
         return _metadataV1(ipId).registrant;
     }
 
     /// @notice Gets the external URI associated with the IP asset.
     /// @param ipId The address identifier of the IP asset.
+    /// @return uri The external URI associated with the IP asset.
     function uri(address ipId) external view returns (string memory) {
         return _metadataV1(ipId).uri;
     }

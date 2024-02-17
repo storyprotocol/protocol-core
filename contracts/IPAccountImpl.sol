@@ -19,6 +19,7 @@ import { Errors } from "./lib/Errors.sol";
 contract IPAccountImpl is IERC165, IIPAccount {
     address public immutable accessController;
 
+    /// @notice Returns the IPAccount's internal nonce for transaction ordering.
     uint256 public state;
 
     receive() external payable override(IERC6551Account) {}
@@ -35,14 +36,14 @@ contract IPAccountImpl is IERC165, IIPAccount {
     }
 
     /// @notice Checks if the contract supports a specific interface
-    /// @param interfaceId_ The interface identifier, as specified in ERC-165
-    /// @return True if the contract supports the interface, false otherwise
-    function supportsInterface(bytes4 interfaceId_) external pure returns (bool) {
-        return (interfaceId_ == type(IIPAccount).interfaceId ||
-            interfaceId_ == type(IERC6551Account).interfaceId ||
-            interfaceId_ == type(IERC1155Receiver).interfaceId ||
-            interfaceId_ == type(IERC721Receiver).interfaceId ||
-            interfaceId_ == type(IERC165).interfaceId);
+    /// @param interfaceId The interface identifier, as specified in ERC-165
+    /// @return bool is true if the contract supports the interface, false otherwise
+    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+        return (interfaceId == type(IIPAccount).interfaceId ||
+            interfaceId == type(IERC6551Account).interfaceId ||
+            interfaceId == type(IERC1155Receiver).interfaceId ||
+            interfaceId == type(IERC721Receiver).interfaceId ||
+            interfaceId == type(IERC165).interfaceId);
     }
 
     /// @notice Returns the identifier of the non-fungible token which owns the account
@@ -68,11 +69,11 @@ contract IPAccountImpl is IERC165, IIPAccount {
     }
 
     /// @notice Checks if the signer is valid for the given data
-    /// @param signer_ The signer to check
-    /// @param data_ The data to check against
+    /// @param signer The signer to check
+    /// @param data The data to check against
     /// @return The function selector if the signer is valid, 0 otherwise
-    function isValidSigner(address signer_, bytes calldata data_) external view returns (bytes4) {
-        if (_isValidSigner(signer_, address(0), data_)) {
+    function isValidSigner(address signer, bytes calldata data) external view returns (bytes4) {
+        if (_isValidSigner(signer, address(0), data)) {
             return IERC6551Account.isValidSigner.selector;
         }
 
@@ -87,23 +88,21 @@ contract IPAccountImpl is IERC165, IIPAccount {
         return IERC721(contractAddress).ownerOf(tokenId);
     }
 
-    /// @notice Checks if the signer is valid for the given data and recipient
-    /// @dev It leverages the access controller to check the permission
-    /// @param signer_ The signer to check
-    /// @param to_ The recipient of the transaction
-    /// @param data_ The calldata to check against
-    /// @return True if the signer is valid, false otherwise
-    function _isValidSigner(address signer_, address to_, bytes calldata data_) internal view returns (bool) {
-        if (data_.length > 0 && data_.length < 4) {
+    /// @dev Checks if the signer is valid for the given data and recipient via the AccessController permission system.
+    /// @param signer The signer to check
+    /// @param to The recipient of the transaction
+    /// @param data The calldata to check against
+    /// @return bool is true if the signer is valid, false otherwise
+    function _isValidSigner(address signer, address to, bytes calldata data) internal view returns (bool) {
+        if (data.length > 0 && data.length < 4) {
             revert Errors.IPAccount__InvalidCalldata();
         }
-        require(data_.length == 0 || data_.length >= 4, "Invalid calldata");
         bytes4 selector = bytes4(0);
-        if (data_.length >= 4) {
-            selector = bytes4(data_[:4]);
+        if (data.length >= 4) {
+            selector = bytes4(data[:4]);
         }
         // the check will revert if permission is denied
-        IAccessController(accessController).checkPermission(address(this), signer_, to_, selector);
+        IAccessController(accessController).checkPermission(address(this), signer, to, selector);
         return true;
     }
 
@@ -158,14 +157,17 @@ contract IPAccountImpl is IERC165, IIPAccount {
         emit Executed(to, value, data, state);
     }
 
+    /// @inheritdoc IERC721Receiver
     function onERC721Received(address, address, uint256, bytes memory) public pure returns (bytes4) {
         return this.onERC721Received.selector;
     }
 
+    /// @inheritdoc IERC1155Receiver
     function onERC1155Received(address, address, uint256, uint256, bytes memory) public pure returns (bytes4) {
         return this.onERC1155Received.selector;
     }
 
+    /// @inheritdoc IERC1155Receiver
     function onERC1155BatchReceived(
         address,
         address,
@@ -176,6 +178,7 @@ contract IPAccountImpl is IERC165, IIPAccount {
         return this.onERC1155BatchReceived.selector;
     }
 
+    /// @dev Executes a transaction from the IP Account.
     function _execute(
         address signer,
         address to,
