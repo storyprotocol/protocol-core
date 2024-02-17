@@ -224,7 +224,12 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
             if (LICENSE_REGISTRY.isLicenseRevoked(licenseIds[i])) {
                 revert Errors.LicensingModule__LinkingRevokedLicense();
             }
-
+            // This function:
+            // - Verifies the license holder is the caller
+            // - Verifies the license is valid (through IPolicyFrameworkManager)
+            // - Verifies all licenses must have either no royalty policy or the same one.
+            //   (That's why we send the royaltyAddressAcc and get it as a return value).
+            // Finally, it will add the policy to the child IP, and set the parent.
             (licensors[i], royaltyAddressAcc, royaltyData[i]) = _verifyRoyaltyAndLink(
                 i,
                 licenseIds[i],
@@ -244,6 +249,8 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         LICENSE_REGISTRY.burnLicenses(holder, licenseIds);
     }
 
+    /// @dev Verifies royalty and link params, and returns the licensor, new royalty policy and royalty data
+    /// This function was added to avoid stack too deep error.
     function _verifyRoyaltyAndLink(
         uint256 i,
         uint256 licenseId,
