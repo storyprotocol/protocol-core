@@ -9,7 +9,7 @@ import { ILicenseRegistry } from "../../../../contracts/interfaces/registries/IL
 import { IDisputeModule } from "../../../../contracts/interfaces/modules/dispute/IDisputeModule.sol";
 import { DataUniqueness } from "../../../../contracts/lib/DataUniqueness.sol";
 import { Licensing } from "../../../../contracts/lib/Licensing.sol";
-import { RoyaltyModule } from "../../../../contracts/modules/royalty-module/RoyaltyModule.sol";
+import { RoyaltyModule } from "../../../../contracts/modules/royalty/RoyaltyModule.sol";
 import { BaseModule } from "../../../../contracts/modules/BaseModule.sol";
 
 contract MockLicensingModule is BaseModule, ILicensingModule {

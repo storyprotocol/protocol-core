@@ -12,7 +12,7 @@ import { AccessController } from "../../../contracts/AccessController.sol";
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY, TAGGING_MODULE_KEY, ROYALTY_MODULE_KEY, LICENSING_MODULE_KEY } from "../../../contracts/lib/modules/Module.sol";
 import { AccessPermission } from "../../../contracts/lib/AccessPermission.sol";
 import { LicenseRegistry } from "../../../contracts/registries/LicenseRegistry.sol";
-import { RoyaltyModule } from "../../../contracts/modules/royalty-module/RoyaltyModule.sol";
+import { RoyaltyModule } from "../../../contracts/modules/royalty/RoyaltyModule.sol";
 
 // test
 import { DeployHelper } from "./DeployHelper.t.sol";

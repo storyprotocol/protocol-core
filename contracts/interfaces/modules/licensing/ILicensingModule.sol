@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 import { Licensing } from "../../../lib/Licensing.sol";
 import { IModule } from "../base/IModule.sol";
-import { RoyaltyModule } from "../../../modules/royalty-module/RoyaltyModule.sol";
+import { RoyaltyModule } from "../../../modules/royalty/RoyaltyModule.sol";
 import { ILicenseRegistry } from "../../registries/ILicenseRegistry.sol";
 import { IDisputeModule } from "../dispute/IDisputeModule.sol";
 
