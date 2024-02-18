@@ -15,6 +15,7 @@ import { IIPAccount } from "contracts/interfaces/IIPAccount.sol";
 import { IRoyaltyPolicyLAP } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLAP.sol";
 import { Governance } from "contracts/governance/Governance.sol";
 import { AccessPermission } from "contracts/lib/AccessPermission.sol";
+import { Errors } from "contracts/lib/Errors.sol";
 import { IP } from "contracts/lib/IP.sol";
 // solhint-disable-next-line max-line-length
 import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY, TAGGING_MODULE_KEY, ROYALTY_MODULE_KEY, LICENSING_MODULE_KEY } from "contracts/lib/modules/Module.sol";
@@ -29,6 +30,7 @@ import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
+import { AncestorsVaultLAP } from "contracts/modules/royalty-module/policies/AncestorsVaultLAP.sol";
 import { RoyaltyPolicyLAP } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLAP.sol";
 import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
@@ -46,6 +48,7 @@ import { JsonDeploymentHandler } from "../../../script/foundry/utils/JsonDeploym
 // test
 import { MockERC20 } from "test/foundry/mocks/token/MockERC20.sol";
 import { MockERC721 } from "test/foundry/mocks/token/MockERC721.sol";
+import { MockTokenGatedHook } from "test/foundry/mocks/MockTokenGatedHook.sol";
 
 contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     using StringUtil for uint256;
@@ -61,14 +64,18 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     LicenseRegistry internal licenseRegistry;
     ModuleRegistry internal moduleRegistry;
 
-    // Modules
+    // Module
     RegistrationModule internal registrationModule;
     LicensingModule internal licensingModule;
     DisputeModule internal disputeModule;
-    ArbitrationPolicySP internal arbitrationPolicySP;
     RoyaltyModule internal royaltyModule;
-    RoyaltyPolicyLAP internal royaltyPolicyLAP;
     TaggingModule internal taggingModule;
+
+    // Policy
+    ArbitrationPolicySP internal arbitrationPolicySP;
+    AncestorsVaultLAP internal ancestorsVaultImpl;
+    RoyaltyPolicyLAP internal royaltyPolicyLAP;
+    PILPolicyFrameworkManager internal pilPfm;
 
     // Misc.
     Governance internal governance;
@@ -79,6 +86,9 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     // Mocks
     MockERC20 internal erc20;
     MockERC721 internal erc721;
+
+    // Hooks
+    MockTokenGatedHook internal mockTokenGatedHook;
 
     mapping(uint256 tokenId => address ipAccountAddress) internal ipAcct;
 
@@ -91,7 +101,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     address internal constant LIQUID_SPLIT_MAIN = 0x57CBFA83f000a38C5b5881743E298819c503A559;
 
     uint256 internal constant ARBITRATION_PRICE = 1000 * 10 ** 6; // 1000 MockToken
-    uint256 internal constant ROYALTY_AMOUNT = 100 * 10 ** 6;
+    uint256 internal constant MAX_ROYALTY_APPROVAL = 10000 ether;
 
     constructor() JsonDeploymentHandler("main") {}
 
@@ -136,7 +146,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         erc721 = new MockERC721("MockERC721");
         _postdeploy(contractKey, address(erc721));
 
-        // Protocol-related Contracts
+        // Core Protocol Contracts
 
         contractKey = "Governance";
         _predeploy(contractKey);
@@ -160,10 +170,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "IPAccountRegistry";
         _predeploy(contractKey);
-        ipAccountRegistry = new IPAccountRegistry(
-            ERC6551_REGISTRY,
-            address(ipAccountImpl)
-        );
+        ipAccountRegistry = new IPAccountRegistry(ERC6551_REGISTRY, address(ipAccountImpl));
         _postdeploy(contractKey, address(ipAccountRegistry));
 
         contractKey = "IPAssetRegistry";
@@ -175,10 +182,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             address(governance)
         );
         _postdeploy(contractKey, address(ipAssetRegistry));
-
-        contractKey = "MetadataProviderV1";
-        _predeploy(contractKey);
-        _postdeploy(contractKey, ipAssetRegistry.metadataProvider());
 
         contractKey = "IPAssetRenderer";
         _predeploy(contractKey);
@@ -239,6 +242,10 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         );
         _postdeploy(contractKey, address(registrationModule));
 
+        //
+        // Story-specific Contracts
+        //
+
         contractKey = "ArbitrationPolicySP";
         _predeploy(contractKey);
         arbitrationPolicySP = new ArbitrationPolicySP(
@@ -259,6 +266,30 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             address(governance)
         );
         _postdeploy(contractKey, address(royaltyPolicyLAP));
+
+        contractKey = "AncestorsVaultLAP";
+        _predeploy(contractKey);
+        ancestorsVaultImpl = new AncestorsVaultLAP(address(royaltyPolicyLAP));
+        _postdeploy(contractKey, address(ancestorsVaultImpl));
+
+        _predeploy("PILPolicyFrameworkManager");
+        pilPfm = new PILPolicyFrameworkManager(
+            address(accessController),
+            address(ipAccountRegistry),
+            address(licensingModule),
+            "pil",
+            "https://pil-license.com/{id}.json"
+        );
+        _postdeploy("PILPolicyFrameworkManager", address(pilPfm));
+
+        //
+        // Mock Hooks
+        //
+
+        contractKey = "MockTokenGatedHook";
+        _predeploy(contractKey);
+        mockTokenGatedHook = new MockTokenGatedHook();
+        _postdeploy(contractKey, address(mockTokenGatedHook));
     }
 
     function _configureDeployedProtocolContracts() private {
@@ -280,7 +311,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         _executeInteractions();
     }
 
-    function _predeploy(string memory contractKey) private pure {
+    function _predeploy(string memory contractKey) private view {
         console2.log(string.concat("Deploying ", contractKey, "..."));
     }
 
@@ -293,7 +324,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         _configureMisc();
         _configureAccessController();
         _configureModuleRegistry();
-        _configureRoyaltyPolicy();
+        _configureRoyaltyRelated();
         _configureDisputeModule();
         _executeInteractions();
     }
@@ -309,13 +340,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
     function _configureAccessController() private {
         accessController.initialize(address(ipAccountRegistry), address(moduleRegistry));
-
-        accessController.setGlobalPermission(
-            address(ipAssetRegistry),
-            address(licensingModule),
-            bytes4(licensingModule.linkIpToParents.selector),
-            AccessPermission.ALLOW
-        );
 
         accessController.setGlobalPermission(
             address(registrationModule),
@@ -341,11 +365,13 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         moduleRegistry.registerModule(ROYALTY_MODULE_KEY, address(royaltyModule));
     }
 
-    function _configureRoyaltyPolicy() private {
+    function _configureRoyaltyRelated() private {
         royaltyModule.setLicensingModule(address(licensingModule));
         // whitelist
         royaltyModule.whitelistRoyaltyPolicy(address(royaltyPolicyLAP), true);
         royaltyModule.whitelistRoyaltyToken(address(erc20), true);
+
+        royaltyPolicyLAP.setAncestorsVaultImplementation(address(ancestorsVaultImpl));
     }
 
     function _configureDisputeModule() private {
@@ -359,14 +385,20 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     }
 
     function _executeInteractions() private {
-        erc721.mintId(deployer, 1);
-        erc721.mintId(deployer, 2);
-        erc721.mintId(deployer, 3);
-        erc721.mintId(deployer, 4);
-        erc20.mint(deployer, 100_000 * 10 ** 6);
+        for (uint256 i = 1; i <= 5; i++) {
+            erc721.mintId(deployer, i);
+        }
+        erc721.mintId(deployer, 100);
+        erc721.mintId(deployer, 101);
+        erc721.mintId(deployer, 102);
+        erc721.mintId(deployer, 103);
+        erc721.mintId(deployer, 104);
+        erc721.mintId(deployer, 105);
+        erc20.mint(deployer, 100_000_000 ether);
 
-        erc20.approve(address(arbitrationPolicySP), 10 * ARBITRATION_PRICE); // 10 * raising disputes
-        erc20.approve(address(royaltyPolicyLAP), ROYALTY_AMOUNT);
+        erc20.approve(address(arbitrationPolicySP), 1000 * ARBITRATION_PRICE); // 1000 * raising disputes
+        // For license/royalty payment, on both minting license and royalty distribution
+        erc20.approve(address(royaltyPolicyLAP), MAX_ROYALTY_APPROVAL);
 
         bytes memory emptyRoyaltyPolicyLAPInitParams = abi.encode(IRoyaltyPolicyLAP.InitParams({
             targetAncestors: new address[](0),
@@ -377,19 +409,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             parentAncestorsRoyalties2: new uint32[](0)
         }));
 
-        /*///////////////////////////////////////////////////////////////
-                        CREATE POLICY FRAMEWORK MANAGERS
-        ///////////////////////////////////////////////////////////////*/
-
-        _predeploy("PILPolicyFrameworkManager");
-        PILPolicyFrameworkManager pilPfm = new PILPolicyFrameworkManager(
-            address(accessController),
-            address(ipAccountRegistry),
-            address(licensingModule),
-            "pil",
-            "https://pil-license.com/{id}.json"
-        );
-        _postdeploy("PILPolicyFrameworkManager", address(pilPfm));
         licensingModule.registerPolicyFrameworkManager(address(pilPfm));
         frameworkAddrs["pil"] = address(pilPfm);
 
@@ -401,19 +420,19 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             RegisterPILPolicyParams({
                 transferable: true,
                 royaltyPolicy: address(royaltyPolicyLAP),
-                mintingFee: 0,
-                mintingFeeToken: address(0),
+                mintingFee: 1 ether,
+                mintingFeeToken: address(erc20),
                 policy: PILPolicy({
                     attribution: true,
                     commercialUse: true,
                     commercialAttribution: true,
-                    commercializerChecker: address(0),
-                    commercializerCheckerData: "",
+                    commercializerChecker: address(mockTokenGatedHook),
+                    commercializerCheckerData: abi.encode(address(erc721)), // use `erc721` as gated token
                     commercialRevShare: 100,
                     derivativesAllowed: true,
                     derivativesAttribution: false,
                     derivativesApproval: false,
-                    derivativesReciprocal: false,
+                    derivativesReciprocal: true,
                     territories: new string[](0),
                     distributionChannels: new string[](0),
                     contentRestrictions: new string[](0)
@@ -425,8 +444,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             RegisterPILPolicyParams({
                 transferable: false,
                 royaltyPolicy: address(0), // no royalty, non-commercial
-                mintingFee: 0,
-                mintingFeeToken: address(0),
+                mintingFee: 0, // no minting fee, non-commercial
+                mintingFeeToken: address(0), // no minting fee token, non-commercial
                 policy: PILPolicy({
                     attribution: true,
                     commercialUse: false,
@@ -475,15 +494,22 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         accessController.setGlobalPermission(
             address(ipAssetRegistry),
             address(licensingModule),
-            bytes4(0),
-            1
+            bytes4(0x9f69e70d),
+            AccessPermission.ALLOW
         );
 
         accessController.setGlobalPermission(
             address(registrationModule),
             address(licenseRegistry),
             bytes4(0), // wildcard
-            1 // AccessPermission.ALLOW
+            AccessPermission.ALLOW
+        );
+
+        accessController.setGlobalPermission(
+            address(registrationModule),
+            address(licenseRegistry),
+            bytes4(0), // wildcard
+            AccessPermission.ALLOW
         );
 
         // wildcard allow
@@ -496,7 +522,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 deployer,
                 address(licenseRegistry),
                 bytes4(0),
-                1 // AccessPermission.ALLOW
+                AccessPermission.ALLOW
             )
         );
 
@@ -507,10 +533,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         // Add "pil_com_deriv_expensive" policy to IPAccount1
         licensingModule.addPolicyToIp(ipAcct[1], policyIds["pil_com_deriv_expensive"]);
 
-        // ROYALTY_MODULE.setRoyaltyPolicy(ipId, newRoyaltyPolicy, new address[](0), abi.encode(minRoyalty));
-
         /*///////////////////////////////////////////////////////////////
-                            MINT LICENSES ON POLICIES
+                    LINK IPACCOUNTS TO PARENTS USING LICENSES
         ///////////////////////////////////////////////////////////////*/
 
         // Mint 2 license of policy "pil_com_deriv_expensive" on IPAccount1
@@ -528,6 +552,17 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             ipAcct[3] = getIpId(erc721, 3);
             vm.label(ipAcct[3], "IPAccount3");
 
+            IRoyaltyPolicyLAP.InitParams memory params = IRoyaltyPolicyLAP.InitParams({
+                targetAncestors: new address[](1),
+                targetRoyaltyAmount: new uint32[](1),
+                parentAncestors1: new address[](0),
+                parentAncestors2: new address[](0),
+                parentAncestorsRoyalties1: new uint32[](0),
+                parentAncestorsRoyalties2: new uint32[](0)
+            });
+            params.targetAncestors[0] = ipAcct[1];
+            params.targetRoyaltyAmount[0] = 100;
+
             registrationModule.registerDerivativeIp(
                 licenseIds,
                 address(erc721),
@@ -535,13 +570,9 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 "IPAccount3",
                 bytes32("some of the best description"),
                 "https://example.com/best-derivative-ip",
-                emptyRoyaltyPolicyLAPInitParams
+                abi.encode(params)
             );
         }
-
-        /*///////////////////////////////////////////////////////////////
-                    LINK IPACCOUNTS TO PARENTS USING LICENSES
-        ///////////////////////////////////////////////////////////////*/
 
         // Mint 1 license of policy "pil_noncom_deriv_reciprocal" on IPAccount2
         // Register derivative IP for NFT tokenId 4
@@ -558,6 +589,17 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             ipAcct[4] = getIpId(erc721, 4);
             vm.label(ipAcct[4], "IPAccount4");
 
+            IRoyaltyPolicyLAP.InitParams memory params = IRoyaltyPolicyLAP.InitParams({
+                targetAncestors: new address[](1),
+                targetRoyaltyAmount: new uint32[](1),
+                parentAncestors1: new address[](0),
+                parentAncestors2: new address[](0),
+                parentAncestorsRoyalties1: new uint32[](0),
+                parentAncestorsRoyalties2: new uint32[](0)
+            });
+            params.targetAncestors[0] = ipAcct[2];
+            params.targetRoyaltyAmount[0] = 100;
+
             ipAcct[4] = registrationModule.registerRootIp(
                 0,
                 address(erc721),
@@ -567,49 +609,136 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 "https://example.com/test-ip"
             );
 
-            licensingModule.linkIpToParents(licenseIds, ipAcct[4], emptyRoyaltyPolicyLAPInitParams);
+            licensingModule.linkIpToParents(licenseIds, ipAcct[4], abi.encode(params));
+        }
+
+        // Multi-parent
+        {
+            ipAcct[5] = getIpId(erc721, 5);
+            vm.label(ipAcct[5], "IPAccount5");
+
+            uint256[] memory licenseIds = new uint256[](2);
+            licenseIds[0] = licensingModule.mintLicense(
+                policyIds["pil_com_deriv_expensive"],
+                ipAcct[1],
+                1,
+                deployer,
+                emptyRoyaltyPolicyLAPInitParams
+            );
+
+            IRoyaltyPolicyLAP.InitParams memory paramsMintLicense = IRoyaltyPolicyLAP.InitParams({
+                targetAncestors: new address[](1),
+                targetRoyaltyAmount: new uint32[](1),
+                parentAncestors1: new address[](0),
+                parentAncestors2: new address[](0),
+                parentAncestorsRoyalties1: new uint32[](0),
+                parentAncestorsRoyalties2: new uint32[](0)
+            });
+            paramsMintLicense.targetAncestors[0] = ipAcct[1];
+            paramsMintLicense.targetRoyaltyAmount[0] = 100;
+
+            licenseIds[1] = licensingModule.mintLicense(
+                policyIds["pil_com_deriv_expensive"],
+                ipAcct[3], // is child of ipAcct[1]
+                1,
+                deployer,
+                abi.encode(paramsMintLicense)
+            );
+
+            IRoyaltyPolicyLAP.InitParams memory paramsLinkParent = IRoyaltyPolicyLAP.InitParams({
+                targetAncestors: new address[](2),
+                targetRoyaltyAmount: new uint32[](2),
+                parentAncestors1: new address[](0),
+                parentAncestors2: new address[](1),
+                parentAncestorsRoyalties1: new uint32[](0),
+                parentAncestorsRoyalties2: new uint32[](1)
+            });
+            paramsLinkParent.targetAncestors[0] = ipAcct[1]; // grandparent
+            paramsLinkParent.targetAncestors[1] = ipAcct[3]; // parent
+            paramsLinkParent.targetRoyaltyAmount[0] = 200; // 100 + 100
+            paramsLinkParent.targetRoyaltyAmount[1] = 100;
+            paramsLinkParent.parentAncestors2[0] = ipAcct[1];
+            paramsLinkParent.parentAncestorsRoyalties2[0] = 100;
+
+            ipAssetRegistry.register(
+                licenseIds,
+                abi.encode(paramsLinkParent),
+                block.chainid,
+                address(erc721),
+                5,
+                address(ipResolver),
+                true,
+                abi.encode(
+                    IP.MetadataV1({
+                        name: "name",
+                        hash: "hash",
+                        registrationDate: uint64(block.timestamp),
+                        registrant: deployer,
+                        uri: "uri"
+                    })
+                )
+            );
         }
 
         /*///////////////////////////////////////////////////////////////
                             ROYALTY PAYMENT AND CLAIMS
         ///////////////////////////////////////////////////////////////*/
 
-        // IPAccount1 has commercial policy, of which IPAccount3 has used to mint a license.
-        // Thus, any payment to IPAccount3 will get split to IPAccount1.
+        // IPAccount1 and IPAccount3 have commercial policy, of which IPAccount5 has used to mint licenses.
+        // Thus, any payment to IPAccount5 will get split to IPAccount1 and IPAccount3.
 
-        // Deployer pays to IPAccount3 (for test purposes).
+        // Deployer pays IPAccount5
         {
-            royaltyModule.payRoyaltyOnBehalf(ipAcct[3], deployer, address(erc20), ROYALTY_AMOUNT);
+            royaltyModule.payRoyaltyOnBehalf(ipAcct[5], ipAcct[5], address(erc20), 1 ether);
         }
 
         // Distribute the accrued revenue from the 0xSplitWallet associated with IPAccount3 to
-        // 0xSplits Main, which will get distributed to IPAccount3 AND its split clone / vault based on revenue
+        // 0xSplits Main, which will get distributed to IPAccount3 AND its claimer based on revenue
         // sharing terms specified in the royalty policy.
         {
-            (, address ipAcct3_splitClone, , , ) = royaltyPolicyLAP.royaltyData(ipAcct[3]);
+            (, , address ipAcct5_ancestorVault, , ) = royaltyPolicyLAP.royaltyData(ipAcct[5]);
 
             address[] memory accounts = new address[](2);
-            // order matters, otherwise error: InvalidSplit__AccountsOutOfOrder
-            accounts[1] = ipAcct3_splitClone;
-            accounts[0] = ipAcct[3];
+            // If you face InvalidSplit__AccountsOutOfOrder, shuffle the order of accounts (swap index 0 and 1)
+            accounts[0] = ipAcct[5];
+            accounts[1] = ipAcct5_ancestorVault;
 
-            royaltyPolicyLAP.distributeIpPoolFunds(ipAcct[3], address(erc20), accounts, address(0));
+            royaltyPolicyLAP.distributeIpPoolFunds(ipAcct[5], address(erc20), accounts, deployer);
         }
 
         // IPAccount1 claims its rNFTs and tokens, only done once since it's a direct chain
         {
-            (, address ipAcct3_splitClone, , , ) = royaltyPolicyLAP.royaltyData(ipAcct[3]);
-
-            address[] memory chain_ipAcct1_to_ipAcct3 = new address[](2);
-            chain_ipAcct1_to_ipAcct3[0] = ipAcct[1];
-            chain_ipAcct1_to_ipAcct3[1] = ipAcct[3];
-
             ERC20[] memory tokens = new ERC20[](1);
             tokens[0] = erc20;
 
-            // Alice calls on behalf of Dan's vault to send money from the Split Main to Dan's vault,
-            // since the revenue payment was made to Dan's Split Wallet, which got distributed to the vault.
-            royaltyPolicyLAP.claimFromIpPool({ account: ipAcct3_splitClone, withdrawETH: 0, tokens: tokens });
+            (, , address ancestorVault_ipAcct5, , ) = royaltyPolicyLAP.royaltyData(ipAcct[5]);
+
+            // First, release the money from the IPAccount5's 0xSplitWallet (that just received money) to the main
+            // 0xSplitMain that acts as a ledger for revenue distribution.
+            // vm.expectEmit(LIQUID_SPLIT_MAIN);
+            // TODO: check Withdrawal(699999999999999998) (Royalty stack is 300, or 30% [absolute] sent to ancestors)
+            royaltyPolicyLAP.claimFromIpPool({ account: ipAcct[5], withdrawETH: 0, tokens: tokens });
+            royaltyPolicyLAP.claimFromIpPool({ account: ancestorVault_ipAcct5, withdrawETH: 0, tokens: tokens });
+
+            // Bob (owner of IPAccount1) calls the claim her portion of rNFTs and tokens. He can only call
+            // `claimFromAncestorsVault` once. Afterwards, she will automatically receive money on revenue distribution.
+
+            address[] memory ancestors = new address[](2);
+            uint32[] memory ancestorsRoyalties = new uint32[](2);
+            ancestors[0] = ipAcct[1]; // grandparent
+            ancestors[1] = ipAcct[3]; // parent (claimer)
+            ancestorsRoyalties[0] = 200;
+            ancestorsRoyalties[1] = 100;
+
+            // IPAccount1 wants to claim from IPAccount5
+            royaltyPolicyLAP.claimFromAncestorsVault({
+                ipId: ipAcct[5],
+                claimerIpId: ipAcct[1],
+                ancestors: ancestors,
+                ancestorsRoyalties: ancestorsRoyalties,
+                withdrawETH: false,
+                tokens: tokens
+            });
         }
 
         /*///////////////////////////////////////////////////////////////
