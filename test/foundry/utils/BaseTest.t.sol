@@ -108,6 +108,13 @@ contract BaseTest is Test, DeployHelper, LicensingHelper {
         // NOTE: accessController is IAccessController, which doesn't expose `initialize` function.
         AccessController(address(accessController)).initialize(address(ipAccountRegistry), getModuleRegistry());
 
+        accessController.setGlobalPermission(
+            address(ipAssetRegistry),
+            address(licensingModule),
+            bytes4(licensingModule.linkIpToParents.selector),
+            AccessPermission.ALLOW
+        );
+
         // If REAL Registration Module and Licensing Module are deployed, set global permissions
         if (deployConditions.module.registrationModule && deployConditions.module.licensingModule) {
             accessController.setGlobalPermission(

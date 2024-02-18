@@ -13,9 +13,15 @@ import { IRoyaltyPolicyLAP } from "../../../../contracts/interfaces/modules/roya
 
 // test
 import { BaseIntegration } from "../BaseIntegration.t.sol";
+import { MockTokenGatedHook } from "../../mocks/MockTokenGatedHook.sol";
+import { MockERC721 } from "../../mocks/token/MockERC721.sol";
 
 contract BigBang_Integration_SingleNftCollection is BaseIntegration {
     using EnumerableSet for EnumerableSet.UintSet;
+
+    MockTokenGatedHook internal mockTokenGatedHook;
+
+    MockERC721 internal mockGatedNft;
 
     mapping(uint256 tokenId => address ipAccount) internal ipAcct;
 
@@ -27,6 +33,9 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
 
     function setUp() public override {
         super.setUp();
+
+        mockTokenGatedHook = new MockTokenGatedHook();
+        mockGatedNft = new MockERC721("MockGatedNft");
 
         // Add PIL PFM policies
 
@@ -42,8 +51,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 attribution: false,
                 commercialUse: true,
                 commercialAttribution: true,
-                commercializerChecker: address(0),
-                commercializerCheckerData: "",
+                commercializerChecker: address(mockTokenGatedHook),
+                commercializerCheckerData: abi.encode(address(mockGatedNft)),
                 commercialRevShare: derivCheapFlexibleRevShare,
                 derivativesAllowed: true,
                 derivativesAttribution: true,
@@ -148,6 +157,10 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             vm.startPrank(u.carl);
             mockNFT.mintId(u.carl, 6);
 
+            // Carl needs to hold an NFT from mockGatedNFT collection to mint license pil_com_deriv_cheap_flexible
+            // (verified by the mockTokenGatedHook commercializer checker)
+            mockGatedNft.mint(u.carl);
+
             mockToken.approve(address(royaltyPolicyLAP), 100 ether);
 
             uint256[] memory carl_license_from_root_alice = new uint256[](1);
@@ -180,7 +193,11 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
         // Carl activates one of the two licenses on his NFT 7 IPAccount, linking as child to Bob's NFT 3 IPAccount
         {
             vm.startPrank(u.carl);
-            mockNFT.mintId(u.carl, 7);
+            mockNFT.mintId(u.carl, 7); // NFT for Carl's IPAccount7
+
+            // Carl is minting license on non-commercial policy, so no commercializer checker is involved.
+            // Thus, no need to mint anything (although Carl already has mockGatedNft from above)
+
             uint256[] memory carl_license_from_root_bob = new uint256[](1);
             carl_license_from_root_bob[0] = licensingModule.mintLicense(
                 policyIds["pil_noncom_deriv_reciprocal_derivative"],
@@ -190,7 +207,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 emptyRoyaltyPolicyLAPInitParams
             );
 
-            IRoyaltyPolicyLAP.InitParams memory params = IRoyaltyPolicyLAP.InitParams({
+            IRoyaltyPolicyLAP.InitParams memory royaltyContextRegister = IRoyaltyPolicyLAP.InitParams({
                 targetAncestors: new address[](1),
                 targetRoyaltyAmount: new uint32[](1),
                 parentAncestors1: new address[](0),
@@ -198,11 +215,28 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 parentAncestorsRoyalties1: new uint32[](0),
                 parentAncestorsRoyalties2: new uint32[](0)
             });
-            params.targetAncestors[0] = ipAcct[3];
-            params.targetRoyaltyAmount[0] = 0;
+            royaltyContextRegister.targetAncestors[0] = ipAcct[3];
+            royaltyContextRegister.targetRoyaltyAmount[0] = 0;
 
-            ipAcct[7] = registerIpAccount(mockNFT, 7, u.carl);
-            linkIpToParents(carl_license_from_root_bob, ipAcct[7], u.carl, abi.encode(params));
+            // TODO: events check
+            ipAssetRegistry.register(
+                carl_license_from_root_bob,
+                abi.encode(royaltyContextRegister),
+                block.chainid,
+                address(mockNFT),
+                7,
+                address(ipResolver),
+                true,
+                abi.encode(
+                    IP.MetadataV1({
+                        name: "IP NAME",
+                        hash: bytes32("hash"),
+                        registrationDate: uint64(block.timestamp),
+                        registrant: u.carl, // caller
+                        uri: "external URL"
+                    })
+                )
+            );
         }
 
         // Alice mints 2 license for policy "pil_com_deriv_cheap_flexible" on Bob's NFT 3 IPAccount
@@ -215,6 +249,10 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             uint256 mintAmount = 2;
 
             mockToken.approve(address(royaltyPolicyLAP), mintAmount * 100 ether);
+
+            // Alice needs to hold an NFT from mockGatedNFT collection to mint license on pil_com_deriv_cheap_flexible
+            // (verified by the mockTokenGatedHook commercializer checker)
+            mockGatedNft.mint(u.alice);
 
             uint256[] memory alice_license_from_root_bob = new uint256[](1);
             alice_license_from_root_bob[0] = licensingModule.mintLicense(
@@ -285,7 +323,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             });
 
             uint256[] memory carl_licenses = new uint256[](2);
-            // Commercial license
+            // Commercial license (Carl already has mockGatedNft from above, so he passes commercializer checker check)
             carl_licenses[0] = licensingModule.mintLicense(
                 policyIds["pil_com_deriv_cheap_flexible"], // ipAcct[1] has this policy attached
                 ipAcct[1],
