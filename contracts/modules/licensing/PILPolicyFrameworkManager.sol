@@ -76,14 +76,14 @@ contract PILPolicyFrameworkManager is
     /// @notice Verify policy parameters for linking a child IP to a parent IP (licensor) by burning a license NFT.
     /// @dev Enforced to be only callable by LicenseRegistry
     /// @param licenseId the license id to burn
-    /// @param caller the address executing the link
+    /// @param licensee the address that holds the license and is executing the linking
     /// @param ipId the IP id of the IP being linked
     /// @param parentIpId the IP id of the parent IP
     /// @param policyData the encoded framework policy data to verify
     /// @return verified True if the link is verified
     function verifyLink(
         uint256 licenseId,
-        address caller,
+        address licensee,
         address ipId,
         address parentIpId,
         bytes calldata policyData
@@ -104,7 +104,7 @@ contract PILPolicyFrameworkManager is
         if (policy.commercializerChecker != address(0)) {
             // No need to check if the commercializerChecker supports the IHookModule interface, as it was checked
             // when the policy was registered.
-            if (!IHookModule(policy.commercializerChecker).verify(caller, policy.commercializerCheckerData)) {
+            if (!IHookModule(policy.commercializerChecker).verify(licensee, policy.commercializerCheckerData)) {
                 return false;
             }
         }
@@ -113,7 +113,7 @@ contract PILPolicyFrameworkManager is
 
     /// @notice Verify policy parameters for minting a license.
     /// @dev Enforced to be only callable by LicenseRegistry
-    /// @param caller the address executing the mint
+    /// @param licensee the address that holds the license and is executing the mint
     /// @param mintingFromADerivative true if the license is minting from a derivative IPA
     /// @param licensorIpId the IP id of the licensor
     /// @param receiver the address receiving the license
@@ -121,7 +121,7 @@ contract PILPolicyFrameworkManager is
     /// @param policyData the encoded framework policy data to verify
     /// @return verified True if the link is verified
     function verifyMint(
-        address caller,
+        address licensee,
         bool mintingFromADerivative,
         address licensorIpId,
         address receiver,
@@ -138,7 +138,7 @@ contract PILPolicyFrameworkManager is
         if (policy.commercializerChecker != address(0)) {
             // No need to check if the commercializerChecker supports the IHookModule interface, as it was checked
             // when the policy was registered.
-            if (!IHookModule(policy.commercializerChecker).verify(caller, policy.commercializerCheckerData)) {
+            if (!IHookModule(policy.commercializerChecker).verify(licensee, policy.commercializerCheckerData)) {
                 return false;
             }
         }

@@ -225,8 +225,9 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         }
 
         // If a policy is set, then is only up to the policy params.
-        // Verify minting param
-        if (!pfm.verifyMint(msg.sender, isInherited, licensorIpId, receiver, amount, pol.frameworkData)) {
+        // When verifying mint via PFM, pass in `receiver` as the `licensee` since the receiver is the one who will own
+        // the license NFT after minting.
+        if (!pfm.verifyMint(receiver, isInherited, licensorIpId, receiver, amount, pol.frameworkData)) {
             revert Errors.LicensingModule__MintLicenseParamFailed();
         }
 
@@ -298,7 +299,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
             revert Errors.LicensingModule__IncompatibleLicensorCommercialPolicy();
         }
 
-        _linkIpToParent(i, licenseId, licenseData.policyId, pol, licenseData.licensorIpId, childIpId);
+        _linkIpToParent(i, licenseId, licenseData.policyId, pol, licenseData.licensorIpId, childIpId, holder);
         return (licenseData.licensorIpId, pol.royaltyPolicy, pol.royaltyData);
     }
 
@@ -485,7 +486,8 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         uint256 policyId,
         Licensing.Policy memory pol,
         address licensor,
-        address childIpId
+        address childIpId,
+        address licensee
     ) private {
         // TODO: check licensor not part of a branch tagged by disputer
         if (licensor == childIpId) {
@@ -495,7 +497,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         if (
             !IPolicyFrameworkManager(pol.policyFramework).verifyLink(
                 licenseId,
-                msg.sender,
+                licensee,
                 childIpId,
                 licensor,
                 pol.frameworkData
