@@ -1,43 +1,5 @@
 # CHANGELOG
 
-## Beta release (beta-rc4)
-
-This release marks the official beta release of core protocol.
-
-- Integrate the Royalty and Licensing system with new royalty policy (#99)
-
-- Integrate the Dispute and Licensing system (#93)
-
-- Introduce a new Royalty Policy (LAP) for on-chain royalty system (#99, #106)
-
-- Introduce working registration features in IP Asset Registry for registering IP assets, backward compatible with Registration Module (#74, #89)
-
-- Support upfront fee payment on license minting (#113)
-
-- Enhance Modules with Type Support and Introduce Hook Module (#85)
-
-- Enhance Security by Adding Owner Restriction to Permissions (#104)
-
-- Unify the unit and integration testing with a modular test framework (#90)
-
-- Change to configurations and linting (300b0c5, #86)
-
-- Change absolute to relative imports (#82, #96)
-
-- Fix logic around license derivatives (#112)
-
-- Fix Caller Parameter in PFM verify (#119)
-
-- Refactor Initialization process of IPAccount registration (#108)
-
-- Clean up and Minimize Base Module Attributes (#81)
-
-- Clean up NatSpec, comments, and standards (#109)
-
-- Add more unit and integration tests (#90, #114)
-
-- Miscellaneous changes (#79, #83, #88, #91, #92, #97, #115)
-
 ## Beta-rc3
 
 This release finalizes the external-facing implementation of core modules and registries, as well as the public interfaces and events.
@@ -57,8 +19,6 @@ This release finalizes the external-facing implementation of core modules and re
 - Review interfaces, events, and variables (#76) and GitHub PR actions (#36, #58)
 - Refactor contracts for relative imports (#75)
 
-Full Changelog: [beta-rc2...beta-rc3](https://github.com/storyprotocol/protocol-core/compare/beta-rc2...beta-rc3)
-
 ## Beta-rc2
 
 This release introduces new modules, registries, libraries, and other logics into the protocol.
@@ -72,7 +32,5 @@ This release introduces new modules, registries, libraries, and other logics int
 - Upgrade License Registry logics for more expressive and comprehensive parameter verifiers (hooks) and license policy enforcement for derivative IPAssets (#23, #31)
 - Enhance the deployment script & post-deployment interactions, as well as the Integration tests to capture more use-case flows (#33)
 - Enhance the Unit tests for better coverage (#29, #30, #35)
-
-Full Changelog: [beta-rc1...beta-rc2](https://github.com/storyprotocol/protocol-core/compare/d0df7d4...beta-rc2)
 
 ## Beta-rc1
