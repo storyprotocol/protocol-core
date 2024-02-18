@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
+import { Ownable, Ownable2Step } from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
@@ -16,8 +17,14 @@ import { DataUniqueness } from "../lib/DataUniqueness.sol";
 
 /// @title LicenseRegistry aka LNFT
 /// @notice Registry of License NFTs, which represent licenses granted by IP ID licensors to create derivative IPs.
-contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
+contract LicenseRegistry is ILicenseRegistry, ERC1155, Ownable2Step, Governable {
     using Strings for *;
+
+    /// @dev Name of the License NFT
+    string public name = "Story Protocol License NFT";
+
+    /// @dev Symbol of the License NFT
+    string public symbol = "SPLNFT";
 
     // TODO: deploy with CREATE2 to make this immutable
     /// @notice Returns the canonical protocol-wide LicensingModule
@@ -45,7 +52,7 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
         _;
     }
 
-    constructor(address governance) ERC1155("") Governable(governance) {}
+    constructor(address governance) ERC1155("") Ownable(msg.sender) Governable(governance) {}
 
     /// @dev Sets the DisputeModule address.
     /// @dev Enforced to be only callable by the protocol admin
@@ -174,7 +181,9 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
         string memory json = string(
             abi.encodePacked(
                 "{",
-                '"name": "Story Protocol License NFT",',
+                '"name": "Story Protocol License #',
+                id.toString(),
+                '",',
                 '"description": "License agreement stating the terms of a Story Protocol IPAsset",',
                 '"external_url": "https://protocol.storyprotocol.xyz/ipa/',
                 licensorIpIdHex,
