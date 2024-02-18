@@ -700,8 +700,8 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
             address[] memory accounts = new address[](2);
             // If you face InvalidSplit__AccountsOutOfOrder, shuffle the order of accounts (swap index 0 and 1)
-            accounts[0] = ipAcct[5];
-            accounts[1] = ipAcct5_ancestorVault;
+            accounts[1] = ipAcct[5];
+            accounts[0] = ipAcct5_ancestorVault;
 
             royaltyPolicyLAP.distributeIpPoolFunds(ipAcct[5], address(erc20), accounts, deployer);
         }
