@@ -225,8 +225,9 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         }
 
         // If a policy is set, then is only up to the policy params.
-        // Verify minting param
-        if (!pfm.verifyMint(msg.sender, isInherited, licensorIpId, receiver, amount, pol.frameworkData)) {
+        // When verifying mint via PFM, pass in `receiver` as the `licensee` since the receiver is the one who will own
+        // the license NFT after minting.
+        if (!pfm.verifyMint(receiver, isInherited, licensorIpId, receiver, amount, pol.frameworkData)) {
             revert Errors.LicensingModule__MintLicenseParamFailed();
         }
 
