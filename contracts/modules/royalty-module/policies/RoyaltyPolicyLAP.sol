@@ -228,7 +228,7 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
 
     /// @notice Distributes funds internally so that accounts holding the royalty nfts at distribution moment can
     /// claim afterwards
-    /// @dev This call will revert if the caller holds all the royalty nfts of the ipId - in that case can call 
+    /// @dev This call will revert if the caller holds all the royalty nfts of the ipId - in that case can call
     /// claimFromIpPoolAsTotalRnftOwner() instead
     /// @param ipId The ipId whose received funds will be distributed
     /// @param token The token to distribute
