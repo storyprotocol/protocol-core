@@ -15,7 +15,7 @@ import { ArrayUtils } from "../../../lib/ArrayUtils.sol";
 import { Errors } from "../../../lib/Errors.sol";
 
 /// @title Liquid Absolute Percentage Policy Ancestors Vault
-/// @notice The ancestors vault allows parents and grandparents to claim their share
+/// @notice The ancestors vault allows parents and grandparents to claim their share of
 ///         the royalty nfts of their children and grandchildren along with any accrued royalties.
 contract AncestorsVaultLAP is IAncestorsVaultLAP, ERC1155Holder, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -32,12 +32,11 @@ contract AncestorsVaultLAP is IAncestorsVaultLAP, ERC1155Holder, ReentrancyGuard
         ROYALTY_POLICY_LAP = IRoyaltyPolicyLAP(royaltyPolicyLAP);
     }
 
-    // TODO: double check everything given this is a permissionless call
-    /// @notice Allows an ancestor IP asset to claim their Royalty NFTs and accrued royalties
-    /// @param ipId The ipId of the IP asset
-    /// @param claimerIpId The ipId of the claimer
-    /// @param ancestors The ancestors of the IP
-    /// @param ancestorsRoyalties The royalties of the ancestors
+    /// @notice Claims all available royalty nfts and accrued royalties for an ancestor of a given ipId
+    /// @param ipId The ipId of the ancestors vault to claim from
+    /// @param claimerIpId The claimer ipId is the ancestor address that wants to claim
+    /// @param ancestors The ancestors for the selected ipId
+    /// @param ancestorsRoyalties The royalties of the ancestors for the selected ipId
     /// @param withdrawETH Indicates if the claimer wants to withdraw ETH
     /// @param tokens The ERC20 tokens to withdraw
     function claim(

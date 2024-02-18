@@ -132,8 +132,8 @@ contract RoyaltyModule is IRoyaltyModule, Governable, ReentrancyGuard, BaseModul
     }
 
     /// @notice Allows the function caller to pay royalties to the receiver IP asset on behalf of the payer IP asset.
-    /// @param receiverIpId The ID of the IP asset that receives the royalties
-    /// @param payerIpId The ID of the IP asset that pays the royalties
+    /// @param receiverIpId The ipId that receives the royalties
+    /// @param payerIpId The ipId that pays the royalties
     /// @param token The token to use to pay the royalties
     /// @param amount The amount to pay
     function payRoyaltyOnBehalf(
