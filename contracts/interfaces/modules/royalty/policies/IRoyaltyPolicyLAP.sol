@@ -7,13 +7,20 @@ import { IRoyaltyPolicy } from "../../../../interfaces/modules/royalty/policies/
 
 /// @title RoyaltyPolicy interface
 interface IRoyaltyPolicyLAP is IRoyaltyPolicy {
+    /// @notice Initializes a royalty policy LAP for a given IP asset
+    /// @param targetAncestors The expected ancestors addresses of an ipId
+    /// @param targetRoyaltyAmount The expected royalties of each of the ancestors for a given ipId
+    /// @param parentAncestors1 The addresses of the ancestors of the first parent
+    /// @param parentAncestors2 The addresses of the ancestors of the second parent
+    /// @param parentAncestorsRoyalties1 The royalties of each of the ancestors of the first parent
+    /// @param parentAncestorsRoyalties2 The royalties of each of the ancestors of the second parent
     struct InitParams {
-        address[] targetAncestors; // the expected ancestors addresses of an ipId
-        uint32[] targetRoyaltyAmount; // the expected royalties of each of the ancestors for a given ipId
-        address[] parentAncestors1; // addresses of the ancestors of the first parent
-        address[] parentAncestors2; // addresses of the the ancestors of the second parent
-        uint32[] parentAncestorsRoyalties1; // the royalties of each of the first parent ancestors
-        uint32[] parentAncestorsRoyalties2; // the royalties of each of the second parent ancestors
+        address[] targetAncestors;
+        uint32[] targetRoyaltyAmount;
+        address[] parentAncestors1;
+        address[] parentAncestors2;
+        uint32[] parentAncestorsRoyalties1;
+        uint32[] parentAncestorsRoyalties2;
     }
 
     /// @notice Event emitted when a policy is initialized

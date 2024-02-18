@@ -15,12 +15,6 @@ interface IRoyaltyModule is IModule {
     /// @param allowed Indicates if the royalty token is whitelisted or not
     event RoyaltyTokenWhitelistUpdated(address token, bool allowed);
 
-    /// @notice Event emitted when a royalty policy is set
-    /// @param ipId The ID of IP asset
-    /// @param royaltyPolicy The address of the royalty policy
-    /// @param data The data to initialize the policy
-    event RoyaltyPolicySet(address ipId, address royaltyPolicy, bytes data);
-
     /// @notice Event emitted when royalties are paid
     /// @param receiverIpId The ID of IP asset that receives the royalties
     /// @param payerIpId The ID of IP asset that pays the royalties
