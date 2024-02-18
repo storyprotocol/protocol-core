@@ -37,7 +37,7 @@ interface IRoyaltyPolicyLAP is IRoyaltyPolicy {
     /// @return isUnlinkable Indicates if the ipId is unlinkable to new parents
     /// @return splitClone The address of the liquid split clone contract for a given ipId
     /// @return ancestorsVault The address of the ancestors vault contract for a given ipId
-    /// @return royaltyStack The royalty stack for a given ipId is the sum of the royalties to be paid to all its ancestors
+    /// @return royaltyStack The royalty stack of a given ipId is the sum of the royalties to be paid to each ancestors
     /// @return ancestorsHash The hash of the unique ancestors addresses and royalties arrays
     function royaltyData(
         address ipId
@@ -107,7 +107,7 @@ interface IRoyaltyPolicyLAP is IRoyaltyPolicy {
     /// @param token The token to withdraw
     function claimFromIpPoolAsTotalRnftOwner(address ipId, uint256 withdrawETH, address token) external;
 
-    /// @notice Claims all available royalty nfts and accrued royalties for an ancestor of a given ipId
+    /// @notice Claims available royalty nfts and accrued royalties for an ancestor of a given ipId
     /// @param ipId The ipId of the ancestors vault to claim from
     /// @param claimerIpId The claimer ipId is the ancestor address that wants to claim
     /// @param ancestors The ancestors for the selected ipId

@@ -27,7 +27,7 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
     /// @param isUnlinkableToParents Indicates if the ipId is unlinkable to new parents
     /// @param splitClone The address of the liquid split clone contract for a given ipId
     /// @param ancestorsVault The address of the ancestors vault contract for a given ipId
-    /// @param royaltyStack The royalty stack for a given ipId is the sum of the royalties to be paid to all its ancestors
+    /// @param royaltyStack The royalty stack of a given ipId is the sum of the royalties to be paid to each ancestors
     /// @param ancestorsHash The hash of the unique ancestors addresses and royalties arrays
     struct LAPRoyaltyData {
         bool isUnlinkableToParents;
