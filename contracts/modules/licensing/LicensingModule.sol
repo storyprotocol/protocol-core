@@ -298,7 +298,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
             revert Errors.LicensingModule__IncompatibleLicensorCommercialPolicy();
         }
 
-        _linkIpToParent(i, licenseId, licenseData.policyId, pol, licenseData.licensorIpId, childIpId);
+        _linkIpToParent(i, licenseId, licenseData.policyId, pol, licenseData.licensorIpId, childIpId, holder);
         return (licenseData.licensorIpId, pol.royaltyPolicy, pol.royaltyData);
     }
 
@@ -485,7 +485,8 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         uint256 policyId,
         Licensing.Policy memory pol,
         address licensor,
-        address childIpId
+        address childIpId,
+        address licensee
     ) private {
         // TODO: check licensor not part of a branch tagged by disputer
         if (licensor == childIpId) {
@@ -495,7 +496,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         if (
             !IPolicyFrameworkManager(pol.policyFramework).verifyLink(
                 licenseId,
-                msg.sender,
+                licensee,
                 childIpId,
                 licensor,
                 pol.frameworkData

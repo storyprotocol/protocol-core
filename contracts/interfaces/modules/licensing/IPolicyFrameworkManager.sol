@@ -37,7 +37,7 @@ interface IPolicyFrameworkManager is IERC165 {
 
     /// @notice Verify policy parameters for minting a license.
     /// @dev Enforced to be only callable by LicenseRegistry
-    /// @param caller the address executing the mint
+    /// @param licensee the address that holds the license and is executing the mint
     /// @param mintingFromADerivative true if we verify minting a license from a derivative IP ID
     /// @param receiver the address receiving the license
     /// @param licensorIpId the IP id of the licensor
@@ -45,7 +45,7 @@ interface IPolicyFrameworkManager is IERC165 {
     /// @param policyData the encoded framework policy data to verify
     /// @return verified True if the link is verified
     function verifyMint(
-        address caller,
+        address licensee,
         bool mintingFromADerivative,
         address licensorIpId,
         address receiver,
@@ -56,14 +56,14 @@ interface IPolicyFrameworkManager is IERC165 {
     /// @notice Verify policy parameters for linking a child IP to a parent IP (licensor) by burning a license NFT.
     /// @dev Enforced to be only callable by LicenseRegistry
     /// @param licenseId the license id to burn
-    /// @param caller the address executing the link
+    /// @param licensee the address that holds the license and is executing the link
     /// @param ipId the IP id of the IP being linked
     /// @param parentIpId the IP id of the parent IP
     /// @param policyData the encoded framework policy data to verify
     /// @return verified True if the link is verified
     function verifyLink(
         uint256 licenseId,
-        address caller,
+        address licensee,
         address ipId,
         address parentIpId,
         bytes calldata policyData
