@@ -17,11 +17,11 @@ interface IAncestorsVaultLAP {
     /// @notice Returns the canonical RoyaltyPolicyLAP
     function ROYALTY_POLICY_LAP() external view returns (IRoyaltyPolicyLAP);
 
-    /// @notice Allows an ancestor IP asset to claim their Royalty NFTs and accrued royalties
-    /// @param ipId The ipId of the IP asset
-    /// @param claimerIpId The ipId of the claimer
-    /// @param ancestors The ancestors of the IP
-    /// @param ancestorsRoyalties The royalties of the ancestors
+    /// @notice Claims all available royalty nfts and accrued royalties for an ancestor of a given ipId
+    /// @param ipId The ipId of the ancestors vault to claim from
+    /// @param claimerIpId The claimer ipId is the ancestor address that wants to claim
+    /// @param ancestors The ancestors for the selected ipId
+    /// @param ancestorsRoyalties The royalties of the ancestors for the selected ipId
     /// @param withdrawETH Indicates if the claimer wants to withdraw ETH
     /// @param tokens The ERC20 tokens to withdraw
     function claim(

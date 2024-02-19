@@ -10,7 +10,7 @@ import { IPAssetRegistry } from "../../registries/IPAssetRegistry.sol";
 import { IMetadataProvider } from "../../interfaces/registries/metadata/IMetadataProvider.sol";
 import { LicenseRegistry } from "../../registries/LicenseRegistry.sol";
 import { TaggingModule } from "../../modules/tagging/TaggingModule.sol";
-import { RoyaltyModule } from "../../modules/royalty-module/RoyaltyModule.sol";
+import { RoyaltyModule } from "../../modules/royalty/RoyaltyModule.sol";
 
 /// @title IP Asset Renderer
 /// @notice The IP asset renderer is responsible for rendering canonical

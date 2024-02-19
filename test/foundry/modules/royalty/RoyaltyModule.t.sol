@@ -3,8 +3,8 @@ pragma solidity ^0.8.23;
 
 // contracts
 import { Errors } from "../../../../contracts/lib/Errors.sol";
-import { RoyaltyModule } from "../../../../contracts/modules/royalty-module/RoyaltyModule.sol";
-import { RoyaltyPolicyLAP } from "../../../../contracts/modules/royalty-module/policies/RoyaltyPolicyLAP.sol";
+import { RoyaltyModule } from "../../../../contracts/modules/royalty/RoyaltyModule.sol";
+import { RoyaltyPolicyLAP } from "../../../../contracts/modules/royalty/policies/RoyaltyPolicyLAP.sol";
 
 // tests
 import { BaseTest } from "../../utils/BaseTest.t.sol";

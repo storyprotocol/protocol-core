@@ -8,7 +8,7 @@ import { ERC6551AccountLib } from "erc6551/lib/ERC6551AccountLib.sol";
 // contracts
 import { Errors } from "contracts/lib/Errors.sol";
 import { IModule } from "contracts/interfaces/modules/base/IModule.sol";
-import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
+import { ArbitrationPolicySP } from "contracts/modules/dispute/policies/ArbitrationPolicySP.sol";
 import { ShortStringOps } from "contracts/utils/ShortStringOps.sol";
 import { PILPolicy } from "contracts/modules/licensing/PILPolicyFrameworkManager.sol";
 // test

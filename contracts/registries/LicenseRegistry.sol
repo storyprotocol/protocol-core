@@ -19,6 +19,12 @@ import { DataUniqueness } from "../lib/DataUniqueness.sol";
 contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
     using Strings for *;
 
+    /// @dev Name of the License NFT
+    string public name = "Story Protocol License NFT";
+
+    /// @dev Symbol of the License NFT
+    string public symbol = "SPLNFT";
+
     // TODO: deploy with CREATE2 to make this immutable
     /// @notice Returns the canonical protocol-wide LicensingModule
     ILicensingModule public LICENSING_MODULE;
@@ -174,7 +180,9 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
         string memory json = string(
             abi.encodePacked(
                 "{",
-                '"name": "Story Protocol License NFT",',
+                '"name": "Story Protocol License #',
+                id.toString(),
+                '",',
                 '"description": "License agreement stating the terms of a Story Protocol IPAsset",',
                 '"external_url": "https://protocol.storyprotocol.xyz/ipa/',
                 licensorIpIdHex,

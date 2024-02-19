@@ -18,7 +18,7 @@ import { Errors } from "../../lib/Errors.sol";
 import { DataUniqueness } from "../../lib/DataUniqueness.sol";
 import { Licensing } from "../../lib/Licensing.sol";
 import { IPAccountChecker } from "../../lib/registries/IPAccountChecker.sol";
-import { RoyaltyModule } from "../../modules/royalty-module/RoyaltyModule.sol";
+import { RoyaltyModule } from "../../modules/royalty/RoyaltyModule.sol";
 import { AccessControlled } from "../../access/AccessControlled.sol";
 import { LICENSING_MODULE_KEY } from "../../lib/modules/Module.sol";
 import { BaseModule } from "../BaseModule.sol";

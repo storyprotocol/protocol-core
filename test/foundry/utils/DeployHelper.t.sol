@@ -25,13 +25,13 @@ import { ModuleRegistry } from "../../../contracts/registries/ModuleRegistry.sol
 import { LicenseRegistry } from "../../../contracts/registries/LicenseRegistry.sol";
 import { IPResolver } from "../../../contracts/resolvers/IPResolver.sol";
 import { RegistrationModule } from "../../../contracts/modules/RegistrationModule.sol";
-import { RoyaltyModule } from "../../../contracts/modules/royalty-module/RoyaltyModule.sol";
-import { AncestorsVaultLAP } from "../../../contracts/modules/royalty-module/policies/AncestorsVaultLAP.sol";
-import { RoyaltyPolicyLAP } from "../../../contracts/modules/royalty-module/policies/RoyaltyPolicyLAP.sol";
+import { RoyaltyModule } from "../../../contracts/modules/royalty/RoyaltyModule.sol";
+import { AncestorsVaultLAP } from "../../../contracts/modules/royalty/policies/AncestorsVaultLAP.sol";
+import { RoyaltyPolicyLAP } from "../../../contracts/modules/royalty/policies/RoyaltyPolicyLAP.sol";
 import { TaggingModule } from "../../../contracts/modules/tagging/TaggingModule.sol";
-import { DisputeModule } from "../../../contracts/modules/dispute-module/DisputeModule.sol";
+import { DisputeModule } from "../../../contracts/modules/dispute/DisputeModule.sol";
 import { LicensingModule } from "../../../contracts/modules/licensing/LicensingModule.sol";
-import { ArbitrationPolicySP } from "../../../contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
+import { ArbitrationPolicySP } from "../../../contracts/modules/dispute/policies/ArbitrationPolicySP.sol";
 
 // test
 import { MockAccessController } from "../mocks/access/MockAccessController.sol";

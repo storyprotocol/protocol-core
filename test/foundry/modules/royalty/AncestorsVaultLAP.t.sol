@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import { AncestorsVaultLAP } from "../../../../contracts/modules/royalty-module/policies/AncestorsVaultLAP.sol";
+import { AncestorsVaultLAP } from "../../../../contracts/modules/royalty/policies/AncestorsVaultLAP.sol";
 import { ILiquidSplitClone } from "../../../../contracts/interfaces/modules/royalty/policies/ILiquidSplitClone.sol";
 import { ILiquidSplitMain } from "../../../../contracts/interfaces/modules/royalty/policies/ILiquidSplitMain.sol";
 import { Errors } from "../../../../contracts/lib/Errors.sol";

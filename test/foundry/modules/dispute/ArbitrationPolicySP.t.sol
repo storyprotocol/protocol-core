@@ -7,7 +7,7 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC6551AccountLib } from "erc6551/lib/ERC6551AccountLib.sol";
 // contracts
 import { Errors } from "contracts/lib/Errors.sol";
-import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
+import { ArbitrationPolicySP } from "contracts/modules/dispute/policies/ArbitrationPolicySP.sol";
 import { PILPolicy } from "contracts/modules/licensing/PILPolicyFrameworkManager.sol";
 // test
 import { BaseTest } from "test/foundry/utils/BaseTest.t.sol";

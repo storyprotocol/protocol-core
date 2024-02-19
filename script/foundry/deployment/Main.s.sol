@@ -29,11 +29,11 @@ import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
 import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
-import { RoyaltyModule } from "contracts/modules/royalty-module/RoyaltyModule.sol";
-import { AncestorsVaultLAP } from "contracts/modules/royalty-module/policies/AncestorsVaultLAP.sol";
-import { RoyaltyPolicyLAP } from "contracts/modules/royalty-module/policies/RoyaltyPolicyLAP.sol";
-import { DisputeModule } from "contracts/modules/dispute-module/DisputeModule.sol";
-import { ArbitrationPolicySP } from "contracts/modules/dispute-module/policies/ArbitrationPolicySP.sol";
+import { RoyaltyModule } from "contracts/modules/royalty/RoyaltyModule.sol";
+import { AncestorsVaultLAP } from "contracts/modules/royalty/policies/AncestorsVaultLAP.sol";
+import { RoyaltyPolicyLAP } from "contracts/modules/royalty/policies/RoyaltyPolicyLAP.sol";
+import { DisputeModule } from "contracts/modules/dispute/DisputeModule.sol";
+import { ArbitrationPolicySP } from "contracts/modules/dispute/policies/ArbitrationPolicySP.sol";
 // solhint-disable-next-line max-line-length
 import { PILPolicyFrameworkManager, PILPolicy, RegisterPILPolicyParams } from "contracts/modules/licensing/PILPolicyFrameworkManager.sol";
 import { MODULE_TYPE_HOOK } from "contracts/lib/modules/Module.sol";
