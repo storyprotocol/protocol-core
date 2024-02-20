@@ -10,7 +10,7 @@ import { Licensing } from "./Licensing.sol";
 library PILFlavors {
     bytes public constant EMPTY_BYTES = "";
 
-    function defaultPolicy() internal returns (RegisterPILPolicyParams memory) {
+    function defaultPolicy() internal pure returns (RegisterPILPolicyParams memory) {
         return
             RegisterPILPolicyParams({
                 transferable: true,
@@ -35,7 +35,7 @@ library PILFlavors {
             });
     }
 
-    function getDefaultPolicyId(ILicensingModule module, address pilFramework) internal pure returns (uint256) {
+    function getDefaultPolicyId(ILicensingModule module, address pilFramework) internal view returns (uint256) {
         Licensing.Policy memory policy = Licensing.Policy({
             isLicenseTransferable: true,
             policyFramework: pilFramework,
@@ -92,7 +92,7 @@ library PILFlavors {
     function getNonCommercialSocialRemixingId(
         ILicensingModule module,
         address pilFramework
-    ) internal pure returns (uint256) {
+    ) internal view returns (uint256) {
         Licensing.Policy memory policy = Licensing.Policy({
             isLicenseTransferable: true,
             policyFramework: pilFramework,
@@ -123,12 +123,13 @@ library PILFlavors {
 
     function commercialUse(
         uint256 mintingFee,
-        address mintingFeeToken
+        address mintingFeeToken,
+        address royaltyPolicy
     ) internal returns (RegisterPILPolicyParams memory) {
         return
             RegisterPILPolicyParams({
                 transferable: true,
-                royaltyPolicy: address(0),
+                royaltyPolicy: royaltyPolicy,
                 mintingFee: mintingFee,
                 mintingFeeToken: mintingFeeToken,
                 policy: PILPolicy({
@@ -154,7 +155,7 @@ library PILFlavors {
         address pilFramework,
         uint256 mintingFee,
         address mintingFeeToken
-    ) internal pure returns (uint256) {
+    ) internal view returns (uint256) {
         Licensing.Policy memory policy = Licensing.Policy({
             isLicenseTransferable: true,
             policyFramework: pilFramework,
@@ -186,7 +187,7 @@ library PILFlavors {
     function commercialRemixingWithAttribution(
         uint32 commercialRevShare,
         address royaltyPolicy
-    ) internal returns (RegisterPILPolicyParams memory) {
+    ) internal pure returns (RegisterPILPolicyParams memory) {
         return
             RegisterPILPolicyParams({
                 transferable: true,
@@ -216,7 +217,7 @@ library PILFlavors {
         address pilFramework,
         uint32 commercialRevShare,
         address royaltyPolicy
-    ) internal pure returns (uint256) {
+    ) internal view returns (uint256) {
         Licensing.Policy memory policy = Licensing.Policy({
             isLicenseTransferable: true,
             policyFramework: pilFramework,
