@@ -28,7 +28,6 @@ import { RegistrationModule } from "../../../contracts/modules/RegistrationModul
 import { RoyaltyModule } from "../../../contracts/modules/royalty/RoyaltyModule.sol";
 import { AncestorsVaultLAP } from "../../../contracts/modules/royalty/policies/AncestorsVaultLAP.sol";
 import { RoyaltyPolicyLAP } from "../../../contracts/modules/royalty/policies/RoyaltyPolicyLAP.sol";
-import { TaggingModule } from "../../../contracts/modules/tagging/TaggingModule.sol";
 import { DisputeModule } from "../../../contracts/modules/dispute/DisputeModule.sol";
 import { LicensingModule } from "../../../contracts/modules/licensing/LicensingModule.sol";
 import { ArbitrationPolicySP } from "../../../contracts/modules/dispute/policies/ArbitrationPolicySP.sol";
@@ -39,7 +38,6 @@ import { MockGovernance } from "../mocks/governance/MockGovernance.sol";
 import { MockDisputeModule } from "../mocks/module/MockDisputeModule.sol";
 import { MockLicensingModule } from "../mocks/module/MockLicensingModule.sol";
 import { MockRoyaltyModule } from "../mocks/module/MockRoyaltyModule.sol";
-import { MockTaggingModule } from "../mocks/module/MockTaggingModule.sol";
 import { MockArbitrationPolicy } from "../mocks/policy/MockArbitrationPolicy.sol";
 import { MockLicenseRegistry } from "../mocks/registry/MockLicenseRegistry.sol";
 import { MockModuleRegistry } from "../mocks/registry/MockModuleRegistry.sol";
@@ -61,7 +59,6 @@ contract DeployHelper {
         bool registrationModule;
         bool disputeModule;
         bool royaltyModule;
-        bool taggingModule;
         bool licensingModule;
     }
 
@@ -118,7 +115,6 @@ contract DeployHelper {
     RegistrationModule internal registrationModule;
     IDisputeModule internal disputeModule;
     IRoyaltyModule internal royaltyModule;
-    TaggingModule internal taggingModule;
     ILicensingModule internal licensingModule;
 
     // Access
@@ -183,7 +179,7 @@ contract DeployHelper {
     /// @notice Deploys all contracts for integration test.
     function deployIntegration() public {
         buildDeployRegistryCondition(DeployRegistryCondition(true, true));
-        buildDeployModuleCondition(DeployModuleCondition(true, true, true, true, true));
+        buildDeployModuleCondition(DeployModuleCondition(true, true, true, true));
         buildDeployAccessCondition(DeployAccessCondition(true, true));
         buildDeployPolicyCondition(DeployPolicyCondition(true, true));
         buildDeployMiscCondition(DeployMiscCondition(true, true, true));
@@ -295,10 +291,7 @@ contract DeployHelper {
             );
             console2.log("DeployHelper: Using REAL LicensingModule");
         }
-        if (d.taggingModule) {
-            taggingModule = new TaggingModule();
-            console2.log("DeployHelper: Using REAL TaggingModule");
-        }
+
         if (d.registrationModule) {
             require(address(ipAssetRegistry) != address(0), "DeployHelper Module: IPAssetRegistry required");
             require(address(ipResolver) != address(0), "DeployHelper Module: IPResolver required");
@@ -346,12 +339,7 @@ contract DeployHelper {
         // Skip IPResolver here, called in `_deployIPResolverConditionally`
         if (d.ipAssetRenderer) {
             require(address(ipAssetRegistry) != address(0), "DeployHelper Misc: IPAssetRegistry required");
-            ipAssetRenderer = new IPAssetRenderer(
-                address(ipAssetRegistry),
-                getLicenseRegistry(),
-                getTaggingModule(),
-                getRoyaltyModule()
-            );
+            ipAssetRenderer = new IPAssetRenderer(address(ipAssetRegistry), getLicenseRegistry(), getRoyaltyModule());
             console2.log("DeployHelper: Using REAL IPAssetRenderer");
         }
         if (d.ipMetadataProvider) {
@@ -440,15 +428,5 @@ contract DeployHelper {
             postDeployConditions.royaltyModule_configure = true;
         }
         return address(royaltyModule);
-    }
-
-    /// @dev Get or deploy mock Tagging Module.
-    function getTaggingModule() public returns (address) {
-        if (address(taggingModule) == address(0)) {
-            taggingModule = new MockTaggingModule();
-            // solhint-disable-next-line no-console
-            console2.log("DeployHelper: Using Mock TaggingModule");
-        }
-        return address(taggingModule);
     }
 }

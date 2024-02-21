@@ -287,14 +287,4 @@ library Errors {
     error AccessControlled__ZeroAddress();
     error AccessControlled__NotIpAccount(address ipAccount);
     error AccessControlled__CallerIsNotIpAccount(address caller);
-
-    ////////////////////////////////////////////////////////////////////////////
-    //                             TaggingModule                              //
-    ////////////////////////////////////////////////////////////////////////////
-
-    error TaggingModule__InvalidRelationTypeName();
-    error TaggingModule__RelationTypeAlreadyExists();
-    error TaggingModule__SrcIpIdDoesNotHaveSrcTag();
-    error TaggingModule__DstIpIdDoesNotHaveDstTag();
-    error TaggingModule__RelationTypeDoesNotExist();
 }

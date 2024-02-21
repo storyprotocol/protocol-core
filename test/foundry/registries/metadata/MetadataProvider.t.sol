@@ -88,7 +88,6 @@ contract MetadataProviderTest is BaseTest {
                 registrationModule: true,
                 disputeModule: false,
                 royaltyModule: false,
-                taggingModule: false,
                 licensingModule: false
             })
         );

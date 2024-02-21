@@ -27,7 +27,6 @@ contract TestArbitrationPolicySP is BaseTest {
                 registrationModule: true,
                 disputeModule: true,
                 royaltyModule: false,
-                taggingModule: false,
                 licensingModule: false
             })
         );

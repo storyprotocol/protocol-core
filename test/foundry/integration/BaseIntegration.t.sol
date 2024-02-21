@@ -29,7 +29,6 @@ contract BaseIntegration is BaseTest {
                 registrationModule: true,
                 disputeModule: true,
                 royaltyModule: true,
-                taggingModule: true,
                 licensingModule: true
             })
         );

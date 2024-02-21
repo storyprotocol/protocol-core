@@ -31,7 +31,6 @@ contract PILPolicyFrameworkTest is BaseTest {
                 registrationModule: false,
                 disputeModule: false,
                 royaltyModule: false,
-                taggingModule: false,
                 licensingModule: true
             })
         );
