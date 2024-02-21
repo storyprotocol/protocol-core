@@ -9,7 +9,6 @@ import { IIPAccount } from "../../interfaces/IIPAccount.sol";
 import { IPAssetRegistry } from "../../registries/IPAssetRegistry.sol";
 import { IMetadataProvider } from "../../interfaces/registries/metadata/IMetadataProvider.sol";
 import { LicenseRegistry } from "../../registries/LicenseRegistry.sol";
-import { TaggingModule } from "../../modules/tagging/TaggingModule.sol";
 import { RoyaltyModule } from "../../modules/royalty/RoyaltyModule.sol";
 
 /// @title IP Asset Renderer
@@ -25,16 +24,14 @@ contract IPAssetRenderer {
     LicenseRegistry public immutable LICENSE_REGISTRY;
 
     // Modules storing attribution related to IPs.
-    TaggingModule public immutable TAGGING_MODULE;
     RoyaltyModule public immutable ROYALTY_MODULE;
 
     /// @notice Initializes the IP asset renderer.
     /// TODO: Add different customization options - e.g. font, colorways, etc.
     /// TODO: Add an external URL for generating SP-branded links for each IP.
-    constructor(address assetRegistry, address licenseRegistry, address taggingModule, address royaltyModule) {
+    constructor(address assetRegistry, address licenseRegistry, address royaltyModule) {
         IP_ASSET_REGISTRY = IPAssetRegistry(assetRegistry);
         LICENSE_REGISTRY = LicenseRegistry(licenseRegistry);
-        TAGGING_MODULE = TaggingModule(taggingModule);
         ROYALTY_MODULE = RoyaltyModule(royaltyModule);
     }
 

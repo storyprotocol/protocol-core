@@ -50,7 +50,6 @@ contract LicensingModuleTest is BaseTest {
                 registrationModule: false,
                 disputeModule: false,
                 royaltyModule: false,
-                taggingModule: false,
                 licensingModule: true
             })
         );

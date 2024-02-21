@@ -51,7 +51,6 @@ contract TestAncestorsVaultLAP is BaseTest {
                 registrationModule: false,
                 disputeModule: false,
                 royaltyModule: true,
-                taggingModule: false,
                 licensingModule: false
             })
         );

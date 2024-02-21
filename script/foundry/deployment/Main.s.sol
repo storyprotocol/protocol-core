@@ -18,7 +18,7 @@ import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { IP } from "contracts/lib/IP.sol";
 // solhint-disable-next-line max-line-length
-import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY, TAGGING_MODULE_KEY, ROYALTY_MODULE_KEY, LICENSING_MODULE_KEY } from "contracts/lib/modules/Module.sol";
+import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY, ROYALTY_MODULE_KEY, LICENSING_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
@@ -28,7 +28,6 @@ import { LicenseRegistry } from "contracts/registries/LicenseRegistry.sol";
 import { LicensingModule } from "contracts/modules/licensing/LicensingModule.sol";
 import { IPResolver } from "contracts/resolvers/IPResolver.sol";
 import { RegistrationModule } from "contracts/modules/RegistrationModule.sol";
-import { TaggingModule } from "contracts/modules/tagging/TaggingModule.sol";
 import { RoyaltyModule } from "contracts/modules/royalty/RoyaltyModule.sol";
 import { AncestorsVaultLAP } from "contracts/modules/royalty/policies/AncestorsVaultLAP.sol";
 import { RoyaltyPolicyLAP } from "contracts/modules/royalty/policies/RoyaltyPolicyLAP.sol";
@@ -69,7 +68,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     LicensingModule internal licensingModule;
     DisputeModule internal disputeModule;
     RoyaltyModule internal royaltyModule;
-    TaggingModule internal taggingModule;
 
     // Policy
     ArbitrationPolicySP internal arbitrationPolicySP;
@@ -188,7 +186,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         ipAssetRenderer = new IPAssetRenderer(
             address(ipAssetRegistry),
             address(licenseRegistry),
-            address(taggingModule),
             address(royaltyModule)
         );
         _postdeploy(contractKey, address(ipAssetRenderer));
@@ -222,11 +219,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             address(disputeModule)
         );
         _postdeploy(contractKey, address(licensingModule));
-
-        contractKey = "TaggingModule";
-        _predeploy(contractKey);
-        taggingModule = new TaggingModule();
-        _postdeploy(contractKey, address(taggingModule));
 
         contractKey = "IPResolver";
         _predeploy(contractKey);
@@ -301,7 +293,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         ipAssetRegistry = IPAssetRegistry(_readAddress("main.IPAssetRegistry"));
         ipResolver = IPResolver(_readAddress("main.IPResolver"));
         registrationModule = RegistrationModule(_readAddress("main.RegistrationModule"));
-        taggingModule = TaggingModule(_readAddress("main.TaggingModule"));
         royaltyModule = RoyaltyModule(_readAddress("main.RoyaltyModule"));
         royaltyPolicyLAP = RoyaltyPolicyLAP(payable(_readAddress("main.royaltyPolicyLAP")));
         disputeModule = DisputeModule(_readAddress("main.DisputeModule"));
@@ -361,7 +352,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         moduleRegistry.registerModule(IP_RESOLVER_MODULE_KEY, address(ipResolver));
         moduleRegistry.registerModule(DISPUTE_MODULE_KEY, address(disputeModule));
         moduleRegistry.registerModule(LICENSING_MODULE_KEY, address(licensingModule));
-        moduleRegistry.registerModule(TAGGING_MODULE_KEY, address(taggingModule));
         moduleRegistry.registerModule(ROYALTY_MODULE_KEY, address(royaltyModule));
     }
 
@@ -740,15 +730,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 tokens: tokens
             });
         }
-
-        /*///////////////////////////////////////////////////////////////
-                            TAGGING MODULE INTERACTIONS
-        ///////////////////////////////////////////////////////////////*/
-
-        taggingModule.setTag("premium", ipAcct[1]);
-        taggingModule.setTag("cheap", ipAcct[1]);
-        taggingModule.removeTag("cheap", ipAcct[1]);
-        taggingModule.setTag("luxury", ipAcct[1]);
 
         /*///////////////////////////////////////////////////////////////
                             DISPUTE MODULE INTERACTIONS

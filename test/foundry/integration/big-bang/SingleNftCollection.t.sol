@@ -296,13 +296,6 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             );
         }
 
-        // Bob tags Alice's NFT
-        {
-            vm.startPrank(u.bob);
-            taggingModule.setTag("sequel", ipAcct[99999999]);
-            assertTrue(taggingModule.isTagged("sequel", ipAcct[99999999]));
-        }
-
         // Carl mints licenses and linkts to multiple parents
         // Carl creates NFT 6 IPAccount
         // Carl activates the license on his NFT 6 IPAccount, linking as child to Alice's NFT 1 IPAccount

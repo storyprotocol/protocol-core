@@ -9,7 +9,7 @@ import { Test } from "forge-std/Test.sol";
 // contracts
 import { AccessController } from "../../../contracts/AccessController.sol";
 // solhint-disable-next-line max-line-length
-import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY, TAGGING_MODULE_KEY, ROYALTY_MODULE_KEY, LICENSING_MODULE_KEY } from "../../../contracts/lib/modules/Module.sol";
+import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY, ROYALTY_MODULE_KEY, LICENSING_MODULE_KEY } from "../../../contracts/lib/modules/Module.sol";
 import { AccessPermission } from "../../../contracts/lib/AccessPermission.sol";
 import { LicenseRegistry } from "../../../contracts/registries/LicenseRegistry.sol";
 import { RoyaltyModule } from "../../../contracts/modules/royalty/RoyaltyModule.sol";
@@ -152,9 +152,6 @@ contract BaseTest is Test, DeployHelper, LicensingHelper {
         }
         if (address(licensingModule) != address(0)) {
             moduleRegistry.registerModule(LICENSING_MODULE_KEY, address(licensingModule));
-        }
-        if (address(taggingModule) != address(0)) {
-            moduleRegistry.registerModule(TAGGING_MODULE_KEY, address(taggingModule));
         }
         if (address(royaltyModule) != address(0)) {
             moduleRegistry.registerModule(ROYALTY_MODULE_KEY, address(royaltyModule));
