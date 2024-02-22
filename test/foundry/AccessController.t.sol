@@ -176,15 +176,6 @@ contract AccessControllerTest is BaseTest {
                 AccessPermission.ALLOW
             )
         );
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.AccessController__RecipientIsNotRegisteredModule.selector, address(0xbeef))
-        );
-        accessController.checkPermission(
-            address(ipAccount),
-            signer,
-            address(0xbeef), // instead of address(mockModule)
-            mockModule.executeSuccessfully.selector
-        );
 
         vm.expectRevert(abi.encodeWithSelector(Errors.AccessController__IPAccountIsNotValid.selector, address(0xbeef)));
         accessController.checkPermission(
@@ -194,6 +185,8 @@ contract AccessControllerTest is BaseTest {
             mockModule.executeSuccessfully.selector
         );
     }
+
+
 
     function test_AccessController_functionPermissionWildcardAllow() public {
         moduleRegistry.registerModule("MockModule", address(mockModule));
