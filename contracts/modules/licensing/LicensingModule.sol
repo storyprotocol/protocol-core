@@ -280,6 +280,29 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         LICENSE_REGISTRY.burnLicenses(holder, licenseIds);
     }
 
+    /// @dev Verifies royalty and link params, and returns the licensor, new royalty policy and royalty data
+    /// This function was added to avoid stack too deep error.
+    function _verifyRoyaltyAndLink(
+        uint256 i,
+        uint256 licenseId,
+        address childIpId,
+        address holder,
+        address royaltyAddressAcc
+    ) private returns (address licensor, address newRoyaltyAcc, bytes memory royaltyData) {
+        if (!LICENSE_REGISTRY.isLicensee(licenseId, holder)) {
+            revert Errors.LicensingModule__NotLicensee();
+        }
+        Licensing.License memory licenseData = LICENSE_REGISTRY.license(licenseId);
+        Licensing.Policy memory pol = policy(licenseData.policyId);
+        // Check if all licenses have the same policy.
+        if (i > 0 && pol.royaltyPolicy != royaltyAddressAcc) {
+            revert Errors.LicensingModule__IncompatibleLicensorCommercialPolicy();
+        }
+
+        _linkIpToParent(i, licenseId, licenseData.policyId, pol, licenseData.licensorIpId, childIpId, holder);
+        return (licenseData.licensorIpId, pol.royaltyPolicy, pol.royaltyData);
+    }
+
     /// @notice Returns if the framework address is registered in the LicensingModule.
     /// @param policyFramework The address of the policy framework manager
     /// @return isRegistered True if the framework is registered
@@ -454,29 +477,6 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         setup.isInherited = isInherited;
         emit PolicyAddedToIpId(msg.sender, ipId, policyId, index, isInherited);
         return index;
-    }
-
-    /// @dev Verifies royalty and link params, and returns the licensor, new royalty policy and royalty data
-    /// This function was added to avoid stack too deep error.
-    function _verifyRoyaltyAndLink(
-        uint256 i,
-        uint256 licenseId,
-        address childIpId,
-        address holder,
-        address royaltyAddressAcc
-    ) private returns (address licensor, address newRoyaltyAcc, bytes memory royaltyData) {
-        if (!LICENSE_REGISTRY.isLicensee(licenseId, holder)) {
-            revert Errors.LicensingModule__NotLicensee();
-        }
-        Licensing.License memory licenseData = LICENSE_REGISTRY.license(licenseId);
-        Licensing.Policy memory pol = policy(licenseData.policyId);
-        // Check if all licenses have the same policy.
-        if (i > 0 && pol.royaltyPolicy != royaltyAddressAcc) {
-            revert Errors.LicensingModule__IncompatibleLicensorCommercialPolicy();
-        }
-
-        _linkIpToParent(i, licenseId, licenseData.policyId, pol, licenseData.licensorIpId, childIpId, holder);
-        return (licenseData.licensorIpId, pol.royaltyPolicy, pol.royaltyData);
     }
 
     /// @dev Link IP to a parent IP using the license NFT.
