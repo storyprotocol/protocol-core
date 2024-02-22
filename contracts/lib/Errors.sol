@@ -278,7 +278,7 @@ library Errors {
     error AccessController__SignerIsZeroAddress();
     error AccessController__CallerIsNotIPAccount();
     error AccessController__PermissionIsNotValid();
-    error AccessController__RecipientIsNotRegisteredModule(address to);
+    error AccessController__BothCallerAndRecipientAreNotRegisteredModule(address signer, address to);
     error AccessController__PermissionDenied(address ipAccount, address signer, address to, bytes4 func);
 
     ////////////////////////////////////////////////////////////////////////////

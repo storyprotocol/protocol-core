@@ -157,17 +157,22 @@ contract AccessControlledTest is BaseTest {
         mockModule.ipAccountOrPermissionFunction(address(ipAccount), "test", true);
     }
 
-    function test_AccessControlled_callIpAccountOrPermissionFunction_nonRegisteredModule() public {
+    function test_AccessControlled_revert_callIpAccountOrPermissionFunction_nonRegisteredModule() public {
         MockAccessControlledModule nonRegisteredModule = new MockAccessControlledModule(
             address(accessController),
             address(ipAccountRegistry),
             address(moduleRegistry),
             "NonRegisteredMockAccessControlledModule"
         );
-
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.AccessController__BothCallerAndRecipientAreNotRegisteredModule.selector,
+                owner,
+                address(nonRegisteredModule)
+            )
+        );
         vm.prank(owner);
-        string memory result = nonRegisteredModule.ipAccountOrPermissionFunction(address(ipAccount), "test", true);
-        assertEq("test", result);
+        nonRegisteredModule.ipAccountOrPermissionFunction(address(ipAccount), "test", true);
     }
 
     function test_AccessControlled_revert_callIpAccountOrPermissionFunction_passInNonIpAccount() public {
