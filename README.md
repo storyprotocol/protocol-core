@@ -107,12 +107,12 @@ docgen: {
 
 You can refer to the [config.ts](https://github.com/OpenZeppelin/solidity-docgen/blob/master/src/config.ts) of solidity-docgen for the full list of configurable parameters.
 
-## Resources
+# Resources
 -   [Hardhat](https://hardhat.org/docs)
 -   [Foundry Documentation](https://book.getfoundry.sh/)
 -   [Yarn](https://yarnpkg.com/getting-started)
 
-### TODO
-
-[ ] Add support for sepolia chain 
-
+# Official Links
+- [Website](https://storyprotocol.xyz)
+- [Twitter/X](https://twitter.com/storyprotocol)
+- [Discord](https://discord.gg/storyprotocol)
