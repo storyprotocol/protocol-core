@@ -200,4 +200,8 @@ contract LicensingHelper {
         LICENSING_MODULE.registerPolicyFrameworkManager(address(_pfm));
         pfm["pil"] = address(_pfm);
     }
+
+    function _pilFramework() internal view returns (PILPolicyFrameworkManager) {
+        return PILPolicyFrameworkManager(pfm["pil"]);
+    }
 }
