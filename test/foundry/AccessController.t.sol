@@ -1646,13 +1646,7 @@ contract AccessControllerTest is BaseTest {
             AccessPermission.ALLOW
         );
         vm.prank(owner);
-        tokenManagementModule.transferERC20Token(
-            payable(address(ipAccount)),
-            anotherAccount,
-            address(mock20),
-            1e18
-        );
+        tokenManagementModule.transferERC20Token(payable(address(ipAccount)), anotherAccount, address(mock20), 1e18);
         assertEq(mock20.balanceOf(anotherAccount), 1e18);
     }
-
 }
