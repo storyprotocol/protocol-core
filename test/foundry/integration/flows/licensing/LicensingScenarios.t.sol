@@ -54,7 +54,7 @@ contract Licensing_Scenarios is BaseIntegration {
     function test_ipaHasNonCommercialAndCommercialPolicy_mintingLicenseFromCommercial() public {
         // Register commercial remixing policy
         uint32 commercialRevShare = 10;
-        uint256 commRemixPolicyId = _pilFramework().registerPolicy(PILFlavors.commercialRemixingWithAttribution(
+        uint256 commRemixPolicyId = _pilFramework().registerPolicy(PILFlavors.commercialRemix(
             commercialRevShare,
             address(royaltyPolicyLAP)
         ));
