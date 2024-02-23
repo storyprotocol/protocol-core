@@ -142,9 +142,15 @@ contract AccessController is IAccessController, Governable {
     /// @param func The function selector of `to` that can be called by the `signer` on behalf of the `ipAccount`
     // solhint-disable code-complexity
     function checkPermission(address ipAccount, address signer, address to, bytes4 func) external view whenNotPaused {
-        // ipAccount can only call registered modules or set Permissions
-        if (to != address(this) && !IModuleRegistry(MODULE_REGISTRY).isRegistered(to)) {
-            revert Errors.AccessController__RecipientIsNotRegisteredModule(to);
+        // The ipAccount is restricted to interact exclusively with registered modules.
+        // This includes initiating calls to these modules and receiving calls from them.
+        // Additionally, it can modify Permissions settings.
+        if (
+            to != address(this) &&
+            !IModuleRegistry(MODULE_REGISTRY).isRegistered(to) &&
+            !IModuleRegistry(MODULE_REGISTRY).isRegistered(signer)
+        ) {
+            revert Errors.AccessController__BothCallerAndRecipientAreNotRegisteredModule(signer, to);
         }
         // Must be a valid IPAccount
         if (!IIPAccountRegistry(IP_ACCOUNT_REGISTRY).isIpAccount(ipAccount)) {

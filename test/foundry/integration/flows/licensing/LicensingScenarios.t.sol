@@ -8,7 +8,6 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // contract
 import { IRoyaltyPolicyLAP } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLAP.sol";
-import { Errors } from "contracts/lib/Errors.sol";
 import { PILFlavors } from "contracts/lib/PILFlavors.sol";
 
 // test
@@ -28,7 +27,6 @@ contract Licensing_Scenarios is BaseIntegration {
 
         // Register PIL Framework
         _deployLFM_PIL();
-        
 
         // Register an original work with both policies set
         mockNFT.mintId(u.alice, 1);
@@ -38,8 +36,7 @@ contract Licensing_Scenarios is BaseIntegration {
         ipAcct[2] = registerIpAccount(mockNFT, 2, u.bob);
 
         nonCommRemixPoliciyId = _pilFramework().registerPolicy(PILFlavors.nonCommercialSocialRemixing());
-        emptyRoyaltyPolicyLAPInitParams =
-        abi.encode(
+        emptyRoyaltyPolicyLAPInitParams = abi.encode(
             IRoyaltyPolicyLAP.InitParams({
                 targetAncestors: new address[](0),
                 targetRoyaltyAmount: new uint32[](0),
@@ -54,17 +51,14 @@ contract Licensing_Scenarios is BaseIntegration {
     function test_ipaHasNonCommercialAndCommercialPolicy_mintingLicenseFromCommercial() public {
         // Register commercial remixing policy
         uint32 commercialRevShare = 10;
-        uint256 commRemixPolicyId = _pilFramework().registerPolicy(PILFlavors.commercialRemix(
-            commercialRevShare,
-            address(royaltyPolicyLAP)
-        ));
+        uint256 commRemixPolicyId = _pilFramework().registerPolicy(
+            PILFlavors.commercialRemix(commercialRevShare, address(royaltyPolicyLAP))
+        );
         // Register commercial use policy
         uint256 mintFee = 100;
-        uint256 commPolicyId = _pilFramework().registerPolicy(PILFlavors.commercialUse(
-            mintFee,
-            address(USDC),
-            address(royaltyPolicyLAP)
-        ));
+        uint256 commPolicyId = _pilFramework().registerPolicy(
+            PILFlavors.commercialUse(mintFee, address(USDC), address(royaltyPolicyLAP))
+        );
         uint256[] memory licenseIds = new uint256[](1);
 
         // Add policies to IP account
@@ -109,7 +103,13 @@ contract Licensing_Scenarios is BaseIntegration {
         });
         params.targetAncestors[0] = ipAcct[1];
         params.targetRoyaltyAmount[0] = commercialRevShare;
-        licenseIds[0] = licensingModule.mintLicense(commRemixPolicyId, ipAcct[1], 1, u.bob, emptyRoyaltyPolicyLAPInitParams);
+        licenseIds[0] = licensingModule.mintLicense(
+            commRemixPolicyId,
+            ipAcct[1],
+            1,
+            u.bob,
+            emptyRoyaltyPolicyLAPInitParams
+        );
         licensingModule.linkIpToParents(licenseIds, ipAcct[4], abi.encode(params));
 
         vm.stopPrank();

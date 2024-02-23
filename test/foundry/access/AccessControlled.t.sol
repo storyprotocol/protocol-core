@@ -166,7 +166,8 @@ contract AccessControlledTest is BaseTest {
         );
         vm.expectRevert(
             abi.encodeWithSelector(
-                Errors.AccessController__RecipientIsNotRegisteredModule.selector,
+                Errors.AccessController__BothCallerAndRecipientAreNotRegisteredModule.selector,
+                owner,
                 address(nonRegisteredModule)
             )
         );

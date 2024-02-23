@@ -7,6 +7,9 @@ import { Errors } from "../../contracts/lib/Errors.sol";
 
 import { MockModule } from "./mocks/module/MockModule.sol";
 import { MockOrchestratorModule } from "./mocks/module/MockOrchestratorModule.sol";
+import { MockTokenManagementModule } from "./mocks/module/MockTokenManagementModule.sol";
+import { MockERC1155 } from "./mocks/token/MockERC1155.sol";
+import { MockERC20 } from "./mocks/token/MockERC20.sol";
 import { BaseTest } from "./utils/BaseTest.t.sol";
 
 contract AccessControllerTest is BaseTest {
@@ -177,7 +180,11 @@ contract AccessControllerTest is BaseTest {
             )
         );
         vm.expectRevert(
-            abi.encodeWithSelector(Errors.AccessController__RecipientIsNotRegisteredModule.selector, address(0xbeef))
+            abi.encodeWithSelector(
+                Errors.AccessController__BothCallerAndRecipientAreNotRegisteredModule.selector,
+                signer,
+                address(0xbeef)
+            )
         );
         accessController.checkPermission(
             address(ipAccount),
@@ -1510,5 +1517,136 @@ contract AccessControllerTest is BaseTest {
             address(mockModule),
             mockModule.executeSuccessfully.selector
         );
+    }
+
+    // ipAccount transfer ERC721 to another account
+    function test_AccessController_ERC721Transfer() public {
+        tokenId = 999;
+        mockNFT.mintId(address(ipAccount), tokenId);
+
+        address anotherAccount = vm.addr(3);
+
+        MockTokenManagementModule tokenManagementModule = new MockTokenManagementModule(
+            address(accessController),
+            address(ipAccountRegistry),
+            address(moduleRegistry)
+        );
+        moduleRegistry.registerModule("MockTokenManagementModule", address(tokenManagementModule));
+        vm.prank(owner);
+        ipAccount.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setPermission(address,address,address,bytes4,uint8)",
+                address(ipAccount),
+                address(tokenManagementModule),
+                address(mockNFT),
+                mockNFT.transferFrom.selector,
+                AccessPermission.ALLOW
+            )
+        );
+        assertEq(
+            accessController.getPermission(
+                address(ipAccount),
+                address(tokenManagementModule),
+                address(mockNFT),
+                mockNFT.transferFrom.selector
+            ),
+            AccessPermission.ALLOW
+        );
+        vm.prank(owner);
+        tokenManagementModule.transferERC721Token(
+            payable(address(ipAccount)),
+            anotherAccount,
+            address(mockNFT),
+            tokenId
+        );
+        assertEq(mockNFT.ownerOf(tokenId), anotherAccount);
+    }
+
+    // ipAccount transfer ERC1155 to another account
+    function test_AccessController_ERC1155Transfer() public {
+        MockERC1155 mock1155 = new MockERC1155("http://token-uri");
+        tokenId = 999;
+        mock1155.mintId(address(ipAccount), tokenId, 1e18);
+
+        address anotherAccount = vm.addr(3);
+
+        MockTokenManagementModule tokenManagementModule = new MockTokenManagementModule(
+            address(accessController),
+            address(ipAccountRegistry),
+            address(moduleRegistry)
+        );
+        moduleRegistry.registerModule("MockTokenManagementModule", address(tokenManagementModule));
+        vm.prank(owner);
+        ipAccount.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setPermission(address,address,address,bytes4,uint8)",
+                address(ipAccount),
+                address(tokenManagementModule),
+                address(mock1155),
+                mock1155.safeTransferFrom.selector,
+                AccessPermission.ALLOW
+            )
+        );
+        assertEq(
+            accessController.getPermission(
+                address(ipAccount),
+                address(tokenManagementModule),
+                address(mock1155),
+                mock1155.safeTransferFrom.selector
+            ),
+            AccessPermission.ALLOW
+        );
+        vm.prank(owner);
+        tokenManagementModule.transferERC1155Token(
+            payable(address(ipAccount)),
+            anotherAccount,
+            address(mock1155),
+            tokenId,
+            1e18
+        );
+        assertEq(mock1155.balanceOf(anotherAccount, tokenId), 1e18);
+    }
+    // ipAccount transfer ERC20 to another account
+    function test_AccessController_ERC20Transfer() public {
+        MockERC20 mock20 = new MockERC20();
+        mock20.mint(address(ipAccount), 1e18);
+
+        address anotherAccount = vm.addr(3);
+
+        MockTokenManagementModule tokenManagementModule = new MockTokenManagementModule(
+            address(accessController),
+            address(ipAccountRegistry),
+            address(moduleRegistry)
+        );
+        moduleRegistry.registerModule("MockTokenManagementModule", address(tokenManagementModule));
+        vm.prank(owner);
+        ipAccount.execute(
+            address(accessController),
+            0,
+            abi.encodeWithSignature(
+                "setPermission(address,address,address,bytes4,uint8)",
+                address(ipAccount),
+                address(tokenManagementModule),
+                address(mock20),
+                mock20.transfer.selector,
+                AccessPermission.ALLOW
+            )
+        );
+        assertEq(
+            accessController.getPermission(
+                address(ipAccount),
+                address(tokenManagementModule),
+                address(mock20),
+                mock20.transfer.selector
+            ),
+            AccessPermission.ALLOW
+        );
+        vm.prank(owner);
+        tokenManagementModule.transferERC20Token(payable(address(ipAccount)), anotherAccount, address(mock20), 1e18);
+        assertEq(mock20.balanceOf(anotherAccount), 1e18);
     }
 }
