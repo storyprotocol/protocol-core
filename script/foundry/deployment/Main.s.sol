@@ -17,8 +17,9 @@ import { Governance } from "contracts/governance/Governance.sol";
 import { AccessPermission } from "contracts/lib/AccessPermission.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 import { IP } from "contracts/lib/IP.sol";
+import { PILFlavors } from "contracts/lib/PILFlavors.sol";
 // solhint-disable-next-line max-line-length
-import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY, ROYALTY_MODULE_KEY, LICENSING_MODULE_KEY } from "contracts/lib/modules/Module.sol";
+import { IP_RESOLVER_MODULE_KEY, REGISTRATION_MODULE_KEY, DISPUTE_MODULE_KEY, ROYALTY_MODULE_KEY, LICENSING_MODULE_KEY, TOKEN_WITHDRAWAL_MODULE_KEY } from "contracts/lib/modules/Module.sol";
 import { IPMetadataProvider } from "contracts/registries/metadata/IPMetadataProvider.sol";
 import { IPAccountRegistry } from "contracts/registries/IPAccountRegistry.sol";
 import { IPAssetRegistry } from "contracts/registries/IPAssetRegistry.sol";
@@ -33,6 +34,7 @@ import { AncestorsVaultLAP } from "contracts/modules/royalty/policies/AncestorsV
 import { RoyaltyPolicyLAP } from "contracts/modules/royalty/policies/RoyaltyPolicyLAP.sol";
 import { DisputeModule } from "contracts/modules/dispute/DisputeModule.sol";
 import { ArbitrationPolicySP } from "contracts/modules/dispute/policies/ArbitrationPolicySP.sol";
+import { TokenWithdrawalModule } from "contracts/modules/external/TokenWithdrawalModule.sol";
 // solhint-disable-next-line max-line-length
 import { PILPolicyFrameworkManager, PILPolicy, RegisterPILPolicyParams } from "contracts/modules/licensing/PILPolicyFrameworkManager.sol";
 import { MODULE_TYPE_HOOK } from "contracts/lib/modules/Module.sol";
@@ -63,11 +65,14 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
     LicenseRegistry internal licenseRegistry;
     ModuleRegistry internal moduleRegistry;
 
-    // Module
+    // Core Module
     RegistrationModule internal registrationModule;
     LicensingModule internal licensingModule;
     DisputeModule internal disputeModule;
     RoyaltyModule internal royaltyModule;
+
+    // External Module
+    TokenWithdrawalModule internal tokenWithdrawalModule;
 
     // Policy
     ArbitrationPolicySP internal arbitrationPolicySP;
@@ -197,11 +202,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "DisputeModule";
         _predeploy(contractKey);
-        disputeModule = new DisputeModule(
-            address(accessController),
-            address(ipAssetRegistry),
-            address(governance)
-        );
+        disputeModule = new DisputeModule(address(accessController), address(ipAssetRegistry), address(governance));
         _postdeploy(contractKey, address(disputeModule));
 
         contractKey = "LicenseRegistry";
@@ -233,6 +234,11 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             address(ipResolver)
         );
         _postdeploy(contractKey, address(registrationModule));
+
+        contractKey = "TokenWithdrawalModule";
+        _predeploy(contractKey);
+        tokenWithdrawalModule = new TokenWithdrawalModule(address(accessController), address(ipAccountRegistry));
+        _postdeploy(contractKey, address(tokenWithdrawalModule));
 
         //
         // Story-specific Contracts
@@ -353,6 +359,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         moduleRegistry.registerModule(DISPUTE_MODULE_KEY, address(disputeModule));
         moduleRegistry.registerModule(LICENSING_MODULE_KEY, address(licensingModule));
         moduleRegistry.registerModule(ROYALTY_MODULE_KEY, address(royaltyModule));
+        moduleRegistry.registerModule(TOKEN_WITHDRAWAL_MODULE_KEY, address(tokenWithdrawalModule));
     }
 
     function _configureRoyaltyRelated() private {
@@ -390,14 +397,16 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         // For license/royalty payment, on both minting license and royalty distribution
         erc20.approve(address(royaltyPolicyLAP), MAX_ROYALTY_APPROVAL);
 
-        bytes memory emptyRoyaltyPolicyLAPInitParams = abi.encode(IRoyaltyPolicyLAP.InitParams({
-            targetAncestors: new address[](0),
-            targetRoyaltyAmount: new uint32[](0),
-            parentAncestors1: new address[](0),
-            parentAncestors2: new address[](0),
-            parentAncestorsRoyalties1: new uint32[](0),
-            parentAncestorsRoyalties2: new uint32[](0)
-        }));
+        bytes memory emptyRoyaltyPolicyLAPInitParams = abi.encode(
+            IRoyaltyPolicyLAP.InitParams({
+                targetAncestors: new address[](0),
+                targetRoyaltyAmount: new uint32[](0),
+                parentAncestors1: new address[](0),
+                parentAncestors2: new address[](0),
+                parentAncestorsRoyalties1: new uint32[](0),
+                parentAncestorsRoyalties2: new uint32[](0)
+            })
+        );
 
         licensingModule.registerPolicyFrameworkManager(address(pilPfm));
         frameworkAddrs["pil"] = address(pilPfm);
@@ -406,6 +415,10 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                                 CREATE POLICIES
         ///////////////////////////////////////////////////////////////*/
 
+        // Policy ID 1
+        policyIds["social_remixing"] = pilPfm.registerPolicy(PILFlavors.nonCommercialSocialRemixing());
+
+        // Policy ID 2
         policyIds["pil_com_deriv_expensive"] = pilPfm.registerPolicy(
             RegisterPILPolicyParams({
                 transferable: true,
@@ -430,6 +443,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             })
         );
 
+        // Policy ID 3
         policyIds["pil_noncom_deriv_reciprocal"] = pilPfm.registerPolicy(
             RegisterPILPolicyParams({
                 transferable: false,
@@ -754,12 +768,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         // Say, IPAccount3 is accused of plagiarism by IPAccount1
         // But, IPAccount1 later cancels the dispute
         {
-            uint256 disputeId = disputeModule.raiseDispute(
-                ipAcct[3],
-                string("https://example.com"),
-                "PLAGIARISM",
-                ""
-            );
+            uint256 disputeId = disputeModule.raiseDispute(ipAcct[3], string("https://example.com"), "PLAGIARISM", "");
 
             disputeModule.cancelDispute(disputeId, bytes("Settled amicably"));
         }
