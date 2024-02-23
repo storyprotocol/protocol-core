@@ -28,7 +28,7 @@ library PILFlavors {
     /// @param module The LicensingModule contract
     /// @param pilFramework The address of the PILPolicyFrameworkManager
     /// @return The policyId for the defaultValuesPolicy() configuration, 0 if not registered
-    function getdefaultValuesPolicyId(ILicensingModule module, address pilFramework) internal view returns (uint256) {
+    function getDefaultValuesPolicyId(ILicensingModule module, address pilFramework) internal view returns (uint256) {
         Licensing.Policy memory policy = Licensing.Policy({
             isLicenseTransferable: true,
             policyFramework: pilFramework,

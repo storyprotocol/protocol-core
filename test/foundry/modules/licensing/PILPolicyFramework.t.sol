@@ -254,7 +254,7 @@ contract PILPolicyFrameworkTest is BaseTest {
         assertEq(keccak256(abi.encode(policy)), keccak256(abi.encode(inputA.policy)));
     }
 
-    function test_PILPolicyFrameworkManager__commercialUseEnabled_invalidCommericalizerChecker() public {
+    function test_PILPolicyFrameworkManager__commercialUseEnabled_invalidCommercializerChecker() public {
         address invalidCommercializerChecker = address(new MockERC721("Fake Commercializer Checker"));
         bytes memory invalideCommercializerCheckerData = abi.encode(address(0x456));
 
@@ -474,7 +474,7 @@ contract PILPolicyFrameworkTest is BaseTest {
         string memory actualJson = pilFramework.policyToJson(abi.encode(policyData));
         /* solhint-disable */
         string
-            memory expectedJson = '{"trait_type": "Attribution", "value": "false"},{"trait_type": "Commerical Use", "value": "false"},{"trait_type": "Commercial Attribution", "value": "true"},{"trait_type": "Commercial Revenue Share", "max_value": 1000, "value": 0},{"trait_type": "Commercializer Check", "value": "0x0000000000000000000000000000000000000000"},{"trait_type": "Derivatives Allowed", "value": "true"},{"trait_type": "Derivatives Attribution", "value": "false"},{"trait_type": "Derivatives Approval", "value": "false"},{"trait_type": "Derivatives Reciprocal", "value": "false"},{"trait_type": "Territories", "value": ["test1","test2"]},{"trait_type": "Distribution Channels", "value": ["test3"]},';
+            memory expectedJson = '{"trait_type": "Attribution", "value": "false"},{"trait_type": "Commercial Use", "value": "false"},{"trait_type": "Commercial Attribution", "value": "true"},{"trait_type": "Commercial Revenue Share", "max_value": 1000, "value": 0},{"trait_type": "Commercializer Check", "value": "0x0000000000000000000000000000000000000000"},{"trait_type": "Derivatives Allowed", "value": "true"},{"trait_type": "Derivatives Attribution", "value": "false"},{"trait_type": "Derivatives Approval", "value": "false"},{"trait_type": "Derivatives Reciprocal", "value": "false"},{"trait_type": "Territories", "value": ["test1","test2"]},{"trait_type": "Distribution Channels", "value": ["test3"]},';
         /* solhint-enable */
 
         assertEq(actualJson, expectedJson);

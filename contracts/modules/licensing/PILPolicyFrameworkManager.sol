@@ -305,7 +305,7 @@ contract PILPolicyFrameworkManager is
         return
             string(
                 abi.encodePacked(
-                    '{"trait_type": "Commerical Use", "value": "',
+                    '{"trait_type": "Commercial Use", "value": "',
                     policy.commercialUse ? "true" : "false",
                     '"},',
                     '{"trait_type": "Commercial Attribution", "value": "',
