@@ -5,9 +5,9 @@ import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC16
 
 import { IIPAccount } from "../../interfaces/IIPAccount.sol";
 import { IIPAccountRegistry } from "../../interfaces/registries/IIPAccountRegistry.sol";
-import { ITokenManagementModule } from "../../interfaces/modules/external/ITokenManagementModule.sol";
+import { ITokenWithdrawalModule } from "../../interfaces/modules/external/ITokenWithdrawalModule.sol";
 import { IPAccountChecker } from "../../lib/registries/IPAccountChecker.sol";
-import { TOKEN_MANAGEMENT_MODULE_KEY } from "../../lib/modules/Module.sol";
+import { TOKEN_WITHDRAWAL_MODULE_KEY } from "../../lib/modules/Module.sol";
 import { BaseModule } from "../BaseModule.sol";
 import { AccessControlled } from "../../access/AccessControlled.sol";
 
@@ -17,69 +17,68 @@ import { AccessControlled } from "../../access/AccessControlled.sol";
 /// on behalf of the IPAccount via the Token Management Module. This frontend contract can transfer any tokens that are
 /// approved by the IPAccount for the Token Management Module. In other words, there's no mechanism for this module to
 /// granularly control which token a caller (approved contract in this case) can transfer.
-contract TokenManagementModule is AccessControlled, BaseModule, ITokenManagementModule {
+contract TokenWithdrawalModule is AccessControlled, BaseModule, ITokenWithdrawalModule {
     using ERC165Checker for address;
     using IPAccountChecker for IIPAccountRegistry;
 
-    string public constant override name = TOKEN_MANAGEMENT_MODULE_KEY;
+    string public constant override name = TOKEN_WITHDRAWAL_MODULE_KEY;
 
     constructor(
         address accessController,
         address ipAccountRegistry
     ) AccessControlled(accessController, ipAccountRegistry) {}
 
-    /// @notice Transfers ERC20 token from the IP account to the specified recipient.
+    /// @notice Withdraws ERC20 token from the IP account to the IP account owner.
     /// @dev When calling this function, the caller must have the permission to call `transfer` via the IP account.
     /// @dev Does not support transfer of multiple tokens at once.
     /// @param ipAccount The IP account to transfer the ERC20 token from
-    /// @param to The recipient of the token
     /// @param tokenContract The address of the ERC20 token contract
     /// @param amount The amount of token to transfer
-    function transferERC20(
+    function withdrawERC20(
         address payable ipAccount,
-        address to,
         address tokenContract,
         uint256 amount
     ) external verifyPermission(ipAccount) {
         IIPAccount(ipAccount).execute(
             tokenContract,
             0,
-            abi.encodeWithSignature("transfer(address,uint256)", to, amount)
+            abi.encodeWithSignature("transfer(address,uint256)", IIPAccount(ipAccount).owner(), amount)
         );
     }
 
-    /// @notice Transfers ERC721 token from the IP account to the specified recipient.
+    /// @notice Withdraws ERC721 token from the IP account to the IP account owner.
     /// @dev When calling this function, the caller must have the permission to call `transferFrom` via the IP account.
     /// @dev Does not support batch transfers.
     /// @param ipAccount The IP account to transfer the ERC721 token from
-    /// @param to The recipient of the token
     /// @param tokenContract The address of the ERC721 token contract
     /// @param tokenId The ID of the token to transfer
-    function transferERC721(
+    function withdrawERC721(
         address payable ipAccount,
-        address to,
         address tokenContract,
         uint256 tokenId
     ) external verifyPermission(ipAccount) {
         IIPAccount(ipAccount).execute(
             tokenContract,
             0,
-            abi.encodeWithSignature("transferFrom(address,address,uint256)", ipAccount, to, tokenId)
+            abi.encodeWithSignature(
+                "transferFrom(address,address,uint256)",
+                ipAccount,
+                IIPAccount(ipAccount).owner(),
+                tokenId
+            )
         );
     }
 
-    /// @notice Transfers ERC1155 token from the IP account to the specified recipient.
+    /// @notice Withdraws ERC1155 token from the IP account to the IP account owner.
     /// @dev When calling this function, the caller must have the permission to call `safeTransferFrom` via the IP
     /// account.
     /// @dev Does not support batch transfers.
     /// @param ipAccount The IP account to transfer the ERC1155 token from
-    /// @param to The recipient of the token
     /// @param tokenContract The address of the ERC1155 token contract
     /// @param tokenId The ID of the token to transfer
     /// @param amount The amount of token to transfer
-    function transferERC1155(
+    function withdrawERC1155(
         address payable ipAccount,
-        address to,
         address tokenContract,
         uint256 tokenId,
         uint256 amount
@@ -90,7 +89,7 @@ contract TokenManagementModule is AccessControlled, BaseModule, ITokenManagement
             abi.encodeWithSignature(
                 "safeTransferFrom(address,address,uint256,uint256,bytes)",
                 ipAccount,
-                to,
+                IIPAccount(ipAccount).owner(),
                 tokenId,
                 amount,
                 ""

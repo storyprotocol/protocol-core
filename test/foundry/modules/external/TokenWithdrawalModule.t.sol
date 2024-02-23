@@ -7,9 +7,9 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 // contracts
 import { IIPAccount } from "../../../../contracts/interfaces/IIPAccount.sol";
 import { AccessPermission } from "../../../../contracts/lib/AccessPermission.sol";
-import { TokenManagementModule } from "../../../../contracts/modules/external/TokenManagementModule.sol";
+import { TokenWithdrawalModule } from "../../../../contracts/modules/external/TokenWithdrawalModule.sol";
 import { Errors } from "../../../../contracts/lib/Errors.sol";
-import { TOKEN_MANAGEMENT_MODULE_KEY } from "../../../../contracts/lib/modules/Module.sol";
+import { TOKEN_WITHDRAWAL_MODULE_KEY } from "../../../../contracts/lib/modules/Module.sol";
 
 // test
 import { MockERC20 } from "../../mocks/token/MockERC20.sol";
@@ -17,14 +17,14 @@ import { MockERC721 } from "../../mocks/token/MockERC721.sol";
 import { MockERC1155 } from "../../mocks/token/MockERC1155.sol";
 import { BaseTest } from "../../utils/BaseTest.t.sol";
 
-contract TokenManagementModuleTest is BaseTest {
+contract TokenWithdrawalModuleTest is BaseTest {
     using Strings for *;
 
     MockERC20 private tErc20 = new MockERC20();
     MockERC721 private tErc721 = new MockERC721("MockERC721");
     MockERC1155 private tErc1155 = new MockERC1155("uri");
 
-    TokenManagementModule private tokenManagementModule;
+    TokenWithdrawalModule private tokenWithdrawalModule;
 
     IIPAccount private ipAcct1;
     IIPAccount private ipAcct2;
@@ -50,10 +50,10 @@ contract TokenManagementModuleTest is BaseTest {
         vm.label(address(ipAcct1), "IPAccount1");
         vm.label(address(ipAcct2), "IPAccount2");
 
-        tokenManagementModule = new TokenManagementModule(address(accessController), address(ipAccountRegistry));
+        tokenWithdrawalModule = new TokenWithdrawalModule(address(accessController), address(ipAccountRegistry));
 
         vm.prank(u.admin);
-        moduleRegistry.registerModule(TOKEN_MANAGEMENT_MODULE_KEY, address(tokenManagementModule));
+        moduleRegistry.registerModule(TOKEN_WITHDRAWAL_MODULE_KEY, address(tokenWithdrawalModule));
     }
 
     modifier testERC20_mintToIpAcct1() {
@@ -64,41 +64,40 @@ contract TokenManagementModuleTest is BaseTest {
         _;
     }
 
-    function test_TokenManagementModule_transferERC20() public testERC20_mintToIpAcct1 {
-        _approveERC20(alice, ipAcct1, address(tokenManagementModule));
+    function test_TokenWithdrawalModule_withdrawERC20() public testERC20_mintToIpAcct1 {
+        _approveERC20(alice, ipAcct1, address(tokenWithdrawalModule));
 
         vm.prank(alice);
-        tokenManagementModule.transferERC20(payable(ipAcct1), address(ipAcct2), address(tErc20), mintAmount20 / 2);
+        tokenWithdrawalModule.withdrawERC20(payable(ipAcct1), address(tErc20), mintAmount20 / 2);
 
         _expectBalanceERC20(address(ipAcct1), mintAmount20 / 2);
-        _expectBalanceERC20(address(ipAcct2), mintAmount20 / 2);
+        _expectBalanceERC20(alice, mintAmount20 / 2);
 
         vm.prank(alice);
         ipAcct1.execute(
-            address(tokenManagementModule),
+            address(tokenWithdrawalModule),
             0,
             abi.encodeWithSelector(
-                tokenManagementModule.transferERC20.selector,
+                tokenWithdrawalModule.withdrawERC20.selector,
                 payable(ipAcct1),
-                address(ipAcct2),
                 address(tErc20),
                 mintAmount20 / 2
             )
         );
 
         _expectBalanceERC20(address(ipAcct1), 0);
-        _expectBalanceERC20(address(ipAcct2), mintAmount20);
+        _expectBalanceERC20(alice, mintAmount20);
     }
 
-    function test_TokenManagementModule_transferERC20_delegatedCall() public testERC20_mintToIpAcct1 {
-        // signer: tokenManagementModule
+    function test_TokenWithdrawalModule_withdrawERC20_delegatedCall() public testERC20_mintToIpAcct1 {
+        // signer: tokenWithdrawalModule
         // to: tErc20
         // func: transfer
-        _approveERC20(alice, ipAcct1, address(tokenManagementModule));
+        _approveERC20(alice, ipAcct1, address(tokenWithdrawalModule));
 
         // signer: randomFrontend
-        // to: tokenManagementModule
-        // func: transferERC20
+        // to: tokenWithdrawalModule
+        // func: withdrawERC20
         vm.prank(alice);
         ipAcct1.execute(
             address(accessController),
@@ -107,36 +106,35 @@ contract TokenManagementModuleTest is BaseTest {
                 "setPermission(address,address,address,bytes4,uint8)",
                 address(ipAcct1),
                 randomFrontend,
-                address(tokenManagementModule),
-                tokenManagementModule.transferERC20.selector,
+                address(tokenWithdrawalModule),
+                tokenWithdrawalModule.withdrawERC20.selector,
                 AccessPermission.ALLOW
             )
         );
 
         vm.prank(randomFrontend);
-        tokenManagementModule.transferERC20(payable(ipAcct1), address(ipAcct2), address(tErc20), mintAmount20 / 2);
+        tokenWithdrawalModule.withdrawERC20(payable(ipAcct1), address(tErc20), mintAmount20 / 2);
 
         _expectBalanceERC20(address(ipAcct1), mintAmount20 / 2);
-        _expectBalanceERC20(address(ipAcct2), mintAmount20 / 2);
+        _expectBalanceERC20(alice, mintAmount20 / 2);
 
         vm.prank(randomFrontend);
         ipAcct1.execute(
-            address(tokenManagementModule),
+            address(tokenWithdrawalModule),
             0,
             abi.encodeWithSelector(
-                tokenManagementModule.transferERC20.selector,
+                tokenWithdrawalModule.withdrawERC20.selector,
                 payable(ipAcct1),
-                address(ipAcct2),
                 address(tErc20),
                 mintAmount20 / 2
             )
         );
 
         _expectBalanceERC20(address(ipAcct1), 0);
-        _expectBalanceERC20(address(ipAcct2), mintAmount20);
+        _expectBalanceERC20(alice, mintAmount20);
     }
 
-    function test_TokenManagementModule_transferERC20_revert_malicious_anotherERC20Transfer()
+    function test_TokenWithdrawalModule_withdrawERC20_revert_malicious_anotherERC20Transfer()
         public
         testERC20_mintToIpAcct1
     {
@@ -147,20 +145,20 @@ contract TokenManagementModuleTest is BaseTest {
         anotherErc20.mint(address(ipAcct1), 1000);
         assertEq(anotherErc20.balanceOf(address(ipAcct1)), 1000, "ERC20 balance does not match");
 
-        // Approve TokenManagementModule to transfer tErc20 from IPAccount1
-        // signer: tokenManagementModule
+        // Approve TokenWithdrawalModule to transfer tErc20 from IPAccount1
+        // signer: tokenWithdrawalModule
         // to: tErc20
         // func: transfer
-        _approveERC20(alice, ipAcct1, address(tokenManagementModule));
+        _approveERC20(alice, ipAcct1, address(tokenWithdrawalModule));
 
-        // Approve TokenManagementModule to transfer anotherErc20 from IPAccount1
-        // signer: tokenManagementModule
+        // Approve TokenWithdrawalModule to transfer anotherErc20 from IPAccount1
+        // signer: tokenWithdrawalModule
         // to: anotherErc20
         // func: transfer
         vm.prank(address(ipAcct1));
         accessController.setPermission(
             address(ipAcct1),
-            address(tokenManagementModule),
+            address(tokenWithdrawalModule),
             address(anotherErc20),
             anotherErc20.transfer.selector,
             AccessPermission.ALLOW
@@ -168,8 +166,8 @@ contract TokenManagementModuleTest is BaseTest {
 
         // Approve a frontend contract to transfer token on behalf of a user (IPAccount1)
         // signer: maliciousFrontend
-        // to: tokenManagementModule
-        // func: transferERC20
+        // to: tokenWithdrawalModule
+        // func: withdrawERC20
         vm.prank(alice);
         ipAcct1.execute(
             address(accessController),
@@ -178,8 +176,8 @@ contract TokenManagementModuleTest is BaseTest {
                 "setPermission(address,address,address,bytes4,uint8)",
                 address(ipAcct1),
                 maliciousFrontend,
-                address(tokenManagementModule),
-                tokenManagementModule.transferERC20.selector,
+                address(tokenWithdrawalModule),
+                tokenWithdrawalModule.withdrawERC20.selector,
                 AccessPermission.ALLOW
             )
         );
@@ -192,108 +190,96 @@ contract TokenManagementModuleTest is BaseTest {
         //
 
         vm.startPrank(maliciousFrontend);
-        tokenManagementModule.transferERC20(payable(ipAcct1), address(0xbeef), address(tErc20), 1000);
-        tokenManagementModule.transferERC20(payable(ipAcct1), address(0xbeef), address(anotherErc20), 1000);
+        tokenWithdrawalModule.withdrawERC20(payable(ipAcct1), address(tErc20), 1000);
+        tokenWithdrawalModule.withdrawERC20(payable(ipAcct1), address(anotherErc20), 1000);
         vm.stopPrank();
 
         // another token is drained
-        assertEq(anotherErc20.balanceOf(address(ipAcct1)), 0, "ERC20 balance does not match");
-        assertEq(anotherErc20.balanceOf(address(0xbeef)), 1000, "ERC20 balance does not match");
+        assertEq(tErc20.balanceOf(alice), 1000, "ERC20 balance does not match");
+        assertEq(anotherErc20.balanceOf(alice), 1000, "ERC20 balance does not match");
     }
 
-    function test_TokenManagementModule_transferERC20_revert_moduleCaller_invalidAccess()
+    function test_TokenWithdrawalModule_withdrawERC20_revert_moduleCaller_invalidAccess()
         public
         testERC20_mintToIpAcct1
     {
-        _approveERC20(alice, ipAcct1, address(tokenManagementModule));
+        _approveERC20(alice, ipAcct1, address(tokenWithdrawalModule));
 
         _expectInvalidAccess(
             address(ipAcct1),
             address(this),
-            address(tokenManagementModule),
-            tokenManagementModule.transferERC20.selector
+            address(tokenWithdrawalModule),
+            tokenWithdrawalModule.withdrawERC20.selector
         );
-        tokenManagementModule.transferERC20(payable(ipAcct1), address(ipAcct2), address(tErc20), mintAmount20);
+        tokenWithdrawalModule.withdrawERC20(payable(ipAcct1), address(tErc20), mintAmount20);
 
         _expectBalanceERC20(address(ipAcct1), mintAmount20);
     }
 
-    function test_TokenManagementModule_transferERC721() public {
+    function test_TokenWithdrawalModule_withdrawERC721() public {
         uint256 tokenId = tErc721.mint(address(ipAcct1));
         _expectOwnerERC721(address(ipAcct1), tokenId);
 
-        _approveERC721(alice, ipAcct1, address(tokenManagementModule));
+        _approveERC721(alice, ipAcct1, address(tokenWithdrawalModule));
 
         vm.prank(alice);
-        tokenManagementModule.transferERC721(payable(ipAcct1), address(ipAcct2), address(tErc721), tokenId);
+        tokenWithdrawalModule.withdrawERC721(payable(ipAcct1), address(tErc721), tokenId);
 
-        _expectOwnerERC721(address(ipAcct2), tokenId);
+        _expectOwnerERC721(alice, tokenId);
     }
 
-    function test_TokenManagementModule_transferERC721_revert_moduleCaller_invalidAccess() public {
+    function test_TokenWithdrawalModule_withdrawERC721_revert_moduleCaller_invalidAccess() public {
         uint256 tokenId = tErc721.mint(address(ipAcct1));
         _expectOwnerERC721(address(ipAcct1), tokenId);
 
-        _approveERC721(alice, ipAcct1, address(tokenManagementModule));
+        _approveERC721(alice, ipAcct1, address(tokenWithdrawalModule));
 
         _expectInvalidAccess(
             address(ipAcct1),
             address(this),
-            address(tokenManagementModule),
-            tokenManagementModule.transferERC721.selector
+            address(tokenWithdrawalModule),
+            tokenWithdrawalModule.withdrawERC721.selector
         );
-        tokenManagementModule.transferERC721(payable(ipAcct1), address(ipAcct2), address(tErc721), tokenId);
+        tokenWithdrawalModule.withdrawERC721(payable(ipAcct1), address(tErc721), tokenId);
 
         _expectOwnerERC721(address(ipAcct1), tokenId);
     }
 
-    function test_TokenManagementModule_transferERC1155() public {
+    function test_TokenWithdrawalModule_withdrawERC1155() public {
         uint256 tokenId = 1;
         uint256 mintAmount1155 = 100;
         tErc1155.mintId(address(ipAcct1), tokenId, mintAmount1155);
         _expectBalanceERC1155(address(ipAcct1), tokenId, mintAmount1155);
-        _expectBalanceERC1155(address(ipAcct2), tokenId, 0);
+        _expectBalanceERC1155(alice, tokenId, 0);
 
-        _approveERC1155(alice, ipAcct1, address(tokenManagementModule));
+        _approveERC1155(alice, ipAcct1, address(tokenWithdrawalModule));
 
         vm.prank(alice);
-        tokenManagementModule.transferERC1155(
-            payable(ipAcct1),
-            address(ipAcct2),
-            address(tErc1155),
-            tokenId,
-            mintAmount1155
-        );
+        tokenWithdrawalModule.withdrawERC1155(payable(ipAcct1), address(tErc1155), tokenId, mintAmount1155);
 
         _expectBalanceERC1155(address(ipAcct1), tokenId, 0);
-        _expectBalanceERC1155(address(ipAcct2), tokenId, mintAmount1155);
+        _expectBalanceERC1155(alice, tokenId, mintAmount1155);
     }
 
-    function test_TokenManagementModule_transferERC1155_revert_moduleCaller_invalidAccess() public {
+    function test_TokenWithdrawalModule_withdrawERC1155_revert_moduleCaller_invalidAccess() public {
         uint256 tokenId = 1;
         uint256 mintAmount1155 = 100;
         tErc1155.mintId(address(ipAcct1), tokenId, mintAmount1155);
         _expectBalanceERC1155(address(ipAcct1), tokenId, mintAmount1155);
-        _expectBalanceERC1155(address(ipAcct2), tokenId, 0);
+        _expectBalanceERC1155(alice, tokenId, 0);
 
-        _approveERC1155(alice, ipAcct1, address(tokenManagementModule));
+        _approveERC1155(alice, ipAcct1, address(tokenWithdrawalModule));
 
         _expectInvalidAccess(
             address(ipAcct1),
             address(this),
-            address(tokenManagementModule),
-            tokenManagementModule.transferERC1155.selector
+            address(tokenWithdrawalModule),
+            tokenWithdrawalModule.withdrawERC1155.selector
         );
-        tokenManagementModule.transferERC1155(
-            payable(ipAcct1),
-            address(ipAcct2),
-            address(tErc1155),
-            tokenId,
-            mintAmount1155
-        );
+        tokenWithdrawalModule.withdrawERC1155(payable(ipAcct1), address(tErc1155), tokenId, mintAmount1155);
 
         _expectBalanceERC1155(address(ipAcct1), tokenId, mintAmount1155);
-        _expectBalanceERC1155(address(ipAcct2), tokenId, 0);
+        _expectBalanceERC1155(alice, tokenId, 0);
     }
 
     //

@@ -4,10 +4,11 @@ pragma solidity ^0.8.23;
 import { IIPAccount } from "../../contracts/interfaces/IIPAccount.sol";
 import { AccessPermission } from "../../contracts/lib/AccessPermission.sol";
 import { Errors } from "../../contracts/lib/Errors.sol";
+import { TOKEN_WITHDRAWAL_MODULE_KEY } from "../../contracts/lib/modules/Module.sol";
+import { TokenWithdrawalModule } from "../../contracts/modules/external/TokenWithdrawalModule.sol";
 
 import { MockModule } from "./mocks/module/MockModule.sol";
 import { MockOrchestratorModule } from "./mocks/module/MockOrchestratorModule.sol";
-import { MockTokenManagementModule } from "./mocks/module/MockTokenManagementModule.sol";
 import { MockERC1155 } from "./mocks/token/MockERC1155.sol";
 import { MockERC20 } from "./mocks/token/MockERC20.sol";
 import { BaseTest } from "./utils/BaseTest.t.sol";
@@ -1526,12 +1527,11 @@ contract AccessControllerTest is BaseTest {
 
         address anotherAccount = vm.addr(3);
 
-        MockTokenManagementModule tokenManagementModule = new MockTokenManagementModule(
+        TokenWithdrawalModule tokenWithdrawalModule = new TokenWithdrawalModule(
             address(accessController),
-            address(ipAccountRegistry),
-            address(moduleRegistry)
+            address(ipAccountRegistry)
         );
-        moduleRegistry.registerModule("MockTokenManagementModule", address(tokenManagementModule));
+        moduleRegistry.registerModule(TOKEN_WITHDRAWAL_MODULE_KEY, address(tokenWithdrawalModule));
         vm.prank(owner);
         ipAccount.execute(
             address(accessController),
@@ -1539,7 +1539,7 @@ contract AccessControllerTest is BaseTest {
             abi.encodeWithSignature(
                 "setPermission(address,address,address,bytes4,uint8)",
                 address(ipAccount),
-                address(tokenManagementModule),
+                address(tokenWithdrawalModule),
                 address(mockNFT),
                 mockNFT.transferFrom.selector,
                 AccessPermission.ALLOW
@@ -1548,20 +1548,15 @@ contract AccessControllerTest is BaseTest {
         assertEq(
             accessController.getPermission(
                 address(ipAccount),
-                address(tokenManagementModule),
+                address(tokenWithdrawalModule),
                 address(mockNFT),
                 mockNFT.transferFrom.selector
             ),
             AccessPermission.ALLOW
         );
         vm.prank(owner);
-        tokenManagementModule.transferERC721Token(
-            payable(address(ipAccount)),
-            anotherAccount,
-            address(mockNFT),
-            tokenId
-        );
-        assertEq(mockNFT.ownerOf(tokenId), anotherAccount);
+        tokenWithdrawalModule.withdrawERC721(payable(address(ipAccount)), address(mockNFT), tokenId);
+        assertEq(mockNFT.ownerOf(tokenId), owner);
     }
 
     // ipAccount transfer ERC1155 to another account
@@ -1572,12 +1567,11 @@ contract AccessControllerTest is BaseTest {
 
         address anotherAccount = vm.addr(3);
 
-        MockTokenManagementModule tokenManagementModule = new MockTokenManagementModule(
+        TokenWithdrawalModule tokenWithdrawalModule = new TokenWithdrawalModule(
             address(accessController),
-            address(ipAccountRegistry),
-            address(moduleRegistry)
+            address(ipAccountRegistry)
         );
-        moduleRegistry.registerModule("MockTokenManagementModule", address(tokenManagementModule));
+        moduleRegistry.registerModule(TOKEN_WITHDRAWAL_MODULE_KEY, address(tokenWithdrawalModule));
         vm.prank(owner);
         ipAccount.execute(
             address(accessController),
@@ -1585,7 +1579,7 @@ contract AccessControllerTest is BaseTest {
             abi.encodeWithSignature(
                 "setPermission(address,address,address,bytes4,uint8)",
                 address(ipAccount),
-                address(tokenManagementModule),
+                address(tokenWithdrawalModule),
                 address(mock1155),
                 mock1155.safeTransferFrom.selector,
                 AccessPermission.ALLOW
@@ -1594,21 +1588,15 @@ contract AccessControllerTest is BaseTest {
         assertEq(
             accessController.getPermission(
                 address(ipAccount),
-                address(tokenManagementModule),
+                address(tokenWithdrawalModule),
                 address(mock1155),
                 mock1155.safeTransferFrom.selector
             ),
             AccessPermission.ALLOW
         );
         vm.prank(owner);
-        tokenManagementModule.transferERC1155Token(
-            payable(address(ipAccount)),
-            anotherAccount,
-            address(mock1155),
-            tokenId,
-            1e18
-        );
-        assertEq(mock1155.balanceOf(anotherAccount, tokenId), 1e18);
+        tokenWithdrawalModule.withdrawERC1155(payable(address(ipAccount)), address(mock1155), tokenId, 1e18);
+        assertEq(mock1155.balanceOf(owner, tokenId), 1e18);
     }
     // ipAccount transfer ERC20 to another account
     function test_AccessController_ERC20Transfer() public {
@@ -1617,12 +1605,11 @@ contract AccessControllerTest is BaseTest {
 
         address anotherAccount = vm.addr(3);
 
-        MockTokenManagementModule tokenManagementModule = new MockTokenManagementModule(
+        TokenWithdrawalModule tokenWithdrawalModule = new TokenWithdrawalModule(
             address(accessController),
-            address(ipAccountRegistry),
-            address(moduleRegistry)
+            address(ipAccountRegistry)
         );
-        moduleRegistry.registerModule("MockTokenManagementModule", address(tokenManagementModule));
+        moduleRegistry.registerModule(TOKEN_WITHDRAWAL_MODULE_KEY, address(tokenWithdrawalModule));
         vm.prank(owner);
         ipAccount.execute(
             address(accessController),
@@ -1630,7 +1617,7 @@ contract AccessControllerTest is BaseTest {
             abi.encodeWithSignature(
                 "setPermission(address,address,address,bytes4,uint8)",
                 address(ipAccount),
-                address(tokenManagementModule),
+                address(tokenWithdrawalModule),
                 address(mock20),
                 mock20.transfer.selector,
                 AccessPermission.ALLOW
@@ -1639,14 +1626,14 @@ contract AccessControllerTest is BaseTest {
         assertEq(
             accessController.getPermission(
                 address(ipAccount),
-                address(tokenManagementModule),
+                address(tokenWithdrawalModule),
                 address(mock20),
                 mock20.transfer.selector
             ),
             AccessPermission.ALLOW
         );
         vm.prank(owner);
-        tokenManagementModule.transferERC20Token(payable(address(ipAccount)), anotherAccount, address(mock20), 1e18);
-        assertEq(mock20.balanceOf(anotherAccount), 1e18);
+        tokenWithdrawalModule.withdrawERC20(payable(address(ipAccount)), address(mock20), 1e18);
+        assertEq(mock20.balanceOf(owner), 1e18);
     }
 }
