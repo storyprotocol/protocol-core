@@ -183,8 +183,15 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
         address receiver,
         bytes calldata royaltyContext
     ) external nonReentrant returns (uint256 licenseId) {
+        _verifyPolicy(_policies[policyId]);
         if (!IP_ACCOUNT_REGISTRY.isIpAccount(licensorIpId)) {
             revert Errors.LicensingModule__LicensorNotRegistered();
+        }
+        if (amount == 0) {
+            revert Errors.LicensingModule__MintAmountZero();
+        }
+        if (receiver == address(0)) {
+            revert Errors.LicensingModule__ReceiverZeroAddress();
         }
         _verifyIpNotDisputed(licensorIpId);
 
@@ -219,7 +226,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
                     msg.sender,
                     pol.royaltyPolicy,
                     pol.mintingFeeToken,
-                    pol.mintingFee
+                    pol.mintingFee * amount
                 );
             }
         }

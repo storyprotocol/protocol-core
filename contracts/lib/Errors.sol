@@ -155,6 +155,8 @@ library Errors {
     error LicensingModule__RegisterPolicyFrameworkMismatch();
     error LicensingModule__RoyaltyPolicyNotWhitelisted();
     error LicensingModule__MintingFeeTokenNotWhitelisted();
+    error LicensingModule__ReceiverZeroAddress();
+    error LicensingModule__MintAmountZero();
     /// @notice emitted when trying to interact with an IP that has been disputed in the DisputeModule
     error LicensingModule__DisputedIpId();
     /// @notice emitted when linking a license from a licensor that has been disputed in the DisputeModule

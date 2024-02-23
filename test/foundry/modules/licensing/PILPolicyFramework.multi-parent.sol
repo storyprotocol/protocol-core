@@ -207,6 +207,8 @@ contract PILPolicyFrameworkMultiParentTest is BaseTest {
         inputA.policy.commercialUse = true;
         inputB.policy.commercialUse = false;
         inputB.policy.commercialRevShare = 0;
+        inputB.mintingFee = 0;
+        inputB.mintingFeeToken = address(0);
         inputB.royaltyPolicy = address(0x0);
         // TODO: passing in two different royaltyPolicy addresses
         // solhint-disable-next-line max-line-length
