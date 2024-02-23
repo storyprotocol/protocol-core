@@ -219,7 +219,7 @@ contract LicensingModule is AccessControlled, ILicensingModule, BaseModule, Reen
                     msg.sender,
                     pol.royaltyPolicy,
                     pol.mintingFeeToken,
-                    pol.mintingFee
+                    pol.mintingFee * amount
                 );
             }
         }
