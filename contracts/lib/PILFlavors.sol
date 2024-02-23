@@ -217,7 +217,7 @@ library PILFlavors {
                 commercializerCheckerData: EMPTY_BYTES,
                 commercialRevShare: 0,
                 derivativesAllowed: true,
-                derivativesAttribution: false,
+                derivativesAttribution: true,
                 derivativesApproval: false,
                 derivativesReciprocal: false,
                 territories: new string[](0),
