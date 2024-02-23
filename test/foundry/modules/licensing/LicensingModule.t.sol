@@ -382,7 +382,7 @@ contract LicensingModuleTest is BaseTest {
         return licenseId;
     }
 
-    function test_LicensingModule_mintLicense_revert_licensorNotRegistered() public {
+    function test_LIcensingModule_mintLicense_revert_inputValidations() public {
         licensingModule.registerPolicyFrameworkManager(address(mockPFM));
 
         vm.prank(address(mockPFM));
@@ -391,8 +391,17 @@ contract LicensingModuleTest is BaseTest {
         vm.prank(ipOwner);
         licensingModule.addPolicyToIp(ipId1, policyId);
 
+        vm.expectRevert(Errors.LicensingModule__PolicyNotFound.selector);
+        licensingModule.mintLicense(9483928387183923004983928394, address(0), 2, licenseHolder, "");
+
         vm.expectRevert(Errors.LicensingModule__LicensorNotRegistered.selector);
         licensingModule.mintLicense(policyId, address(0), 2, licenseHolder, "");
+
+        vm.expectRevert(Errors.LicensingModule__MintAmountZero.selector);
+        licensingModule.mintLicense(policyId, ipId1, 0, licenseHolder, "");
+
+        vm.expectRevert(Errors.LicensingModule__ReceiverZeroAddress.selector);
+        licensingModule.mintLicense(policyId, ipId1, 2, address(0), "");
     }
 
     function test_LicensingModule_mintLicense_revert_callerNotLicensorAndIpIdHasNoPolicy() public {
