@@ -48,12 +48,40 @@ contract Licensing_Scenarios is BaseIntegration {
         );
     }
 
+    function test_flavors_getId() public {
+        uint256 id = PILFlavors.getNonCommercialSocialRemixingId(licensingModule, address(_pilFramework()));
+        assertEq(id, nonCommRemixPoliciyId);
+        uint32 commercialRevShare = 10;
+        uint256 commRemixPolicyId = _pilFramework().registerPolicy(
+            PILFlavors.commercialRemix(commercialRevShare, address(royaltyPolicyLAP))
+        );
+        assertEq(commRemixPolicyId, PILFlavors.getcommercialRemixId(
+            licensingModule,
+            address(_pilFramework()),
+            commercialRevShare,
+            address(royaltyPolicyLAP)
+        ));
+
+        uint256 mintFee = 100;
+        uint256 commPolicyId = _pilFramework().registerPolicy(
+            PILFlavors.commercialUse(mintFee, address(USDC), address(royaltyPolicyLAP))
+        );
+        assertEq(commPolicyId, PILFlavors.getCommercialUseId(
+            licensingModule,
+            address(_pilFramework()),
+            mintFee,
+            address(USDC),
+            address(royaltyPolicyLAP)
+        ));
+    }
+
     function test_ipaHasNonCommercialAndCommercialPolicy_mintingLicenseFromCommercial() public {
         // Register commercial remixing policy
         uint32 commercialRevShare = 10;
         uint256 commRemixPolicyId = _pilFramework().registerPolicy(
             PILFlavors.commercialRemix(commercialRevShare, address(royaltyPolicyLAP))
         );
+
         // Register commercial use policy
         uint256 mintFee = 100;
         uint256 commPolicyId = _pilFramework().registerPolicy(
