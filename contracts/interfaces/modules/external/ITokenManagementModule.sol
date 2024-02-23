@@ -5,9 +5,9 @@ import { IModule } from "../base/IModule.sol";
 
 /// @title Token Management Module
 /// @notice Module for transferring ERC20, ERC721, and ERC1155 tokens for IP Accounts.
-/// @dev SECURITY RISK: An IPAccount can delegate to a frontend contract (not a registered module) to transfer tokens 
-/// on behalf of the IPAccount via the Token Management Module. This frontend contract can transfer any tokens that are 
-/// approved by the IPAccount for the Token Management Module. In other words, there's no mechanism for this module to 
+/// @dev SECURITY RISK: An IPAccount can delegate to a frontend contract (not a registered module) to transfer tokens
+/// on behalf of the IPAccount via the Token Management Module. This frontend contract can transfer any tokens that are
+/// approved by the IPAccount for the Token Management Module. In other words, there's no mechanism for this module to
 /// granularly control which token a caller (approved contract in this case) can transfer.
 interface ITokenManagementModule is IModule {
     /// @notice Transfers ERC20 token from the IP account to the specified recipient.
@@ -29,7 +29,7 @@ interface ITokenManagementModule is IModule {
     function transferERC721(address payable ipAccount, address to, address tokenContract, uint256 tokenId) external;
 
     /// @notice Transfers ERC1155 token from the IP account to the specified recipient.
-    /// @dev When calling this function, the caller must have the permission to call `safeTransferFrom` via the IP 
+    /// @dev When calling this function, the caller must have the permission to call `safeTransferFrom` via the IP
     /// account.
     /// @dev Does not support batch transfers.
     /// @param ipAccount The IP account to transfer the ERC1155 token from
