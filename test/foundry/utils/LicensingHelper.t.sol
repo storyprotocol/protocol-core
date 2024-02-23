@@ -121,10 +121,9 @@ contract LicensingHelper {
         string memory pName = string(abi.encodePacked("pil_", name));
         policies[pName] = RegisterPILPolicyParams({
             transferable: true,
-            // TODO: use mock or real based on condition
             royaltyPolicy: commercial ? address(ROYALTY_POLICY_LAP) : address(0),
-            mintingFee: 0,
-            mintingFeeToken: address(0),
+            mintingFee: commercial ? 1 ether : 0,
+            mintingFeeToken: address(0), // TODO: set to a valid token if commercial
             policy: PILPolicy({
                 attribution: true,
                 commercialUse: commercial,
@@ -132,6 +131,39 @@ contract LicensingHelper {
                 commercializerChecker: address(0),
                 commercializerCheckerData: "",
                 commercialRevShare: commercial ? commercialRevShare : 0,
+                derivativesAllowed: derivatives,
+                derivativesAttribution: false,
+                derivativesApproval: false,
+                derivativesReciprocal: reciprocal,
+                territories: emptyStringArray,
+                distributionChannels: emptyStringArray,
+                contentRestrictions: emptyStringArray
+            })
+        });
+    }
+
+    function _mapPILPolicyCommercial(
+        string memory name,
+        bool derivatives,
+        bool reciprocal,
+        uint32 commercialRevShare,
+        address royaltyPolicy,
+        uint256 mintingFee,
+        address mintingFeeToken
+    ) internal {
+        string memory pName = string(abi.encodePacked("pil_", name));
+        policies[pName] = RegisterPILPolicyParams({
+            transferable: true,
+            royaltyPolicy: royaltyPolicy,
+            mintingFee: mintingFee,
+            mintingFeeToken: mintingFeeToken,
+            policy: PILPolicy({
+                attribution: true,
+                commercialUse: true,
+                commercialAttribution: false,
+                commercializerChecker: address(0),
+                commercializerCheckerData: "",
+                commercialRevShare: commercialRevShare,
                 derivativesAllowed: derivatives,
                 derivativesAttribution: false,
                 derivativesApproval: false,

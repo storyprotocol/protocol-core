@@ -7,6 +7,7 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // contract
+import { IRoyaltyModule } from "contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
 import { IRoyaltyPolicyLAP } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLAP.sol";
 
 // test
@@ -30,7 +31,10 @@ contract Flows_Integration_Disputes is BaseIntegration {
             })
         );
 
+    address internal royaltyPolicyAddr; // must be assigned AFTER super.setUp()
+    address internal mintingFeeToken; // must be assigned AFTER super.setUp()
     uint32 internal defaultCommRevShare = 100;
+    uint256 internal mintingFee = 7 ether;
 
     function setUp() public override {
         super.setUp();
@@ -38,13 +42,18 @@ contract Flows_Integration_Disputes is BaseIntegration {
         // Register PIL Framework
         _deployLFM_PIL();
 
+        royaltyPolicyAddr = address(royaltyPolicyLAP);
+        mintingFeeToken = address(erc20);
+
         // Register a License
-        _mapPILPolicySimple({
+        _mapPILPolicyCommercial({
             name: "commercial-remix",
-            commercial: true,
             derivatives: true,
             reciprocal: true,
-            commercialRevShare: defaultCommRevShare
+            commercialRevShare: defaultCommRevShare,
+            royaltyPolicy: royaltyPolicyAddr,
+            mintingFeeToken: mintingFeeToken,
+            mintingFee: mintingFee
         });
         _registerPILPolicyFromMapping("commercial-remix");
 
@@ -74,11 +83,17 @@ contract Flows_Integration_Disputes is BaseIntegration {
             ipAcct[2] = _getIpId(mockNFT, 2);
             vm.label(ipAcct[2], "IPAccount2");
 
+            uint256 mintAmount = 3;
+            erc20.approve(address(royaltyPolicyAddr), mintAmount * mintingFee);
+
             uint256[] memory licenseIds = new uint256[](1);
+
+            vm.expectEmit(address(royaltyModule));
+            emit IRoyaltyModule.LicenseMintingFeePaid(ipAcct[1], u.bob, address(erc20), mintAmount * mintingFee);
             licenseIds[0] = licensingModule.mintLicense(
                 _getPilPolicyId("commercial-remix"),
                 ipAcct[1],
-                1,
+                mintAmount,
                 u.bob,
                 emptyRoyaltyPolicyLAPInitParams
             );
@@ -116,8 +131,13 @@ contract Flows_Integration_Disputes is BaseIntegration {
             ipAcct[3] = _getIpId(mockNFT, 3);
             vm.label(ipAcct[3], "IPAccount3");
 
+            uint256 mintAmount = 1;
             uint256[] memory licenseIds = new uint256[](2);
 
+            erc20.approve(address(royaltyPolicyAddr), 2 * mintAmount * mintingFee);
+
+            vm.expectEmit(address(royaltyModule));
+            emit IRoyaltyModule.LicenseMintingFeePaid(ipAcct[1], u.carl, address(erc20), mintAmount * mintingFee);
             licenseIds[0] = licensingModule.mintLicense(
                 _getPilPolicyId("commercial-remix"),
                 ipAcct[1], // grandparent, root IP
@@ -137,6 +157,8 @@ contract Flows_Integration_Disputes is BaseIntegration {
             params1.targetAncestors[0] = ipAcct[1];
             params1.targetRoyaltyAmount[0] = defaultCommRevShare;
 
+            vm.expectEmit(address(royaltyModule));
+            emit IRoyaltyModule.LicenseMintingFeePaid(ipAcct[2], u.carl, address(erc20), mintAmount * mintingFee);
             licenseIds[1] = licensingModule.mintLicense(
                 _getPilPolicyId("commercial-remix"),
                 ipAcct[2], // parent, is child IP of ipAcct[1]
