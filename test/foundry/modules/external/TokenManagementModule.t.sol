@@ -82,7 +82,7 @@ contract TokenManagementModuleTest is BaseTest {
                 payable(ipAcct1),
                 address(ipAcct2),
                 address(tErc20),
-                mintAmount20
+                mintAmount20 / 2
             )
         );
 
@@ -128,7 +128,7 @@ contract TokenManagementModuleTest is BaseTest {
                 payable(ipAcct1),
                 address(ipAcct2),
                 address(tErc20),
-                mintAmount20
+                mintAmount20 / 2
             )
         );
 
