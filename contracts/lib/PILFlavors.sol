@@ -107,14 +107,15 @@ library PILFlavors {
         ILicensingModule module,
         address pilFramework,
         uint256 mintingFee,
-        address mintingFeeToken
+        address mintingFeeToken,
+        address royaltyPolicy
     ) internal view returns (uint256) {
         Licensing.Policy memory policy = Licensing.Policy({
             isLicenseTransferable: true,
             policyFramework: pilFramework,
             frameworkData: abi.encode(_commercialUsePIL()),
-            royaltyPolicy: address(0),
-            royaltyData: abi.encode(uint256(0)),
+            royaltyPolicy: royaltyPolicy,
+            royaltyData: abi.encode(uint32(0)),
             mintingFee: mintingFee,
             mintingFeeToken: mintingFeeToken
         });
@@ -158,7 +159,7 @@ library PILFlavors {
             isLicenseTransferable: true,
             policyFramework: pilFramework,
             frameworkData: abi.encode(_commercialRemixPIL(commercialRevShare)),
-            royaltyPolicy: address(0),
+            royaltyPolicy: royaltyPolicy,
             royaltyData: abi.encode(commercialRevShare),
             mintingFee: 0,
             mintingFeeToken: address(0)
