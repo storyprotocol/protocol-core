@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.23;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 // contract
 import { IAccessController } from "../../../contracts/interfaces/IAccessController.sol";
 import { IIPAccountRegistry } from "../../../contracts/interfaces/registries/IIPAccountRegistry.sol";
@@ -26,6 +28,8 @@ contract LicensingHelper {
 
     IRoyaltyPolicyLAP private ROYALTY_POLICY_LAP; // keep private to avoid collision with `BaseIntegration`
 
+    IERC20 private erc20;
+
     mapping(string frameworkName => uint256 frameworkId) internal frameworkIds;
 
     mapping(string policyName => uint256 globalPolicyId) internal policyIds;
@@ -41,13 +45,15 @@ contract LicensingHelper {
         address _ipAccountRegistry,
         address _licensingModule,
         address _royaltyModule,
-        address _royaltyPolicy
+        address _royaltyPolicy,
+        address _erc20
     ) public {
         ACCESS_CONTROLLER = IAccessController(_accessController);
         IP_ACCOUNT_REGISTRY = IIPAccountRegistry(_ipAccountRegistry);
         LICENSING_MODULE = ILicensingModule(_licensingModule);
         ROYALTY_MODULE = IRoyaltyModule(_royaltyModule);
         ROYALTY_POLICY_LAP = IRoyaltyPolicyLAP(_royaltyPolicy);
+        erc20 = IERC20(_erc20);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -123,7 +129,7 @@ contract LicensingHelper {
             transferable: true,
             royaltyPolicy: commercial ? address(ROYALTY_POLICY_LAP) : address(0),
             mintingFee: commercial ? 1 ether : 0,
-            mintingFeeToken: address(0), // TODO: set to a valid token if commercial
+            mintingFeeToken: commercial ? address(erc20) : address(0),
             policy: PILPolicy({
                 attribution: true,
                 commercialUse: commercial,

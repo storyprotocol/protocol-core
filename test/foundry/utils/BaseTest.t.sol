@@ -77,7 +77,8 @@ contract BaseTest is Test, DeployHelper, LicensingHelper {
             address(ipAccountRegistry),
             getLicensingModule(),
             getRoyaltyModule(),
-            isMockRoyaltyPolicyLAP ? address(mockRoyaltyPolicyLAP) : address(royaltyPolicyLAP)
+            isMockRoyaltyPolicyLAP ? address(mockRoyaltyPolicyLAP) : address(royaltyPolicyLAP),
+            address(erc20)
         );
 
         // Set aliases

@@ -31,6 +31,8 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
 
     uint32 internal constant derivCheapFlexibleRevShare = 10;
 
+    uint256 internal constant mintingFee = 100 ether;
+
     function setUp() public override {
         super.setUp();
 
@@ -45,7 +47,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             "com_deriv_cheap_flexible", // ==> policyIds["pil_com_deriv_cheap_flexible"]
             true,
             address(royaltyPolicyLAP),
-            100 ether, // mint payment (100 * 10^18)
+            mintingFee,
             address(mockToken),
             PILPolicy({
                 attribution: false,
@@ -161,7 +163,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             // (verified by the mockTokenGatedHook commercializer checker)
             mockGatedNft.mint(u.carl);
 
-            mockToken.approve(address(royaltyPolicyLAP), 100 ether);
+            mockToken.approve(address(royaltyPolicyLAP), mintingFee);
 
             uint256[] memory carl_license_from_root_alice = new uint256[](1);
             carl_license_from_root_alice[0] = licensingModule.mintLicense(
@@ -248,7 +250,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             mockNFT.mintId(u.alice, 2);
             uint256 mintAmount = 2;
 
-            mockToken.approve(address(royaltyPolicyLAP), mintAmount * 100 ether);
+            mockToken.approve(address(royaltyPolicyLAP), mintAmount * mintingFee);
 
             // Alice needs to hold an NFT from mockGatedNFT collection to mint license on pil_com_deriv_cheap_flexible
             // (verified by the mockTokenGatedHook commercializer checker)
@@ -309,10 +311,12 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
         {
             vm.startPrank(u.carl);
 
+            uint256 license0_mintAmount = 1000;
             uint256 tokenId = 70000; // dummy number that shouldn't conflict with any other token IDs used in this test
             mockNFT.mintId(u.carl, tokenId);
 
-            mockToken.approve(address(royaltyPolicyLAP), 200 ether);
+            mockToken.mint(u.carl, mintingFee * license0_mintAmount);
+            mockToken.approve(address(royaltyPolicyLAP), mintingFee * license0_mintAmount);
 
             IP.MetadataV1 memory metadata = IP.MetadataV1({
                 name: "IP NAME",
@@ -327,7 +331,7 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
             carl_licenses[0] = licensingModule.mintLicense(
                 policyIds["pil_com_deriv_cheap_flexible"], // ipAcct[1] has this policy attached
                 ipAcct[1],
-                100, // mint 100 licenses
+                license0_mintAmount,
                 u.carl,
                 emptyRoyaltyPolicyLAPInitParams
             );
@@ -355,11 +359,15 @@ contract BigBang_Integration_SingleNftCollection is BaseIntegration {
                 ""
             );
 
+            uint256 license1_mintAmount = 500;
+            mockToken.mint(u.carl, mintingFee * license1_mintAmount);
+            mockToken.approve(address(royaltyPolicyLAP), mintingFee * license1_mintAmount);
+
             // Modify license[1] to a Commercial license
             carl_licenses[1] = licensingModule.mintLicense(
                 policyIds["pil_com_deriv_cheap_flexible"], // ipAcct[300] has this policy attached
                 ipAcct[300],
-                1,
+                license1_mintAmount,
                 u.carl,
                 emptyRoyaltyPolicyLAPInitParams
             );
