@@ -1,6 +1,6 @@
 /* solhint-disable no-console */
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.23;
+pragma solidity 0.8.23;
 
 // external
 import { console2 } from "forge-std/console2.sol"; // console to indicate mock deployment calls.

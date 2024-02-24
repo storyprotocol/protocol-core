@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.23;
+pragma solidity 0.8.23;
 
 import { IAccessController } from "contracts/interfaces/IAccessController.sol";
 import { ILicensingModule } from "contracts/interfaces/modules/licensing/ILicensingModule.sol";

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.23;
+pragma solidity 0.8.23;
 
 // external
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
