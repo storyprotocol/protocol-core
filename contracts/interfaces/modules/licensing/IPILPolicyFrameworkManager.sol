@@ -8,7 +8,7 @@ import { IPolicyFrameworkManager } from "../../../interfaces/modules/licensing/I
 /// @param attribution Whether or not attribution is required when reproducing the work
 /// @param commercialUse Whether or not the work can be used commercially
 /// @param commercialAttribution Whether or not attribution is required when reproducing the work commercially
-/// @param commercializerChecker commericializers that are allowed to commercially exploit the work. If zero address,
+/// @param commercializerChecker commercializers that are allowed to commercially exploit the work. If zero address,
 /// then no restrictions is enforced.
 /// @param commercialRevShare Percentage of revenue that must be shared with the licensor
 /// @param derivativesAllowed Whether or not the licensee can create derivatives of his work
@@ -18,7 +18,7 @@ import { IPolicyFrameworkManager } from "../../../interfaces/modules/licensing/I
 /// @param derivativesReciprocal Whether or not the licensee must license derivatives of the work under the same terms.
 /// @param territories List of territories where the license is valid. If empty, global.
 /// @param distributionChannels List of distribution channels where the license is valid. Empty if no restrictions.
-/// @param royaltyPolicy Address of a royalty policy contract (e.g. RoyaltyPolicyLS) that will handle royalty payments
+/// @param contentRestrictions List of content restrictions. Empty if no restrictions.
 /// TODO: DO NOT deploy on production networks without hashing string[] instead of storing them
 struct PILPolicy {
     bool attribution;

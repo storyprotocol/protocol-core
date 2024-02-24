@@ -55,24 +55,30 @@ contract Licensing_Scenarios is BaseIntegration {
         uint256 commRemixPolicyId = _pilFramework().registerPolicy(
             PILFlavors.commercialRemix(commercialRevShare, address(royaltyPolicyLAP))
         );
-        assertEq(commRemixPolicyId, PILFlavors.getcommercialRemixId(
-            licensingModule,
-            address(_pilFramework()),
-            commercialRevShare,
-            address(royaltyPolicyLAP)
-        ));
+        assertEq(
+            commRemixPolicyId,
+            PILFlavors.getcommercialRemixId(
+                licensingModule,
+                address(_pilFramework()),
+                commercialRevShare,
+                address(royaltyPolicyLAP)
+            )
+        );
 
         uint256 mintFee = 100;
         uint256 commPolicyId = _pilFramework().registerPolicy(
             PILFlavors.commercialUse(mintFee, address(USDC), address(royaltyPolicyLAP))
         );
-        assertEq(commPolicyId, PILFlavors.getCommercialUseId(
-            licensingModule,
-            address(_pilFramework()),
-            mintFee,
-            address(USDC),
-            address(royaltyPolicyLAP)
-        ));
+        assertEq(
+            commPolicyId,
+            PILFlavors.getCommercialUseId(
+                licensingModule,
+                address(_pilFramework()),
+                mintFee,
+                address(USDC),
+                address(royaltyPolicyLAP)
+            )
+        );
     }
 
     function test_ipaHasNonCommercialAndCommercialPolicy_mintingLicenseFromCommercial() public {
