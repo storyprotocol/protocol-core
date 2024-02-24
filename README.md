@@ -1,7 +1,12 @@
 
-# Solidity Template 
+# Story Protocol Beta
 
-Support both [Foundry](https://github.com/gakonst/foundry) test and [Hardhat](https://hardhat.org/).
+Story Protocol is building the Programmable IP layer to bring programmability to IP. Story Protocol transforms IPs into networks that transcend mediums and platforms, unleashing global creativity and liquidity. Instead of static JPEGs that lack interactivity and composability with other assets, programmable IPs are dynamic and extensible: built to be built upon. Creators and applications can register their IP with Story Protocol, converting their static IP into programmable IP by declaring a set of onchain rights that any program can read and write on.
+
+# Documentation
+
+[Learn more about Story Protocol](https://docs.storyprotocol.xyz/)
+
 
 # Getting Started
 
@@ -41,8 +46,8 @@ You'll need to add the following variables to a `.env` file:
 
 -   `MAINNET_URL`
 -   `MAINNET_PRIVATEKEY`
--   `GOERLI_URL`
--   `GOERLI_PRIVATEKEY`
+-   `SEPOLIA_URL`
+-   `SEPOLIA_PRIVATEKEY`
 -   `ETHERSCAN_API_KEY`
 
 ## Deploying
@@ -86,6 +91,13 @@ make slither
 ```
 
 And get your slither output.
+
+# Licensing
+
+The license for Story Protocol Core is the Business Source License 1.1 (BUSL-1.1), see LICENSE."
+
+In the terms of service with your End Users, governing your End Users’ use of and access to your App, you will include the following sentence:
+“This application is integrated with functionality provided by Story Protocol, Inc that enables intellectual property registration and tracking. You acknowledge and agree that such functionality and your use of this application is subject to Story Protocol, Inc.’s End User Terms."
 
 
 # Document Generation

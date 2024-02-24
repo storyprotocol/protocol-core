@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.23;
 
 import { IERC6551Registry } from "erc6551/interfaces/IERC6551Registry.sol";
