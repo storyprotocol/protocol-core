@@ -1,8 +1,21 @@
 # CHANGELOG
 
-## Beta release (beta-rc4)
+## Beta (beta-rc5)
 
-This release marks the official beta release of core protocol.
+This release marks the official beta release of Story Protocol's smart contracts.
+
+- Allow IPAccount to Execute Calls to External Contracts (#127)
+- Add PIL flavors libraries to improve DevEx (#123, #128, #130)
+- Add Token Withdrawal Module for token withdrawals for IPAccounts (#131)
+- Remove unused TaggingModule (#124)
+- Fix Licensing Minting Payment to Account for Mint Amount (#129)
+- Update README (#125, #136), Licensing (#135), and Script (#136)
+
+Full Changelog: [beta-rc4...beta](https://github.com/storyprotocol/protocol-core/compare/beta-rc4...beta)
+
+## Beta-rc4
+
+This release marks the unofficial beta release of Story Protocol's smart contracts.
 
 - Integrate the Royalty and Licensing system with new royalty policy (#99)
 - Integrate the Dispute and Licensing system (#93)
@@ -21,7 +34,7 @@ This release marks the official beta release of core protocol.
 - Add more unit and integration tests (#90, #114)
 - Miscellaneous changes (#79, #83, #88, #91, #92, #97, #115, #121)
 
-Full Changelog: [beta-rc2...beta-rc3](https://github.com/storyprotocol/protocol-core/compare/beta-rc3...beta-rc4)
+Full Changelog: [beta-rc3...beta-rc4](https://github.com/storyprotocol/protocol-core/compare/beta-rc3...beta-rc4)
 
 ## Beta-rc3
 
