@@ -98,10 +98,11 @@ And get your slither output.
 
 # Licensing
 
-The license for Story Protocol Core is the Business Source License 1.1 (BUSL-1.1), see LICENSE."
+The license for Story Protocol Core is the Business Source License 1.1 (BUSL-1.1), see LICENSE.
 
 In the terms of service with your End Users, governing your End Users’ use of and access to your App, you will include the following sentence:
-“This application is integrated with functionality provided by Story Protocol, Inc that enables intellectual property registration and tracking. You acknowledge and agree that such functionality and your use of this application is subject to Story Protocol, Inc.’s End User Terms."
+
+“This application is integrated with functionality provided by Story Protocol, Inc. that enables intellectual property registration and tracking. You acknowledge and agree that such functionality and your use of this application is subject to Story Protocol, Inc.’s End User Terms."
 
 
 # Document Generation
