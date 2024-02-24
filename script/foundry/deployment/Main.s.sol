@@ -276,7 +276,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             address(ipAccountRegistry),
             address(licensingModule),
             "pil",
-            "https://pil-license.com/{id}.json"
+            "https://github.com/storyprotocol/protocol-core/blob/main/PIL-Beta-2024-02.pdf"
         );
         _postdeploy("PILPolicyFrameworkManager", address(pilPfm));
 
