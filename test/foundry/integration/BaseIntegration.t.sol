@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.23;
+// SPDX-License-Identifier: BUSL-1.1
+pragma solidity 0.8.23;
 
 // external
 import { IERC6551Registry } from "erc6551/interfaces/IERC6551Registry.sol";

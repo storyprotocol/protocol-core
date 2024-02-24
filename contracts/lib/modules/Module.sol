@@ -1,6 +1,5 @@
-// SPDX-License-Identifier: UNLICENSED
-// See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
-pragma solidity ^0.8.23;
+// SPDX-License-Identifier: BUSL-1.1
+pragma solidity 0.8.23;
 
 // Default Module Type, all modules in this type by default
 string constant MODULE_TYPE_DEFAULT = "MODULE";

@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+// SPDX-License-Identifier: BUSL-1.1
+pragma solidity 0.8.23;
 
 import { IIPAccount } from "../../contracts/interfaces/IIPAccount.sol";
 import { AccessPermission } from "../../contracts/lib/AccessPermission.sol";

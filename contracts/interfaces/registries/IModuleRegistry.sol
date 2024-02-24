@@ -1,6 +1,5 @@
-// SPDX-License-Identifier: UNLICENSED
-// See https://github.com/storyprotocol/protocol-contracts/blob/main/StoryProtocol-AlphaTestingAgreement-17942166.3.pdf
-pragma solidity ^0.8.23;
+// SPDX-License-Identifier: BUSL-1.1
+pragma solidity 0.8.23;
 
 /// @title IModuleRegistry
 /// @dev This interface defines the methods for a module registry in the Story Protocol.
