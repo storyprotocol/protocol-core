@@ -1,12 +1,14 @@
 {
-  "name": "solidity-template",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "@story-protocol/contracts",
+  "version": "0.3.0",
+  "description": "Story Protocol smart contracts",
+  "main": "",
   "directories": {
     "lib": "lib",
     "test": "test"
   },
+  "author": "StoryProtocol",
+  "license": "BUSL-1.1",
   "scripts": {
     "lint": "npm run lint:js && npm run lint:sol",
     "lint:fix": "npm run lint:js:fix && npm run lint:sol:fix",
@@ -19,8 +21,6 @@
     "prepare": "husky install",
     "docgen": "hardhat docgen"
   },
-  "author": "StoryProtocol",
-  "license": "MIT",
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@nomicfoundation/hardhat-foundry": "^1.1.1",
