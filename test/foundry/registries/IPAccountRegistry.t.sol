@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity 0.8.23;
 
 import { IPAccountImpl } from "../../../contracts/IPAccountImpl.sol";
 import { IPAccountChecker } from "../../../contracts/lib/registries/IPAccountChecker.sol";

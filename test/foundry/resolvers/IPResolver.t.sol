@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity 0.8.23;
 
 import { ResolverBaseTest } from "test/foundry/resolvers/ResolverBase.t.sol";
 import { KeyValueResolver } from "contracts/resolvers/KeyValueResolver.sol";

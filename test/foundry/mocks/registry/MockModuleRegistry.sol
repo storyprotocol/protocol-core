@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSDL-1.1
-pragma solidity ^0.8.23;
+pragma solidity 0.8.23;
 
 import { IModuleRegistry } from "../../../../contracts/interfaces/registries/IModuleRegistry.sol";
 import { MODULE_TYPE_DEFAULT } from "../../../../contracts/lib/modules/Module.sol";
