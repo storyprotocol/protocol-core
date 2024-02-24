@@ -8,22 +8,64 @@ Story Protocol is building the Programmable IP layer to bring programmability to
 
 [Learn more about Story Protocol](https://docs.storyprotocol.xyz/)
 
-# Getting Started
+Story Protocol merges the concepts of IP identity and functionality, paving the way for innovative and dynamic IP management on public, permissionless blockchain.
+
+# Architecture Overview
+
+## Architecture Diagram
+![image](./assets/beta-architecture.png)
+
+Let's briefly introduce the layers mentioned in the above diagram:
+
+## Core Concepts
+
+### IPAsset (Nouns)
+
+IPAssets are the foundational programmable IP metadata on Story Protocol. Each IPAsset represents an onchain NFT (representing an IP) and its associated IPAccount, which is a modified ERC-6551 (Token Bound Account) implementation. An IPAsset transforms a new or existing NFT like BAYC into a versatile and interactive IP entity.
+
+### IPAccount
+
+IPAccounts are onchain programmable IPs that represent respective NFTs, implemented with Story Protocol's modification to ERC-6551. For example, a Mad Lad NFT will have an associated IPAccount, whose owner is the owner of that Mad Lad NFT.
+
+All interactions within Story Protocol center around IPAccounts, with the protocol's focus on enabling the IPAccount-centric system. Licensing, revenue/royalty sharing, remixing, and other critical features are made possible due to the IPAccount's programmability.
+
+A key feature of IPAccount is the generic execute() function, which allows calling arbitrary modules within Story Protocol via encoded bytes data (thus extensible for future modules). Additionally, there is executeWithSig() function that enables users to sign transactions and have others execute on their behalf for seamless UX.
+
+### Module (Verb)
+
+Modules are customizable programs (smart contracts) that define and extend the functionality of IPAccounts in Story Protocol. As "Verbs" act on "Nouns" (IPAccount), modules empower developers to create functions and interactions for each IP to make IPs truly programmable.
+
+### Registry
+
+A "Registry" functions as a primary directory/storage for the global states of Story Protocol. Unlike IPAccounts, which manage the state of specific IPs, a Registry oversees the broader states of the protocol.
+
+### Access Controller
+
+Access Controller manages all permission-related states and permission checks in Story Protocol. In particular, it maintains the Permission Table and Permission Engine to process and store permissions for calls between modules and from IPAccounts.
+
+### Application Layer (Ecosystem)
+
+This layer comprises applications that build on top of Story Protocol for IP business, such as distribution, discovery, and co-creation.
+
+# Deployed Contracts
+- [Sepolia addresses](https://docs.storyprotocol.xyz/docs/deployed-smart-contracts-1)
+
+# Interacting with Codebase
 
 ## Requirements
 
 Please install the following:
 
--   [Foundry / Foundryup](https://github.com/gakonst/foundry)
--   [Hardhat](https://hardhat.org/hardhat-runner/docs/getting-started#overview) 
+- [Foundry / Foundryup](https://github.com/gakonst/foundry)
+- [Hardhat](https://hardhat.org/hardhat-runner/docs/getting-started#overview)
 
 And you probably already have `make` installed... but if not [try looking here.](https://askubuntu.com/questions/161104/how-do-i-install-make) and [here for MacOS](https://stackoverflow.com/questions/1469994/using-make-on-os-x)
 
 ## Quickstart
 
 ```sh
-make # This installs the project's dependencies.
-make test
+yarn # this installs packages
+make # this builds
 ```
 
 ## Testing
@@ -32,11 +74,12 @@ make test
 make test
 ```
 
-or
+## Coverage
 
 ```
-forge test
+make coverage
 ```
+Open `index.html` in `coverage/` folder.
 
 # Deploying to a network
 
@@ -53,9 +96,8 @@ You'll need to add the following variables to a `.env` file:
 ## Deploying
 
 ```
-make deploy-goerli
+make deploy-sepolia
 ```
-
 
 ### Working with a local network
 
@@ -123,13 +165,3 @@ docgen: {
 ```
 
 You can refer to the [config.ts](https://github.com/OpenZeppelin/solidity-docgen/blob/master/src/config.ts) of solidity-docgen for the full list of configurable parameters.
-
-# Resources
--   [Hardhat](https://hardhat.org/docs)
--   [Foundry Documentation](https://book.getfoundry.sh/)
--   [Yarn](https://yarnpkg.com/getting-started)
-
-# Official Links
-- [Website](https://storyprotocol.xyz)
-- [Twitter/X](https://twitter.com/storyprotocol)
-- [Discord](https://discord.gg/storyprotocol)
