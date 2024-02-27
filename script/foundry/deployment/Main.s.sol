@@ -207,7 +207,10 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
 
         contractKey = "LicenseRegistry";
         _predeploy(contractKey);
-        licenseRegistry = new LicenseRegistry(address(governance));
+        licenseRegistry = new LicenseRegistry(
+            address(governance),
+            "https://github.com/storyprotocol/protocol-core/blob/main/assets/license-image.gif"
+        );
         _postdeploy(contractKey, address(licenseRegistry));
 
         contractKey = "LicensingModule";
