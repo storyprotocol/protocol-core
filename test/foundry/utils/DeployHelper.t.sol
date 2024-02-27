@@ -255,7 +255,7 @@ contract DeployHelper {
         console2.log("DeployHelper: Using REAL IPAssetRegistry");
 
         if (d.licenseRegistry) {
-            licenseRegistry = new LicenseRegistry(getGovernance());
+            licenseRegistry = new LicenseRegistry(getGovernance(), "deploy helper");
             console2.log("DeployHelper: Using REAL LicenseRegistry");
         }
     }

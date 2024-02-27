@@ -19,11 +19,17 @@ import { DataUniqueness } from "../lib/DataUniqueness.sol";
 contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
     using Strings for *;
 
-    /// @dev Name of the License NFT
-    string public name = "Story Protocol License NFT";
+    /// @notice Emitted for metadata updates, per EIP-4906
+    event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
 
-    /// @dev Symbol of the License NFT
-    string public symbol = "SPLNFT";
+    /// @notice Name of the Programmable IP License NFT
+    string public name = "Programmable IP License NFT";
+
+    /// @notice Symbol of the Programmable IP License NFT
+    string public symbol = "PILNFT";
+
+    /// @notice URL of the Licensing Image
+    string public imageUrl;
 
     // TODO: deploy with CREATE2 to make this immutable
     /// @notice Returns the canonical protocol-wide LicensingModule
@@ -51,7 +57,9 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
         _;
     }
 
-    constructor(address governance) ERC1155("") Governable(governance) {}
+    constructor(address governance, string memory url) ERC1155("") Governable(governance) {
+        imageUrl = url;
+    }
 
     /// @dev Sets the DisputeModule address.
     /// @dev Enforced to be only callable by the protocol admin
@@ -71,6 +79,14 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
             revert Errors.LicenseRegistry__ZeroLicensingModule();
         }
         LICENSING_MODULE = ILicensingModule(newLicensingModule);
+    }
+
+    /// @dev Sets the Licensing Image URL.
+    /// @dev Enforced to be only callable by the protocol admin
+    /// @param url The URL of the Licensing Image
+    function setLicensingImageUrl(string calldata url) external onlyProtocolAdmin {
+        imageUrl = url;
+        emit BatchMetadataUpdate(1, _mintedLicenses);
     }
 
     /// @notice Mints license NFTs representing a policy granted by a set of ipIds (licensors). This NFT needs to be
@@ -188,7 +204,9 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
                 licensorIpIdHex,
                 '",',
                 // solhint-disable-next-line max-length
-                '"image": "https://images.ctfassets.net/5ei3wx54t1dp/1WXOHnPLROsGiBsI46zECe/4f38a95c58d3b0329af3085b36d720c8/Story_Protocol_Icon.png",',
+                '"image": "',
+                imageUrl,
+                '",',
                 '"attributes": ['
             )
         );
