@@ -1,6 +1,15 @@
 # CHANGELOG
 
-## Beta (beta-rc5)
+## v1.0.0-beta-rc6
+
+This release patches the beta release of Story Protocol.
+
+- Update License NFT image and names (#141)
+- Update PIL dispute terms (#140)
+
+Full Changelog: [v1.0.0-beta-rc5...v1.0.0-beta-rc6](https://github.com/storyprotocol/protocol-core/compare/v1.0.0-beta-rc5...v1.0.0-beta-rc6)
+
+## v1.0.0-beta-rc5
 
 This release marks the official beta release of Story Protocol's smart contracts.
 
@@ -11,9 +20,9 @@ This release marks the official beta release of Story Protocol's smart contracts
 - Fix Licensing Minting Payment to Account for Mint Amount (#129)
 - Update README (#125, #136), Licensing (#135), and Script (#136)
 
-Full Changelog: [beta-rc4...beta](https://github.com/storyprotocol/protocol-core/compare/beta-rc4...beta)
+Full Changelog: [v1.0.0-beta-rc4...v1.0.0-beta-rc5](https://github.com/storyprotocol/protocol-core/compare/v1.0.0-beta-rc4...v1.0.0-beta-rc5)
 
-## Beta-rc4
+## v1.0.0-beta-rc4
 
 This release marks the unofficial beta release of Story Protocol's smart contracts.
 
@@ -34,9 +43,9 @@ This release marks the unofficial beta release of Story Protocol's smart contrac
 - Add more unit and integration tests (#90, #114)
 - Miscellaneous changes (#79, #83, #88, #91, #92, #97, #115, #121)
 
-Full Changelog: [beta-rc3...beta-rc4](https://github.com/storyprotocol/protocol-core/compare/beta-rc3...beta-rc4)
+Full Changelog: [v1.0.0-beta-rc3...v1.0.0-beta-rc4](https://github.com/storyprotocol/protocol-core/compare/v1.0.0-beta-rc3...v1.0.0-beta-rc4)
 
-## Beta-rc3
+## v1.0.0-beta-rc3
 
 This release finalizes the external-facing implementation of core modules and registries, as well as the public interfaces and events.
 
@@ -55,9 +64,9 @@ This release finalizes the external-facing implementation of core modules and re
 - Review interfaces, events, and variables (#76) and GitHub PR actions (#36, #58)
 - Refactor contracts for relative imports (#75)
 
-Full Changelog: [beta-rc2...beta-rc3](https://github.com/storyprotocol/protocol-core/compare/beta-rc2...beta-rc3)
+Full Changelog: [v1.0.0-beta-rc2...v1.0.0-beta-rc3](https://github.com/storyprotocol/protocol-core/compare/v1.0.0-beta-rc2...v1.0.0-beta-rc3)
 
-## Beta-rc2
+## v1.0.0-beta-rc2
 
 This release introduces new modules, registries, libraries, and other logics into the protocol.
 
@@ -71,6 +80,6 @@ This release introduces new modules, registries, libraries, and other logics int
 - Enhance the deployment script & post-deployment interactions, as well as the Integration tests to capture more use-case flows (#33)
 - Enhance the Unit tests for better coverage (#29, #30, #35)
 
-Full Changelog: [beta-rc1...beta-rc2](https://github.com/storyprotocol/protocol-core/compare/d0df7d4...beta-rc2)
+Full Changelog: [v1.0.0-beta-rc1...v1.0.0-beta-rc2](https://github.com/storyprotocol/protocol-core/compare/d0df7d4...v1.0.0-beta-rc2)
 
-## Beta-rc1
+## v1.0.0-beta-rc1
