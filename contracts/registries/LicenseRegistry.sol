@@ -22,11 +22,11 @@ contract LicenseRegistry is ILicenseRegistry, ERC1155, Governable {
     /// @notice Emitted for metadata updates, per EIP-4906
     event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
 
-    /// @notice Name of the License NFT
-    string public name = "Story Protocol License NFT";
+    /// @notice Name of the Programmable IP License NFT
+    string public name = "Programmable IP License NFT";
 
-    /// @notice Symbol of the License NFT
-    string public symbol = "SPLNFT";
+    /// @notice Symbol of the Programmable IP License NFT
+    string public symbol = "PILNFT";
 
     /// @notice URL of the Licensing Image
     string public imageUrl;
