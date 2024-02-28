@@ -1,7 +1,7 @@
 {
-  "name": "@story-protocol/contracts",
-  "version": "0.3.0",
-  "description": "Story Protocol smart contracts",
+  "name": "@story-protocol/protocol-core",
+  "version": "v1.0.0-beta-rc6",
+  "description": "Story Protocol core smart contracts",
   "main": "",
   "directories": {
     "lib": "lib",
