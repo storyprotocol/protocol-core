@@ -172,7 +172,11 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
         if (parentIpIds.length > MAX_PARENTS) revert Errors.RoyaltyPolicyLAP__AboveParentLimit();
 
         // calculate new royalty stack
-        (uint32 royaltyStack, address[] memory newAncestors, uint32[] memory newAncestorsRoyalties) = _getNewAncestorsData(parentIpIds, parentRoyalties);
+        (
+            uint32 royaltyStack,
+            address[] memory newAncestors,
+            uint32[] memory newAncestorsRoyalties
+        ) = _getNewAncestorsData(parentIpIds, parentRoyalties);
 
         // set the parents as unlinkable / loop limited to 2 parents
         for (uint256 i = 0; i < parentIpIds.length; i++) {
@@ -199,14 +203,7 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
             ancestorsRoyalties: newAncestorsRoyalties
         });
 
-        emit PolicyInitialized(
-            ipId,
-            splitClone,
-            ancestorsVault,
-            royaltyStack,
-            newAncestors,
-            newAncestorsRoyalties
-        );
+        emit PolicyInitialized(ipId, splitClone, ancestorsVault, royaltyStack, newAncestors, newAncestorsRoyalties);
     }
 
     /// @notice Allows the caller to pay royalties to the given IP asset
@@ -278,16 +275,8 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
     /// @param ipId The ipId of the ancestors vault to claim from
     /// @param claimerIpId The claimer ipId is the ancestor address that wants to claim
     /// @param tokens The ERC20 tokens to withdraw
-    function claimFromAncestorsVault(
-        address ipId,
-        address claimerIpId,
-        ERC20[] calldata tokens
-    ) external {
-        IAncestorsVaultLAP(royaltyData[ipId].ancestorsVault).claim(
-            ipId,
-            claimerIpId,
-            tokens
-        );
+    function claimFromAncestorsVault(address ipId, address claimerIpId, ERC20[] calldata tokens) external {
+        IAncestorsVaultLAP(royaltyData[ipId].ancestorsVault).claim(ipId, claimerIpId, tokens);
     }
 
     /// @dev Gets the new ancestors data
@@ -360,7 +349,7 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
             }
 
             address[] memory parentAncestors = royaltyData[parentIpIds[i]].ancestorsAddresses;
-            uint32[] memory parentAncestorsRoyalties = royaltyData[parentIpIds[i]].ancestorsRoyalties; 
+            uint32[] memory parentAncestorsRoyalties = royaltyData[parentIpIds[i]].ancestorsRoyalties;
 
             for (uint256 j = 0; j < parentAncestors.length; j++) {
                 if (i == 0) {
@@ -389,7 +378,7 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
         for (uint256 k = 0; k < ancestorsCount; k++) {
             newAncestors[k] = newAncestors_[k];
             newAncestorsRoyalty[k] = newAncestorsRoyalty_[k];
-        }    
+        }
     }
 
     /// @dev Deploys a liquid split clone contract
@@ -424,7 +413,9 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
     /// @return royaltyStack The royalty stack of a given ipId is the sum of the royalties to be paid to each ancestors
     /// @return ancestorsAddresses The ancestors addresses array
     /// @return ancestorsRoyalties The ancestors royalties array
-    function getRoyaltyData(address ipId) external view returns (bool, address, address, uint32, address[] memory, uint32[] memory) {
+    function getRoyaltyData(
+        address ipId
+    ) external view returns (bool, address, address, uint32, address[] memory, uint32[] memory) {
         LAPRoyaltyData memory data = royaltyData[ipId];
         return (
             data.isUnlinkableToParents,

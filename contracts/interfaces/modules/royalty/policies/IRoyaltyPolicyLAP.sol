@@ -80,11 +80,7 @@ interface IRoyaltyPolicyLAP is IRoyaltyPolicy {
     /// @param ipId The ipId of the ancestors vault to claim from
     /// @param claimerIpId The claimer ipId is the ancestor address that wants to claim
     /// @param tokens The ERC20 tokens to withdraw
-    function claimFromAncestorsVault(
-        address ipId,
-        address claimerIpId,
-        ERC20[] calldata tokens
-    ) external;
+    function claimFromAncestorsVault(address ipId, address claimerIpId, ERC20[] calldata tokens) external;
 
     /// @notice Returns the royalty data for a given IP asset
     /// @param ipId The ID of the IP asset
@@ -94,5 +90,7 @@ interface IRoyaltyPolicyLAP is IRoyaltyPolicy {
     /// @return royaltyStack The royalty stack of a given ipId is the sum of the royalties to be paid to each ancestors
     /// @return targetAncestors The ip ancestors array
     /// @return targetRoyaltyAmount The ip royalty amount array
-    function getRoyaltyData(address ipId) external view returns (bool, address, address, uint32, address[] memory, uint32[] memory);
+    function getRoyaltyData(
+        address ipId
+    ) external view returns (bool, address, address, uint32, address[] memory, uint32[] memory);
 }
