@@ -7,7 +7,6 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // contract
-import { IRoyaltyPolicyLAP } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLAP.sol";
 import { Errors } from "contracts/lib/Errors.sol";
 
 // test
@@ -74,21 +73,10 @@ contract Flows_Integration_Disputes is BaseIntegration {
         uint256[] memory licenseIds = new uint256[](1);
         licenseIds[0] = licenseId;
 
-        IRoyaltyPolicyLAP.InitParams memory royaltyContext = IRoyaltyPolicyLAP.InitParams({
-            targetAncestors: new address[](0),
-            targetRoyaltyAmount: new uint32[](0),
-            parentAncestors1: new address[](0),
-            parentAncestors2: new address[](0),
-            parentAncestorsRoyalties1: new uint32[](0),
-            parentAncestorsRoyalties2: new uint32[](0)
-        });
-
         vm.prank(u.carl);
         vm.expectRevert(Errors.LicensingModule__LinkingRevokedLicense.selector);
-        licensingModule.linkIpToParents(licenseIds, ipAcct[3], abi.encode(royaltyContext));
+        licensingModule.linkIpToParents(licenseIds, ipAcct[3], "");
     }
-
-    // TODO: check if IPAccount is transferable even if disputed
 
     function test_Integration_Disputes_transferLicenseAfterIpDispute() public {
         assertEq(licenseRegistry.balanceOf(u.carl, policyId), 0);

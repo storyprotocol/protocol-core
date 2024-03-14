@@ -463,7 +463,7 @@ contract TestRoyaltyModule is BaseTest {
         address receiverIpId = address(7);
         address payerIpId = address(3);
 
-        (, address splitClone, , , ) = royaltyPolicyLAP.royaltyData(receiverIpId);
+        (, address splitClone, , , , ) = royaltyPolicyLAP.getRoyaltyData(receiverIpId);
 
         vm.startPrank(payerIpId);
         USDC.mint(payerIpId, royaltyAmount);
@@ -491,7 +491,7 @@ contract TestRoyaltyModule is BaseTest {
         address licenseRoyaltyPolicy = address(royaltyPolicyLAP);
         address token = address(USDC);
 
-        (, address splitClone, , , ) = royaltyPolicyLAP.royaltyData(receiverIpId);
+        (, address splitClone, , , , ) = royaltyPolicyLAP.getRoyaltyData(receiverIpId);
 
         vm.startPrank(payerAddress);
         USDC.mint(payerAddress, royaltyAmount);

@@ -7,7 +7,6 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // contract
-import { IRoyaltyPolicyLAP } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLAP.sol";
 import { PILFlavors } from "contracts/lib/PILFlavors.sol";
 
 // test
@@ -19,8 +18,6 @@ contract Licensing_Scenarios is BaseIntegration {
 
     mapping(uint256 tokenId => address ipAccount) internal ipAcct;
     uint256 nonCommRemixPoliciyId;
-
-    bytes internal emptyRoyaltyPolicyLAPInitParams;
 
     function setUp() public override {
         super.setUp();
@@ -36,16 +33,6 @@ contract Licensing_Scenarios is BaseIntegration {
         ipAcct[2] = registerIpAccount(mockNFT, 2, u.bob);
 
         nonCommRemixPoliciyId = _pilFramework().registerPolicy(PILFlavors.nonCommercialSocialRemixing());
-        emptyRoyaltyPolicyLAPInitParams = abi.encode(
-            IRoyaltyPolicyLAP.InitParams({
-                targetAncestors: new address[](0),
-                targetRoyaltyAmount: new uint32[](0),
-                parentAncestors1: new address[](0),
-                parentAncestors2: new address[](0),
-                parentAncestorsRoyalties1: new uint32[](0),
-                parentAncestorsRoyalties2: new uint32[](0)
-            })
-        );
     }
 
     function test_flavors_getId() public {
@@ -109,42 +96,14 @@ contract Licensing_Scenarios is BaseIntegration {
         // Mint license for Non-commercial remixing, then link to new IPA to make it a derivative
         vm.startPrank(u.bob);
         licenseIds[0] = licensingModule.mintLicense(nonCommRemixPoliciyId, ipAcct[1], 1, u.bob, "");
-        licensingModule.linkIpToParents(licenseIds, ipAcct[2], emptyRoyaltyPolicyLAPInitParams);
+        licensingModule.linkIpToParents(licenseIds, ipAcct[2], "");
         // Mint license for commercial use, then link to new IPA to make it a derivative
-        // Needs royalty context with 1 ancestor, since it's commercial
-        IRoyaltyPolicyLAP.InitParams memory params = IRoyaltyPolicyLAP.InitParams({
-            targetAncestors: new address[](1),
-            targetRoyaltyAmount: new uint32[](1),
-            parentAncestors1: new address[](0),
-            parentAncestors2: new address[](0),
-            parentAncestorsRoyalties1: new uint32[](0),
-            parentAncestorsRoyalties2: new uint32[](0)
-        });
-        params.targetAncestors[0] = ipAcct[1];
-        params.targetRoyaltyAmount[0] = 0;
         IERC20(USDC).approve(address(royaltyPolicyLAP), mintFee);
-        licenseIds[0] = licensingModule.mintLicense(commPolicyId, ipAcct[1], 1, u.bob, emptyRoyaltyPolicyLAPInitParams);
-        licensingModule.linkIpToParents(licenseIds, ipAcct[3], abi.encode(params));
+        licenseIds[0] = licensingModule.mintLicense(commPolicyId, ipAcct[1], 1, u.bob, "");
+        licensingModule.linkIpToParents(licenseIds, ipAcct[3], "");
         // Mint license for commercial remixing, then link to new IPA to make it a derivative
-        // Needs royalty context with 1 ancestor, since it's commercial
-        params = IRoyaltyPolicyLAP.InitParams({
-            targetAncestors: new address[](1),
-            targetRoyaltyAmount: new uint32[](1),
-            parentAncestors1: new address[](0),
-            parentAncestors2: new address[](0),
-            parentAncestorsRoyalties1: new uint32[](0),
-            parentAncestorsRoyalties2: new uint32[](0)
-        });
-        params.targetAncestors[0] = ipAcct[1];
-        params.targetRoyaltyAmount[0] = commercialRevShare;
-        licenseIds[0] = licensingModule.mintLicense(
-            commRemixPolicyId,
-            ipAcct[1],
-            1,
-            u.bob,
-            emptyRoyaltyPolicyLAPInitParams
-        );
-        licensingModule.linkIpToParents(licenseIds, ipAcct[4], abi.encode(params));
+        licenseIds[0] = licensingModule.mintLicense(commRemixPolicyId, ipAcct[1], 1, u.bob, "");
+        licensingModule.linkIpToParents(licenseIds, ipAcct[4], "");
 
         vm.stopPrank();
     }

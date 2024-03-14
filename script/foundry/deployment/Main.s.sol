@@ -386,17 +386,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         // For license/royalty payment, on both minting license and royalty distribution
         erc20.approve(address(royaltyPolicyLAP), MAX_ROYALTY_APPROVAL);
 
-        bytes memory emptyRoyaltyPolicyLAPInitParams = abi.encode(
-            IRoyaltyPolicyLAP.InitParams({
-                targetAncestors: new address[](0),
-                targetRoyaltyAmount: new uint32[](0),
-                parentAncestors1: new address[](0),
-                parentAncestors2: new address[](0),
-                parentAncestorsRoyalties1: new uint32[](0),
-                parentAncestorsRoyalties2: new uint32[](0)
-            })
-        );
-
         licensingModule.registerPolicyFrameworkManager(address(pilPfm));
         frameworkAddrs["pil"] = address(pilPfm);
 
@@ -552,38 +541,22 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 ipAcct[1],
                 2,
                 deployer,
-                emptyRoyaltyPolicyLAPInitParams
+                ""
             );
 
             ipAcct[3] = getIpId(erc721, 3);
             vm.label(ipAcct[3], "IPAccount3");
 
-            IRoyaltyPolicyLAP.InitParams memory royaltyContext = IRoyaltyPolicyLAP.InitParams({
-                targetAncestors: new address[](1),
-                targetRoyaltyAmount: new uint32[](1),
-                parentAncestors1: new address[](0),
-                parentAncestors2: new address[](0),
-                parentAncestorsRoyalties1: new uint32[](0),
-                parentAncestorsRoyalties2: new uint32[](0)
-            });
-            royaltyContext.targetAncestors[0] = ipAcct[1];
-            royaltyContext.targetRoyaltyAmount[0] = 100;
-
             ipAssetRegistry.register(
                 licenseIds,
-                abi.encode(royaltyContext),
+                "",
                 block.chainid,
                 address(erc721),
                 3,
-                address(ipResolver),
-                true,
-                abi.encode(IP.MetadataV1({
-                    name: "IPAccount3",
-                    hash: bytes32("more content hash"),
-                    registrationDate: uint64(block.timestamp),
-                    registrant: deployer,
-                    uri: "https://example.com/test-derivative-ip"
-                }))
+                "IPAccount3",
+                bytes32("some of the best description"),
+                "https://example.com/best-derivative-ip",
+                ""
             );
         }
 
@@ -596,22 +569,11 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 ipAcct[2],
                 1,
                 deployer,
-                emptyRoyaltyPolicyLAPInitParams
+                ""
             );
 
             ipAcct[4] = getIpId(erc721, 4);
             vm.label(ipAcct[4], "IPAccount4");
-
-            IRoyaltyPolicyLAP.InitParams memory params = IRoyaltyPolicyLAP.InitParams({
-                targetAncestors: new address[](1),
-                targetRoyaltyAmount: new uint32[](1),
-                parentAncestors1: new address[](0),
-                parentAncestors2: new address[](0),
-                parentAncestorsRoyalties1: new uint32[](0),
-                parentAncestorsRoyalties2: new uint32[](0)
-            });
-            params.targetAncestors[0] = ipAcct[2];
-            params.targetRoyaltyAmount[0] = 100;
 
             ipAcct[4] = ipAssetRegistry.register(
                 block.chainid,
@@ -628,7 +590,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 }))
             );
 
-            licensingModule.linkIpToParents(licenseIds, ipAcct[4], abi.encode(params));
+            licensingModule.linkIpToParents(licenseIds, ipAcct[4], "");
         }
 
         // Multi-parent
@@ -642,46 +604,20 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 ipAcct[1],
                 1,
                 deployer,
-                emptyRoyaltyPolicyLAPInitParams
+                ""
             );
-
-            IRoyaltyPolicyLAP.InitParams memory paramsMintLicense = IRoyaltyPolicyLAP.InitParams({
-                targetAncestors: new address[](1),
-                targetRoyaltyAmount: new uint32[](1),
-                parentAncestors1: new address[](0),
-                parentAncestors2: new address[](0),
-                parentAncestorsRoyalties1: new uint32[](0),
-                parentAncestorsRoyalties2: new uint32[](0)
-            });
-            paramsMintLicense.targetAncestors[0] = ipAcct[1];
-            paramsMintLicense.targetRoyaltyAmount[0] = 100;
 
             licenseIds[1] = licensingModule.mintLicense(
                 policyIds["pil_com_deriv_expensive"],
                 ipAcct[3], // is child of ipAcct[1]
                 1,
                 deployer,
-                abi.encode(paramsMintLicense)
+                ""
             );
-
-            IRoyaltyPolicyLAP.InitParams memory paramsLinkParent = IRoyaltyPolicyLAP.InitParams({
-                targetAncestors: new address[](2),
-                targetRoyaltyAmount: new uint32[](2),
-                parentAncestors1: new address[](0),
-                parentAncestors2: new address[](1),
-                parentAncestorsRoyalties1: new uint32[](0),
-                parentAncestorsRoyalties2: new uint32[](1)
-            });
-            paramsLinkParent.targetAncestors[0] = ipAcct[1]; // grandparent
-            paramsLinkParent.targetAncestors[1] = ipAcct[3]; // parent
-            paramsLinkParent.targetRoyaltyAmount[0] = 200; // 100 + 100
-            paramsLinkParent.targetRoyaltyAmount[1] = 100;
-            paramsLinkParent.parentAncestors2[0] = ipAcct[1];
-            paramsLinkParent.parentAncestorsRoyalties2[0] = 100;
 
             ipAssetRegistry.register(
                 licenseIds,
-                abi.encode(paramsLinkParent),
+                "",
                 block.chainid,
                 address(erc721),
                 5,
@@ -715,7 +651,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
         // 0xSplits Main, which will get distributed to IPAccount3 AND its claimer based on revenue
         // sharing terms specified in the royalty policy.
         {
-            (, , address ipAcct5_ancestorVault, , ) = royaltyPolicyLAP.royaltyData(ipAcct[5]);
+            (, , address ipAcct5_ancestorVault, , ,) = royaltyPolicyLAP.getRoyaltyData(ipAcct[5]);
 
             address[] memory accounts = new address[](2);
             // If you face InvalidSplit__AccountsOutOfOrder, shuffle the order of accounts (swap index 0 and 1)
@@ -730,7 +666,7 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             ERC20[] memory tokens = new ERC20[](1);
             tokens[0] = erc20;
 
-            (, , address ancestorVault_ipAcct5, , ) = royaltyPolicyLAP.royaltyData(ipAcct[5]);
+            (, , address ancestorVault_ipAcct5, , ,) = royaltyPolicyLAP.getRoyaltyData(ipAcct[5]);
 
             // First, release the money from the IPAccount5's 0xSplitWallet (that just received money) to the main
             // 0xSplitMain that acts as a ledger for revenue distribution.
@@ -753,8 +689,6 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
             royaltyPolicyLAP.claimFromAncestorsVault({
                 ipId: ipAcct[5],
                 claimerIpId: ipAcct[1],
-                ancestors: ancestors,
-                ancestorsRoyalties: ancestorsRoyalties,
                 tokens: tokens
             });
         }

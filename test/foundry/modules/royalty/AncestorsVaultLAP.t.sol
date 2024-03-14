@@ -72,10 +72,10 @@ contract TestAncestorsVaultLAP is BaseTest {
         royaltyPolicyLAP.onLinkToParents(address(100), parentsIpIds100, encodedLicenseData, MAX_ANCESTORS);
         vm.stopPrank();
 
-        (, splitClone100, ancestorsVaultAddr100, royaltyStack100, ) = royaltyPolicyLAP.royaltyData(address(100));
+        (, splitClone100, ancestorsVaultAddr100, royaltyStack100, , ) = royaltyPolicyLAP.getRoyaltyData(address(100));
         ancestorsVault100 = AncestorsVaultLAP(ancestorsVaultAddr100);
 
-        (, , ancestorsVaultAddr1, , ) = royaltyPolicyLAP.royaltyData(address(1));
+        (, , ancestorsVaultAddr1, , , ) = royaltyPolicyLAP.getRoyaltyData(address(1));
         ancestorsVault1 = AncestorsVaultLAP(ancestorsVaultAddr1);
 
         ipIdToClaim = address(100);
@@ -86,7 +86,7 @@ contract TestAncestorsVaultLAP is BaseTest {
         claimerIpId7 = address(7);
         claimerIpId10 = address(10);
 
-        (, splitClone7, , , ) = royaltyPolicyLAP.royaltyData(claimerIpId7);
+        (, splitClone7, , , , ) = royaltyPolicyLAP.getRoyaltyData(claimerIpId7);
 
         // send tokens to ancestors vault
         ethAccrued = 1 ether;
@@ -390,31 +390,21 @@ contract TestAncestorsVaultLAP is BaseTest {
     }
 
     function test_AncestorsVaultLAP_claim_AlreadyClaimed() public {
-        ancestorsVault100.claim(ipIdToClaim, claimerIpId7, MAX_ANCESTORS_, MAX_ANCESTORS_ROYALTY_, tokens);
+        ancestorsVault100.claim(ipIdToClaim, claimerIpId7, tokens);
 
         vm.expectRevert(Errors.AncestorsVaultLAP__AlreadyClaimed.selector);
-        ancestorsVault100.claim(ipIdToClaim, claimerIpId7, MAX_ANCESTORS_, MAX_ANCESTORS_ROYALTY_, tokens);
+        ancestorsVault100.claim(ipIdToClaim, claimerIpId7, tokens);
     }
 
-    function test_AncestorsVaultLAP_claim_InvalidClaimer() public {
-        vm.expectRevert(Errors.AncestorsVaultLAP__InvalidClaimer.selector);
-        ancestorsVault1.claim(ipIdToClaim, claimerIpId7, MAX_ANCESTORS_, MAX_ANCESTORS_ROYALTY_, tokens);
-    }
-
-    function test_AncestorsVaultLAP_claim_InvalidAncestorsHash() public {
-        address[] memory invalidAncestors = new address[](14);
-        vm.expectRevert(Errors.AncestorsVaultLAP__InvalidAncestorsHash.selector);
-        ancestorsVault100.claim(ipIdToClaim, claimerIpId7, invalidAncestors, MAX_ANCESTORS_ROYALTY_, tokens);
-
-        uint32[] memory invalidAncestorsRoyalty = new uint32[](14);
-        vm.expectRevert(Errors.AncestorsVaultLAP__InvalidAncestorsHash.selector);
-        ancestorsVault100.claim(ipIdToClaim, claimerIpId7, MAX_ANCESTORS_, invalidAncestorsRoyalty, tokens);
+    function test_AncestorsVaultLAP_claim_InvalidVault() public {
+        vm.expectRevert(Errors.AncestorsVaultLAP__InvalidVault.selector);
+        ancestorsVault1.claim(ipIdToClaim, claimerIpId7, tokens);
     }
 
     function test_AncestorsVaultLAP_claim_ClaimerNotAnAncestor() public {
         address notAnAncestor = address(50);
         vm.expectRevert(Errors.AncestorsVaultLAP__ClaimerNotAnAncestor.selector);
-        ancestorsVault100.claim(ipIdToClaim, notAnAncestor, MAX_ANCESTORS_, MAX_ANCESTORS_ROYALTY_, tokens);
+        ancestorsVault100.claim(ipIdToClaim, notAnAncestor, tokens);
     }
 
     function test_AncestorsVaultLAP_claim_ERC20BalanceNotZero() public {
@@ -434,7 +424,7 @@ contract TestAncestorsVaultLAP is BaseTest {
         );
 
         vm.expectRevert(Errors.AncestorsVaultLAP__ERC20BalanceNotZero.selector);
-        ancestorsVault100.claim(ipIdToClaim, claimerIpId7, MAX_ANCESTORS_, MAX_ANCESTORS_ROYALTY_, tokens);
+        ancestorsVault100.claim(ipIdToClaim, claimerIpId7, tokens);
     }
 
     function test_AncestorsVaultLAP_claim() public {
@@ -448,7 +438,7 @@ contract TestAncestorsVaultLAP is BaseTest {
         vm.expectEmit(true, true, true, true, address(ancestorsVault100));
         emit Claimed(ipIdToClaim, claimerIpId7, tokens);
 
-        ancestorsVault100.claim(ipIdToClaim, claimerIpId7, MAX_ANCESTORS_, MAX_ANCESTORS_ROYALTY_, tokens);
+        ancestorsVault100.claim(ipIdToClaim, claimerIpId7, tokens);
 
         uint256 rnftBalAfter = ILiquidSplitClone(splitClone100).balanceOf(address(7), 0);
         uint256 ancestorsVaultUSDCBalAfter = USDC.balanceOf(address(ancestorsVault100));
@@ -477,7 +467,7 @@ contract TestAncestorsVaultLAP is BaseTest {
     }
 
     function test_AncestorsVaultLAP_claim_MultipleClaims() public {
-        ancestorsVault100.claim(ipIdToClaim, claimerIpId10, MAX_ANCESTORS_, MAX_ANCESTORS_ROYALTY_, tokens);
+        ancestorsVault100.claim(ipIdToClaim, claimerIpId10, tokens);
 
         // address 7 as the root will claim from address 100
         uint256 rnftBalBefore = ILiquidSplitClone(splitClone100).balanceOf(address(7), 0);
@@ -489,7 +479,7 @@ contract TestAncestorsVaultLAP is BaseTest {
         vm.expectEmit(true, true, true, true, address(ancestorsVault100));
         emit Claimed(ipIdToClaim, claimerIpId7, tokens);
 
-        ancestorsVault100.claim(ipIdToClaim, claimerIpId7, MAX_ANCESTORS_, MAX_ANCESTORS_ROYALTY_, tokens);
+        ancestorsVault100.claim(ipIdToClaim, claimerIpId7, tokens);
 
         uint256 rnftBalAfter = ILiquidSplitClone(splitClone100).balanceOf(address(7), 0);
         uint256 ancestorsVaultUSDCBalAfter = USDC.balanceOf(address(ancestorsVault100));
