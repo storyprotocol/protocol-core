@@ -19,14 +19,6 @@ interface IAncestorsVaultLAP {
     /// @notice Claims all available royalty nfts and accrued royalties for an ancestor of a given ipId
     /// @param ipId The ipId of the ancestors vault to claim from
     /// @param claimerIpId The claimer ipId is the ancestor address that wants to claim
-    /// @param ancestors The ancestors for the selected ipId
-    /// @param ancestorsRoyalties The royalties of the ancestors for the selected ipId
     /// @param tokens The ERC20 tokens to withdraw
-    function claim(
-        address ipId,
-        address claimerIpId,
-        address[] calldata ancestors,
-        uint32[] calldata ancestorsRoyalties,
-        ERC20[] calldata tokens
-    ) external;
+    function claim(address ipId, address claimerIpId, ERC20[] calldata tokens) external;
 }

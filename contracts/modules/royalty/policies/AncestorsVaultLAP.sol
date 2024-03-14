@@ -35,22 +35,19 @@ contract AncestorsVaultLAP is IAncestorsVaultLAP, ERC1155Holder, ReentrancyGuard
     /// @notice Claims all available royalty nfts and accrued royalties for an ancestor of a given ipId
     /// @param ipId The ipId of the ancestors vault to claim from
     /// @param claimerIpId The claimer ipId is the ancestor address that wants to claim
-    /// @param ancestors The ancestors for the selected ipId
-    /// @param ancestorsRoyalties The royalties of the ancestors for the selected ipId
     /// @param tokens The ERC20 tokens to withdraw
-    function claim(
-        address ipId,
-        address claimerIpId,
-        address[] calldata ancestors,
-        uint32[] calldata ancestorsRoyalties,
-        ERC20[] calldata tokens
-    ) external nonReentrant {
-        (, address splitClone, address ancestorsVault, , bytes32 ancestorsHash) = ROYALTY_POLICY_LAP.royaltyData(ipId);
+    function claim(address ipId, address claimerIpId, ERC20[] calldata tokens) external nonReentrant {
+        (
+            ,
+            address splitClone,
+            address ancestorsVault,
+            ,
+            address[] memory ancestors,
+            uint32[] memory ancestorsRoyalties
+        ) = ROYALTY_POLICY_LAP.getRoyaltyData(ipId);
 
         if (isClaimed[ipId][claimerIpId]) revert Errors.AncestorsVaultLAP__AlreadyClaimed();
-        if (address(this) != ancestorsVault) revert Errors.AncestorsVaultLAP__InvalidClaimer();
-        if (keccak256(abi.encodePacked(ancestors, ancestorsRoyalties)) != ancestorsHash)
-            revert Errors.AncestorsVaultLAP__InvalidAncestorsHash();
+        if (address(this) != ancestorsVault) revert Errors.AncestorsVaultLAP__InvalidVault();
 
         // transfer the rnfts to the claimer accrued royalties to the claimer IpId address
         _transferRnftsAndAccruedTokens(claimerIpId, splitClone, ancestors, ancestorsRoyalties, tokens);
@@ -69,8 +66,8 @@ contract AncestorsVaultLAP is IAncestorsVaultLAP, ERC1155Holder, ReentrancyGuard
     function _transferRnftsAndAccruedTokens(
         address claimerIpId,
         address splitClone,
-        address[] calldata ancestors,
-        uint32[] calldata ancestorsRoyalties,
+        address[] memory ancestors,
+        uint32[] memory ancestorsRoyalties,
         ERC20[] calldata tokens
     ) internal {
         (uint32 index, bool isIn) = ArrayUtils.indexOf(ancestors, claimerIpId);
