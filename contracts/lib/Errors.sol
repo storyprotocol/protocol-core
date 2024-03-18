@@ -194,7 +194,6 @@ library Errors {
     error DisputeModule__NotInDisputeState();
     error DisputeModule__NotAbleToResolve();
     error DisputeModule__NotRegisteredIpId();
-    error DisputeModule__UnauthorizedAccess();
 
     error ArbitrationPolicySP__ZeroDisputeModule();
     error ArbitrationPolicySP__ZeroPaymentToken();
@@ -214,7 +213,6 @@ library Errors {
     error RoyaltyModule__ZeroLicensingModule();
     error RoyaltyModule__CanOnlyMintSelectedPolicy();
     error RoyaltyModule__NoParentsOnLinking();
-    error RoyaltyModule__NotRegisteredIpId();
 
     error RoyaltyPolicyLAP__ZeroRoyaltyModule();
     error RoyaltyPolicyLAP__ZeroLiquidSplitFactory();
@@ -224,26 +222,18 @@ library Errors {
     error RoyaltyPolicyLAP__AboveParentLimit();
     error RoyaltyPolicyLAP__AboveAncestorsLimit();
     error RoyaltyPolicyLAP__AboveRoyaltyStackLimit();
-    error RoyaltyPolicyLAP__InvalidAncestorsLength();
-    error RoyaltyPolicyLAP__InvalidAncestors();
-    error RoyaltyPolicyLAP__InvalidRoyaltyAmountLength();
-    error RoyaltyPolicyLAP__InvalidAncestorsHash();
     error RoyaltyPolicyLAP__InvalidParentRoyaltiesLength();
-    error RoyaltyPolicyLAP__InvalidAncestorsRoyalty();
     error RoyaltyPolicyLAP__ImplementationAlreadySet();
     error RoyaltyPolicyLAP__ZeroAncestorsVaultImpl();
     error RoyaltyPolicyLAP__NotFullOwnership();
     error RoyaltyPolicyLAP__UnlinkableToParents();
-    error RoyaltyPolicyLAP__TransferFailed();
     error RoyaltyPolicyLAP__LastPositionNotAbleToMintLicense();
 
     error AncestorsVaultLAP__ZeroRoyaltyPolicyLAP();
     error AncestorsVaultLAP__AlreadyClaimed();
-    error AncestorsVaultLAP__InvalidAncestorsHash();
-    error AncestorsVaultLAP__InvalidClaimer();
+    error AncestorsVaultLAP__InvalidVault();
     error AncestorsVaultLAP__ClaimerNotAnAncestor();
     error AncestorsVaultLAP__ERC20BalanceNotZero();
-    error AncestorsVaultLAP__TransferFailed();
 
     ////////////////////////////////////////////////////////////////////////////
     //                             ModuleRegistry                             //

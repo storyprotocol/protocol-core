@@ -8,7 +8,6 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // contract
 import { IRoyaltyModule } from "contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
-import { IRoyaltyPolicyLAP } from "contracts/interfaces/modules/royalty/policies/IRoyaltyPolicyLAP.sol";
 import { IP } from "contracts/lib/IP.sol";
 
 // test
@@ -19,18 +18,6 @@ contract Flows_Integration_Disputes is BaseIntegration {
     using Strings for *;
 
     mapping(uint256 tokenId => address ipAccount) internal ipAcct;
-
-    bytes internal emptyRoyaltyPolicyLAPInitParams =
-        abi.encode(
-            IRoyaltyPolicyLAP.InitParams({
-                targetAncestors: new address[](0),
-                targetRoyaltyAmount: new uint32[](0),
-                parentAncestors1: new address[](0),
-                parentAncestors2: new address[](0),
-                parentAncestorsRoyalties1: new uint32[](0),
-                parentAncestorsRoyalties2: new uint32[](0)
-            })
-        );
 
     address internal royaltyPolicyAddr; // must be assigned AFTER super.setUp()
     address internal mintingFeeToken; // must be assigned AFTER super.setUp()
@@ -96,23 +83,12 @@ contract Flows_Integration_Disputes is BaseIntegration {
                 ipAcct[1],
                 mintAmount,
                 u.bob,
-                emptyRoyaltyPolicyLAPInitParams
+                ""
             );
-
-            IRoyaltyPolicyLAP.InitParams memory params = IRoyaltyPolicyLAP.InitParams({
-                targetAncestors: new address[](1),
-                targetRoyaltyAmount: new uint32[](1),
-                parentAncestors1: new address[](0),
-                parentAncestors2: new address[](0),
-                parentAncestorsRoyalties1: new uint32[](0),
-                parentAncestorsRoyalties2: new uint32[](0)
-            });
-            params.targetAncestors[0] = ipAcct[1];
-            params.targetRoyaltyAmount[0] = defaultCommRevShare;
 
             ipAssetRegistry.register(
                 licenseIds,
-                abi.encode(params),
+                "",
                 block.chainid,
                 address(mockNFT),
                 2,
@@ -153,19 +129,8 @@ contract Flows_Integration_Disputes is BaseIntegration {
                 ipAcct[1], // grandparent, root IP
                 1,
                 u.carl,
-                emptyRoyaltyPolicyLAPInitParams
+                ""
             );
-
-            IRoyaltyPolicyLAP.InitParams memory params1 = IRoyaltyPolicyLAP.InitParams({
-                targetAncestors: new address[](1),
-                targetRoyaltyAmount: new uint32[](1),
-                parentAncestors1: new address[](0),
-                parentAncestors2: new address[](0),
-                parentAncestorsRoyalties1: new uint32[](0),
-                parentAncestorsRoyalties2: new uint32[](0)
-            });
-            params1.targetAncestors[0] = ipAcct[1];
-            params1.targetRoyaltyAmount[0] = defaultCommRevShare;
 
             vm.expectEmit(address(royaltyModule));
             emit IRoyaltyModule.LicenseMintingFeePaid(ipAcct[2], u.carl, address(erc20), mintAmount * mintingFee);
@@ -174,27 +139,12 @@ contract Flows_Integration_Disputes is BaseIntegration {
                 ipAcct[2], // parent, is child IP of ipAcct[1]
                 1,
                 u.carl,
-                abi.encode(params1)
+                ""
             );
-
-            IRoyaltyPolicyLAP.InitParams memory params2 = IRoyaltyPolicyLAP.InitParams({
-                targetAncestors: new address[](2),
-                targetRoyaltyAmount: new uint32[](2),
-                parentAncestors1: new address[](0),
-                parentAncestors2: new address[](1),
-                parentAncestorsRoyalties1: new uint32[](0),
-                parentAncestorsRoyalties2: new uint32[](1)
-            });
-            params2.targetAncestors[0] = ipAcct[1]; // grandparent
-            params2.targetAncestors[1] = ipAcct[2]; // parent
-            params2.targetRoyaltyAmount[0] = defaultCommRevShare * 2; // owed to grandparent (twice - royalty stack!)
-            params2.targetRoyaltyAmount[1] = defaultCommRevShare; // owed to parent
-            params2.parentAncestors2[0] = ipAcct[1];
-            params2.parentAncestorsRoyalties2[0] = defaultCommRevShare;
 
             ipAssetRegistry.register(
                 licenseIds,
-                abi.encode(params2),
+                "",
                 block.chainid,
                 address(mockNFT),
                 3,
@@ -240,7 +190,7 @@ contract Flows_Integration_Disputes is BaseIntegration {
         {
             vm.startPrank(u.dan);
 
-            (, , address ipAcct3_ancestorVault, , ) = royaltyPolicyLAP.royaltyData(ipAcct[3]);
+            (, , address ipAcct3_ancestorVault, , , ) = royaltyPolicyLAP.getRoyaltyData(ipAcct[3]);
 
             address[] memory accounts = new address[](2);
             // If you face InvalidSplit__AccountsOutOfOrder, shuffle the order of accounts (swap index 0 and 1)
@@ -257,7 +207,7 @@ contract Flows_Integration_Disputes is BaseIntegration {
             ERC20[] memory tokens = new ERC20[](1);
             tokens[0] = mockToken;
 
-            (, , address ancestorVault_ipAcct3, , ) = royaltyPolicyLAP.royaltyData(ipAcct[3]);
+            (, , address ancestorVault_ipAcct3, , , ) = royaltyPolicyLAP.getRoyaltyData(ipAcct[3]);
 
             // First, release the money from the IPAccount3's 0xSplitWallet (that just received money) to the main
             // 0xSplitMain that acts as a ledger for revenue distribution.
@@ -277,13 +227,7 @@ contract Flows_Integration_Disputes is BaseIntegration {
             ancestorsRoyalties[1] = defaultCommRevShare;
 
             // IPAccount2 wants to claim from IPAccount3
-            royaltyPolicyLAP.claimFromAncestorsVault({
-                ipId: ipAcct[3],
-                claimerIpId: ipAcct[2],
-                ancestors: ancestors,
-                ancestorsRoyalties: ancestorsRoyalties,
-                tokens: tokens
-            });
+            royaltyPolicyLAP.claimFromAncestorsVault({ ipId: ipAcct[3], claimerIpId: ipAcct[2], tokens: tokens });
         }
 
         // IPAccount1, which is both the grandparent and parent of IPAccount3, claims its rNFTs and tokens.
@@ -291,8 +235,8 @@ contract Flows_Integration_Disputes is BaseIntegration {
             ERC20[] memory tokens = new ERC20[](1);
             tokens[0] = mockToken;
 
-            (, address splitClone_ipAcct1, , , ) = royaltyPolicyLAP.royaltyData(ipAcct[1]);
-            (, , address ancestorVault_ipAcct3, , ) = royaltyPolicyLAP.royaltyData(ipAcct[3]);
+            (, address splitClone_ipAcct1, , , , ) = royaltyPolicyLAP.getRoyaltyData(ipAcct[1]);
+            (, , address ancestorVault_ipAcct3, , , ) = royaltyPolicyLAP.getRoyaltyData(ipAcct[3]);
 
             uint256 balanceBefore_SplitClone_ipAcct1 = mockToken.balanceOf(ipAcct[1]);
             uint256 balanceBefore_AncestorVault_ipAcct3 = mockToken.balanceOf(ancestorVault_ipAcct3);
@@ -305,13 +249,7 @@ contract Flows_Integration_Disputes is BaseIntegration {
             ancestorsRoyalties[1] = defaultCommRevShare;
 
             // IPAccount1 wants to claim from IPAccount3 (gets RNFTs and tokens)
-            royaltyPolicyLAP.claimFromAncestorsVault({
-                ipId: ipAcct[3],
-                claimerIpId: ipAcct[1],
-                ancestors: ancestors,
-                ancestorsRoyalties: ancestorsRoyalties,
-                tokens: tokens
-            });
+            royaltyPolicyLAP.claimFromAncestorsVault({ ipId: ipAcct[3], claimerIpId: ipAcct[1], tokens: tokens });
 
             uint256 balanceAfter_SplitClone_ipAcct1 = mockToken.balanceOf(ipAcct[1]);
             uint256 balanceAfter_AncestorVault_ipAcct3 = mockToken.balanceOf(ancestorVault_ipAcct3);
