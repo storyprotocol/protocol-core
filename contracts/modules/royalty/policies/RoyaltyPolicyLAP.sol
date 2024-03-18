@@ -131,7 +131,7 @@ contract RoyaltyPolicyLAP is IRoyaltyPolicyLAP, Governable, ERC1155Holder, Reent
         } else {
             // If the policy is already initialized and an ipId has the maximum number of ancestors
             // it can not have any derivative and therefore is not allowed to mint any license
-            if (royaltyData[ipId].ancestorsAddresses.length >= MAX_ANCESTORS)
+            if (data.ancestorsAddresses.length >= MAX_ANCESTORS)
                 revert Errors.RoyaltyPolicyLAP__LastPositionNotAbleToMintLicense();
         }
     }
