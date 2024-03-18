@@ -553,10 +553,15 @@ contract Main is Script, BroadcastManager, JsonDeploymentHandler {
                 block.chainid,
                 address(erc721),
                 3,
-                "IPAccount3",
-                bytes32("some of the best description"),
-                "https://example.com/best-derivative-ip",
-                ""
+                address(ipResolver),
+                true,
+                abi.encode(IP.MetadataV1({
+                    name: "IPAccount3",
+                    hash: bytes32("more content hash"),
+                    registrationDate: uint64(block.timestamp),
+                    registrant: deployer,
+                    uri: "https://example.com/test-derivative-ip"
+                }))
             );
         }
 
