@@ -5,6 +5,7 @@ pragma solidity 0.8.23;
 // external
 import { console2 } from "forge-std/console2.sol"; // console to indicate mock deployment calls.
 import { ERC6551Registry } from "erc6551/ERC6551Registry.sol";
+import { TestProxyHelper } from "./TestProxyHelper.sol";
 
 // contracts
 import { AccessController } from "../../../contracts/AccessController.sol";
@@ -252,7 +253,18 @@ contract DeployHelper {
         console2.log("DeployHelper: Using REAL IPAssetRegistry");
 
         if (d.licenseRegistry) {
-            licenseRegistry = new LicenseRegistry(getGovernance(), "deploy helper");
+            address newIml = address(new LicenseRegistry());
+            licenseRegistry = LicenseRegistry(
+                TestProxyHelper.deployUUPSProxy(
+                    newIml,
+                    abi.encodeCall(
+                        LicenseRegistry.initialize, (
+                            address(getGovernance()),
+                            "deploy helper"
+                        )
+                    )
+                )
+            );
             console2.log("DeployHelper: Using REAL LicenseRegistry");
         }
     }
