@@ -11,7 +11,6 @@ import { IRoyaltyModule } from "../../interfaces/modules/royalty/IRoyaltyModule.
 import { IRoyaltyPolicy } from "../../interfaces/modules/royalty/policies/IRoyaltyPolicy.sol";
 import { Errors } from "../../lib/Errors.sol";
 import { ROYALTY_MODULE_KEY } from "../../lib/modules/Module.sol";
-import { BaseModule } from "../BaseModule.sol";
 
 /// @title Story Protocol Royalty Module
 /// @notice The Story Protocol royalty module allows to set royalty policies an IP asset and pay royalties as a
